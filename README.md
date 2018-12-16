@@ -22,6 +22,10 @@ PieHelper is an extensible, user-friendly, scripted software suite which
 	- checking for required controller presence (PS3/PS4 supported)
 	- optionally setting up automatic xboxdrv mapping for your controller(s)
 
+* Currently uninplemented :
+	- xboxdrv mapping for PS3 usb, PS3 bluetooth, PS4 bluetooth
+	- Correct handling of XBOX controllers
+
 PieHelper has been written entirely in ksh and currently has no prerequisites
 except for the following assumptions 
 
