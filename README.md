@@ -9,7 +9,7 @@ PieHelper is an extensible, user-friendly, scripted software suite which
 	- start
 	- restart
 	- switching from one application to another
-* the current list of supported applications is 
+* the current list of supported integrable applications is 
 	- Kodi
 	- Moonlight
 	- RetroPie/Emulationstation
@@ -17,15 +17,17 @@ PieHelper is an extensible, user-friendly, scripted software suite which
 	- Bash
 	- PieHelper
 * offers some additional features
-	- adding and removing out-of-scope applications as supported applications
+	- integrate additional out-of-scope applications
 	- mounting/unmounting CIFS shares at application startup/halt
 	- checking for required controller presence (PS3/PS4 supported)
 	- optionally setting up automatic xboxdrv mapping for your controller(s)
+	- selecting one integrated application to start by default on system boot
 
 * Currently uninplemented :
 	- xboxdrv mapping for PS3 usb, PS3 bluetooth, PS4 bluetooth
 	- Correct handling of XBOX controllers
 
+PieHelper binds each application to a specific TTY and uses autologin functionality at TTY selection
 PieHelper has been written entirely in ksh and currently has no prerequisites
 except for the following assumptions 
 
