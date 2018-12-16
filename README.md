@@ -16,6 +16,11 @@ PieHelper is an extensible, user-friendly, scripted software suite which
 	- X11
 	- Bash
 	- PieHelper
+* offers some additional features
+	- adding and removing out-of-scope applications as supported applications
+	- mounting/unmounting CIFS shares at application startup/halt
+	- checking for required controller presence (PS3/PS4 supported)
+	- optionally setting up automatic xboxdrv mapping for your controller(s)
 
 PieHelper has been written entirely in ksh and currently has no prerequisites
 except for the following assumptions 
