@@ -1,0 +1,6 @@
+Update your system:ph_update_system
+Reboot your system:$PH_SUDO init 6
+Manage applications:ph_show_menu AppManagement
+Manage controllers:ph_show_menu Controllers
+Advanced options:ph_show_menu Advanced
+Quit to shell:echo -e "\nYou can always return to PieHelper by running 'startpieh.sh or startpieh.sh -p'" ; break

@@ -1,0 +1,13 @@
+Configure PieHelper:confpieh_ph.sh -c
+Unconfigure PieHelper:confpieh_ph.sh -u
+Uninstall PieHelper:confpieh_ph.sh -s
+List PieHelper current state and version:confpieh_ph.sh -g
+List all available options for PieHelper:confopts_ph.sh -p list -a PieHelper
+View the current value of PieHelper option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a PieHelper -g
+View the current value of PieHelper option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a PieHelper -g -r
+Change the value of read-write PieHelper option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a PieHelper -s
+Change the value of read-write PieHelper option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a PieHelper -s -r
+Display help for PieHelper option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a PieHelper -d
+Display help for PieHelper option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a PieHelper -d -r
+Display TTY currently allocated to PieHelper:confapps_ph.sh -p tty -a PieHelper
+Return to previous menu:return

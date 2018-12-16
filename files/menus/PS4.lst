@@ -1,0 +1,3 @@
+Set the controller type to regular PS4 controller(s):confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='PS4' ; confopts_ph.sh -p set -a Ctrls -o PH_CTRL_MAP='no'
+Set the controller type to PS4 with XBOX controller emulation:confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='PS4' ; confopts_ph.sh -p set -a Ctrls -o PH_CTRL_MAP='yes'
+Return to previous menu:return

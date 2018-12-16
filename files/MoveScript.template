@@ -1,0 +1,17 @@
+#!/bin/ksh
+# Move from #PH_APP# to #PH_APP2# (by Davy Keppens on 04/10/2018)
+# Enable/Disable debug by running confpieh_ph.sh -d #PH_APPL#to#PH_APPL2#.sh
+
+. $(dirname $0)/../main/main.sh || exit $? && set +x
+
+#set -x
+
+if [[ `fgconsole` -ne `ph_get_tty_for_app #PH_APP#` ]]
+then
+	printf "%s\n" "- Disabling #PH_APP#"
+	printf "%2s%s\n" "" "FAILED : #PH_APP# not currently on foreground"
+	exit 1
+fi
+stop#PH_APPL#.sh || exit $?
+start#PH_APPL2#.sh || exit $?
+exit 0
