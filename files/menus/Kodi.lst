@@ -1,0 +1,15 @@
+Start or switch to Kodi:startkodi.sh
+Stop Kodi:stopkodi.sh force
+Restart Kodi:restartkodi.sh force
+Install Kodi:confapps_ph.sh -p int -a Kodi
+Uninstall Kodi:confapps_ph.sh -p rem -a Kodi
+List all available options for Kodi:confopts_ph.sh -p list -a Kodi
+View the current value of Kodi option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Kodi -g
+View the current value of Kodi option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Kodi -g -r
+Change the value of read-write Kodi option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Kodi -s
+Change the value of read-write Kodi option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Kodi -s -r
+Display help for Kodi option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Kodi -d
+Display help for Kodi option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Kodi -d -r
+Display TTY currently allocated to Kodi:confapps_ph.sh -p tty -a Kodi
+Move Kodi to another TTY:confapps_ph.sh -p move -a Kodi -t prompt
+Return to previous menu:return

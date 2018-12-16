@@ -1,0 +1,11 @@
+List all applications currently integrated with PieHelper:confapps_ph.sh -p list -l int
+List all currently supported applications:confapps_ph.sh -p list -l supp
+List all applications currently running and their allocated TTY:confapps_ph.sh -p list -l run
+List the application currently configured to start by default on system boot:confapps_ph.sh -p list -l start
+List all of the above (integrated, supported, running and start):confapps_ph.sh -p list -l all
+Configure an application to start by default on system boot:confapps_ph.sh -p start -a prompt
+List the currently allocated TTY for each supported application:confapps_ph.sh -p tty -a all
+Install and add an out-of-scope application as a supported and integrated application:confsupp_ph.sh -p prompt -i
+Remove an out-of-scope application from PieHelper and (optionally) uninstall it:confsupp_ph.sh -p prompt -r
+Manage your integrated applications:ph_show_menu Apps
+Return to previous menu:return
