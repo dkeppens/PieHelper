@@ -10,7 +10,6 @@
 * mention autoset of CMD_OPTS or NUM_CTRL in confopts_ph.sh help and/or (config files/+confsupp)
 * check for /proc, systemd and ksh93 repreqs
 * no change TTY and stop all other apps on just restart of application ? works for kodi,moonlight,emul stuff too ?
-* start using github with CICD pipeline
 * really not possible to hide initial output scroll on non-TTY when starting startpieh.sh -p ?
 * write help for controller config in confctrl_ph.sh and include in menus
  OR
