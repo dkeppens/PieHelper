@@ -1,3 +1,0 @@
-Set the controller type to regular PS3 controller(s):confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='PS3' ; confopts_ph.sh -p set -a Ctrls -o PH_CTRL_MAP='no'
-Set the controller type to PS3 with XBOX controller emulation:confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='PS3' ; confopts_ph.sh -p set -a Ctrls -o PH_CTRL_MAP='yes'
-Return to previous menu:return

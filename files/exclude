@@ -1,5 +1,0 @@
-build/PieHelper*
-conf/installed_apps
-files/autologin.conf
-files/ph_uninstall.sh
-files/10-retropie.sh
