@@ -2123,7 +2123,7 @@ printf "%2s%s\n" "" "SUCCESS"
 if [[ ! -f /etc/profile.d/PieHelper-path.sh ]]
 then
 	printf "%s\n" "- Installing PieHelper PATH extension"
-	echo "export PATH=$PH_SCRIPTS_DIR:\$PATH" >/tmp/PieHelper-path.sh && \
+	echo "export PATH=/usr/local/bin:$PH_SCRIPTS_DIR:\$PATH" >/tmp/PieHelper-path.sh && \
 	($PH_SUDO mv /tmp/PieHelper-path.sh /etc/profile.d/PieHelper-path.sh ; \
 	 printf "%2s%s\n" "" "SUCCESS") || \
 	printf "%2s%s\n" "" "Warning : Could not install PieHelper PATH extension"

@@ -75,6 +75,15 @@ EOF
 							mv /tmp/supported_apps_tmp $PH_CONF_DIR/supported_apps ; mv /tmp/controller_ids_tmp $PH_CONF_DIR/controller_ids ; \
 							echo "$PH_OLD_VERSION" >$PH_FILES_DIR/VERSION ; rm $PH_FILES_DIR/first_run ; ph_restore_options ; printf "%2s%s\n" "" "FAILED" ; return 1) || \
 							exit 1
+	printf "%8s%s\n" "" "--> Removing any old build archives"
+	rm $PH_BUILD_DIR/PieHelper-*.tar
+	printf "%10s%s\n" "" "OK"
+	if [[ "$PH_UPDATE_GIT" == "yes" ]]
+	then
+		git add .
+		git commit -a
+		git push
+	fi
 	printf "%8s%s\n" "" "--> Creating a new tarball archive for PieHelper \"$PH_NEW_VERSION\""
 	cd $PH_SCRIPTS_DIR/.. ; tar -X $PH_FILES_DIR/exclude -cvf $PH_BUILD_DIR/PieHelper-$PH_NEW_VERSION.tar ./* >/dev/null 2>&1 || \
 		(printf "%10s%s\n" "" "ERROR : Could not create a new tarball archive for PieHelper $PH_NEW_VERSION" ; mv /tmp/installed_apps_tmp $PH_CONF_DIR/installed_apps ; \
@@ -120,14 +129,6 @@ EOF
 	ph_restore_options
 	printf "%2s%s\n" "" "$PH_RESULT"
 	unset PH_REVERSE
-	if [[ "$PH_UPDATE_GIT" == "yes" ]]
-	then
-		cd ~/PieHelper
-		tar xvf $PH_BUILD_DIR/PieHelper-$PH_NEW_VERSION.tar
-		git add .
-		git commit -a
-		git push
-	fi
 	exit 0
 fi
 confgenb_ph.sh -h || unset PH_REVERSE
