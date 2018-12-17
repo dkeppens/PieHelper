@@ -233,6 +233,9 @@ else
 fi
 [[ $PH_NUM_CTRL -ge 2 ]] && (printf "%8s%s\n" "" "--> Growing udev event queue for multiple controller usage" ; \
 		$PH_SUDO udevadm control --children-max 500 ; printf "%10s%s\n" "" "OK")
+## handle possibly different bluetooth service on newest model PI
+$PH_SUDO systemctl enable bluetooth >/dev/null 2>&1
+$PH_SUDO systemctl start bluetooth >/dev/null 2>&1
 if [[ "$PH_MAP" == "yes" ]]
 then
 	ph_cleanup_controllers unmap || return $?
@@ -2058,12 +2061,6 @@ do
 								printf "%2s%s\n" "" "FAILED" ; return 1) || return $?
 	fi
 done
-printf "%8s%s\n" "" "--> Starting bluetooth service"
-## handle possibly different bluetooth service on newest model PI
-$PH_SUDO systemctl enable bluetooth >/dev/null 2>&1
-$PH_SUDO systemctl start bluetooth >/dev/null 2>&1 && printf "%10s%s\n" "" "OK" || \
-		(printf "%10s%s\n" "" "ERROR : Could not start bluetooth service" ; ph_set_default_tty_states ; \
-		 ph_set_default_logind_conf ; printf "%2s%s\n" "" "FAILED" ; return 1) || return $?
 ## check if following needed and implement error handling
 $PH_SUDO rmmod xpad 2>/dev/null
 echo "blacklist xpad" >/tmp/xboxdrv-blacklist.conf_tmp
