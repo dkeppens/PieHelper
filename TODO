@@ -55,7 +55,7 @@
 * test different users
 * test and support ALL other distros on raspbianpi.org ?
 * REST interface for calling scripts and android app : use vtutil && android app
-* change README (explain who you are and add contact info, reason for the soft, shell written so no dependencies except systemd, list soft PREREQS if any (Raspbian ?), general working principle, declare need to configure VARS if any left (if so, change to getopt options), list of scripts and all their options)
+* change README
 * complete VERSIONS
 * complete HOWTO
 * make available on net via NAS ftp and website
