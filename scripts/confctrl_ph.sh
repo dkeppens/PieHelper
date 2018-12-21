@@ -19,7 +19,7 @@ do
 		PH_ACTION="$OPTARG" ;;
 			   t)
 		ph_screen_input "$OPTARG" || exit $?
-		[[ "$OPTARG" != @(PS3|PS4|XBOX) ]] && (! confctrl_ph.sh -h) && exit 1
+		[[ "$OPTARG" != @(PS3|PS4|XBOX360) ]] && (! confctrl_ph.sh -h) && exit 1
 		[[ -n "$PH_TYPE" ]] && (! confctrl_ph.sh -h) && exit 1
 		PH_TYPE="$OPTARG" ;;
 			   c)
@@ -35,7 +35,7 @@ do
 		>&2 printf "%9s%s\n" "" "-p specifies the action to take"
 		>&2 printf "%12s%s\n" "" "\"help\" allows requesting the display of basic configuration information for controllers of type [ctrltype] using connection method [conntype]"
 		>&2 printf "%15s%s\n" "" "-t allows selecting one of a list of supported controller types as value for [ctrltype]"
-		>&2 printf "%18s%s\n" "" "- The currently supported controller types are \"PS3\", \"XBOX\" and \"PS4\""
+		>&2 printf "%18s%s\n" "" "- The currently supported controller types are \"PS3\", \"XBOX360\" and \"PS4\""
 		>&2 printf "%15s%s\n" "" "-c allows selecting one of a list of known controller connection types as value for [conntype]"
 		>&2 printf "%18s%s\n" "" "- The currently known controller connection types are \"cabled\" and \"bluetooth\""
 		>&2 printf "\n"

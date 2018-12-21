@@ -25,7 +25,6 @@ PieHelper is an extensible, user-friendly, scripted software suite which
 
 * Currently uninplemented :
 	- xboxdrv mapping for PS3 usb, PS3 bluetooth, PS4 bluetooth
-	- Correct handling of XBOX controllers
 
 PieHelper binds each application to a specific TTY and uses autologin functionality at TTY selection
 PieHelper has been written entirely in ksh and currently has no prerequisites

@@ -170,7 +170,7 @@ ph_check_conf_files cont || (printf "%8s%s\n" "" "--> Checking for controller id
 			printf "%10s%s\n" "" "ERROR : Not found" ; \
 			printf "%2s%s\n" "" "FAILED" ; return 1) || return $?
 ph_cleanup_controllers reset
-[[ "$PH_CTRL_TYPE" == "XBOX" ]] && PH_MAP="no"
+[[ "$PH_CTRL_TYPE" == "XBOX360" ]] && PH_MAP="no"
 PH_EVDEVS=`ls -l /dev/input/event+([[:digit:]]) | wc -l`
 [[ $PH_EVDEVS -eq 0 ]] && printf "%8s%s\n" "" "--> Running type verification of input devices" && printf "%10s%s\n" "" "ERROR : (None found)" && return 1 
 for PH_i in `ls -l /dev/input/event+([[:digit:]]) | sort -n | nawk 'BEGIN { ORS = " " } { print $NF }'`
@@ -185,7 +185,7 @@ do
 		PH_CTRL_CONN=`udevadm info -q all --path $PH_PARENT_DEV_PATH | nawk -F'=' -v type="$PH_j" 'BEGIN { flag = 0 ; conn="" ; if (type~/^PS4$/) { string = "\"(Sony Interactive Entertainment )*Wireless Controller\"$" }
 				else { if (type~/^PS4A$/) { string="\"Sony Interactive Entertainment DUALSHOCK.*4 USB Wireless Adaptor\"$" }
 				else { if (type~/^PS3$/) { string="\".*PLAYSTATION\(R\)3 Controller\"$" }
-				else { if (type~/^XBOX$/) { string="\"Microsoft X-Box 360 pad\"$" }}}}}
+				else { if (type~/^XBOX360$/) { string="\"Microsoft X-Box 360 pad\"$" }}}}}
 				$2 ~ string { flag = 1 ; next }
 				$1 ~ "^.: ID_BUS$" { if (type~/^PS4A/) { conn = "sony-adaptor" } else { conn = $2 } ; next }
 				{ next }
@@ -239,7 +239,7 @@ $PH_SUDO systemctl start bluetooth >/dev/null 2>&1
 if [[ "$PH_MAP" == "yes" ]]
 then
 	ph_cleanup_controllers unmap || return $?
-	printf "%8s%s\n" "" "--> Configuring xboxdrv mapping to virtual XBOX controller(s)"
+	printf "%8s%s\n" "" "--> Configuring xboxdrv mapping to virtual XBOX360 controller(s)"
 	for PH_CTRL_ID in {1..$PH_NUM_CTRL}
 	do
 		typeset -n PH_ID="PH_CTRL_ID`sed -n ''$PH_CTRL_ID'p' $PH_CONF_DIR/controller_ids`"
