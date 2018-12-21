@@ -1,4 +1,4 @@
-PieHelper       /home/dkeppens/PieHelper_notgit/scripts/startpieh.sh
+PieHelper       /home/dkeppens/PieHelper/scripts/startpieh.sh
 Bash    /bin/bash
 Moonlight       /usr/local/bin/moonlight stream
 Kodi    /usr/bin/xinit /usr/bin/kodi-standalone -- :0 -nolisten tcp vtPH_TTY

@@ -185,7 +185,7 @@ do
 		PH_CTRL_CONN=`udevadm info -q all --path $PH_PARENT_DEV_PATH | nawk -F'=' -v type="$PH_j" 'BEGIN { flag = 0 ; conn="" ; if (type~/^PS4$/) { string = "\"(Sony Interactive Entertainment )*Wireless Controller\"$" }
 				else { if (type~/^PS4A$/) { string="\"Sony Interactive Entertainment DUALSHOCK.*4 USB Wireless Adaptor\"$" }
 				else { if (type~/^PS3$/) { string="\".*PLAYSTATION\(R\)3 Controller\"$" }
-				else { if (type~/^XBOX$/) { string="" }}}}}
+				else { if (type~/^XBOX$/) { string="\"Microsoft X-Box 360 pad\"$" }}}}}
 				$2 ~ string { flag = 1 ; next }
 				$1 ~ "^.: ID_BUS$" { if (type~/^PS4A/) { conn = "sony-adaptor" } else { conn = $2 } ; next }
 				{ next }
