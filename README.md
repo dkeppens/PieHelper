@@ -36,7 +36,8 @@ except for the following assumptions
 * presence of a /proc filesystem
 * either apt or pacman as a package management utility
 
-It *SHOULD* therefore work out of the box on Raspbian, Noobs, Ubuntu and ArchLinux distros
+It *SHOULD* therefore work out of the box on Raspbian, Noobs, Ubuntu and ArchLinux distros 
+
 Currently however, it has only been tested on Raspbian
 
 PieHelper written by Davy Keppens on 04/10/08
