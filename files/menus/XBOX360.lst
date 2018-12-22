@@ -1,0 +1,4 @@
+Set the controller type to XBOX360:confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='XBOX360'
+View help on how to configure a usb XBOX360 controller on your system:confctrl_ph.sh -p help -c usb -t XBOX360
+View help on how to configure a wireless XBOX360 controller on your system:confctrl_ph.sh -p help -c wireless -t XBOX360
+Return to previous menu:return

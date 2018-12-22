@@ -1,3 +1,4 @@
+* remove all sudo configuration references and switch to using acl's + set stricter perms on scripts
 * change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
 * print keywords option info and perhaps also more info from help sections of matching confxxxx_ph.sh scripts in interactive menu stuff
 * change confpieh_ph.sh -p debug for partial results and for fasttrack bypass to set all modules to debug/no debug 
