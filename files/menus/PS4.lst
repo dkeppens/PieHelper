@@ -1,3 +1,6 @@
-Set the controller type to regular PS4 controller(s):confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='PS4' ; confopts_ph.sh -p set -a Ctrls -o PH_CTRL_MAP='no'
-Set the controller type to PS4 with XBOX controller emulation:confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='PS4' ; confopts_ph.sh -p set -a Ctrls -o PH_CTRL_MAP='yes'
+Set the controller type to PS4:confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='PS4' ; confopts_ph.sh -p set -a Ctrls -o PH_CTRL_MAP='no'
+Set the controller type to PS4 with XBOX360 controller emulation:confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='PS4' ; confopts_ph.sh -p set -a Ctrls -o PH_CTRL_MAP='yes'
+View help on how to configure a usb PS4 controller on your system:confctrl_ph.sh -p help -c usb -t PS4
+View help on how to configure a bluetooth PS4 controller on your system:confctrl_ph.sh -p help -c wireless -t PS4
+View help on how to configure a PS4 controller using the Sony Wireless Adapter on your system:confctrl_ph.sh -p help -c sonywadapt -t PS4
 Return to previous menu:return

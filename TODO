@@ -8,10 +8,10 @@
 * only sed CMD_OPTS vars on startup of app if 'PH_CTRL' string present in current value of CMD_OPTS
 * allow setting multiple options at once with confopts interactive and non-interactive + plus change in menu calls
 * mention autoset of CMD_OPTS or NUM_CTRL in confopts_ph.sh help and/or (config files/+confsupp)
-* check for /proc, systemd and ksh93 repreqs
+* check for /proc, systemd and ksh93 prereqs
 * no change TTY and stop all other apps on just restart of application ? works for kodi,moonlight,emul stuff too ?
 * really not possible to hide initial output scroll on non-TTY when starting startpieh.sh -p ?
-* write help for controller config in confctrl_ph.sh and include in menus
+* write help for XBOX360 wireless controller config in confctrl_ph.sh
  OR
 * switch confctrl_ph.sh to actual controller config after all and add required package expect
 * check for /etc/apt/apt.conf on debian and turn off option don't install recommended packages

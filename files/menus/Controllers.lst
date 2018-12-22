@@ -5,7 +5,7 @@ Change the value of read-write controller setting(s) (Variable expansion disable
 Change the value of read-write controller setting(s) (Variable expansion enabled):printf "%8s%s\n" "" "Use the controller-specific submenus to change controller settings"
 Display help for controller setting(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Ctrls -d
 Display help for controller setting(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Ctrls -d -r
-XBOX controllers:ph_show_menu XBOX
+XBOX360 controllers:ph_show_menu XBOX360
 PS3 controllers:ph_show_menu PS3
 PS4 controllers:ph_show_menu PS4
 Return to previous menu:return

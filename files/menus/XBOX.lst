@@ -1,2 +1,0 @@
-Set the controller type to regular XBOX controller(s):confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='XBOX'
-Return to previous menu:return
