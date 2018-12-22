@@ -16,7 +16,7 @@
 * switch confctrl_ph.sh to actual controller config after all and add required package expect
 * check for /etc/apt/apt.conf on debian and turn off option don't install recommended packages
 * test for controllers actually online ?
-* eliminate controller specific submenus for more clarity ?
+* eliminate controller-specific submenus
 * support for using a mix of different controller types
 * test integrated new bluetooth method for newest modelPI (start etc) -> change ph_setup_controllers if needed
 * check again if output clear enough for ph_generate_installed_apps and correct if needed (decicated TTY ?)

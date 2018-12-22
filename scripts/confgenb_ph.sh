@@ -59,18 +59,18 @@ then
 	>$PH_CONF_DIR/controller_ids
 	printf "%10s%s\n" "" "OK"
 	printf "%8s%s\n" "" "--> Setting supported applications configuration file back to default"
-	cp -p $PH_CONF_DIR/supported_apps /tmp/supported_apps_tmp 2>/dev/null
-	cat >$PH_CONF_DIR/supported_apps <<EOF
-PieHelper       $PH_SCRIPTS_DIR/startpieh.sh
-Bash    /bin/bash
-Moonlight       /usr/local/bin/moonlight stream
-Kodi    `which xinit` /usr/bin/kodi-standalone -- :0 -nolisten tcp vtPH_TTY
-X11     /usr/bin/startx -- :1 vtPH_TTY
-Emulationstation        /usr/bin/emulationstation
+	mv $PH_CONF_DIR/supported_apps /tmp/supported_apps_tmp 2>/dev/null
+cat >$PH_CONF_DIR/supported_apps <<EOF
+PieHelper	$PH_SCRIPTS_DIR/startpieh.sh
+Bash	/bin/bash
+Moonlight	/usr/local/bin/moonlight stream
+Kodi	/usr/bin/xinit /usr/bin/kodi-standalone -- :0 -nolisten tcp vtPH_TTY
+X11	/usr/bin/startx -- :1 vtPH_TTY
+Emulationstation	/usr/bin/emulationstation
 EOF
 	printf "%10s%s\n" "" "OK"
 	printf "%8s%s\n" "" "--> Removing installed applications configuration file"
-	mv $PH_CONF_DIR/installed_apps /tmp/installed_apps_tmp
+	mv $PH_CONF_DIR/installed_apps /tmp/installed_apps_tmp 2>/dev/null
 	[[ $? -eq 0 ]] && printf "%10s%s\n" "" "OK" || (printf "%10s%s\n" "" "ERROR : Could not remove installed applications configuration file" ; \
 							mv /tmp/supported_apps_tmp $PH_CONF_DIR/supported_apps ; mv /tmp/controller_ids_tmp $PH_CONF_DIR/controller_ids ; \
 							echo "$PH_OLD_VERSION" >$PH_FILES_DIR/VERSION ; rm $PH_FILES_DIR/first_run ; ph_restore_options ; printf "%2s%s\n" "" "FAILED" ; return 1) || \

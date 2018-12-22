@@ -1,3 +1,5 @@
+- PieHelper works by binding a supported application to a specific TTY
+  When switching to a TTY, the application bound to it will autostart
 - PieHelper will autodetect a first run and autostart configure method
   Alternatively, running confpieh_ph.sh -c will also start configuration mode for PieHelper
   PieHelper will configure it's menu as the default app to start on system boot during this initial configuration
@@ -30,7 +32,10 @@
 				   - remove previously out-of-scope applications as a PieHelper supported and integrated application
 	* confctrl_ph.sh : used to - display general info about how to configure your controller(s) on Linux
 	* startXXX.sh    : used to - start an application with shortname XXXX (shortnames are defined as a unique identifier consisting out of the 4 first letters of the application name in lowercase)
+				   - On any integrated application start, any other integrated applications marked as non-persistent will first be stopped
+				   - startpieh.sh can be launched with a -p parameter if you wish to use the PieHelper menu on a remote pseudo-terminal instead of it's allocated TTY
+				     using this option will prevent other running integrated applications being stopped first with the sole exception of other PieHelper instances running on a TTY
+				     Starting PieHelper without -p will always stop any instances running on a remote pseudo-terminal
 	* stopXXXX.sh    : used to - stop an integrated application with shortname XXXX
-				   - On any integrated application start, any other integrated applications marked as non-persistent will be stopped
 	* restartXXXX.sh : used to - restart an integrated application with shortname XXXX
   The PieHelper menu offers most of the options available through all command line scripts
