@@ -29,14 +29,14 @@ PieHelper is an extensible, user-friendly, scripted software suite which
 
 PieHelper binds each application to a specific TTY and uses autologin functionality at TTY selection 
 
-PieHelper has been written entirely in ksh and currently has no prerequisites
+PieHelper has been written entirely in ksh93 and currently has no other prerequisites
 except for the following assumptions 
 
 * systemd as a service managament facility
 * presence of a /proc filesystem
 * either apt or pacman as a package management utility
 
-It *SHOULD* therefore work out of the box on Raspbian, Noobs, Ubuntu and ArchLinux distros 
+It should therefore work out of the box on Raspbian, Noobs, Ubuntu and ArchLinux distros 
 
 Currently however, it has only been tested on Raspbian
 
