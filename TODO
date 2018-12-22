@@ -22,7 +22,6 @@
 * check again if output clear enough for ph_generate_installed_apps and correct if needed (decicated TTY ?)
 * rename installed_apps to integrated_apps ?
 * test from menus to see if increase in PH_PIEH_MAX_TTYS viable or not and if so : remove limit check in confsupp_ph.sh + mentions of it everywhere
-* move bluetooth start from initial configure to where it's needed to avoib being early blocking factor
 * test persistence ignored for piehelper when stop issued from menu and revert + also in conf file if non-functional
 * test all confxxxx_ph.sh scripts now have all checks needed
 * remove all code for move scripts and all move scripts and move template
@@ -45,7 +44,7 @@
 * test keyboard/mouse functionality on TTYs for bash and x11
 * support and test retropie & OSMC distros & ArchLinux (complete it)
 * hashing of passwords functionality
-* signal catching where handy and possible
+* signal catching where possible
 * test moonlight
 * mention supported controllers in README and mixing controller types not supported
 * mention NAS support and NVIDIA gFE dependency for Moonlight in README
