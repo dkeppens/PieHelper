@@ -31,7 +31,7 @@ PieHelper binds each application to a specific TTY and uses autologin functional
 PieHelper has been written entirely in ksh93 and currently has no other prerequisites
 except for the following assumptions 
 
-* systemd as a service managament facility
+* systemd as a service management facility
 * presence of a /proc filesystem
 * either apt or pacman as a package management utility
 
