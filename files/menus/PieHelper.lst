@@ -1,6 +1,6 @@
+Uninstall PieHelper:confpieh_ph.sh -s
 Configure PieHelper:confpieh_ph.sh -c
 Unconfigure PieHelper:confpieh_ph.sh -u
-Uninstall PieHelper:confpieh_ph.sh -s
 List PieHelper current state and version:confpieh_ph.sh -g
 List all available options for PieHelper:confopts_ph.sh -p list -a PieHelper
 View the current value of PieHelper option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a PieHelper -g

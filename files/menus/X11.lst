@@ -3,6 +3,7 @@ Stop X11:stopx11.sh force
 Restart X11:restartx11.sh force
 Install X11:confapps_ps.sh -p int -a X11
 Uninstall X11:confapps_ph.sh -p rem -a X11
+Update X11 to the latest version (only if installed as a package):ph_update_pkg $PH_X11_PKG_NAME
 List all available options for X11:confopts_ph.sh -p list -a X11
 View the current value of X11 option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a X11 -g
 View the current value of X11 option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a X11 -g -r

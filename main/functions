@@ -256,7 +256,7 @@ then
 				--evdev-keymap KEY_#305=a,BTN_C=b,KEY_#304=x,KEY_#307=y \
 				--evdev-keymap BTN_TL2=back,BTN_MODE=guide,BTN_TR2=start \
 				--axismap -y1=y1,-y2=y2 \
-				--pid-file "/tmp/xboxdrv"$PH_CTRL_ID".pid" --evdev-no-grab --silent --detach-kernel-driver --mimic-xpad >/dev/null 2>&1 &)
+				--pid-file "/tmp/xboxdrv"$PH_CTRL_ID".pid" --silent --detach-kernel-driver --mimic-xpad >/dev/null 2>&1 &)
 			! ls /proc/`cat "/tmp/xboxdrv"$PH_CTRL_ID".pid" >/dev/null 2>&1` >/dev/null 2>&1 && printf "%10s%s\n" "" "ERROR : Could not start xboxdrv instance" && >$PH_CONF_DIR/controller_ids && return 1
 			echo $((PH_EVDEVS+`echo $((PH_CTRL_ID-1))`)) >>$PH_CONF_DIR/controller_ids ;;
 ## correct button mappings for the three cases below
@@ -272,7 +272,7 @@ then
 				--evdev-keymap KEY_#305=a,BTN_C=b,KEY_#304=x,KEY_#307=y \
 				--evdev-keymap BTN_TL2=back,BTN_MODE=guide,BTN_TR2=start \
 				--axismap -y1=y1,-y2=y2 \
-				--pid-file "/tmp/xboxdrv"$PH_CTRL_ID".pid" --evdev-no-grab --silent --detach-kernel-driver --mimic-xpad >/dev/null 2>&1 &)
+				--pid-file "/tmp/xboxdrv"$PH_CTRL_ID".pid" --silent --detach-kernel-driver --mimic-xpad >/dev/null 2>&1 &)
 			! ls /proc/`cat "/tmp/xboxdrv"$PH_CTRL_ID".pid" >/dev/null 2>&1` >/dev/null 2>&1 && printf "%10s%s\n" "" "ERROR : Could not start xboxdrv instance" && >$PH_CONF_DIR/controller_ids && return 1
 			echo $((PH_EVDEVS+`echo $((PH_CTRL_ID-1))`)) >>$PH_CONF_DIR/controller_ids ;; 
 		   			   	 PS3_bluetooth)
@@ -287,7 +287,7 @@ then
 				--evdev-keymap KEY_#305=a,BTN_C=b,KEY_#304=x,KEY_#307=y \
 				--evdev-keymap BTN_TL2=back,BTN_MODE=guide,BTN_TR2=start \
 				--axismap -y1=y1,-y2=y2 \
-				--pid-file "/tmp/xboxdrv"$PH_CTRL_ID".pid" --evdev-no-grab --silent --detach-kernel-driver --mimic-xpad >/dev/null 2>&1 &)
+				--pid-file "/tmp/xboxdrv"$PH_CTRL_ID".pid" --silent --detach-kernel-driver --mimic-xpad >/dev/null 2>&1 &)
 			! ls /proc/`cat "/tmp/xboxdrv"$PH_CTRL_ID".pid" >/dev/null 2>&1` >/dev/null 2>&1 && printf "%10s%s\n" "" "ERROR : Could not start xboxdrv instance" && >$PH_CONF_DIR/controller_ids && return 1
 			echo $((PH_EVDEVS+`echo $((PH_CTRL_ID-1))`)) >>$PH_CONF_DIR/controller_ids ;;
 			   			       PS3_usb)
@@ -302,7 +302,7 @@ then
 				--evdev-keymap KEY_#305=a,BTN_C=b,KEY_#304=x,KEY_#307=y \
 				--evdev-keymap BTN_TL2=back,BTN_MODE=guide,BTN_TR2=start \
 				--axismap -y1=y1,-y2=y2 \
-				--pid-file "/tmp/xboxdrv"$PH_CTRL_ID".pid" --evdev-no-grab --silent --detach-kernel-driver --mimic-xpad >/dev/null 2>&1 &)
+				--pid-file "/tmp/xboxdrv"$PH_CTRL_ID".pid" --silent --detach-kernel-driver --mimic-xpad >/dev/null 2>&1 &)
 			! ls /proc/`cat "/tmp/xboxdrv"$PH_CTRL_ID".pid" >/dev/null 2>&1` >/dev/null 2>&1 && printf "%10s%s\n" "" "ERROR : Could not start xboxdrv instance" && >$PH_CONF_DIR/controller_ids && return 1
 			echo $((PH_EVDEVS+`echo $((PH_CTRL_ID-1))`)) >>$PH_CONF_DIR/controller_ids ;;
 		esac

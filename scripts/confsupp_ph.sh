@@ -177,8 +177,9 @@ Start or switch to $PH_APP:start$PH_APPL.sh
 Stop $PH_APP:stop$PH_APPL.sh
 Restart $PH_APP:restart$PH_APPL.sh
 Install $PH_APP:confapps_ph.sh -p int -a $PH_APP
-Configure $PH_APP:confapps_ph.sh -p conf -a $PH_APP
 Uninstall $PH_APP:confapps_ph.sh -p rem -a $PH_APP
+Configure $PH_APP:confapps_ph.sh -p conf -a $PH_APP
+Update $PH_APP to the latest version (only if installed as a package):ph_update_pkg \$PH_`echo $PH_APPU`_PKG_NAME
 List all available options for $PH_APP:confopts_ph.sh -p list -a $PH_APP
 View the current value of $PH_APP option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a $PH_APP -g
 View the current value of $PH_APP option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a $PH_APP -g -r

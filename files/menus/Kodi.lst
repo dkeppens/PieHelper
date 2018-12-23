@@ -3,6 +3,7 @@ Stop Kodi:stopkodi.sh force
 Restart Kodi:restartkodi.sh force
 Install Kodi:confapps_ph.sh -p int -a Kodi
 Uninstall Kodi:confapps_ph.sh -p rem -a Kodi
+Update Kodi to the latest version (only if installed as a package):ph_update_pkg $PH_KODI_PKG_NAME
 List all available options for Kodi:confopts_ph.sh -p list -a Kodi
 View the current value of Kodi option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Kodi -g
 View the current value of Kodi option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Kodi -g -r
