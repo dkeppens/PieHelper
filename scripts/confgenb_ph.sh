@@ -24,11 +24,12 @@ do
 		PH_UPDATE_GIT="yes" ;;
 			   *)
 		>&2 printf "%s\n" "Usage : confgenb_ph.sh -h |"
-		>&2 printf "%23s%s\n" "" "-g |"
+		>&2 printf "%23s%s\n" "" "'-g' |"
 		>&2 printf "%23s%s\n" "" "-v [version]"
 		>&2 printf "\n"
 		>&2 printf "%3s%s\n" "" "Where -h displays this usage"
-		>&2 printf "%9s%s\n" "" "-g allows setting the git repository PieHelper if a local copy is present in ~/PieHelper"
+		>&2 printf "%9s%s\n" "" "-g allows updating the remote git master repository with all new changes for [version] in the new build"
+		>&2 printf "%12s%s\n" "" "Specifying -g is optional"
 		>&2 printf "%9s%s\n" "" "-v allows setting a new version number [version] and will generate a new build archive named PieHelper-[version].tar"
 		>&2 printf "%12s%s\n" "" "- [version] should be specified as a decimal number"
 		>&2 printf "%12s%s\n" "" "- The archive will be placed in $PH_BUILD_DIR"
