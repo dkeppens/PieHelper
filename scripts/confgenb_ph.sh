@@ -9,11 +9,12 @@
 typeset PH_OLD_VERSION=""
 typeset PH_NEW_VERSION=""
 typeset PH_RESULT="SUCCESS"
-typeset PH_UPDATE_GIT="no"
+typeset PH_GIT_UPDATE="no"
+typeset PH_GIT_COMMSG=""
 PH_BUILD_DIR=$PH_SCRIPTS_DIR/../build
 PH_REVERSE=""
 
-while getopts v:hg PH_OPTION 2>/dev/null
+while getopts v:hgm: PH_OPTION 2>/dev/null
 do
 	case $PH_OPTION in v)
 		[[ -n "$PH_NEW_VERSION" ]] && (! confgenb_ph.sh -h) && exit 1
@@ -21,15 +22,21 @@ do
 		[[ "$OPTARG" != +([[:digit:]])\.+([[:digit:]]) ]] && (! confgenb_ph.sh -h) && exit 1
 		PH_NEW_VERSION="$OPTARG" ;;
 			   g)
-		PH_UPDATE_GIT="yes" ;;
+		PH_GIT_UPDATE="yes" ;;
+			   m)
+		PH_GIT_COMMSG="$OPTARG" ;;
 			   *)
 		>&2 printf "%s\n" "Usage : confgenb_ph.sh -h |"
-		>&2 printf "%23s%s\n" "" "'-g' |"
+		>&2 printf "%23s%s\n" "" "'-g '-m'' |"
 		>&2 printf "%23s%s\n" "" "-v [version]"
 		>&2 printf "\n"
 		>&2 printf "%3s%s\n" "" "Where -h displays this usage"
 		>&2 printf "%9s%s\n" "" "-g allows updating the remote git master repository with all new changes for [version] in the new build"
-		>&2 printf "%12s%s\n" "" "Specifying -g is optional"
+		>&2 printf "%12s%s\n" "" "- Specifying -g is optional"
+		>&2 printf "%12s%s\n" "" "-m allows setting a commit message for git"
+		>&2 printf "%15s%s\n" "" "- Specifying -m is optional"
+		>&2 printf "%15s%s\n" "" "- Commit messages should always be surrounded with single or double quotes"
+		>&2 printf "%15s%s\n" "" "- Empty or left-out commit messages will cancel the commit operation"
 		>&2 printf "%9s%s\n" "" "-v allows setting a new version number [version] and will generate a new build archive named PieHelper-[version].tar"
 		>&2 printf "%12s%s\n" "" "- [version] should be specified as a decimal number"
 		>&2 printf "%12s%s\n" "" "- The archive will be placed in $PH_BUILD_DIR"
@@ -79,11 +86,25 @@ EOF
 	printf "%8s%s\n" "" "--> Removing any old build archives"
 	rm $PH_BUILD_DIR/PieHelper-*.tar 2>/dev/null
 	printf "%10s%s\n" "" "OK"
-	if [[ "$PH_UPDATE_GIT" == "yes" ]]
+	if [[ "$PH_GIT_UPDATE" == "yes" ]]
 	then
-		git add .
-		git commit -a
-		git push
+		if [[ -z "$PH_GIT_COMMSG" ]]
+		then
+			printf "%8s%s\n" "" "--> Syncing $PH_NEW_VERSION changes to github master --> Skippping (Empty commit message)"
+			printf "%10s%s\n" "" "OK"
+		else
+			printf "%8s%s\n" "" "--> Syncing $PH_NEW_VERSION changes to github master"
+			git add . >/dev/null 2>&1
+			git commit -a --message="$PH_GIT_COMMSG" >/dev/null 2>&1
+			git push >/dev/null 2>&1
+			if [[ $? -eq 0 ]]
+			then
+				printf "%10s%s\n" "" "OK"
+			else
+				printf "%10s%s\n" "" "ERROR : Issues encountered during repo synchronisation"
+				PH_RESULT="PARTIALLY FAILED"
+			fi
+		fi
 	fi
 	printf "%8s%s\n" "" "--> Creating a new tarball archive for PieHelper \"$PH_NEW_VERSION\""
 	cd $PH_SCRIPTS_DIR/.. ; tar -X $PH_FILES_DIR/exclude -cvf $PH_BUILD_DIR/PieHelper-$PH_NEW_VERSION.tar ./* >/dev/null 2>&1 || \

@@ -31,6 +31,7 @@
 	* confsupp_ph.sh : used to - add out-of-scope applications as a PieHelper supported and integrated application
 				   - remove previously out-of-scope applications as a PieHelper supported and integrated application
 	* confctrl_ph.sh : used to - display general info about how to configure your controller(s) on Linux
+	* confgenb_ph.sh : used to - generate new build archives using tar and optionally create a timestamped backup as well as synchronize all changes to the remote github master repository
 	* startXXX.sh    : used to - start an application with shortname XXXX (shortnames are defined as a unique identifier consisting out of the 4 first letters of the application name in lowercase)
 				   - On any integrated application start, any other integrated applications marked as non-persistent will first be stopped
 				   - startpieh.sh can be launched with a -p parameter if you wish to use the PieHelper menu on a remote pseudo-terminal instead of it's allocated TTY
