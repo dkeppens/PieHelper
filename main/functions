@@ -187,7 +187,7 @@ do
 				else { if (type~/^PS3$/) { string="\".*PLAYSTATION\(R\)3 Controller\"$" }
 				else { if (type~/^XBOX360$/) { string="\"Microsoft X-Box 360 pad\"$" }}}}}
 				$2 ~ string { flag = 1 ; next }
-				$1 ~ "^.: ID_BUS$" { if (type~/^PS4A/) { conn = "sony-adaptor" } else { conn = $2 } ; next }
+				$1 ~ "^.: ID_BUS$" { if (type~/^PS4A/) { conn = "sonywadapt" } else { conn = $2 } ; next }
 				{ next }
 				END { if (flag==1) { print conn }}'`
 		PH_CTRL_ID=${PH_i##*event}
@@ -260,7 +260,7 @@ then
 			! ls /proc/`cat "/tmp/xboxdrv"$PH_CTRL_ID".pid" >/dev/null 2>&1` >/dev/null 2>&1 && printf "%10s%s\n" "" "ERROR : Could not start xboxdrv instance" && >$PH_CONF_DIR/controller_ids && return 1
 			echo $((PH_EVDEVS+`echo $((PH_CTRL_ID-1))`)) >>$PH_CONF_DIR/controller_ids ;;
 ## correct button mappings for the three cases below
-				       PS4_@(usb|sony-adaptor))
+				       PS4_@(usb|sonywadapt))
 			($PH_SUDO nice --adjustment="-9" `which xboxdrv` \
 				--evdev /dev/`udevadm info -q symlink /dev/input/event$PH_ID | nawk 'BEGIN { ORS = "" } $1 ~/^input\/by-path/ { print $1 ; exit } { print $2 ; exit }'` \
 				--evdev-absmap ABS_X=x1,ABS_Y=y1 \
