@@ -9,7 +9,7 @@ PieHelper is an extensible, user-friendly, scripted software suite which
 	- start
 	- restart
 	- switching from one application to another
-* the standard list of supported integrable applications is 
+* the default list of supported integrable applications is
 	- Kodi
 	- Moonlight
 	- RetroPie/Emulationstation
@@ -23,8 +23,8 @@ PieHelper is an extensible, user-friendly, scripted software suite which
 	- optionally setting up automatic xboxdrv mapping for your controller(s)
 	- selecting one integrated application to start by default on system boot
 * Currently uninplemented :
-	- xboxdrv mapping for PS3 usb, PS3 bluetooth, PS4 bluetooth
-	- confctrl_ph.sh help for XBOX360 wireless configuration
+	- xboxdrv mapping for PS3 usb, PS3 bluetooth, PS4 bluetooth is implemented but needs to be checked
+	- confctrl_ph.sh help for XBOX360 wireless configuration not in yet
 
 PieHelper binds each application to a specific TTY and uses autologin functionality at TTY selection 
 
