@@ -25,7 +25,7 @@ PieHelper is an extensible, user-friendly, scripted software suite which
 	- selecting one integrated application to start by default on system boot
 * Currently uninplemented :
 	- xboxdrv mapping for PS3 usb, PS3 bluetooth, PS4 bluetooth is implemented but needs to be checked
-	- confctrl_ph.sh help for XBOX360 wireless configuration not in yet
+	- Controller detection for XBOX360 controllers with a wireless usb receiver needs to be checked
 
 PieHelper binds each application to a specific TTY and uses autologin functionality at TTY selection 
 
