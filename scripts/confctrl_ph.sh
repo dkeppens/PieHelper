@@ -62,7 +62,11 @@ case $PH_ACTION in help)
 			printf "%s\n" "- Push in and hold the Playstation and share buttons on your $PH_TYPE controller simultaneously for 3-5 seconds to enable pairing mode for your controller"
 			printf "%s\n" "  Your controller should now be paired" ;;
 		    xboxurec)
-			printf "%s\n" "- This help is currently unimplemented" ;;
+			printf "%s\n" "- Plug your Xbox 360 USB Receiver into one of the Raspberry Pi's usb ports"
+			printf "%s\n" "- Turn on your wireless Xbox 360 controller by holding down the Guide button"
+			printf "%s\n" "- Press the connect button on the receiver"
+			printf "%s\n" "- Press the connect button on the top of the controller"
+			printf "%s\n" "- Your controller should now be connected" ;;
 		   bluetooth) 
 			printf "%s\n" "- To connect your $PH_CONN $PH_TYPE controller you need a separate bluetooth adapter for all Raspberry Pi 2 revisions and older models"
 			printf "%s\n" "  A list of compatible usb bluetooth adapters for Raspberry Pi 2 and older models can be found online"
