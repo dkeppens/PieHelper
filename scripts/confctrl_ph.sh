@@ -24,7 +24,7 @@ do
 		PH_TYPE="$OPTARG" ;;
 			   c)
 		ph_screen_input "$OPTARG" || exit $?
-		[[ "$OPTARG" != @(usb|wireless|sonywadapt) ]] && (! confctrl_ph.sh -h) && exit 1
+		[[ "$OPTARG" != @(usb|bluetooth|xboxurec|sonywadapt) ]] && (! confctrl_ph.sh -h) && exit 1
 		[[ -n "$PH_CONN" ]] && (! confctrl_ph.sh -h) && exit 1
 		PH_CONN="$OPTARG" ;;
 			   *)
@@ -37,7 +37,7 @@ do
 		>&2 printf "%15s%s\n" "" "-t allows selecting one of a list of supported controller types as value for [ctrltype]"
 		>&2 printf "%18s%s\n" "" "- The currently supported controller types are \"PS3\", \"XBOX360\" and \"PS4\""
 		>&2 printf "%15s%s\n" "" "-c allows selecting one of a list of known controller connection types as value for [conntype]"
-		>&2 printf "%18s%s\n" "" "- The currently known controller connection types are \"usb\" and \"wireless\" and \"sonywadapt\" (Sony Wireless Adapter)"
+		>&2 printf "%18s%s\n" "" "- The currently known controller connection types are \"usb\", \"bluetooth\", \"xboxurec\" (Xbox 360 USB Receiver) and \"sonywadapt\" (Sony Wireless Adapter)"
 		>&2 printf "\n"
 		exit 1 ;;
 	esac
@@ -45,6 +45,8 @@ done
 (([[ -z "$PH_CONN" || -z "$PH_TYPE" ]]) || ([[ -z "$PH_ACTION" ]])) && (! confctrl_ph.sh -h) && exit 1
 [[ "$PH_CONN" == "sonywadapt" && "$PH_TYPE" != "PS4" ]] && (printf "%s\n" "- Displaying help for configuring $PH_TYPE $PH_CONN controllers" ; \
 			printf "%2s%s\n" "" "ERROR : Sony Wireless Adapter is only supported for PS4 controllers") && exit 1 
+[[ "$PH_CONN" == "xboxurec" && "$PH_TYPE" != "XBOX360" ]] && (printf "%s\n" "- Displaying help for configuring $PH_TYPE $PH_CONN controllers" ; \
+			printf "%2s%s\n" "" "ERROR : Xbox 360 USB Receiver is only supported for XBOX360 controllers") && exit 1 
 case $PH_ACTION in help)
 	printf "%s\n" "- Displaying help for configuring $PH_TYPE $PH_CONN controllers"
 	printf "%2s%s\n" "" "SUCCESS"
@@ -59,20 +61,14 @@ case $PH_ACTION in help)
 			printf "%s\n" "- Push the wireless adapter down and hold for 3-5 seconds to enable pairing mode for your adapter"
 			printf "%s\n" "- Push in and hold the Playstation and share buttons on your $PH_TYPE controller simultaneously for 3-5 seconds to enable pairing mode for your controller"
 			printf "%s\n" "  Your controller should now be paired" ;;
-		    wireless)
-			case $PH_TYPE in PS3)
-					printf "%s\n" "- Start by connecting your $PH_TYPE controller using usb" ;;
-			             XBOX360)
-					printf "%s\n" "- This help is currently unimplemented"
-					printf "\n"
-					ph_print_bannerline
-					printf "\n"
-					exit 0 ;;
-			esac
+		    xboxurec)
+			printf "%s\n" "- This help is currently unimplemented" ;;
+		   bluetooth) 
 			printf "%s\n" "- To connect your $PH_CONN $PH_TYPE controller you need a separate bluetooth adapter for all Raspberry Pi 2 revisions and older models"
 			printf "%s\n" "  A list of compatible usb bluetooth adapters for Raspberry Pi 2 and older models can be found online"
 			printf "%s\n" "  Plug your bluetooth adapter into one of the Raspberry Pi's usb ports"
 			printf "%s\n" "  Raspberry Pi 3 and newer models have an on-board bluetooth adapter so there is no need for a separate one"
+			[[ "$PH_TYPE" == "PS3" ]] && printf "%s\n" "- Start by connecting your $PH_TYPE controller using usb"
 			printf "%s\n" "- Start a terminal or console window on your Raspberry Pi"
 			printf "%s\n" "- Become root by typing 'sudo bash'"
 			printf "%s\n" "- Enable the bluetooth service by typing 'systemctl enable bluetooth'"
