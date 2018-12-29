@@ -1,6 +1,11 @@
 Update your system:ph_update_system
 Reboot your system:$PH_SUDO init 6
-Manage applications:ph_show_menu AppManagement
-Manage controllers:ph_show_menu Controllers
-Advanced options:ph_show_menu Advanced
-Quit to shell:echo -e "\nYou can always return to PieHelper by running 'startpieh.sh or startpieh.sh -p'" ; break
+XBOX360 controllers menu:ph_show_menu XBOX360
+PS3 controllers menu:ph_show_menu PS3
+PS4 controllers menu:ph_show_menu PS4
+AppManagement menu:ph_show_menu AppManagement
+Apps menu:ph_show_menu Apps
+Controllers menu:ph_show_menu Controllers
+Advanced menu:ph_show_menu Advanced
+Force quit to shell:echo "You can always return to the PieHelper menu by typing 'startpieh.sh -p' to start on a pseudo-terminal" ; echo "Or by typing 'startpieh.sh' to start on a TTY" ; echo '' ; exit 0
+Return to previous menu or Quit to shell:return

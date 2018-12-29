@@ -24,7 +24,7 @@
 * change confpieh_ph.sh -p debug for partial results and for fasttrack bypass to set all modules to debug/no debug 
 * change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
 * cifs mount problem which occurs after first game done ? for Emulationstation
-* option for startpieh.sh and same -p for starting up in specific submenu -> needs more dynamic menusystem instead of just use 'return'
+* option for startpieh.sh and same -p for starting up in specific submenu
 * check for entered single quotes and report error on them in all interactive prompts for new option values + test what happens on non-interactive ones
 * only sed CMD_OPTS vars on startup of app if 'PH_CTRL' string present in current value of CMD_OPTS
 * check for /proc, systemd and ksh93 prereqs

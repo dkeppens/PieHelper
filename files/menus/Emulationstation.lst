@@ -13,4 +13,12 @@ Display help for Emulationstation option(s) (Variable expansion disabled):confop
 Display help for Emulationstation option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Emulationstation -d -r
 Display TTY currently allocated to Emulationstation:confapps_ph.sh -p tty -a Emulationstation
 Move Emulationstation to another TTY:confapps_ph.sh -p move -a Emulationstation -t prompt
+XBOX360 controllers menu:ph_show_menu XBOX360
+PS3 controllers menu:ph_show_menu PS3
+PS4 controllers menu:ph_show_menu PS4
+AppManagement menu:ph_show_menu AppManagement
+Apps menu:ph_show_menu Apps
+Controllers menu:ph_show_menu Controllers
+Advanced menu:ph_show_menu Advanced
+Main menu:ph_show_menu Main
 Return to previous menu:return

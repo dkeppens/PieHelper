@@ -15,4 +15,12 @@ Display help for Moonlight option(s) (Variable expansion disabled):confopts_ph.s
 Display help for Moonlight option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Moonlight -d -r
 Display TTY currently allocated to Moonlight:confapps_ph.sh -p tty -a Moonlight
 Move Moonlight to another TTY:confapps_ph.sh -p move -a Moonlight -t prompt
+XBOX360 controllers menu:ph_show_menu XBOX360
+PS3 controllers menu:ph_show_menu PS3
+PS4 controllers menu:ph_show_menu PS4
+AppManagement menu:ph_show_menu AppManagement
+Apps menu:ph_show_menu Apps
+Controllers menu:ph_show_menu Controllers
+Advanced menu:ph_show_menu Advanced
+Main menu:ph_show_menu Main
 Return to previous menu:return
