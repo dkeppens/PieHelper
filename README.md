@@ -20,12 +20,12 @@ intended for novice linux users that :
 	- selecting one integrated application to start by default on system boot
 
 * The default list of supported integrable applications is :
-		- Kodi (Media Center)
-		- Moonlight (Gamestreaming from devices running NVIDIA graphic cards with Geforce Experience software)
-		- RetroPie/Emulationstation (Emulator collection for retro-gaming)
-		- X11 (Graphical Desktop)
-		- Bash (CLI login)
-		- PieHelper (Menu and CLI based management of all listed)
+	- Kodi (Media Center)
+	- Moonlight (Gamestreaming from devices running NVIDIA graphic cards with Geforce Experience software)
+	- RetroPie/Emulationstation (Emulator collection for retro-gaming)
+	- X11 (Graphical Desktop)
+	- Bash (CLI login)
+	- PieHelper (Menu and CLI based management of all listed)
 * Currently uninplemented :
 	- Controller detection for XBOX360 controllers using an XBOX360 USB Receiver
 * Needs verification :
