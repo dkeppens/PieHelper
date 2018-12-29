@@ -1,3 +1,4 @@
+* implement -h parameter for all scripts
 * changes for catching updated return result of ph_set_option function everywhere
 * use a better separator (') for multiple options confopts_ph.sh possibility
 * in interactive set for confopts_ph.sh : display for num_Ctrl and cmd_opts that changes will be reflected to the other
