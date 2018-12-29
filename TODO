@@ -1,3 +1,4 @@
+* use a better separator (same as before ?) for multiple options confopts_ph.sh possibility
 * in interactive set for confopts_ph.sh : display for num_Ctrl and cmd_opts that changes will be reflected to the other
 * also for same : display notice about using PH_CTRL string when adding EBIDs to CMD_opts
 * changes for using CMD_OPTS myself for all apps, also in supported_apps configuration file for all but basic start command + watch special position for graphical stuff in that case
