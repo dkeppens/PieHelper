@@ -33,6 +33,7 @@ mostly intended for novice linux users that :
 	- xboxdrv mapping for usb PS3 controllers, bluetooth PS3 controllers and bluetooth PS4 controllers
 
 PieHelper binds each application to a specific TTY and uses autologin functionality at TTY selection 
+
 Developed exclusively with ksh93, no other prerequisites exist except for the following assumptions :
 
 	- systemd as a service management facility
