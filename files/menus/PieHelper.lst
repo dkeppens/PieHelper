@@ -10,12 +10,10 @@ Change the value of read-write PieHelper option(s) (Variable expansion enabled):
 Display help for PieHelper option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a PieHelper -d
 Display help for PieHelper option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a PieHelper -d -r
 Display TTY currently allocated to PieHelper:confapps_ph.sh -p tty -a PieHelper
-XBOX360 controllers menu:ph_show_menu XBOX360
-PS3 controllers menu:ph_show_menu PS3
-PS4 controllers menu:ph_show_menu PS4
 AppManagement menu:ph_show_menu AppManagement
-Apps menu:ph_show_menu Apps
-Controllers menu:ph_show_menu Controllers
+Apps menu and submenus:ph_show_menu Apps
+Controllers menu and submenus:ph_show_menu Controllers
 Advanced menu:ph_show_menu Advanced
 Main menu:ph_show_menu Main
-Return to previous menu:return
+Force quit to shell:echo "You can always return to the PieHelper menu by typing 'startpieh.sh -p' to start on a pseudo-terminal" ; echo "Or by typing 'startpieh.sh' to start on a TTY" ; echo '' ; exit 0
+Return to previous menu or shell:return

@@ -7,11 +7,9 @@ Configure an application to start by default on system boot:confapps_ph.sh -p st
 List the currently allocated TTY for each supported application:confapps_ph.sh -p tty -a all
 Install and add an out-of-scope application as a supported and integrated application:confsupp_ph.sh -p prompt -i
 Remove an out-of-scope application from PieHelper and (optionally) uninstall it:confsupp_ph.sh -p prompt -r
-XBOX360 controllers menu:ph_show_menu XBOX360
-PS3 controllers menu:ph_show_menu PS3
-PS4 controllers menu:ph_show_menu PS4
-Apps menu:ph_show_menu Apps
-Controllers menu:ph_show_menu Controllers
+Apps menu and submenus:ph_show_menu Apps
+Controllers menu and submenus:ph_show_menu Controllers
 Advanced menu:ph_show_menu Advanced
 Main menu:ph_show_menu Main
-Return to previous menu:return
+Force quit to shell:echo "You can always return to the PieHelper menu by typing 'startpieh.sh -p' to start on a pseudo-terminal" ; echo "Or by typing 'startpieh.sh' to start on a TTY" ; echo '' ; exit 0
+Return to previous menu or shell:return

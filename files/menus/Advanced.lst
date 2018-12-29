@@ -2,11 +2,9 @@ Check all current PieHelper TTY configurations and attempt a repair where needed
 List all OS-relevant PieHelper modules and their current debugstate:confpieh_ph.sh -p list
 Switch the debug state for one or more relevant PieHelper modules:confpieh_ph.sh -p debug -m prompt
 Check the install status of all currently supported applications and attempt integration with PieHelper:confapps_ph.sh -p state
-XBOX360 controllers menu:ph_show_menu XBOX360
-PS3 controllers menu:ph_show_menu PS3
-PS4 controllers menu:ph_show_menu PS4
 AppManagement menu:ph_show_menu AppManagement
-Apps menu:ph_show_menu Apps
-Controllers menu:ph_show_menu Controllers
+Apps menu and submenus:ph_show_menu Apps
+Controllers menu and submenus:ph_show_menu Controllers
 Main menu:ph_show_menu Main
-Return to previous menu:return
+Force quit to shell:echo "You can always return to the PieHelper menu by typing 'startpieh.sh -p' to start on a pseudo-terminal" ; echo "Or by typing 'startpieh.sh' to start on a TTY" ; echo '' ; exit 0
+Return to previous menu or shell:return
