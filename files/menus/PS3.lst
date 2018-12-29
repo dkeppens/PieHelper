@@ -1,5 +1,6 @@
 Set the controller type to PS3:confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='PS3' ; confopts_ph.sh -p set -a Ctrls -o PH_CTRL_MAP='no'
 Set the controller type to PS3 with XBOX360 controller emulation:confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='PS3' ; confopts_ph.sh -p set -a Ctrls -o PH_CTRL_MAP='yes'
-View help on how to configure a usb PS3 controller on your system:confctrl_ph.sh -p help -c usb -t PS3
-View help on how to configure a bluetooth PS3 controller on your system:confctrl_ph.sh -p help -c wireless -t PS3
+View help on how to configure a usb PS3 controller:confctrl_ph.sh -p help -c usb -t PS3
+View help on how to configure a bluetooth PS3 controller:confctrl_ph.sh -p help -c bluetooth -t PS3
+Interactively configure bluetooth PS3 controller(s):confctrl_ph.sh -p prompt -t PS3
 Return to previous menu:return

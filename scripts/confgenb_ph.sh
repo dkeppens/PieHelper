@@ -60,11 +60,11 @@ then
 	printf "%10s%s\n" "" "OK"
 	printf "%8s%s\n" "" "--> Updating version number to $PH_NEW_VERSION"
 	PH_OLD_VERSION="$PH_VERSION"
-	echo "$PH_NEW_VERSION" >$PH_FILES_DIR/VERSION
+	echo "$PH_NEW_VERSION" >$PH_CONF_DIR/VERSION
 	printf "%10s%s\n" "" "OK"
 	printf "%8s%s\n" "" "--> Removing controller ids' configuration file"
-	cp -p $PH_CONF_DIR/controller_ids /tmp/controller_ids_tmp 2>/dev/null
-	>$PH_CONF_DIR/controller_ids
+	cp -p $PH_CONF_DIR/controller_cli_ids /tmp/controller_cli_ids_tmp 2>/dev/null
+	>$PH_CONF_DIR/controller_cli_ids
 	printf "%10s%s\n" "" "OK"
 	printf "%8s%s\n" "" "--> Setting supported applications configuration file back to default"
 	mv $PH_CONF_DIR/supported_apps /tmp/supported_apps_tmp 2>/dev/null
@@ -80,8 +80,8 @@ EOF
 	printf "%8s%s\n" "" "--> Removing installed applications configuration file"
 	mv $PH_CONF_DIR/installed_apps /tmp/installed_apps_tmp 2>/dev/null
 	[[ $? -eq 0 ]] && printf "%10s%s\n" "" "OK" || (printf "%10s%s\n" "" "ERROR : Could not remove installed applications configuration file" ; \
-							mv /tmp/supported_apps_tmp $PH_CONF_DIR/supported_apps ; mv /tmp/controller_ids_tmp $PH_CONF_DIR/controller_ids ; \
-							echo "$PH_OLD_VERSION" >$PH_FILES_DIR/VERSION ; rm $PH_FILES_DIR/first_run ; ph_restore_options ; printf "%2s%s\n" "" "FAILED" ; return 1) || \
+							mv /tmp/supported_apps_tmp $PH_CONF_DIR/supported_apps ; mv /tmp/controller_cli_ids_tmp $PH_CONF_DIR/controller_cli_ids ; \
+							echo "$PH_OLD_VERSION" >$PH_CONF_DIR/VERSION ; rm $PH_FILES_DIR/first_run ; ph_restore_options ; printf "%2s%s\n" "" "FAILED" ; return 1) || \
 							exit 1
 	printf "%8s%s\n" "" "--> Removing any old build archives"
 	rm $PH_BUILD_DIR/PieHelper-*.tar 2>/dev/null
@@ -109,8 +109,8 @@ EOF
 	printf "%8s%s\n" "" "--> Creating a new tarball archive for PieHelper \"$PH_NEW_VERSION\""
 	cd $PH_SCRIPTS_DIR/.. ; tar -X $PH_FILES_DIR/exclude -cvf $PH_BUILD_DIR/PieHelper-$PH_NEW_VERSION.tar ./* >/dev/null 2>&1 || \
 		(printf "%10s%s\n" "" "ERROR : Could not create a new tarball archive for PieHelper $PH_NEW_VERSION" ; mv /tmp/installed_apps_tmp $PH_CONF_DIR/installed_apps ; \
-		 mv /tmp/supported_apps_tmp $PH_CONF_DIR/supported_apps ; mv /tmp/controller_ids_tmp $PH_CONF_DIR/controller_ids ; \
-		 echo "$PH_OLD_VERSION" >$PH_FILES_DIR/VERSION ; rm $PH_FILES_DIR/first_run ; ph_restore_options ; printf "%2s%s\n" "" "FAILED" ; exit 1) || \
+		 mv /tmp/supported_apps_tmp $PH_CONF_DIR/supported_apps ; mv /tmp/controller_cli_ids_tmp $PH_CONF_DIR/controller_cli_ids ; \
+		 echo "$PH_OLD_VERSION" >$PH_CONF_DIR/VERSION ; rm $PH_FILES_DIR/first_run ; ph_restore_options ; printf "%2s%s\n" "" "FAILED" ; exit 1) || \
 		 exit $?
 	printf "%10s%s\n" "" "OK"
 	printf "%8s%s\n" "" "--> Attempting to determine required remote mounts for PieHelper"
@@ -143,7 +143,7 @@ EOF
 	mv /tmp/supported_apps_tmp $PH_CONF_DIR/supported_apps
 	printf "%10s%s\n" "" "OK"
 	printf "%8s%s\n" "" "--> Restoring controller ids' configuration file"
-	mv /tmp/controller_ids_tmp $PH_CONF_DIR/controller_ids
+	mv /tmp/controller_cli_ids_tmp $PH_CONF_DIR/controller_cli_ids
 	printf "%10s%s\n" "" "OK"
 	printf "%8s%s\n" "" "--> Removing first_run file in $PH_FILES_DIR"
 	rm $PH_FILES_DIR/first_run 2>/dev/null

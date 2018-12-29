@@ -23,3 +23,4 @@ PH_PIEH_CIFS_SUBDIR:starting with / or empty:$PH_OPTARG_VAL == @(/*|)
 PH_X11_PERSISTENT:yes or no:$PH_OPTARG_VAL == @(yes|no)
 PH_CTRL_MAP:yes or no:$PH_OPTARG_VAL == @(yes|no)
 PH_CTRL_TYPE:PS3, PS4 or XBOX360:$PH_OPTARG_VAL == @(PS3|PS4|XBOX360)
+PH_CTRL_BLUE_ADAPT:a valid mac address or none:`$(ph_check_mac_validity $PH_OPTARG_VAL) echo $?` -eq 0

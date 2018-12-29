@@ -1,6 +1,6 @@
-PieHelper is an extensible, user-friendly, scripted software suite which
+PieHelper is an extensible, user-friendly, scripted software suite for Raspberry Pi which
 
-* allows for easy CLI and text menu-based management of the RaspBerryPi's most-used applications
+* allows for easy CLI and text menu-based management of the RaspBerry's most-used applications
 	- installation
 	- uninstallation
 	- basic configuration
@@ -10,22 +10,24 @@ PieHelper is an extensible, user-friendly, scripted software suite which
 	- restart
 	- switching from one application to another
 * the default list of supported integrable applications is
-	- Kodi
-	- Moonlight
-	- RetroPie/Emulationstation
-	- X11
-	- Bash
-	- PieHelper
+	- Kodi (Media Center)
+	- Moonlight (Gamestreaming from devices running NVIDIA graphic cards with Geforce Experience software)
+	- RetroPie/Emulationstation (Emulator collection for retro-gaming)
+	- X11 (Graphical Desktop)
+	- Bash (CLI login)
+	- PieHelper (Menu and CLI based management of all listed)
 * offers some additional features
+	- can integrate additional out-of-scope (not integrated by default) applications of the user's choice
 	- running each application under a separate account
-	- integrate additional out-of-scope applications
 	- mounting/unmounting CIFS shares at application startup/halt
-	- checking for required controller presence (PS3/PS4/XBOX360 supported)
-	- optionally setting up automatic xboxdrv mapping for your controller(s)
+	- configuring bluetooth controllers (official PS3/PS4 controllers supported)
+	- checking for required controller presence (official PS3/PS4/XBOX360 controllers and Sony Wireless Adapter/XBOX360 USB Receiver/usb/bluetooth connection methods supported)
+	- optionally setting up automatic xboxdrv mapping for your controller(s) (official PS3/PS4 controllers supported)
 	- selecting one integrated application to start by default on system boot
 * Currently uninplemented :
-	- xboxdrv mapping for PS3 usb, PS3 bluetooth, PS4 bluetooth is implemented but needs to be checked
-	- Controller detection for XBOX360 controllers with a wireless usb receiver needs to be checked
+	- Controller detection for XBOX360 controllers using an XBOX360 USB Receiver
+* Needs verification :
+	- xboxdrv mapping for usb PS3 controllers, bluetooth PS3 controllers and bluetooth PS4 controllers
 
 PieHelper binds each application to a specific TTY and uses autologin functionality at TTY selection 
 
@@ -36,7 +38,7 @@ except for the following assumptions
 * presence of a /proc filesystem
 * either apt or pacman as a package management utility
 
-It should therefore work out of the box on Raspbian, Noobs, Ubuntu and ArchLinux distros 
+It should therefore work out of the box on Raspbian, Noobs, Ubuntu and ArchLinux distros for the Raspberry Pi
 
 Currently however, it has only been tested on Raspbian
 

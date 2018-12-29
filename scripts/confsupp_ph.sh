@@ -209,9 +209,11 @@ PH_`echo $PH_APPU`_PERSISTENT='no'							# - This indicates whether $PH_APP, whe
 PH_`echo $PH_APPU`_PKG_NAME='$PH_APP_PKG'						# - This is the package name for $PH_APP if available
 											# - Default is '$PH_APP_PKG'
 PH_`echo $PH_APPU`_CMD_OPTS=''								# - These are the command line options you wish to launch $PH_APP with
-											# - Amongst others, this can used for passing controller devices when required as parameters by $PH_APP
+											# - Amongst others, this can used for passing event-based input devices when required as parameters by $PH_APP
 											#   When passing controller devices, replace the id number in the device reference with the string 'PH_CTRL#' where
 											#   where '#' is '1' for controller 1, '2' for controller 2, etc
+											# - Changes to an option for an application's command line options where event-based input devices are present will automatically be reflected to
+											#   the application's option determining the controller amount unless all event device parameters are being removed
 											# - Default is ''
 PH_`echo $PH_APPU`_USE_CTRL='no'							# - This indicates whether you want to use controllers with $PH_APP or not
 											# - Controller type to be used and the toggle for optional mapping with xboxdrv should be configured first using confopts_ph.sh
@@ -222,6 +224,8 @@ PH_`echo $PH_APPU`_USE_CTRL='no'							# - This indicates whether you want to us
 											# - Default is 'no'
 											# - Accepted values are 'yes' and 'no'
 PH_`echo $PH_APPU`_NUM_CTRL='1'								# - This is the number of controllers you want to use with $PH_APP
+											# - Changes to an option that sets the controller amount for an application will automatically be reflected to
+											#   the application's command line options if event-based input devices are present as command-line parameters
 											# - Default is '1'
 											# - Accepted values are '1', '2', '3' and '4'
 PH_`echo $PH_APPU`_CIFS_SHARE='no'							# - This indicates whether you want to mount a CIFS share from local network server PH_`echo $PH_APPU`_CIFS_SRV where $PH_APP can access files

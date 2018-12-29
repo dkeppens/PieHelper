@@ -61,7 +61,7 @@ done
 
 # Setting version number
 
-PH_VERSION=`cat $PH_FILES_DIR/VERSION`
+PH_VERSION=`cat $PH_CONF_DIR/VERSION`
 
 # Setting PH_SUDO
 

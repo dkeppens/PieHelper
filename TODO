@@ -1,65 +1,72 @@
-* remove all sudo configuration references and switch to using acl's + set stricter perms on scripts
-* change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
-* print keywords option info and perhaps also more info from help sections of matching confxxxx_ph.sh scripts in interactive menu stuff
+* in interactive set for confopts_ph.sh : display for num_Ctrl and cmd_opts that changes will be reflected to the other
+* also for same : display notice about using PH_CTRL string when adding EBIDs to CMD_opts
+* changes for using CMD_OPTS myself for all apps, also in supported_apps configuration file for all but basic start command + watch special position for graphical stuff in that case
+* if start using kodi cmd_opts -> kodi num_ctrl can no longer be read-only
+* more dynamic linked behaviour between num_ctrl and cmd_opts option valid for all applications
+ - num_ctrl not to 0
+ - if num_ctrl change -> check cmd_opts for event-based input-devices (EBID) and change to reflect (add on add and remove on remove)
+ 										if not present, no change to cmd_opts
+ - if cmd_opts change -> if EBID are present -> reflect change it not going to 0
+								if going to 0, no change to num_ctrl
+			if no EBID -> reflect new number after add/remove to num_ctrl
+ - with  * check if CMD_OPTS or NUM_CTRL empty, no auto change the corresponding one in ph_set_option
+* user options for pin codes for PS3 and PS4 bluetooth
+* change everywhere where multiple options need to be set at once to new method of ph_set_option or confopts_ph.sh
+* multiple options at once with confopts interactive for help and get and prompt too ?
+* change ph_set_option for more than 2 controllers with _num_ctrl and _cmd_opts still needed ?
+* check EVERYWHERE for always echo and don't quote namerefs !
+* test new dualshock3 controllers
+* treat remaining remarks in codebase
+* change ph_setup_controllers for working together with confctrl_ph.sh and use mac addresses
+* create button configuration files for the different controller types for emulationstation with configure script
 * change confpieh_ph.sh -p debug for partial results and for fasttrack bypass to set all modules to debug/no debug 
+* change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
 * cifs mount problem which occurs after first game done ? for Emulationstation
-* change ip regex to include 0.0.0 range + run extra checks for reserved ranges
 * option for startpieh.sh and same -p for starting up in specific submenu
 * check for entered single quotes and report error on them in all interactive prompts for new option values + test what happens on non-interactive ones
 * only sed CMD_OPTS vars on startup of app if 'PH_CTRL' string present in current value of CMD_OPTS
-* allow setting multiple options at once with confopts interactive and non-interactive + plus change in menu calls
-* mention autoset of CMD_OPTS or NUM_CTRL in confopts_ph.sh help and/or (config files/+confsupp)
 * check for /proc, systemd and ksh93 prereqs
 * no change TTY and stop all other apps on just restart of application ? works for kodi,moonlight,emul stuff too ?
-* really not possible to hide initial output scroll on non-TTY when starting startpieh.sh -p ?
-* write help for XBOX360 wireless controller config in confctrl_ph.sh
- OR
-* switch confctrl_ph.sh to actual controller config after all and add required package expect
+* recheck possibility hiding initial output scroll when running startpieh.sh -p
 * check for /etc/apt/apt.conf on debian and turn off option don't install recommended packages
-* test for controllers actually online ?
-* eliminate controller-specific submenus
+* test for controllers actually online
+* test listblue_ph.sh with more than one bluetooth adapter
 * support for using a mix of different controller types
-* test integrated new bluetooth method for newest modelPI (start etc) -> change ph_setup_controllers if needed
-* check again if output clear enough for ph_generate_installed_apps and correct if needed (decicated TTY ?)
-* rename installed_apps to integrated_apps ?
+* test integrated new bluetooth method for newest modelPI -> change ph_setup_controllers if needed
+* check clarity of output for ph_generate_installed_apps (dedicate a TTY for prompts)
+* rename installed_apps to integrated_apps
 * test from menus to see if increase in PH_PIEH_MAX_TTYS viable or not and if so : remove limit check in confsupp_ph.sh + mentions of it everywhere
 * test persistence ignored for piehelper when stop issued from menu and revert + also in conf file if non-functional
 * test all confxxxx_ph.sh scripts now have all checks needed
 * remove all code for move scripts and all move scripts and move template
 * check for nowhere empty reads where not permitted
 * Get list of necessary paths for PATH (include shells) -> packages required (fi aplay)
-* Configure option VRAM for Kodi config gpu_mem_** based on ?
-* possibility of using ph_show_menu Main in installed_Apps for PieHelper
+* Configure option VRAM for Kodi config gpu_mem_** based on raspberry model
+* possibility of using ph_show_menu Main in installed_apps for PieHelper
 * move script logic to ph_run_action -> rebuild templates & all scripts
-* treat remaining remarks in codebase
 * check and possibly format some more input stuff in functions
 * recursive going back to original settings when error occured ala confgenb also in confsupp
 * empty line remains in functions.user in confsupp on remove app
-* correct code ph_configure_moon for pairing when Moonlight back OK
+* correct code ph_configure_moon for pairing and test Moonlight when GFE back OK
 * test controller mappings
-* test second controller input prob gone ?
+* test second controller input
+* test fresh install on new model Raspberry
 * test emulationstation gaming for a couple successive games
 * test ph_install_app and ph_remove_app for Emulationstation and Kodi
-* check all conf files before release for ALL TABS
+* check all conf files for ALL TABS
 * test ph_remove_pieh from menus and through confpieh_ph.sh
-* test keyboard/mouse functionality on TTYs for bash and x11
-* support and test retropie & OSMC distros & ArchLinux (complete it)
+* test keyboard/mouse functionality on TTYs for Bash and X11
 * hashing of passwords functionality
 * signal catching where possible
-* test moonlight
 * mention supported controllers in README and mixing controller types not supported
-* mention NAS support and NVIDIA gFE dependency for Moonlight in README
-* mention no support for multiple physical displays
+* mention no support for multiple physical displays in README
 * test all from menus
 * test confsupp_ph.sh for graphical stuff
-* test different users
-* test and support ALL other distros on raspbianpi.org ?
+* test acls for different users
+* test and support all other linux-based distros
 * REST interface for calling scripts and android app : use vtutil && android app
 * change README
-* complete VERSIONS
-* complete HOWTO
-* make available on net via NAS ftp and website
+* change VERSIONS
+* change HOWTO
 * package version with or without dependencies ? (with could possibly change scripts f.e. required packages no longer needed ?)
-* internal testers before release
-* release on forums and facebook (and website ?)
 * try compiling steam on arm and add it for self-use only if possible

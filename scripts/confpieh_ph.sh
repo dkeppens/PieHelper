@@ -23,6 +23,7 @@ typeset PH_SSTRING=""
 typeset PH_STRING=""
 typeset PH_DEBUGSTATE=""
 typeset PH_RESULT="SUCCESS"
+typeset -i PH_COUNT=0
 
 while getopts hp:m:gcsru PH_OPTION 2>/dev/null
 do
@@ -93,10 +94,16 @@ case $PH_ACTION in repair)
                 case $PH_MODULES in all)
                         PH_MODULES=`$PH_SCRIPTS_DIR/confpieh_ph.sh -p list | tail -n +2 | nawk '$1 !~ /SUCCESS/ { print $1 } { next }' | paste -d',' -s` ;;
 				 prompt)
+			PH_MODULES=""
 			printf "%s\n" "- Using interactive mode"
-			printf "%8s%s" "" "--> Please enter a comma-separated list of relevant PieHelper module names (The keyword \"all\" selects all modules) : "
-			read PH_MODULES 2>/dev/null
-			ph_screen_input "$PH_MODULES" || exit $?
+			while [[ -z "$PH_MODULES" ]]
+			do
+				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+				printf "%8s%s" "" "--> Please enter a comma-separated list of relevant PieHelper module names (The keyword \"all\" selects all modules) : "
+				read PH_MODULES >/dev/null 2>&1
+				ph_screen_input "$PH_MODULES" || exit $?
+				((PH_COUNT++))
+			done
 			printf "%10s%s\n" "" "OK"
 			printf "%2s%s\n" "" "SUCCESS"
 			confpieh_ph.sh -p debug -m "$PH_MODULES"

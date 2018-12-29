@@ -7,6 +7,7 @@
   The PieHelper menu or any available scripts can be used to manage all PieHelper integrated applications or
   to add or remove any additional applications as an integrated application
 - List of available tools :
+
 	* confpieh_ph.sh : used to - configure PieHelper
 				   - unconfigure PieHelper
 				   - uninstall PieHelper
@@ -30,7 +31,8 @@
 				   - view the help of any option for any supported application
 	* confsupp_ph.sh : used to - add out-of-scope applications as a PieHelper supported and integrated application
 				   - remove previously out-of-scope applications as a PieHelper supported and integrated application
-	* confctrl_ph.sh : used to - display general info about how to configure your controller(s) on Linux
+	* confctrl_ph.sh : used to - display manual configuration steps for different controller types and connection methods
+				   - interactively configure bluetooth controllers
 	* confgenb_ph.sh : used to - generate new build archives using tar and optionally create a timestamped backup as well as synchronize all changes to the remote github master repository
 	* startXXX.sh    : used to - start an application with shortname XXXX (shortnames are defined as a unique identifier consisting out of the 4 first letters of the application name in lowercase)
 				   - On any integrated application start, any other integrated applications marked as non-persistent will first be stopped
@@ -39,4 +41,7 @@
 				     Starting PieHelper without -p will always stop any instances running on a remote pseudo-terminal
 	* stopXXXX.sh    : used to - stop an integrated application with shortname XXXX
 	* restartXXXX.sh : used to - restart an integrated application with shortname XXXX
+	* listmoon_ph.sh : used to - list all shared games for Moonlight
+	* listblue_ph.sh : used to - list available bluetooth adapters and default adapter choice
+
   The PieHelper menu offers most of the options available through all command line scripts

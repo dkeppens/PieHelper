@@ -5,7 +5,7 @@ Install Moonlight:confapps_ph.sh -p int -a Moonlight
 Uninstall Moonlight:confapps_ph.sh -p rem -a Moonlight
 Configure Moonlight (pair and set all options):confapps_ph.sh -p conf -a Moonlight
 Update Moonlight to the latest version (only if installed as a package):ph_update_pkg $PH_MOON_PKG_NAME
-List all Moonlight shared games:listmoon_ph.sh
+List all games currently shared by Moonlight:listmoon_ph.sh
 List all available options for Moonlight:confopts_ph.sh -p list -a Moonlight
 View the current value of Moonlight option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Moonlight -g
 View the current value of Moonlight option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Moonlight -g -r
