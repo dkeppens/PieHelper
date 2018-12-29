@@ -1,47 +1,55 @@
 - PieHelper works by binding a supported application to a specific TTY
   When switching to a TTY, the application bound to it will autostart
-- PieHelper will autodetect a first run and autostart configure method
-  Alternatively, running confpieh_ph.sh -c will also start configuration mode for PieHelper
+- PieHelper will autodetect a first run and start configure mode
+  Alternatively, running confpieh_ph.sh -c will also start configuration for PieHelper
   PieHelper will configure it's menu as the default app to start on system boot during this initial configuration
-- After initial configuration, the location for all PieHelper scripts will also be automatically added to your PATH variable
-  The PieHelper menu or any available scripts can be used to manage all PieHelper integrated applications or
-  to add or remove any additional applications as an integrated application
-- List of available tools :
+- During initial configuration, the location for all CLI tools will be automatically added to your PATH variable
+  The PieHelper menu or any available tools can be used to manage applications integrated by default or
+  to install and integrate or to remove any additional out-of-scope applications (applications not integrated by default)
+- List of available CLI tools :
 
-	* confpieh_ph.sh : used to - configure PieHelper
-				   - unconfigure PieHelper
-				   - uninstall PieHelper
-				   - attempt a repair of possible broken PieHelper TTY configurations
-				   - display the current state and version of PieHelper
-				   - list all available PieHelper modules relevant to your OS and their current debugstate 
-				   - toggle the debugstate of any relevant PieHelper modules
-	* confapps_ph.sh : used to - list all applications currently integrated with PieHelper
-				   - list all applications currently supported by PieHelper
-				   - list the application currently configured as the default application to start on system boot
-				   - list any integrated applications currently running
-				   - list all of the above
-				   - list all supported applications and their allocated TTY
-				   - install an supported application and adding it as an integrated application
-				   - remove an application from PieHelper as an integrated application
-				   - configure an integrated application
-				   - move an integrated appplication from it's allocated to a different TTY
-				   - configure an application as the default application to start on system boot 
-				   - detect the presence of any supported applications on your system and integrate them into PieHelper
-	* confopts_ph.sh : used to - view and configure option values for any supported application
-				   - view the help of any option for any supported application
-	* confsupp_ph.sh : used to - add out-of-scope applications as a PieHelper supported and integrated application
-				   - remove previously out-of-scope applications as a PieHelper supported and integrated application
-	* confctrl_ph.sh : used to - display manual configuration steps for different controller types and connection methods
-				   - interactively configure bluetooth controllers
-	* confgenb_ph.sh : used to - generate new build archives using tar and optionally create a timestamped backup as well as synchronize all changes to the remote github master repository
-	* startXXX.sh    : used to - start an application with shortname XXXX (shortnames are defined as a unique identifier consisting out of the 4 first letters of the application name in lowercase)
+	* confpieh_ph.sh : used to - Configure PieHelper
+				   - Unconfigure PieHelper
+				   - Uninstall PieHelper
+				   - Check for broken PieHelper TTY configurations and attempt a repair where needed
+				   - Display the current state and version of PieHelper
+				   - List all available PieHelper modules relevant to your OS and their current debugstate 
+				   - Toggle the debugstate of any relevant PieHelper modules
+	* confapps_ph.sh : used to - List all applications currently integrated with PieHelper
+				   - List all applications currently supported by PieHelper
+				   - List the application currently configured as the application to start by default on system boot
+				   - List any integrated applications currently running
+				   - List all of the above
+				   - List all supported applications and their allocated TTY
+				   - Install and integrate a supported application
+				   - Remove an application from PieHelper as an integrated application and optionally uninstall it
+				   - Configure an integrated application
+				   - Move an integrated appplication from it's allocated to a different TTY
+				   - Configure an integrated application as the default application to start on system boot 
+				   - Detect the presence of any supported applications on your system and integrate them into PieHelper
+	* confopts_ph.sh : used to - View and change the value of options of any supported application
+				   - View the help for options of any supported application
+	* confsupp_ph.sh : used to - Add out-of-scope applications as supported and integrated applications
+				   - Remove previously out-of-scope applications from PieHelper as supported and integrated applications and optionally uninstall them
+	* confctrl_ph.sh : used to - Display manual configuration steps for different controller types and connection methods
+				   - Interactively configure bluetooth controllers
+	* confgenb_ph.sh : used to - Generate a new tar build archive, optionally create a timestamped backup and synchronize all changes to the remote github master repository
+	* startXXX.sh    : used to - Start an integrated application with shortname XXXX (shortnames are defined as a unique identifier consisting of maximum the 4 first letters of an application name)
 				   - On any integrated application start, any other integrated applications marked as non-persistent will first be stopped
-				   - startpieh.sh can be launched with a -p parameter if you wish to use the PieHelper menu on a remote pseudo-terminal instead of it's allocated TTY
-				     using this option will prevent other running integrated applications being stopped first with the sole exception of other PieHelper instances running on a TTY
-				     Starting PieHelper without -p will always stop any instances running on a remote pseudo-terminal
-	* stopXXXX.sh    : used to - stop an integrated application with shortname XXXX
-	* restartXXXX.sh : used to - restart an integrated application with shortname XXXX
-	* listmoon_ph.sh : used to - list all shared games for Moonlight
-	* listblue_ph.sh : used to - list available bluetooth adapters and default adapter choice
+				   - The startscript for PieHelper (startpieh.sh) can be launched with the following parameters :
+						-p : To start the PieHelper menu on a remote pseudo-terminal instead of it's allocated TTY
+	          				     Using this option will prevent other running integrated applications being stopped first with the sole exception of other PieHelper instances running on a TTY
+				     		     Starting PieHelper without -p will always stop any instances running on a remote pseudo-terminal
+						-m : To start PieHelper in a specific menu or submenu instead of the default Main menu
+						-h : To show help
+	* stopXXXX.sh    : used to - Stop an integrated application with shortname XXXX
+				   - The stopscript for PieHelper (stoppieh.sh) can be launched with the following parameters :
+						-p : To stop an instance of PieHelper currently running on a pseudo-terminal instead of it's allocated TTY
+						     This option should not be used if PieHelper is running on it's allocated TTY
+						-h : To show help
+	* restartXXXX.sh : used to - Restart an integrated application with shortname XXXX
+	* listmoon_ph.sh : used to - List all shared games for Moonlight
+	* listblue_ph.sh : used to - list available bluetooth adapters and the adapter currently configured as default
 
-  The PieHelper menu offers most of the options available through all command line scripts
+- The -h parameter for showing help is available for all tools, not just the ones specific to PieHelper
+- The PieHelper menu offers most, but not all of the options available with the CLI tools

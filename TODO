@@ -70,6 +70,6 @@
 * REST interface for calling scripts and android app : use vtutil && android app
 * change README
 * change VERSIONS
-* change HOWTO
+* verify HOWTO
 * package version with or without dependencies ? (with could possibly change scripts f.e. required packages no longer needed ?)
 * try compiling steam on arm and add it for self-use only if possible
