@@ -40,9 +40,9 @@ Developed exclusively with ksh93, no other prerequisites exist except for the fo
 	- presence of a /proc filesystem
 	- either apt or pacman as a package management utility
 
-and should therefore work out of the box on Raspbian, Noobs, Ubuntu and ArchLinux distros for the Raspberry Pi
+and compatibility should therefore be out-of-the-box for Raspberry Pi based Raspbian, Noobs, Ubuntu and ArchLinux distros
 
-Currently however, only Raspbian compatibility has been tested
+Currently however, only the official Raspbian distro has been tested
 
 Feedback, bug reports and feature requests can be reported on the official github repository
 or emailed to the address listed below
