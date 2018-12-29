@@ -1,4 +1,5 @@
-PieHelper is an extensible, user-friendly, scripted software suite for Raspberry Pi which
+PieHelper is an extensible, user-friendly, scripted software suite for Raspberry Pi
+intended for novice linux users that :
 
 * allows for easy CLI and text menu-based management of the RaspBerry's most-used applications
 	- installation
@@ -9,13 +10,6 @@ PieHelper is an extensible, user-friendly, scripted software suite for Raspberry
 	- start
 	- restart
 	- switching from one application to another
-* the default list of supported integrable applications is
-	- Kodi (Media Center)
-	- Moonlight (Gamestreaming from devices running NVIDIA graphic cards with Geforce Experience software)
-	- RetroPie/Emulationstation (Emulator collection for retro-gaming)
-	- X11 (Graphical Desktop)
-	- Bash (CLI login)
-	- PieHelper (Menu and CLI based management of all listed)
 * offers some additional features
 	- can integrate additional out-of-scope (not integrated by default) applications of the user's choice
 	- running each application under a separate account
@@ -24,6 +18,14 @@ PieHelper is an extensible, user-friendly, scripted software suite for Raspberry
 	- checking for required controller presence (official PS3/PS4/XBOX360 controllers and Sony Wireless Adapter/XBOX360 USB Receiver/usb/bluetooth connection methods supported)
 	- optionally setting up automatic xboxdrv mapping for your controller(s) (official PS3/PS4 controllers supported)
 	- selecting one integrated application to start by default on system boot
+
+* The default list of supported integrable applications is :
+		- Kodi (Media Center)
+		- Moonlight (Gamestreaming from devices running NVIDIA graphic cards with Geforce Experience software)
+		- RetroPie/Emulationstation (Emulator collection for retro-gaming)
+		- X11 (Graphical Desktop)
+		- Bash (CLI login)
+		- PieHelper (Menu and CLI based management of all listed)
 * Currently uninplemented :
 	- Controller detection for XBOX360 controllers using an XBOX360 USB Receiver
 * Needs verification :
