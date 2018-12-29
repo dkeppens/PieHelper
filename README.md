@@ -1,4 +1,4 @@
-PieHelper is an extensible, user-friendly, scripted software suite for Raspberry Pi
+PieHelper is an extensible, user-friendly, scripted software suite for Raspberry Pi,
 mostly intended for novice linux users that :
 
 * allows for easy CLI and text menu-based management of the RaspBerry's most-used applications :
@@ -40,7 +40,7 @@ Developed exclusively with ksh93, no other prerequisites exist except for the fo
 	- presence of a /proc filesystem
 	- either apt or pacman as a package management utility
 
-and compatibility should therefore be out-of-the-box for Raspberry Pi based Raspbian, Noobs, Ubuntu and ArchLinux distros
+and compatibility should therefore be out-of-the-box for Pi-based Raspbian, Noobs, Ubuntu and ArchLinux distros
 
 Currently however, only the official Raspbian distro has been tested
 
