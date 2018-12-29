@@ -1,13 +1,7 @@
-Set the controller type to PS4:confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='PS4' -o PH_CTRL_MAP='no'
-Set the controller type to PS4 with XBOX360 controller emulation:confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='PS4' -o PH_CTRL_MAP='yes'
 View help on how to configure a usb PS4 controller:confctrl_ph.sh -p help -c usb -t PS4
 View help on how to configure a PS4 controller using the Sony Wireless Adapter:confctrl_ph.sh -p help -c sonywadapt -t PS4
 View help on how to configure a bluetooth PS4 controller:confctrl_ph.sh -p help -c bluetooth -t PS4
 Interactively configure bluetooth PS4 controller(s):confctrl_ph.sh -p prompt -t PS4
-AppManagement menu:ph_show_menu AppManagement
-Apps menu and submenus:ph_show_menu Apps
-Controllers menu and submenus:ph_show_menu Controllers
-Advanced menu:ph_show_menu Advanced
-Main menu:ph_show_menu Main
-Force quit to shell:echo "You can always return to the PieHelper menu by typing 'startpieh.sh -p' to start on a pseudo-terminal" ; echo "Or by typing 'startpieh.sh' to start on a TTY" ; echo '' ; exit 0
-Return to previous menu or shell:return
+Go to Main menu:ph_show_menu Main
+Go to Controllers menu:ph_show_menu Controllers
+Return to previous screen:return

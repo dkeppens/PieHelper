@@ -1,14 +1,8 @@
-List all available controller settings:confopts_ph.sh -p list -a Ctrls
-List all currently available bluetooth controllers:listblue_ph.sh
-View the current value of controller setting(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Ctrls -g
-View the current value of controller setting(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Ctrls -g -r
-Change the value of read-write controller setting(s) (Variable expansion disabled):printf "%8s%s\n" "" "Use the controller-specific submenus to change controller settings"
-Change the value of read-write controller setting(s) (Variable expansion enabled):printf "%8s%s\n" "" "Use the controller-specific submenus to change controller settings"
-Display help for controller setting(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Ctrls -d
-Display help for controller setting(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Ctrls -d -r
-AppManagement menu:ph_show_menu AppManagement
-Apps menu and submenus:ph_show_menu Apps
-Advanced menu:ph_show_menu Advanced
-Main menu:ph_show_menu Main
-Force quit to shell:echo "You can always return to the PieHelper menu by typing 'startpieh.sh -p' to start on a pseudo-terminal" ; echo "Or by typing 'startpieh.sh' to start on a TTY" ; echo '' ; exit 0
-Return to previous menu or shell:return
+Go to PS3 controllers submenu:ph_show_menu PS3
+Go to PS4 controllers submenu:ph_show_menu PS4
+Go to XBOX controllers submenu:ph_show_menu XBOX360
+Go to Controller settings submenu:ph_show_menu Settings
+Go to Main menu:ph_show_menu Main
+Go to Apps menu:ph_show_menu Apps
+Go to Advanced menu:ph_show_menu Advanced
+Return to previous screen:return

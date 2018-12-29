@@ -1,8 +1,8 @@
 Update your system:ph_update_system
 Reboot your system:$PH_SUDO init 6
-AppManagement menu:ph_show_menu AppManagement
-Apps menu and submenus:ph_show_menu Apps
-Controllers menu and submenus:ph_show_menu Controllers
-Advanced menu:ph_show_menu Advanced
-Force quit to shell:echo "You can always return to the PieHelper menu by typing 'startpieh.sh -p' to start on a pseudo-terminal" ; echo "Or by typing 'startpieh.sh' to start on a TTY" ; echo '' ; exit 0
-Return to previous menu or shell:return
+Open shell to CLI tools location:ph_open_shell_session
+Quit to shell (Stop PieHelper):break
+Go to Apps menu:ph_show_menu Apps
+Go to Controllers menu:ph_show_menu Controllers
+Go to Advanced menu:ph_show_menu Advanced
+Return to previous screen:return

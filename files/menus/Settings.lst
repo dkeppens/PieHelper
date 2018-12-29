@@ -1,0 +1,14 @@
+List all available controller settings:confopts_ph.sh -p list -a Ctrls
+List all currently available bluetooth controllers:listblue_ph.sh
+View the current value of controller setting(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Ctrls -g
+View the current value of controller setting(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Ctrls -g -r
+Set the controller type to PS3:confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='PS3' -o PH_CTRL_MAP='no'
+Set the controller type to PS3 with XBOX360 controller emulation:confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='PS3' -o PH_CTRL_MAP='yes'
+Set the controller type to PS4:confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='PS4' -o PH_CTRL_MAP='no'
+Set the controller type to PS4 with XBOX360 controller emulation:confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='PS4' -o PH_CTRL_MAP='yes'
+Set the controller type to XBOX360:confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='XBOX360'
+Display help for controller setting(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Ctrls -d
+Display help for controller setting(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Ctrls -d -r
+Go to Main menu:ph_show_menu Main
+Go to Controllers menu:ph_show_menu Controllers
+Return to previous screen:return

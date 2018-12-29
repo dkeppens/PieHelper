@@ -17,6 +17,18 @@ done
 return 0
 }
 
+function ph_open_shell_session {
+
+clear
+printf "%s\n\n" "List of available tools : "
+cd $PH_SCRIPTS_DIR >/dev/null 2>&1
+ls
+printf "\n%s\n\n" "Run any tool with the '-h' parameter to see help"
+printf "%s\n\n" "Return to the PieHelper menu by typing 'exit' or CTRL-D"
+/bin/bash +x
+return 0
+}
+
 function ph_check_mac_validity {
 
 typeset PH_MAC_ADDR="$1"
@@ -526,7 +538,8 @@ return 0
 
 function ph_show_menu {
 
-typeset PH_HEADER="Welcome to PieHelper $PH_VERSION $1 menu"
+[[ "$1" == @(Advanced|Main|Apps|Controllers) ]] && typeset PH_TYPE="menu" || typeset PH_TYPE="submenu"
+typeset PH_HEADER="Welcome to PieHelper $PH_VERSION $1 $PH_TYPE"
 typeset PH_j=""
 typeset -i PH_ANSWER=0
 typeset -i PH_i=0
@@ -542,9 +555,13 @@ do
 		>$PH_FILES_DIR/menus/Apps.lst
 		for PH_j in `nawk '{ print $1 }' $PH_CONF_DIR/installed_apps`
 		do
-			echo "$PH_j:ph_show_menu $PH_j" >>$PH_FILES_DIR/menus/Apps.lst
+			echo "Go to $PH_j submenu:ph_show_menu $PH_j" >>$PH_FILES_DIR/menus/Apps.lst
 		done
-		echo "Return to previous menu:return" >>$PH_FILES_DIR/menus/Apps.lst
+		echo "Go to AppManagement submenu:ph_show_menu AppManagement" >>$PH_FILES_DIR/menus/Apps.lst
+		echo "Go to Main menu:ph_show_menu Main" >>$PH_FILES_DIR/menus/Apps.lst
+		echo "Go to Advanced menu:ph_show_menu Advanced" >>$PH_FILES_DIR/menus/Apps.lst
+		echo "Go to Controllers menu:ph_show_menu Controllers" >>$PH_FILES_DIR/menus/Apps.lst
+		echo "Return to previous screen:return" >>$PH_FILES_DIR/menus/Apps.lst
 	fi
 	set -A PH_MENU_ITEM ""
 	for PH_i in {1..`cat $PH_FILES_DIR/menus/$1.lst | wc -l`}
@@ -603,12 +620,15 @@ do
 			printf "\n"
 		fi
 	else
-		eval ${PH_MENU_CMD[$PH_ANSWER]} $PH_ANSWER
+		eval ${PH_MENU_CMD[$PH_ANSWER]} $PH_ANSWER 2>/dev/null
 		PH_ANSWER=0
 	fi
 	[[ $PH_ANSWER -eq 0 || $PH_ANSWER -eq 1 ]] && printf "%s" "Press Enter to continue" && read 2>/dev/null
 done
-return 0
+echo "You can always return to the PieHelper menu by typing 'startpieh.sh -p' to start on a pseudo-terminal"
+echo "Or by typing 'startpieh.sh' to start on a TTY"
+echo ''
+exit 0
 }
 
 function ph_escape_paths {

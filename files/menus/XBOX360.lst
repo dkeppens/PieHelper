@@ -1,10 +1,5 @@
-Set the controller type to XBOX360:confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='XBOX360'
 View help on how to configure a usb XBOX360 controller:confctrl_ph.sh -p help -c usb -t XBOX360
 View help on how to configure a wireless XBOX360 controller:confctrl_ph.sh -p help -c xboxurecv -t XBOX360
-AppManagement menu:ph_show_menu AppManagement
-Apps menu and submenus:ph_show_menu Apps
-Controllers menu and submenus:ph_show_menu Controllers
-Advanced menu:ph_show_menu Advanced
-Main menu:ph_show_menu Main
-Force quit to shell:echo "You can always return to the PieHelper menu by typing 'startpieh.sh -p' to start on a pseudo-terminal" ; echo "Or by typing 'startpieh.sh' to start on a TTY" ; echo '' ; exit 0
-Return to previous menu or shell:return
+Go to Main menu:ph_show_menu Main
+Go to Controllers menu:ph_show_menu Controllers
+Return to previous screen:return

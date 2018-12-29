@@ -13,10 +13,6 @@ Display help for Kodi option(s) (Variable expansion disabled):confopts_ph.sh -p 
 Display help for Kodi option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Kodi -d -r
 Display TTY currently allocated to Kodi:confapps_ph.sh -p tty -a Kodi
 Move Kodi to another TTY:confapps_ph.sh -p move -a Kodi -t prompt
-AppManagement menu:ph_show_menu AppManagement
-Apps menu and submenus:ph_show_menu Apps
-Controllers menu and submenus:ph_show_menu Controllers
-Advanced menu:ph_show_menu Advanced
-Main menu:ph_show_menu Main
-Force quit to shell:echo "You can always return to the PieHelper menu by typing 'startpieh.sh -p' to start on a pseudo-terminal" ; echo "Or by typing 'startpieh.sh' to start on a TTY" ; echo '' ; exit 0
-Return to previous menu or shell:return
+Go to Main menu:ph_show_menu Main
+Go to Apps menu:ph_show_menu Apps
+Return to previous screen:return

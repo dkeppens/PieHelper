@@ -189,7 +189,9 @@ Display help for $PH_APP option(s) (Variable expansion disabled):confopts_ph.sh 
 Display help for $PH_APP option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a $PH_APP -d -r
 Display TTY currently allocated to $PH_APP:confapps_ph.sh -p tty -a $PH_APP
 Move $PH_APP to another TTY:confapps_ph.sh -p move -a $PH_APP -t prompt
-Return to previous menu:return
+Go to Main menu:ph_show_menu Main
+Go to Apps menu:ph_show_menu Apps
+Return to previous screen:return
 EOF
 		printf "%10s%s\n" "" "OK"
 		printf "%8s%s\n" "" "--> Adding a config file"
