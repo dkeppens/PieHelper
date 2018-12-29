@@ -33,15 +33,13 @@ mostly intended for novice linux users that :
 	- xboxdrv mapping for usb PS3 controllers, bluetooth PS3 controllers and bluetooth PS4 controllers
 
 PieHelper binds each application to a specific TTY and uses autologin functionality at TTY selection 
-and has been written entirely in ksh93
-
-Therefore no other prerequisites exist except for the following assumptions :
+Developed exclusively with ksh93, no other prerequisites exist except for the following assumptions :
 
 	- systemd as a service management facility
 	- presence of a /proc filesystem
 	- either apt or pacman as a package management utility
 
-It should therefore work out of the box on Raspbian, Noobs, Ubuntu and ArchLinux distros for the Raspberry Pi
+and should therefore work out of the box on Raspbian, Noobs, Ubuntu and ArchLinux distros for the Raspberry Pi
 
 Currently however, only Raspbian compatibility has been tested
 
