@@ -1,0 +1,43 @@
+#!/usr/bin/expect -f
+# Interactively configure bluetooth controllers (by Davy Keppens on 25/12/2018)
+
+set adaptid [lindex $argv 0];
+set ctrltype [lindex $argv 1];
+set ctrlid [lindex $argv 2];
+set ctrlpaired [lindex $argv 3];
+set ctrltrusted [lindex $argv 4];
+
+spawn /usr/bin/bluetoothctl
+send "select $adaptid\r"
+expect "#"
+if { "$ctrltype" == "PS3" } {
+	if { "$ctrltrusted" == "no" } {
+		send "trust $ctrlid\r"
+		expect "trust succeeded"
+	}
+	send "agent on\r"
+	expect "Agent registered"
+	if { "$ctrlpaired" == "no" } {
+		set timeout 10
+		send "pair $ctrlid\r"
+		expect -re {.*Enter PIN code.*}
+		send "0000\r"
+		expect "Pairing successful"
+	}
+} else {
+	if { "$ctrltrusted" == "no" } {
+		send "trust $ctrlid\r"
+		expect "trust succeeded"
+	}
+	if { "$ctrlpaired" == "no" } {
+		set timeout 10
+		send "pair $ctrlid\r"
+		expect -re "Pairing successful"
+	}
+}
+set timeout 15
+send "connect $ctrlid\r"
+expect -re "Connection successful" {
+	exit 0
+}
+exit 1

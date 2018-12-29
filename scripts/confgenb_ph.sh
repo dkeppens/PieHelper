@@ -94,6 +94,7 @@ EOF
 			printf "%10s%s\n" "" "OK"
 		else
 			printf "%8s%s\n" "" "--> Syncing $PH_NEW_VERSION changes to github master"
+			cd $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
 			git add . >/dev/null 2>&1
 			git commit -a --message="$PH_GIT_COMMSG" >/dev/null 2>&1
 			git push >/dev/null 2>&1
@@ -104,6 +105,7 @@ EOF
 				printf "%10s%s\n" "" "ERROR : Issues encountered during repo synchronisation"
 				PH_RESULT="PARTIALLY FAILED"
 			fi
+			cd - >/dev/null 2>&1
 		fi
 	fi
 	printf "%8s%s\n" "" "--> Creating a new tarball archive for PieHelper \"$PH_NEW_VERSION\""
