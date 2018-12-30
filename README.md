@@ -44,6 +44,8 @@ and compatibility should therefore be out-of-the-box for Pi-based Raspbian, Noob
 
 Currently however, only the official Raspbian distro has been tested
 
+Note : PieHelper is still under active development and certainly NOT bugfree
+
 Feedback, bug reports and feature requests can be reported on the official github repository
 or emailed to the address listed below
 

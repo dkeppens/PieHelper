@@ -1,3 +1,4 @@
+* support in ph_repair_pieh for protection against multiple instances of 1 app + verification whether all known info matches
 * implement -h parameter for all scripts
 * changes for catching updated return result of ph_set_option function everywhere
 * use a better separator (') for multiple options confopts_ph.sh possibility
