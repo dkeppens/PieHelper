@@ -1426,12 +1426,7 @@ if nawk -v user=^"$PH_APP_USER"$ '$2 ~ user { exit 1 } { next }' $PH_CONF_DIR/in
 then
 	if [[ "$PH_RUN_USER" != "$PH_APP_USER" ]]
 	then
-		printf "%8s%s\n" "" "--> Removing ACLs for user $PH_APP_USER"
-		$PH_SUDO setfacl -R -x u:"$PH_APP_USER" $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
-		printf "%10s%s\n" "" "OK"
-		printf "%8s%s\n" "" "--> Removing sudo rules for $PH_APP_USER"
-		$PH_SUDO rm /etc/profile.d/020_pieh-"$PH_APP_USER" 2>/dev/null
-		printf "%10s%s\n" "" "OK"
+		ph_revoke_pieh_access "$PH_APP_USER"
 	fi
 fi
 printf "%2s%s\n" "" "SUCCESS"
@@ -1510,17 +1505,38 @@ if nawk -v user=^"$PH_APP_USER"$ '$2 ~ user { exit 1 } { next }' $PH_CONF_DIR/in
 then
 	if [[ "$PH_APP_USER" != "$PH_RUN_USER" ]]
 	then
-		printf "%8s%s\n" "" "--> Installing ACLs for $PH_APP_USER"
-		$PH_SUDO setfacl -R -m u:"$PH_APP_USER":rwx $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
-		printf "%10s%s\n" "" "OK"
-                printf "%8s%s\n" "" "--> Installing sudo rules for $PH_APP_USER"
-                echo "$PH_APP_USER ALL=(ALL) NOPASSWD: ALL" >/tmp/020_pieh-"$PH_APP_USER"
-                $PH_SUDO chown root:root /tmp/020_pieh-"$PH_APP_USER"
-                $PH_SUDO chmod 440 /tmp/020_pieh-"$PH_APP_USER"
-                $PH_SUDO mv /tmp/020_pieh-"$PH_APP_USER" /etc/sudoers.d
-                printf "%10s%s\n" "" "OK"
+		ph_grant_pieh_access "$PH_APP_USER"
 	fi
 fi
+return 0
+}
+
+function ph_revoke_pieh_access {
+
+typeset PH_APP_USER="$1"
+
+printf "%8s%s\n" "" "--> Removing ACLs for user $PH_APP_USER"
+$PH_SUDO setfacl -R -x u:"$PH_APP_USER" $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
+printf "%10s%s\n" "" "OK"
+printf "%8s%s\n" "" "--> Removing sudo rules for $PH_APP_USER"
+$PH_SUDO rm /etc/profile.d/020_pieh-"$PH_APP_USER" 2>/dev/null
+printf "%10s%s\n" "" "OK"
+return 0
+}
+
+function ph_grant_pieh_access {
+
+typeset PH_APP_USER="$1"
+
+printf "%8s%s\n" "" "--> Installing ACLs for $PH_APP_USER"
+$PH_SUDO setfacl -R -m u:"$PH_APP_USER":rwx $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
+printf "%10s%s\n" "" "OK"
+printf "%8s%s\n" "" "--> Installing sudo rules for $PH_APP_USER"
+echo "$PH_APP_USER ALL=(ALL) NOPASSWD: ALL" >/tmp/020_pieh-"$PH_APP_USER"
+$PH_SUDO chown root:root /tmp/020_pieh-"$PH_APP_USER"
+$PH_SUDO chmod 440 /tmp/020_pieh-"$PH_APP_USER"
+$PH_SUDO mv /tmp/020_pieh-"$PH_APP_USER" /etc/sudoers.d
+printf "%10s%s\n" "" "OK"
 return 0
 }
 
@@ -1856,7 +1872,7 @@ typeset PH_RUNAPP=""
 typeset -l PH_RUNAPPL=""
 typeset -l PH_COMPAREAPPL=""
 
-PH_COMPAREAPPL=`nawk -F'"' '$1 ~ /^PH_RUNAPP_CMD=$/ { print substr($2,index($2,"start")+5,index($2,".")-(index($2,"start")+5)) }' /etc/profile.d/PieHelper_tty$PH_i.sh`
+PH_COMPAREAPPL=`nawk -F\' '$1 ~ /^PH_RUNAPP_CMD=$/ { print substr($2,index($2,"start")+5,index($2,".")-(index($2,"start")+5)) }' /etc/profile.d/PieHelper_tty$PH_i.sh`
 for PH_RUNAPP in `nawk 'BEGIN { ORS = " " } { print $1 }' $PH_CONF_DIR/installed_apps`
 do
 	PH_RUNAPPL=`echo $PH_RUNAPP | cut -c1-4`
@@ -1880,119 +1896,147 @@ printf "%s\n" "- Checking for PieHelper configuration files"
 printf "%8s%s\n" "" "--> Checking for supported applications configuration file"
 if [[ ! -f $PH_CONF_DIR/supported_apps ]]
 then
-	printf "%10s%s\n" "" "Warning : Not found -> Creating"
-	cat >$PH_CONF_DIR/supported_apps <<EOF
-PieHelper	$PH_SCRIPTS_DIR/startpieh.sh
-Bash	/bin/bash
-Moonlight	/usr/local/bin/moonlight stream
-Kodi	/usr/bin/xinit /usr/bin/kodi-standalone -- :0 -nolisten tcp vtPH_TTY
-X11	/usr/bin/startx -- :1 vtPH_TTY
-Emulationstation	/usr/bin/emulationstation
+        printf "%10s%s\n" "" "Warning : Not found -> Creating"
+        cat >$PH_CONF_DIR/supported_apps <<EOF
+PieHelper       $PH_SCRIPTS_DIR/startpieh.sh
+Bash    /bin/bash
+Moonlight       /usr/local/bin/moonlight stream
+Kodi    `which xinit` /usr/bin/kodi-standalone -- :0 -nolisten tcp vtPH_TTY
+X11     /usr/bin/startx -- :1 vtPH_TTY
+Emulationstation        /usr/bin/emulationstation
 EOF
 else
-	printf "%10s%s\n" "" "OK (Found)"
+        printf "%10s%s\n" "" "OK (Found)"
 fi
 printf "%s\n" "- Checking TTY configurations"
 printf "%8s%s\n" "" "--> Checking configuration of TTY1"
 if [[ -f /etc/systemd/system/getty@tty1.service.d/autostart.conf ]]
 then
-	PH_STARTAPP_TTY=`nawk '$0 ~ /^ExecStartPost=/ { print $NF }' /etc/systemd/system/getty@tty1.service.d/autostart.conf`
-	PH_RUNAPP=`nawk -v tty=\^$PH_STARTAPP_TTY\$ '$4 ~ tty { print $1 }' $PH_CONF_DIR/installed_apps`
-	if [[ "$PH_RUNAPP" != "" ]]
-	then
-		if [[ "$PH_RUNAPP" != "$PH_PIEH_STARTAPP" ]]
-		then
-			printf "%10s%s\n" "" "Warning : Configured startapp differs from PH_PIEH_STARTAPP -> Resetting PH_PIEH_STARTAPP to \"$PH_RUNAPP\""
-			ph_set_option PieHelper -r PH_PIEH_STARTAPP="$PH_RUNAPP" || PH_RESULT="PARTIALLY FAILED"
-		else
-			printf "%10s%s\n" "" "OK (TTY1)"
-		fi
-	else
-		if [[ "$PH_PIEH_STARTAPP" != "none" ]]
-		then
-			printf "%10s%s\n" "" "Warning : Too much missing information for TTY1 -> Setting startapp to \"none\""
-			printf "%20s%s\n" "" "- You might want to choose a new application to start by default on system boot"
-			printf "%22s%s\n" "" "A new startapp can be set with confapps_ph.sh or the PieHelper menu"
-			ph_set_app_for_start none >/dev/null || PH_RESULT="PARTIALLY FAILED"
-			ph_set_pieh_tty_states || PH_RESULT="PARTIALLY FAILED"
-		else
-			printf "%10s%s\n" "" "Warning : Too much missing information for TTY1 -> Removing remaining configuration"
-			printf "%20s%s\n" "" "- You might want to choose a new application to start by default on system boot"
-			printf "%22s%s\n" "" "A new startapp can be set with confapps_ph.sh or the PieHelper menu"
-			$PH_SUDO rm -r /etc/systemd/system/getty@tty1.service.d/autostart.conf 2>/dev/null
-			ph_set_pieh_tty_states || PH_RESULT="PARTIALLY FAILED"
-		fi
-	fi
+        PH_STARTAPP_TTY=`nawk '$0 ~ /^ExecStartPost=/ { print $NF }' /etc/systemd/system/getty@tty1.service.d/autostart.conf`
+        PH_RUNAPP=`nawk -v tty=\^$PH_STARTAPP_TTY\$ '$4 ~ tty { print $1 }' $PH_CONF_DIR/installed_apps`
+        if [[ "$PH_RUNAPP" != "" ]]
+        then
+                if [[ "$PH_RUNAPP" != "$PH_PIEH_STARTAPP" ]]
+                then
+                        printf "%10s%s\n" "" "Warning : Configured startapp differs from PH_PIEH_STARTAPP -> Resetting PH_PIEH_STARTAPP to \"$PH_RUNAPP\""
+                        ph_set_option PieHelper -r PH_PIEH_STARTAPP="$PH_RUNAPP" || PH_RESULT="PARTIALLY FAILED"
+                else
+                        printf "%10s%s\n" "" "OK (TTY1)"
+                fi
+        else
+                if [[ "$PH_PIEH_STARTAPP" != "none" ]]
+                then
+                        printf "%10s%s\n" "" "Warning : Too much missing information for TTY1 -> Setting startapp to \"none\""
+                        printf "%20s%s\n" "" "- You might want to choose a new application to start by default on system boot"
+                        printf "%22s%s\n" "" "A new startapp can be set with confapps_ph.sh or the PieHelper menu"
+                        ph_set_app_for_start none >/dev/null || PH_RESULT="PARTIALLY FAILED"
+                        ph_set_pieh_tty_states || PH_RESULT="PARTIALLY FAILED"
+                else
+                        printf "%10s%s\n" "" "Warning : Too much missing information for TTY1 -> Removing remaining configuration"
+                        printf "%20s%s\n" "" "- You might want to choose a new application to start by default on system boot"
+                        printf "%22s%s\n" "" "A new startapp can be set with confapps_ph.sh or the PieHelper menu"
+                        $PH_SUDO rm -r /etc/systemd/system/getty@tty1.service.d/autostart.conf 2>/dev/null
+                        ph_set_pieh_tty_states || PH_RESULT="PARTIALLY FAILED"
+                fi
+        fi
 else
-	if [[ "$PH_PIEH_STARTAPP" != "none" ]]
-	then
-		printf "%10s%s\n" "" "Warning : Missing autostart configuration for TTY1 -> Reconfiguring TTY1"
-		printf "%8s%s\n" "" "--> Attempting to determine TTY for $PH_PIEH_STARTAPP"
-		PH_STARTAPP_TTY=`nawk -v app=^"$PH_PIEH_STARTAPP"$ '$1 ~ app && $4 !~ /^-$/ { print $4 }' $PH_CONF_DIR/installed_apps`
-		if [[ $PH_STARTAPP_TTY -eq 0 ]]
-		then
-			printf "%10s%s\n" "" "Warning : Could not determine TTY for $PH_PIEH_STARTAPP -> Resetting PH_PIEH_STARTAPP to \"none\""
-			ph_set_option PieHelper -r PH_PIEH_STARTAPP='none' || PH_RESULT="PARTIALLY FAILED"
-		else
-			printf "%10s%s\n" "" "OK"
-			ph_set_tty_for_boot $PH_STARTAPP_TTY
-		fi
-	else
-		ph_set_pieh_tty_states >/dev/null || PH_RESULT="PARTIALLY FAILED"
-	fi
+        if [[ "$PH_PIEH_STARTAPP" != "none" ]]
+        then
+                printf "%10s%s\n" "" "Warning : Missing autostart configuration for TTY1 -> Reconfiguring TTY1"
+                printf "%8s%s\n" "" "--> Attempting to determine TTY for $PH_PIEH_STARTAPP"
+                PH_STARTAPP_TTY=`nawk -v app=^"$PH_PIEH_STARTAPP"$ '$1 ~ app && $4 !~ /^-$/ { print $4 }' $PH_CONF_DIR/installed_apps`
+                if [[ $PH_STARTAPP_TTY -eq 0 ]]
+                then
+                        printf "%10s%s\n" "" "Warning : Could not determine TTY for $PH_PIEH_STARTAPP -> Resetting PH_PIEH_STARTAPP to \"none\""
+                        ph_set_option PieHelper -r PH_PIEH_STARTAPP='none' || PH_RESULT="PARTIALLY FAILED"
+                else
+                        printf "%10s%s\n" "" "OK"
+                        ph_set_tty_for_boot $PH_STARTAPP_TTY
+                fi
+        else
+                ph_set_pieh_tty_states >/dev/null || PH_RESULT="PARTIALLY FAILED"
+        fi
 fi
 while [[ $PH_i -le $PH_PIEH_MAX_TTYS ]]
 do
-	printf "%8s%s\n" "" "--> Checking configuration of TTY$PH_i"
-	if cut -f4 $PH_CONF_DIR/installed_apps | grep ^"$PH_i"$ >/dev/null
-	then
-		PH_RUNAPP=`nawk -v tty=\^$PH_i\$ '$4 ~ tty { print $1 }' $PH_CONF_DIR/installed_apps`
-		PH_RUNAPP_USER=`nawk -v tty=\^$PH_i\$ '$4 ~ tty { print $2 }' $PH_CONF_DIR/installed_apps`
-		if [[ ! -f /etc/systemd/system/getty@tty$PH_i.service.d/autologin.conf || ! -f /etc/profile.d/PieHelper_tty$PH_i.sh ]]
-		then
-			printf "%10s%s\n" "" "Warning : Missing autologin configuration or missing login script for TTY$PH_i -> Reconfiguring TTY$PH_i"
-			ph_setup_tty $PH_i "$PH_RUNAPP"
-		else
-			printf "%10s%s\n" "" "OK (TTY$PH_i)"
-		fi
-	else
-		if [[ -f /etc/systemd/system/getty@tty$PH_i.service.d/autologin.conf ]]
-		then
-			if [[ -f /etc/profile.d/PieHelper_tty$PH_i.sh ]]
-			then
-				printf "%10s%s\n" "" "Warning : Missing information in integrated applications configuration file for TTY$PH_i -> Restoring"
-				printf "%8s%s\n" "" "--> Restoring info to integrated applications configuration file"
-				PH_RUNAPP=`ph_get_app_from_login_script`
-				nawk -v runapp=^"$PH_RUNAPP"$ -v runapptty=$PH_i '$1 ~ runapp { print $1 "\t" $2 "\t" $3 "\t" runapptty ; next } \
-													 { print }' $PH_CONF_DIR/installed_apps >/tmp/installed_apps 2>/dev/null
-				[[ $? -eq 0 ]] && mv /tmp/installed_apps $PH_CONF_DIR/installed_apps
-				printf "%10s%s\n" "" "OK"
-				PH_RUNAPP_USER=`nawk -v tty=\^$PH_i\$ '$4 ~ tty { print $2 }' $PH_CONF_DIR/installed_apps`
-			else
-				printf "%10s%s\n" "" "Warning : Too much missing information for TTY$PH_i -> Removing remaining configuration"
-				printf "%8s%s\n" "" "--> Removing remaining configuration information"
-				$PH_SUDO rm -r /etc/systemd/system/getty@tty$PH_i.service.d
-				printf "%10s%s\n" "" "OK"
-			fi
-		else
-			if [[ -f /etc/profile.d/PieHelper_tty$PH_i.sh ]]
-			then
-				printf "%10s%s\n" "" "Warning : Missing autologin configuration for TTY$PH_i -> Reconfiguring TTY$PH_i"
-				PH_RUNAPP=`ph_get_app_from_login_script`
-				ph_setup_tty $PH_i "$PH_RUNAPP"
-				printf "%8s%s\n" "" "--> Running additional check on integrated applications configuration file"
-				printf "%10s%s\n" "" "Warning : Missing information in integrated applications configuration file for TTY$PH_i -> Restoring"
-				printf "%8s%s\n" "" "--> Restoring info to integrated applications configuration file"
-				nawk -v runapp=^"$PH_RUNAPP"$ -v runapptty=$PH_i '$1 ~ runapp { print $1 "\t" $2 "\t" $3 "\t" runapptty ; next } \
-													 { print }' $PH_CONF_DIR/installed_apps >/tmp/installed_apps 2>/dev/null
-				[[ $? -eq 0 ]] && mv /tmp/installed_apps $PH_CONF_DIR/installed_apps
-				printf "%10s%s\n" "" "OK"
-				PH_RUNAPP_USER=`nawk -v tty=\^$PH_i\$ '$4 ~ tty { print $2 }' $PH_CONF_DIR/installed_apps`
-			else
-				printf "%10s%s\n" "" "OK (TTY$PH_i)"
-			fi
-		fi
-	fi
+        printf "%8s%s\n" "" "--> Checking configuration of TTY$PH_i"
+        if cut -f4 $PH_CONF_DIR/installed_apps | grep ^"$PH_i"$ >/dev/null
+        then
+                PH_RUNAPP=`nawk -v tty=\^$PH_i\$ '$4 ~ tty { print $1 }' $PH_CONF_DIR/installed_apps`
+                PH_RUNAPP_USER=`nawk -v tty=\^$PH_i\$ '$4 ~ tty { print $2 }' $PH_CONF_DIR/installed_apps`
+                if [[ ! -f /etc/systemd/system/getty@tty$PH_i.service.d/autologin.conf || ! -f /etc/profile.d/PieHelper_tty$PH_i.sh ]]
+                then
+                        printf "%10s%s\n" "" "Warning : Missing autologin configuration or missing login script for TTY$PH_i -> Reconfiguring TTY$PH_i"
+                        ph_setup_tty $PH_i "$PH_RUNAPP"
+                else
+                        if ([[ "$PH_RUN_USER" != "$PH_RUNAPP_USER" ]] && [[ ! -f /etc/sudoers.d/020_pieh-"$PH_RUNAPP_USER" ]])
+                        then
+                                printf "%10s%s\n" "" "Warning : Missing sudo rules for user $PH_RUNAPP_USER -> Restoring"
+                                ph_grant_pieh_access "$PH_RUNAPP_USER"
+                        else
+                                printf "%10s%s\n" "" "OK (TTY$PH_i)"
+                        fi
+                fi
+        else
+                if [[ -f /etc/systemd/system/getty@tty$PH_i.service.d/autologin.conf ]]
+                then
+                        if [[ -f /etc/profile.d/PieHelper_tty$PH_i.sh ]]
+                        then
+                                printf "%10s%s\n" "" "Warning : Missing information in integrated applications configuration file for TTY$PH_i -> Restoring"
+                                printf "%8s%s\n" "" "--> Restoring info to integrated applications configuration file"
+                                PH_RUNAPP=`ph_get_app_from_login_script`
+                                nawk -v runapp=^"$PH_RUNAPP"$ -v runapptty=$PH_i '$1 ~ runapp { print $1 "\t" $2 "\t" $3 "\t" runapptty ; next } \
+                                                                                                         { print }' $PH_CONF_DIR/installed_apps >/tmp/installed_apps 2>/dev/null
+                                [[ $? -eq 0 ]] && mv /tmp/installed_apps $PH_CONF_DIR/installed_apps
+                                printf "%10s%s\n" "" "OK"
+                                PH_RUNAPP_USER=`nawk -v tty=\^$PH_i\$ '$4 ~ tty { print $2 }' $PH_CONF_DIR/installed_apps`
+                                if [[ "$PH_RUN_USER" != "$PH_RUNAPP_USER" ]]
+                                then
+                                        printf "%8s%s\n" "" "--> Running additional check on sudo rules"
+                                        if [[ -f /etc/sudoers.d/020_pieh-"$PH_RUNAPP_USER" ]]
+                                        then
+                                                printf "%10s%s\n" "" "OK"
+                                        else
+                                                printf "%10s%s\n" "" "Warning : Missing sudo rules for user $PH_RUNAPP_USER -> Restoring"
+                                                ph_grant_pieh_access "$PH_RUNAPP_USER"
+                                        fi
+                                fi
+                        else
+                                printf "%10s%s\n" "" "Warning : Too much missing information for TTY$PH_i -> Removing remaining configuration where possible"
+                                printf "%8s%s\n" "" "--> Removing remaining configuration information"
+                                $PH_SUDO rm -r /etc/systemd/system/getty@tty$PH_i.service.d
+                                printf "%10s%s\n" "" "OK"
+                        fi
+                else
+                        if [[ -f /etc/profile.d/PieHelper_tty$PH_i.sh ]]
+                        then
+                                printf "%10s%s\n" "" "Warning : Missing autologin configuration for TTY$PH_i -> Reconfiguring TTY$PH_i"
+                                PH_RUNAPP=`ph_get_app_from_login_script`
+                                ph_setup_tty $PH_i "$PH_RUNAPP"
+                                printf "%8s%s\n" "" "--> Running additional check on integrated applications configuration file"
+                                printf "%10s%s\n" "" "Warning : Missing information in integrated applications configuration file for TTY$PH_i -> Restoring"
+                                printf "%8s%s\n" "" "--> Restoring info to integrated applications configuration file"
+                                nawk -v runapp=^"$PH_RUNAPP"$ -v runapptty=$PH_i '$1 ~ runapp { print $1 "\t" $2 "\t" $3 "\t" runapptty ; next } \
+                                                                                                         { print }' $PH_CONF_DIR/installed_apps >/tmp/installed_apps 2>/dev/null
+                                [[ $? -eq 0 ]] && mv /tmp/installed_apps $PH_CONF_DIR/installed_apps
+                                printf "%10s%s\n" "" "OK"
+                                PH_RUNAPP_USER=`nawk -v tty=\^$PH_i\$ '$4 ~ tty { print $2 }' $PH_CONF_DIR/installed_apps`
+                                if [[ "$PH_RUN_USER" != "$PH_RUNAPP_USER" ]]
+                                then
+                                        printf "%8s%s\n" "" "--> Running additional check on sudo rules"
+                                        if [[ -f /etc/sudoers.d/020_pieh-"$PH_RUNAPP_USER" ]]
+                                        then
+                                                printf "%10s%s\n" "" "OK"
+                                        else
+                                                printf "%10s%s\n" "" "Warning : Missing sudo rules for user $PH_RUNAPP_USER -> Restoring"
+                                                ph_grant_pieh_access "$PH_RUNAPP_USER"
+                                        fi
+                                fi
+                        else
+                                printf "%10s%s\n" "" "OK (TTY$PH_i)"
+                        fi
+                fi
+        fi
         ((PH_i ++))
 done
 printf "%2s%s\n" "" "$PH_RESULT"
