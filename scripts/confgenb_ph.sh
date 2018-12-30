@@ -6,11 +6,13 @@
 
 #set -x
 
+typeset PH_i=""
 typeset PH_OLD_VERSION=""
 typeset PH_NEW_VERSION=""
 typeset PH_RESULT="SUCCESS"
 typeset PH_GIT_UPDATE="no"
 typeset PH_GIT_COMMSG=""
+typeset PH_ACL_USERS=""
 PH_BUILD_DIR=$PH_SCRIPTS_DIR/../build
 PH_REVERSE=""
 
@@ -53,6 +55,13 @@ done
 if [[ -n "$PH_NEW_VERSION" ]]
 then
 	printf "%s\n" "- Creating a new build archive for PieHelper version $PH_NEW_VERSION"
+	PH_ACL_USERS=`getfacl $PH_SCRIPTS_DIR 2>/dev/null | nawk -F':' 'BEGIN { ORS = " " } $1 ~ /^user$/ && $2 !~ /^$/ { print $2 }'`
+	for PH_i in $PH_ACL_USERS
+	do
+		printf "%8s%s\n" "" "--> Removing ACLs for user $PH_i"
+		$PH_SUDO setfacl -R -x u:"$PH_i" $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
+		printf "%10s%s\n" "" "OK"
+	done
 	ph_set_all_options_to_default || (printf "%2s%s\n" "" "FAILED" ; return 1) || exit $?
 	printf "%8s%s\n" "" "--> Creating new first_run file in $PH_FILES_DIR"
 	touch $PH_FILES_DIR/first_run 2>/dev/null || (printf "%10s%s\n" "" "ERROR : Could not create new first_run file in $PH_FILES_DIR" ; \
@@ -151,6 +160,12 @@ EOF
 	rm $PH_FILES_DIR/first_run 2>/dev/null
 	printf "%10s%s\n" "" "OK"
 	ph_restore_options
+	for PH_i in $PH_ACL_USERS
+	do
+		printf "%8s%s\n" "" "--> Restoring ACLs for user $PH_i"
+		$PH_SUDO setfacl -R -m u:"$PH_i":rwx $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
+		printf "%10s%s\n" "" "OK"
+	done
 	printf "%2s%s\n" "" "$PH_RESULT"
 	unset PH_REVERSE
 	exit 0
