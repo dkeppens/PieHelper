@@ -1429,6 +1429,9 @@ then
 		printf "%8s%s\n" "" "--> Removing ACLs for user $PH_APP_USER"
 		$PH_SUDO setfacl -R -x u:"$PH_APP_USER" $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
 		printf "%10s%s\n" "" "OK"
+		printf "%8s%s\n" "" "--> Removing sudo rules for $PH_APP_USER"
+		$PH_SUDO rm /etc/profile.d/020_pieh-"$PH_APP_USER" 2>/dev/null
+		printf "%10s%s\n" "" "OK"
 	fi
 fi
 printf "%2s%s\n" "" "SUCCESS"
@@ -1510,6 +1513,12 @@ then
 		printf "%8s%s\n" "" "--> Installing ACLs for $PH_APP_USER"
 		$PH_SUDO setfacl -R -m u:"$PH_APP_USER":rx $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
 		printf "%10s%s\n" "" "OK"
+                printf "%8s%s\n" "" "--> Installing sudo rules for $PH_APP_USER"
+                echo "$PH_APP_USER ALL=(ALL) NOPASSWD: ALL" >/tmp/020_pieh-"$PH_APP_USER"
+                $PH_SUDO chown root:root /tmp/020_pieh-"$PH_APP_USER"
+                $PH_SUDO chmod 440 /tmp/020_pieh-"$PH_APP_USER"
+                $PH_SUDO mv /tmp/020_pieh-"$PH_APP_USER" /etc/sudoers.d
+                printf "%10s%s\n" "" "OK"
 	fi
 fi
 return 0
