@@ -1,12 +1,16 @@
 - PieHelper works by binding a supported application to a specific TTY
   When switching to a TTY, the application bound to it will autostart
-- PieHelper will autodetect a first run and start configure mode
-  Alternatively, running confpieh_ph.sh -c will also start configuration for PieHelper
-  PieHelper will configure it's menu as the default app to start on system boot during this initial configuration
-- During initial configuration, the location for all CLI tools will be automatically added to your PATH variable
-  The PieHelper menu or any available tools can be used to manage applications integrated by default or
+  Therefore, if you have already made custom setups to your system TTY's,
+  they should be removed before configuring and using PieHelper
+- PieHelper will detect the initial run and automatically start configuration
+  Alternatively, running confpieh_ph.sh -c will also start configure mode for PieHelper
+  During configuration, PieHelper will set it's menu as the default application to start on system boot
+  A different application can be set after initial configuration is complete
+  Configure mode will also add the location of the CLI tools to your PATH variable
+  A reboot is required after configuring or unconfiguring PieHelper
+- The PieHelper menu or any available tools can be used to manage applications integrated by default or
   to install and integrate or to remove any additional out-of-scope applications (applications not integrated by default)
-- List of available CLI tools :
+  List of available CLI tools :
 
 	* confpieh_ph.sh : used to - Configure PieHelper
 				   - Unconfigure PieHelper
@@ -35,7 +39,7 @@
 				   - Interactively configure bluetooth controllers
 	* confgenb_ph.sh : used to - Generate a new tar build archive, optionally create a timestamped backup and synchronize all changes to the remote github master repository
 	* startXXX.sh    : used to - Start an integrated application with shortname XXXX (shortnames are defined as a unique identifier consisting of maximum the 4 first letters of an application name)
-				   - On any integrated application start, any other integrated applications marked as non-persistent will first be stopped
+				   - On any integrated application start, any other integrated applications marked as non-persistent (read more on persistence below) will first be stopped
 				   - The startscript for PieHelper (startpieh.sh) can be launched with the following parameters :
 						-p : To start the PieHelper menu on a remote pseudo-terminal instead of it's allocated TTY
 	          				     Using this option will prevent other running integrated applications being stopped first with the sole exception of other PieHelper instances running on a TTY
@@ -52,4 +56,25 @@
 	* listblue_ph.sh : used to - list available bluetooth adapters and the adapter currently configured as default
 
 - The -h parameter for showing help is available for all tools, not just the ones specific to PieHelper
-- The PieHelper menu offers most, but not all of the options available with the CLI tools
+  Running the tools without any parameters will execute their default function
+- A word on TTY switching and flexibility : 
+
+	* The PieHelper menu offers most, but not all of the options available through the CLI tools
+	  Also, using the CLI tools from a remote terminal offers slightly more flexibility because TTY switching is handled automatically
+	  The main differences when using the menu directly on a TTY and not from a remote terminal are the following :
+	   - Instead of the scripts, the linux built-in mechanism of Ctrl-LeftAlt-Functionkey#TTY will need to be used to switch to a TTY number '#TTY'
+	     This implies remembering the TTY number allocated to the application you want to switch to
+	     For convenience however, the PieHelper menu will always be allocated to TTY 2 while TTY 1 stays reserved for system console messages
+	   - Some applications will intercept the TTY switch keystroke combination when running and need to be exited before the new TTY will become visible
+	     Moonlight is an example of such an application since all key strokes will be sent back through the stream and interpreted by the remote host
+	     Moonlight streaming can be quit by typing 'Ctrl+Alt+Shift+Q' or exiting your game manually
+	* Using PieHelper, there is the option to mark an application as persistent
+	  This implies that the application will not be stopped when another starts (default behaviour) and such application will only ever be stopped
+	    if a direct stop or restart command is issued
+	  Some applications (e.g. Kodi, Emulationstation) do not render to the default frame buffer and will stay visible on foreground,
+	    even when switching to another TTY
+	  Never mark such applications as persistent to prevent them from overlaying the output of the default frame buffer
+
+- To troubleshoot PieHelper functionality, attempt to run 'confpieh_ph.sh -r' or the corresponding menu option
+  If the issue remains, try unconfiguring and reconfiguring PieHelper
+- Enjoy !

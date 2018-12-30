@@ -9,6 +9,7 @@
 typeset PH_RUNAPP="PieHelper"
 typeset PH_EXCEPTION=""
 typeset PH_OPTION=""
+typeset PH_MENU=""
 typeset PH_INST=""
 typeset PH_FLAG=""
 typeset PH_i=""
@@ -21,19 +22,36 @@ typeset -i PH_RUNAPP_TTY=0
 typeset -i PH_OLDOPTIND=$OPTIND
 OPTIND=1
 
+if [[ `$PH_SUDO cat /proc/$PPID/comm` != restart*sh ]]
+then
+        ph_check_app_name -i -a "$PH_RUNAPP" || exit $?
+fi
 PH_RUNAPPL=`echo $PH_RUNAPP | cut -c1-4`
 PH_RUNAPPU=`echo $PH_RUNAPP | cut -c1-4`
-while getopts ph PH_OPTION 2>/dev/null
+while getopts phm: PH_OPTION 2>/dev/null
 do
         case $PH_OPTION in p)
                 [[ `tty` != /dev/pts/* ]] && printf "%s\n" "- Enabling $PH_RUNAPP" && printf "%2s%s\n" "" "FAILED : Not currently on a pseudoterminal" && \
 						OPTIND=$PH_OLDOPTIND && OPTARG="$PH_OLDOPTARG" && exit 1
 		PH_FLAG="pseudo" ;;
+			   m)
+		if [[ "$OPTARG" != @(Main|Controllers|Apps|Advanced|Settings|PS3|PS4|XBOX360|AppManagement|`nawk 'BEGIN { ORS = "|" } { print $1 }' $PH_CONF_DIR/supported_apps`) ]]
+		then
+			startpieh.sh -h || exit $?
+		fi
+		[[ -z "$OPTARG" ]] && PH_MENU="Main" || PH_MENU="$OPTARG" ;;	
                            *)
-                >&2 printf "%s\n" "Usage : start$PH_RUNAPPL.sh -h|-p"
+                >&2 printf "%s\n" "Usage : start$PH_RUNAPPL.sh -h|-p |"
+		>&2 printf "%21s%s\n" "" "-m '[menu]'"
                 >&2 printf "\n"
                 >&2 printf "%3s%s\n" "" "Where -h displays this usage"
-                >&2 printf "%9s%s\n" "" "-p requests to attempt starting an instance of $PH_RUNAPP on a pseudo-terminal"
+                >&2 printf "%9s%s\n" "" "-p allows starting an instance of $PH_RUNAPP on a pseudo-terminal instead of it's allocated TTY"
+                >&2 printf "%9s%s\n" "" "-m allows starting $PH_RUNAPP directly in menu [menu] instead of the default Main menu"
+                >&2 printf "%12s%s\n" "" "- Allowed values for [menu] are \"Main\", \"Controllers\", \"Apps\", \"Advanced\", \"Settings\", \"PS3\", \"PS4\", \"XBOX360\", \"AppManagement\","
+                >&2 printf "%12s%s\n" "" "  or the name of any supported application"
+                >&2 printf "%15s%s\n" "" "- Specifying a value for [menu] is optional"
+                >&2 printf "%15s%s\n" "" "  The Main menu will be selected by default is no value is given"
+                >&2 printf "%12s%s\n" "" "- This setting will be ignored if a persistent instance of PieHelper is already active"
                 >&2 printf "\n"
                 OPTIND=$PH_OLDOPTIND ; OPTARG="$PH_OLDOPTARG" ; exit 1 ;;
         esac
@@ -56,7 +74,7 @@ then
 			[[ "$PH_i" == "Bash" ]] && PH_RUNAPP_CMD="bash"
 			if pgrep -t tty$PH_RUNAPP_TTY -f "$PH_RUNAPP_CMD" >/dev/null
 			then
-				printf "%10s%s\n" "" "Warning : $PH_i is active"
+				printf "%10s%s\n" "" "Warning : $PH_i is active -> Stopping"
 				[[ -n "$PH_APPSL" ]] && PH_APPSL="$PH_APPSL $PH_RUNAPPL" || PH_APPSL="$PH_RUNAPPL"
 			else
 				printf "%10s%s\n" "" "OK (Not found)"
@@ -133,7 +151,7 @@ else
 		printf "%8s%s\n" "" "--> Starting $PH_RUNAPP"
 		printf "%10s%s\n" "" "OK"
 		printf "%2s%s\n" "" "SUCCESS"
-		ph_show_menu Main
+		ph_show_menu "$PH_MENU"
 	fi
 fi
 exit 0

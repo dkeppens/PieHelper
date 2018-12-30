@@ -12,6 +12,10 @@ typeset PH_RUNAPP_CMD=""
 typeset -l PH_RUNAPPL=`echo $PH_RUNAPP | cut -c1-4`
 typeset -i PH_RUNAPP_TTY=0
 
+if [[ `$PH_SUDO cat /proc/$PPID/comm` != start*sh ]]
+then
+        ph_check_app_name -i -a "$PH_RUNAPP" || exit $?
+fi
 printf "%s\n" "- Disabling $PH_RUNAPP"
 printf "%8s%s\n" "" "--> Attempting to determine TTY for $PH_RUNAPP"
 PH_RUNAPP_TTY=`ph_get_tty_for_app $PH_RUNAPP`

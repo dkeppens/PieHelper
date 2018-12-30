@@ -15,6 +15,10 @@ typeset -l PH_RUNAPPL=""
 typeset -u PH_RUNAPPU=""
 typeset -i PH_RUNAPP_TTY=0
 
+if [[ `$PH_SUDO cat /proc/$PPID/comm` != restart*sh ]]
+then
+        ph_check_app_name -i -a "$PH_RUNAPP" || exit $?
+fi
 printf "%s\n" "- Checking for application presences"
 [[ `$PH_SUDO cat /proc/$PPID/comm` == +(?)to+(?).sh ]] && PH_EXCEPTION=`nawk '$1 ~ /^stop.*\.sh$/ { print substr($1,5,length($1)-7) }' $PH_SCRIPTS_DIR/\`$PH_SUDO cat /proc/$PPID/comm\``
 for PH_i in `cut -f1 $PH_CONF_DIR/installed_apps | egrep -v ^"$PH_RUNAPP"$ | paste -d" " -s`
@@ -29,7 +33,7 @@ do
 		[[ "$PH_i" == "Bash" ]] && PH_RUNAPP_CMD="bash"
 		if pgrep -t tty$PH_RUNAPP_TTY -f "$PH_RUNAPP_CMD" >/dev/null
 		then
-			printf "%10s%s\n" "" "Warning : $PH_i is active"
+			printf "%10s%s\n" "" "Warning : $PH_i is active -> Stopping"
 			[[ -n "$PH_APPSL" ]] && PH_APPSL="$PH_APPSL $PH_RUNAPPL" || PH_APPSL="$PH_RUNAPPL"
 		else
 			[[ "$PH_i" == "PieHelper" ]] && printf "%10s%s\n" "" "OK (Not found or running on a pseudo-terminal)" || \

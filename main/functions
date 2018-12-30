@@ -24,6 +24,7 @@ printf "%s\n\n" "List of available tools : "
 cd $PH_SCRIPTS_DIR >/dev/null 2>&1
 ls
 printf "\n%s\n\n" "Run any tool with the '-h' parameter to see help"
+printf "\n%s\n\n" "Run any tool without parameters to execute their default function"
 printf "%s\n\n" "Return to the PieHelper menu by typing 'exit' or CTRL-D"
 /bin/bash +x
 return 0
@@ -363,7 +364,7 @@ if [[ "$1" == @(unmap|full) ]]
 then
 	if pgrep xboxdrv >/dev/null 2>&1
 	then
-		printf "%8s%s\n" "" "--> Disabling xboxdrv"
+		printf "%8s%s\n" "" "--> Stopping xboxdrv"
 		$PH_SUDO pkill -9 xboxdrv >/dev/null 2>&1
 		if [[ $? -eq 0 ]]
 		then
@@ -385,6 +386,8 @@ typeset PH_OPTION=""
 typeset PH_APP=""
 typeset PH_j=""
 typeset PH_TYPE=""
+typeset PH_OLDOPTARG="$OPTARG"
+typeset -i PH_OLDOPTIND=$OPTIND
 typeset -l PH_APPL=""
 
 ph_check_conf_files supp || (printf "%s\n" "- Checking for supported applications configuration file" ; \
@@ -405,6 +408,8 @@ do
 		PH_APPL=`echo $PH_APP | cut -c1-4` ;;
 	esac
 done
+OPTIND=$PH_OLDOPTIND
+OPTARG="$PH_OLDOPTARG"
 if [[ "$PH_FILE" == "new" ]]
 then
 	printf "%s\n" "- Checking validity of $PH_TYPE application's shortname"
@@ -418,8 +423,20 @@ then
 	return 0
 fi
 printf "%s\n" "- Checking validity of $PH_TYPE application name"
-$PH_SCRIPTS_DIR/confapps_ph.sh -p list -l "$PH_FILE" | tail -n +2 | nawk '{ print $1 }' | grep ^"$PH_APP"$ >/dev/null && printf "%2s%s\n" "" "SUCCESS" || \
-		(printf "%2s%s\n" "" "FAILED : Unknown $PH_TYPE application \"$PH_APP\"" ; return 1) || return $?
+if $PH_SCRIPTS_DIR/confapps_ph.sh -p list -l "$PH_FILE" | tail -n +2 | nawk '{ print $1 }' | grep ^"$PH_APP"$ >/dev/null
+then
+	printf "%2s%s\n" "" "SUCCESS"
+else
+	if [[ "$PH_TYPE" == "integrated" ]]
+	then
+		printf "%2s%s\n" "" "FAILED : Unknown $PH_TYPE application \"$PH_APP\""
+		printf "%2s%s\n" "" "INFO   : Application is not yet installed or still undiscovered"
+		printf "%2s%s\n" "" "         Both the PieHelper menu and the 'confapps_ph.sh' tool can be used for either installing the application or running a discovery scan"
+	else
+		printf "%2s%s\n" "" "FAILED : Unknown $PH_TYPE application \"$PH_APP\""
+	fi
+	return $?
+fi
 return 0
 }
 
@@ -627,6 +644,7 @@ do
 done
 echo "You can always return to the PieHelper menu by typing 'startpieh.sh -p' to start on a pseudo-terminal"
 echo "Or by typing 'startpieh.sh' to start on a TTY"
+echo "Use 'startpieh.sh -h' to see all available options"
 echo ''
 exit 0
 }
@@ -2258,7 +2276,6 @@ case $1 in start)
 		[[ $PH_RUNAPP_TTY -eq ${PH_BASH_TTY##+([^[:digit:]])} ]] && clear
 	fi ;;
 	       *)
-	PH_PIEH_TTY=`ph_get_tty_for_app PieHelper`
 	printf "%8s%s\n" "" "--> Stopping $PH_RUNAPP"
 	if [[ `eval echo "\\$PH_\$PH_RUNAPPU"_PERSISTENT` == "yes" && -z "$3" ]]
 	then

@@ -18,6 +18,10 @@ typeset -i PH_RUNAPP_TTY=0
 typeset -i PH_OLDOPTIND=$OPTIND
 OPTIND=1
 
+if [[ `$PH_SUDO cat /proc/$PPID/comm` != start*sh ]]
+then
+	ph_check_app_name -i -a "$PH_RUNAPP" || exit $?
+fi
 while getopts ph PH_OPTION 2>/dev/null
 do
         case $PH_OPTION in p)
