@@ -15,15 +15,13 @@ typeset PH_INST=""
 typeset PH_FLAG=""
 typeset PH_i=""
 typeset PH_RUNAPP_CMD=""
-typeset -l PH_RUNAPPL=""
+typeset -l PH_RUNAPPL=`echo $PH_RUNAPP | cut -c1-4`
 typeset -l PH_APPSL=""
-typeset -u PH_RUNAPPU=""
+typeset -u PH_RUNAPPU=`echo $PH_RUNAPP | cut -c1-4`
 typeset -i PH_RUNAPP_TTY=0
 typeset -i PH_OLDOPTIND=$OPTIND
 OPTIND=1
 
-PH_RUNAPPL=`echo $PH_RUNAPP | cut -c1-4`
-PH_RUNAPPU=`echo $PH_RUNAPP | cut -c1-4`
 while getopts phm: PH_OPTION 2>/dev/null
 do
         case $PH_OPTION in p)
@@ -46,7 +44,7 @@ do
 				exit 1
 			fi
 		fi
-		[[ -n "$OPTARG" ]] PH_MENU="$OPTARG" ;;	
+		[[ -n "$OPTARG" ]] && PH_MENU="$OPTARG" ;;	
                            *)
                 >&2 printf "%s\n" "Usage : start$PH_RUNAPPL.sh '-m ['menu']' '-p' | -h"
                 >&2 printf "\n"
@@ -179,7 +177,7 @@ else
         printf "%10s%s\n" "" "OK (Not found)"
 	if [[ "$PH_FLAG" == "" ]]
 	then
-		ph_run_app_action start "$PH_RUNAPP"
+		ph_run_app_action start "$PH_RUNAPP" "$PH_MENU"
 		[[ $? -eq 0 ]] && printf "%2s%s\n" "" "SUCCESS" || (printf "%2s%s\n" "" "FAILED" ; return 1) || exit $?
 	else
 		printf "%8s%s\n" "" "--> Starting $PH_RUNAPP"
