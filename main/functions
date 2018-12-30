@@ -1339,7 +1339,7 @@ then
 else
 	printf "%10s%s\n" "" "OK (None)"
 fi
-printf "%8s%s\n" "" "--> Checking if configured as default application to start on system boot"
+printf "%8s%s\n" "" "--> Checking if configured as the default application to start on system boot"
 if [[ "$PH_PIEH_STARTAPP" == "$PH_APP" ]]
 then
 	printf "%10s%s\n" "" "Warning : Yes -> Unconfiguring"
@@ -1422,6 +1422,15 @@ printf "%8s%s\n" "" "--> Removing $PH_APP as an integrated application"
 nawk -v app=^"$PH_APP"$ '$1 ~ app { next } { print }' $PH_CONF_DIR/installed_apps >/tmp/installed_apps_tmp 2>/dev/null
 [[ $? -eq 0 ]] && mv /tmp/installed_apps_tmp $PH_CONF_DIR/installed_apps
 printf "%10s%s\n" "" "OK"
+if nawk -v user=^"$PH_APP_USER"$ '$2 ~ user { exit 1 } { next }' $PH_CONF_DIR/installed_apps 2>/dev/null
+then
+	if [[ "$PH_RUN_USER" != "$PH_APP_USER" ]]
+	then
+		printf "%8s%s\n" "" "--> Removing ACLs for user $PH_APP_USER"
+		$PH_SUDO setfacl -R -x $PH_SCRIPTS_DIR/.. u:"$PH_APP_USER" >/dev/null 2>&1
+		printf "%10s%s\n" "" "OK"
+	fi
+fi
 printf "%2s%s\n" "" "SUCCESS"
 return 0
 }
@@ -1494,6 +1503,15 @@ fi
 nawk -v app="${PH_APP_READ[$PH_i]}" -v cmd="$PH_APP_CMD" '$1 ~ app { print $1 "\t" cmd ; next } { print }' $PH_CONF_DIR/supported_apps >/tmp/supported_apps 2>/dev/null
 [[ $? -eq 0 ]] && mv /tmp/supported_apps $PH_CONF_DIR/supported_apps	
 printf "%10s%s\n" "" "OK"
+if nawk -v user=^"$PH_APP_USER"$ '$2 ~ user { exit 1 } { next }' $PH_CONF_DIR/installed_apps 2>/dev/null
+then
+	if [[ "$PH_APP_USER" != "$PH_RUN_USER" ]]
+	then
+		printf "%8s%s\n" "" "--> Installing ACLs for $PH_APP_USER"
+		$PH_SUDO setfacl -R -m u:$PH_APP_USER:rx $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
+		printf "%10s%s\n" "" "OK"
+	fi
+fi
 return 0
 }
 
@@ -1677,12 +1695,6 @@ PH_RUNAPP_CMD="$PH_SCRIPTS_DIR/start$PH_RUNAPPL.sh" || \
 PH_RUNAPP_CMD=`sed "s/PH_TTY/$PH_RUNAPP_TTY/" <<<$PH_RUNAPP_CMD`
 ph_set_option LoginScript -r PH_RUNAPP_TTY="tty$PH_RUNAPP_TTY" -r PH_RUNAPP_USER="$PH_RUNAPP_USER" \
 	      -r PH_RUNAPP_CMD="$PH_RUNAPP_CMD"
-if [[ "$PH_RUNAPP_USER" != "$PH_RUN_USER" ]]
-then
-	printf "%8s%s\n" "" "--> Installing ACLs for $PH_RUNAPP_USER"
-	setfacl -R -m u:$PH_RUNAPP_USER:rx $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
-	printf "%10s%s\n" "" "OK"
-fi
 printf "%8s%s\n" "" "--> Installing login script as PieHelper_tty$PH_RUNAPP_TTY.sh"
 $PH_SUDO mv $PH_CONF_DIR/LoginScript.conf /etc/profile.d/PieHelper_tty$PH_RUNAPP_TTY.sh
 $PH_SUDO chown $PH_RUNAPP_USER:`id -gn $PH_RUNAPP_USER` /etc/profile.d/PieHelper_tty$PH_RUNAPP_TTY.sh
