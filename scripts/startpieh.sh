@@ -46,7 +46,7 @@ do
 				exit 1
 			fi
 		fi
-		[[ -z "$OPTARG" ]] && PH_MENU="Main" || PH_MENU="$OPTARG" ;;	
+		[[ -n "$OPTARG" ]] PH_MENU="$OPTARG" ;;	
                            *)
                 >&2 printf "%s\n" "Usage : start$PH_RUNAPPL.sh '-m ['menu']' '-p' | -h"
                 >&2 printf "\n"
@@ -87,6 +87,7 @@ done
 OPTIND=$PH_OLDOPTIND
 OPTARG="$PH_OLDOPTARG"
 
+[[ -z "$PH_MENU" ]] && PH_MENU="Main"
 if [[ `$PH_SUDO cat /proc/$PPID/comm` != restart*sh ]]
 then
         ph_check_app_name -i -a "$PH_RUNAPP" || exit $?
