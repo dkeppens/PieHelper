@@ -1263,7 +1263,7 @@ case $PH_APP in Moonlight)
 		[[ $? -eq 0 ]] && printf "%10s%s\n" "" "OK" || (printf "%10s%s\n" "" "ERROR : Could not download $PH_APP setup script" ; \
 				printf "%2s%s\n" "" "FAILED" ; return 1) || return $?
 		cd RetroPie-Setup
-		chmod +x retropie_setup.sh
+		$PH_SUDO chmod +x retropie_setup.sh
 		printf "%8s%s\n" "" "--> Executing $PH_APP setup script"
 		printf "%12s%s\n" "" "- Use this setup script to do a basic install of $PH_APP"
 		printf "%12s%s\n" "" "- Settings for autostart configured with this script will be overridden by PieHelper"
@@ -1722,7 +1722,7 @@ ph_set_option LoginScript -r PH_RUNAPP_TTY="tty$PH_RUNAPP_TTY" -r PH_RUNAPP_USER
 	      -r PH_RUNAPP_CMD="$PH_RUNAPP_CMD"
 printf "%8s%s\n" "" "--> Installing login script as PieHelper_tty$PH_RUNAPP_TTY.sh"
 $PH_SUDO mv $PH_CONF_DIR/LoginScript.conf /etc/profile.d/PieHelper_tty$PH_RUNAPP_TTY.sh
-$PH_SUDO chown $PH_RUNAPP_USER:`id -gn $PH_RUNAPP_USER` /etc/profile.d/PieHelper_tty$PH_RUNAPP_TTY.sh
+$PH_SUDO chown $PH_RUNAPP_USER:`$PH_SUDO id -gn $PH_RUNAPP_USER` /etc/profile.d/PieHelper_tty$PH_RUNAPP_TTY.sh
 printf "%10s%s\n" "" "OK"
 printf "%8s%s\n" "" "--> Installing TTY$PH_RUNAPP_TTY autologin configuration"
 $PH_SUDO mkdir /etc/systemd/system/getty@tty$PH_RUNAPP_TTY.service.d 2>/dev/null
@@ -2122,7 +2122,7 @@ then
 fi
 printf "%8s%s\n" "" "--> Checking location"
 [[ `ls -d $PH_SCRIPTS_DIR/../../PieHelper 2>/dev/null` == *PieHelper ]] && \
-	($PH_SUDO chmod -R 750 $PH_SCRIPTS_DIR/../../PieHelper ; chown -R $PH_RUN_USER:`id -gn $PH_RUN_USER` $PH_SCRIPTS_DIR/../../PieHelper) || \
+	($PH_SUDO chmod -R 750 $PH_SCRIPTS_DIR/../../PieHelper ; $PH_SUDO chown -R $PH_RUN_USER:`$PH_SUDO id -gn $PH_RUN_USER` $PH_SCRIPTS_DIR/../../PieHelper) || \
 	(printf "%10s%s\n" "" "PieHelper should be not be stored outside it's default directory 'PieHelper'" ; printf "%2s%s\n" "" "FAILED" ; return 1) || exit $?
 printf "%10s%s\n" "" "OK"
 printf "%8s%s\n" "" "--> Creating supported applications configuration file"
