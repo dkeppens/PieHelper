@@ -9,12 +9,12 @@
 typeset PH_RUNAPP="PieHelper"
 typeset PH_EXCEPTION=""
 typeset PH_OPTION=""
+typeset PH_OLDOPTARG="$OPTARG"
 typeset PH_MENU=""
 typeset PH_INST=""
 typeset PH_FLAG=""
 typeset PH_i=""
 typeset PH_RUNAPP_CMD=""
-typeset PH_OLDOPTARG="$OPTARG"
 typeset -l PH_RUNAPPL=""
 typeset -l PH_APPSL=""
 typeset -u PH_RUNAPPU=""
@@ -22,42 +22,75 @@ typeset -i PH_RUNAPP_TTY=0
 typeset -i PH_OLDOPTIND=$OPTIND
 OPTIND=1
 
-if [[ `$PH_SUDO cat /proc/$PPID/comm` != restart*sh ]]
-then
-        ph_check_app_name -i -a "$PH_RUNAPP" || exit $?
-fi
 PH_RUNAPPL=`echo $PH_RUNAPP | cut -c1-4`
 PH_RUNAPPU=`echo $PH_RUNAPP | cut -c1-4`
 while getopts phm: PH_OPTION 2>/dev/null
 do
         case $PH_OPTION in p)
-                [[ `tty` != /dev/pts/* ]] && printf "%s\n" "- Enabling $PH_RUNAPP" && printf "%2s%s\n" "" "FAILED : Not currently on a pseudoterminal" && \
+                [[ `tty` != /dev/pts/* ]] && printf "%s\n" "- Enabling $PH_RUNAPP" && printf "%2s%s\n" "" "FAILED : Not currently on a pseudo-terminal" && \
 						OPTIND=$PH_OLDOPTIND && OPTARG="$PH_OLDOPTARG" && exit 1
 		PH_FLAG="pseudo" ;;
 			   m)
+		if ! ph_screen_input "$OPTARG"
+		then
+			OPTIND=$PH_OLDOPTIND
+			OPTARG="$PH_OLDOPTARG"
+			exit 1
+		fi
 		if [[ "$OPTARG" != @(Main|Controllers|Apps|Advanced|Settings|PS3|PS4|XBOX360|AppManagement|`nawk 'BEGIN { ORS = "|" } { print $1 }' $PH_CONF_DIR/supported_apps`) ]]
 		then
-			startpieh.sh -h || exit $?
+			if ! startpieh.sh -h
+			then
+				OPTIND=$PH_OLDOPTIND
+				OPTARG="$PH_OLDOPTARG"
+				exit 1
+			fi
 		fi
 		[[ -z "$OPTARG" ]] && PH_MENU="Main" || PH_MENU="$OPTARG" ;;	
                            *)
-                >&2 printf "%s\n" "Usage : start$PH_RUNAPPL.sh -h|-p |"
-		>&2 printf "%21s%s\n" "" "-m '[menu]'"
+                >&2 printf "%s\n" "Usage : start$PH_RUNAPPL.sh '-m ['menu']' '-p' | -h"
                 >&2 printf "\n"
                 >&2 printf "%3s%s\n" "" "Where -h displays this usage"
-                >&2 printf "%9s%s\n" "" "-p allows starting an instance of $PH_RUNAPP on a pseudo-terminal instead of it's allocated TTY"
+                >&2 printf "%9s%s\n" "" "- Running this script without parameters will start an instance of $PH_RUNAPP on it's allocated TTY"
+                >&2 printf "%12s%s\n" "" "- The first unallocated TTY will be automatically assigned to any application without a TTY that attempts to start"
+                >&2 printf "%12s%s\n" "" "- A TTY is only deallocated when an application is removed from PieHelper"
+                >&2 printf "%12s%s\n" "" "- If an application in need of a TTY attempts to start but all TTY's are already allocated, startup will fail"
+                >&2 printf "%12s%s\n" "" "- At any application start, all other running applications marked non-persistent, will first be stopped"
+                >&2 printf "%12s%s\n" "" "  Two exceptions to this rule exist :"
+                >&2 printf "%15s%s\n" "" "- PieHelper starting on a pseudo-terminal will never stop running applications"
+                >&2 printf "%15s%s\n" "" "- To avoid unnecessary actions for move scripts, stop actions performed directly by those will not be repeated"
+                >&2 printf "%12s%s\n" "" "  One exception is the application just stopped by actions of our calling script if that script was a move script"
+                >&2 printf "%12s%s\n" "" "  A move script is defined as a script named 'xxxx'to'yyyy'.sh where 'xxxx' is the shortname of the application stopped"
+		>&2 printf "%12s%s\n" "" "  and 'yyyy' is the shortname of the application we're starting on behalf of the calling move script"
+                >&2 printf "%12s%s\n" "" "- Additionally, the following rules apply to the start of $PH_RUNAPP :" 
+                >&2 printf "%15s%s\n" "" "- If a persistent $PH_RUNAPP instance is already running on that TTY, that TTY will become the active TTY"
+                >&2 printf "%15s%s\n" "" "- If a non-persistent $PH_RUNAPP instance is already running on that TTY, startup will fail"
+                >&2 printf "%15s%s\n" "" "- If a $PH_RUNAPP instance is already running on a pseudo-terminal, that instance will be replaced by the new instance on it's allocated TTY"
+                >&2 printf "%9s%s\n" "" "-p allows setting the start of $PH_RUNAPP to be executed on a pseudo-terminal instead of it's allocated TTY"
+                >&2 printf "%12s%s\n" "" "- Specifying -p is optional"
+                >&2 printf "%12s%s\n" "" "- The following rules replace these for a normal start :" 
+                >&2 printf "%15s%s\n" "" "- As mentioned above, PieHelper will not stop any other running applications when starting in this mode" 
+                >&2 printf "%15s%s\n" "" "- If a persistent $PH_RUNAPP pseudo-terminal instance is already running, startup will be skipped but succeed with a warning" 
+                >&2 printf "%15s%s\n" "" "- If a non-persistent $PH_RUNAPP pseudo-terminal instance is already running, startup will fail"
+                >&2 printf "%15s%s\n" "" "- If a $PH_RUNAPP instance is already running on it's allocated TTY, that instance will be replaced by the new pseudo-terminal instance"
                 >&2 printf "%9s%s\n" "" "-m allows starting $PH_RUNAPP directly in menu [menu] instead of the default Main menu"
+                >&2 printf "%12s%s\n" "" "- Specifying -m is optional"
                 >&2 printf "%12s%s\n" "" "- Allowed values for [menu] are \"Main\", \"Controllers\", \"Apps\", \"Advanced\", \"Settings\", \"PS3\", \"PS4\", \"XBOX360\", \"AppManagement\","
                 >&2 printf "%12s%s\n" "" "  or the name of any supported application"
                 >&2 printf "%15s%s\n" "" "- Specifying a value for [menu] is optional"
                 >&2 printf "%15s%s\n" "" "  The Main menu will be selected by default is no value is given"
-                >&2 printf "%12s%s\n" "" "- This setting will be ignored if a persistent instance of PieHelper is already active"
+                >&2 printf "%12s%s\n" "" "- This setting will be ignored if a persistent instance of $PH_RUNAPP is already active"
                 >&2 printf "\n"
                 OPTIND=$PH_OLDOPTIND ; OPTARG="$PH_OLDOPTARG" ; exit 1 ;;
         esac
 done
 OPTIND=$PH_OLDOPTIND
 OPTARG="$PH_OLDOPTARG"
+
+if [[ `$PH_SUDO cat /proc/$PPID/comm` != restart*sh ]]
+then
+        ph_check_app_name -i -a "$PH_RUNAPP" || exit $?
+fi
 if [[ "$PH_FLAG" != "pseudo" ]]
 then
 	printf "%s\n" "- Checking for application presences"
@@ -115,7 +148,7 @@ then
 			printf "%2s%s\n" "" "SUCCESS"
 			$PH_SCRIPTS_DIR/stop$PH_RUNAPPL.sh -p || exit $?
 			printf "%s\n" "- Restarting $PH_RUNAPP on a TTY"
-			ph_run_app_action start "$PH_RUNAPP"
+			ph_run_app_action start "$PH_RUNAPP" "$PH_MENU"
 			[[ $? -eq 0 ]] && printf "%2s%s\n" "" "SUCCESS" || (printf "%2s%s\n" "" "FAILED" ; return 1) || exit $?
 		fi
 	else

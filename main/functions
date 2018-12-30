@@ -2326,7 +2326,10 @@ case $1 in start)
 	PH_RUNAPP_TTY=`ph_get_tty_for_app $PH_RUNAPP`
 	PH_RUNAPP_CMD=`nawk -v runapp=^"$PH_RUNAPP"$ 'BEGIN { ORS=" " } $1 ~ runapp { for (i=2;i<=NF;i++) { if (i==NF) { ORS="" ; print $i } else { print $i }}}' $PH_CONF_DIR/supported_apps`
 	PH_RUNAPP_CMD=`sed "s/PH_TTY/$PH_RUNAPP_TTY/" <<<$PH_RUNAPP_CMD`
-	[[ "$PH_RUNAPP" == "PieHelper" ]] && PH_RUNAPP_CMD="ph_show_menu Main"
+	if [[ "$PH_RUNAPP" == "PieHelper" ]]
+	then
+		[[ -z "$3" ]] && PH_RUNAPP_CMD="ph_show_menu Main" || PH_RUNAPP_CMD="ph_show_menu $3"
+	fi
 	printf "%8s%s\n" "" "--> Starting $PH_RUNAPP"
 	$PH_SUDO systemctl start getty@tty$PH_RUNAPP_TTY >/dev/null 2>&1
 	[[ `fgconsole` -eq $PH_RUNAPP_TTY && "$PH_RUNAPP_CMD" != "/bin/bash" ]] && eval $PH_RUNAPP_CMD $PH_RUNAPPU_CMD_OPTS 2>/dev/null || $PH_SUDO `which chvt` $PH_RUNAPP_TTY

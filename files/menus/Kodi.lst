@@ -1,6 +1,6 @@
 Start or switch to Kodi:startkodi.sh
 Stop Kodi:stopkodi.sh force
-Restart Kodi:restartkodi.sh force
+Restart Kodi:restartkodi.sh
 Install Kodi:confapps_ph.sh -p int -a Kodi
 Uninstall Kodi:confapps_ph.sh -p rem -a Kodi
 Update Kodi to the latest version (only if installed as a package):ph_update_pkg $PH_KODI_PKG_NAME

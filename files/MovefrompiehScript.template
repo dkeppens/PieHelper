@@ -1,0 +1,50 @@
+#!/bin/ksh
+# Move from PieHelper to X11 (by Davy Keppens on 04/10/2018)
+# Enable/Disable debug by running confpieh_ph.sh -d piehtox11.sh
+
+. $(dirname $0)/../main/main.sh || exit $? && set +x
+
+#set -x
+
+typeset PH_FLAG=""
+typeset PH_OPTION=""
+typeset PH_OLDOPTARG="$OPTARG"
+typeset -i PH_OLDOPTIND=$OPTIND
+
+while getopts hp PH_OPTION 2>/dev/null
+do
+        case $PH_OPTION in p)
+                PH_FLAG="pseudo" ;;
+                           *)
+                >&2 printf "%s\n" "Usage : piehtox11.sh |-h|-p"
+                >&2 printf "\n"
+                >&2 printf "%3s%s\n" "" "Where -h displays this usage"
+                >&2 printf "%9s%s\n" "" "-p will stop an instance of PieHelper running on a pseudo-terminal"
+                >&2 printf "%9s%s\n" "" "   If successful, a new instance of X11 will be started if one is not already running"
+                >&2 printf "%9s%s\n" "" "If a persistent instance is already running, the TTY allocated to that instance will become the active TTY"
+                >&2 printf "\n"
+                >&2 printf "%9s%s\n" "" "Running this script without parameters will stop an instance of PieHelper running on it's allocated TTY if"
+                >&2 printf "%9s%s\n" "" "the currently active TTY is the TTY allocated to PieHelper"
+                >&2 printf "%9s%s\n" "" "If successful, a new instance of X11 will be started if one is not already running"
+                >&2 printf "%9s%s\n" "" "If a persistent instance is already running, the TTY allocated to that instance will become the active TTY"
+                >&2 printf "\n"
+                OPTIND=$PH_OLDOPTIND ; OPTARG="$PH_OLDOPTARG" ; exit 1 ;;
+        esac
+done
+OPTIND=$PH_OLDOPTIND
+OPTARG="$PH_OLDOPTARG"
+
+if [[ `fgconsole` -ne `ph_get_tty_for_app PieHelper` && "$PH_FLAG" != "pseudo" ]]
+then
+	printf "%s\n" "- Disabling PieHelper"
+	printf "%2s%s\n" "" "FAILED : PieHelper not currently on foreground"
+	exit 1
+fi
+if [[ -z "$PH_FLAG" ]]
+then
+	stoppieh.sh || exit $?
+else
+	stoppieh.sh -p || exit $?
+fi
+startx11.sh || exit $?
+exit 0

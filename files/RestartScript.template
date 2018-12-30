@@ -1,11 +1,31 @@
 #!/bin/ksh
-# Restart #PH_APP# (by Davy Keppens on 04/10/2018)
-# Enable/Disable debug by running confpieh_ph.sh -d restart#PH_APPL#.sh
+# Restart Bash (by Davy Keppens on 04/10/2018)
+# Enable/Disable debug by running confpieh_ph.sh -d restartbash.sh
 
 . $(dirname $0)/../main/main.sh || exit $? && set +x
 
 #set -x
 
-stop#PH_APPL#.sh $1 || exit $?
-start#PH_APPL#.sh || exit $?
+typeset PH_OPTION=""
+typeset PH_OLDOPTARG="$OPTARG"
+typeset -i PH_OLDOPTIND=$OPTIND
+
+while getopts h PH_OPTION 2>/dev/null
+do
+        case $PH_OPTION in *)
+                >&2 printf "%s\n" "Usage : restartbash.sh |-h"
+                >&2 printf "\n"
+                >&2 printf "%3s%s\n" "" "Where -h displays this usage"
+                >&2 printf "\n"
+                >&2 printf "%9s%s\n" "" "Running this script without parameters will stop a running instance of Bash on it's allocated TTY"
+                >&2 printf "%9s%s\n" "" "If successful, Bash will be restarted on the same TTY"
+                >&2 printf "\n"
+                OPTIND=$PH_OLDOPTIND ; OPTARG="$PH_OLDOPTARG" ; exit 1 ;;
+        esac
+done
+OPTIND=$PH_OLDOPTIND
+OPTARG="$PH_OLDOPTARG"
+
+stopbash.sh $1 || exit $?
+startbash.sh || exit $?
 exit 0

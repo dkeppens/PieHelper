@@ -8,9 +8,9 @@
 
 typeset PH_RUNAPP="PieHelper"
 typeset PH_PARAM="$1"
+typeset PH_OPTION=""
 typeset PH_INST=""
 typeset PH_FLAG=""
-typeset PH_OPTION=""
 typeset PH_i=""
 typeset PH_OLDOPTARG="$OPTARG"
 typeset -l PH_RUNAPPL=`echo $PH_RUNAPP | cut -c1-4`
@@ -18,33 +18,41 @@ typeset -i PH_RUNAPP_TTY=0
 typeset -i PH_OLDOPTIND=$OPTIND
 OPTIND=1
 
-if [[ `$PH_SUDO cat /proc/$PPID/comm` != start*sh ]]
-then
-	ph_check_app_name -i -a "$PH_RUNAPP" || exit $?
-fi
 while getopts ph PH_OPTION 2>/dev/null
 do
         case $PH_OPTION in p)
 		PH_FLAG="pseudo" ;;
                            *)
-                >&2 printf "%s\n" "Usage : stop$PH_RUNAPPL.sh -h|-p"
+                >&2 printf "%s\n" "Usage : stop$PH_RUNAPPL.sh '-p' | -h"
                 >&2 printf "\n"
                 >&2 printf "%3s%s\n" "" "Where -h displays this usage"
-                >&2 printf "%9s%s\n" "" "-p requests to attempt stopping an instance of $PH_RUNAPP running on a pseudo-terminal"
+                >&2 printf "%9s%s\n" "" "-p allows setting the stop of $PH_RUNAPP to be executed on a pseudo-terminal instead of it's allocated TTY"
+                >&2 printf "%12s%s\n" "" "- Specifying -p is optional"
+                >&2 printf "%9s%s\n" "" "- Running this script without parameters will stop an instance of $PH_RUNAPP running on it's allocated TTY"
                 >&2 printf "\n"
                 OPTIND=$PH_OLDOPTIND ; OPTARG="$PH_OLDOPTARG" ; exit 1 ;;
         esac
 done
 OPTIND=$PH_OLDOPTIND
 OPTARG="$PH_OLDOPTARG"
+
+if [[ `$PH_SUDO cat /proc/$PPID/comm` != start*sh ]]
+then
+	ph_check_app_name -i -a "$PH_RUNAPP" || exit $?
+fi
 printf "%s\n" "- Disabling $PH_RUNAPP"
 if [[ "$PH_FLAG" != "pseudo" ]]
 then
 	printf "%8s%s\n" "" "--> Attempting to determine TTY for $PH_RUNAPP"
 	PH_RUNAPP_TTY=`ph_get_tty_for_app $PH_RUNAPP`
-	[[ $? -eq 1 && $PH_RUNAPP_TTY -ne 0 ]] && printf "%10s%s\n" "" "OK (Found)" || \
-	                (printf "%10s%s\n" "" "Warning : Could not determine TTY for $PH_RUNAPP" ; printf "%2s%s\n" "" "SUCCESS" ; return 1) || \
-	                 exit 0
+	if [[ $? -eq 1 && $PH_RUNAPP_TTY -ne 0 ]]
+	then
+		printf "%10s%s\n" "" "OK (Found)"
+	else
+		printf "%10s%s\n" "" "Warning : Could not determine TTY for $PH_RUNAPP"
+		printf "%2s%s\n" "" "SUCCESS"
+		exit 0
+	fi
 fi
 printf "%8s%s\n" "" "--> Checking for $PH_RUNAPP"
 PH_INST=`pgrep startpieh.sh | sed "s/^$PPID$//g" | paste -d" " -s`

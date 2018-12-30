@@ -1,6 +1,6 @@
 Start or switch to Emulationstation:startemul.sh
 Stop Emulationstation:stopemul.sh force
-Restart Emulationstation:restartemul.sh force
+Restart Emulationstation:restartemul.sh
 Install Emulationstation:confapps_ph.sh -p int -a Emulationstation
 Uninstall Emulationstation:confapps_ph.sh -p rem -a Emulationstation
 Configure Emulationstation:confapps_ph.sh -p conf -a Emulationstation

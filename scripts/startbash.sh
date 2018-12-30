@@ -9,11 +9,30 @@
 typeset PH_RUNAPP="Bash"
 typeset PH_RUNAPP_CMD=""
 typeset PH_EXCEPTION=""
+typeset PH_OPTION=""
+typeset PH_OLDOPTARG="$OPTARG"
 typeset PH_i=""
 typeset -l PH_APPSL=""
-typeset -l PH_RUNAPPL=""
-typeset -u PH_RUNAPPU=""
+typeset -l PH_RUNAPPL=`echo $PH_RUNAPP | cut -c1-4`
+typeset -u PH_RUNAPPU=`echo $PH_RUNAPP | cut -c1-4`
 typeset -i PH_RUNAPP_TTY=0
+typeset -i PH_OLDOPTIND=$OPTIND
+OPTIND=1
+
+while getopts h PH_OPTION 2>/dev/null
+do
+        case $PH_OPTION in *)
+                >&2 printf "%s%s%s\n" "Usage : start" "$PH_RUNAPPL" ".sh | -h"
+                >&2 printf "\n"
+                >&2 printf "%3s%s\n" "" "Where -h displays this usage"
+                >&2 printf "%9s%s\n" "" "- Running this script without parameters will start an instance of $PH_RUNAPP on it's allocated TTY if one is not already running"
+                >&2 printf "%9s%s\n" "" "  If a persistent instance is already running, the TTY allocated to that instance will become the active TTY"
+                >&2 printf "\n"
+                OPTIND=$PH_OLDOPTIND ; OPTARG="$PH_OLDOPTARG" ; exit 1 ;;
+        esac
+done
+OPTIND=$PH_OLDOPTIND
+OPTARG="$PH_OLDOPTARG"
 
 if [[ `$PH_SUDO cat /proc/$PPID/comm` != restart*sh ]]
 then

@@ -1,6 +1,6 @@
 Start or switch to Moonlight:startmoon.sh
 Stop Moonlight:stopmoon.sh force
-Restart Moonlight:restartmoon.sh force
+Restart Moonlight:restartmoon.sh
 Install Moonlight:confapps_ph.sh -p int -a Moonlight
 Uninstall Moonlight:confapps_ph.sh -p rem -a Moonlight
 Configure Moonlight (pair and set all options):confapps_ph.sh -p conf -a Moonlight

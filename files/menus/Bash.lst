@@ -1,6 +1,6 @@
 Start or switch to Bash:startbash.sh
 Stop Bash:stopbash.sh force
-Restart Bash:restartbash.sh force
+Restart Bash:restartbash.sh
 Update Bash to the latest version (only if installed as a package):ph_update_pkg $PH_BASH_PKG_NAME
 List all available options for Bash:confopts_ph.sh -p list -a Bash
 View the current value of Bash option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Bash -g

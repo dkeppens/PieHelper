@@ -1,6 +1,6 @@
 Start or switch to X11:startx11.sh
 Stop X11:stopx11.sh force
-Restart X11:restartx11.sh force
+Restart X11:restartx11.sh
 Install X11:confapps_ps.sh -p int -a X11
 Uninstall X11:confapps_ph.sh -p rem -a X11
 Update X11 to the latest version (only if installed as a package):ph_update_pkg $PH_X11_PKG_NAME

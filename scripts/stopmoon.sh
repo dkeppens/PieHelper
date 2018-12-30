@@ -8,9 +8,27 @@
 
 typeset PH_RUNAPP="Moonlight"
 typeset PH_PARAM="$1"
+typeset PH_OPTION=""
 typeset PH_RUNAPP_CMD=""
+typeset PH_OLDOPTARG="$OPTARG"
 typeset -l PH_RUNAPPL=`echo $PH_RUNAPP | cut -c1-4`
 typeset -i PH_RUNAPP_TTY=0
+typeset -i PH_OLDOPTIND=$OPTIND
+OPTIND=1
+
+while getopts h PH_OPTION 2>/dev/null
+do
+        case $PH_OPTION in *)
+                >&2 printf "%s\n" "Usage : stopmoon.sh | -h"
+                >&2 printf "\n"
+                >&2 printf "%3s%s\n" "" "Where -h displays this usage"
+                >&2 printf "%9s%s\n" "" "- Running this script without parameters will stop an instance of Moonlight running on it's allocated TTY"
+                >&2 printf "\n"
+                OPTIND=$PH_OLDOPTIND ; OPTARG="$PH_OLDOPTARG" ; exit 1 ;;
+        esac
+done
+OPTIND=$PH_OLDOPTIND
+OPTARG="$PH_OLDOPTARG"
 
 if [[ `$PH_SUDO cat /proc/$PPID/comm` != start*sh ]]
 then

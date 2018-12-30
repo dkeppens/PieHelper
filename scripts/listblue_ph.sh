@@ -6,9 +6,29 @@
 
 #set -x
 
+typeset PH_OPTION=""
+typeset PH_OLDOPTARG="$OPTARG"
 typeset PH_i=""
+typeset -i PH_OLDOPTIND=$OPTIND
 typeset -i PH_NUM_ADAPT=0
 typeset -i PH_RETCODE=0
+OPTIND=1
+
+while getopts h PH_OPTION 2>/dev/null
+do
+        case $PH_OPTION in *)
+                >&2 printf "%s\n" "Usage : listblue_ph.sh | -h"
+                >&2 printf "\n"
+                >&2 printf "%3s%s\n" "" "Where -h displays this usage"
+                >&2 printf "%9s%s\n" "" "- Running this script without parameters will provide a listing of the following : "
+                >&2 printf "%12s%s\n" "" "- The bluetooth adapter currently set as default"
+                >&2 printf "%12s%s\n" "" "- A summary of all bluetooth adapters available on the system"
+                >&2 printf "\n"
+                OPTIND=$PH_OLDOPTIND ; OPTARG="$PH_OLDOPTARG" ; exit 1 ;;
+        esac
+done
+OPTIND=$PH_OLDOPTIND
+OPTARG="$PH_OLDOPTARG"
 
 printf "%s\n" "- Displaying bluetooth adapter currently set as default"
 [[ "$PH_CTRL_BLUE_ADAPT" != "none" ]] && printf "%8s%s\n" "" "$PH_CTRL_BLUE_ADAPT" || \
