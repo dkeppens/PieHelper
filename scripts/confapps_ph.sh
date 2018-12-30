@@ -95,7 +95,7 @@ do
 		>&2 printf "%18s%s\n" "" "- [startapp] should already be known to PieHelper as an integrated application"
 		>&2 printf "%18s%s\n" "" "- The keyword \"none\" can be used to remove the current configuration for starting an application by default on system boot"
 		>&2 printf "%18s%s\n" "" "- The keyword \"prompt\" will make confapps_ph.sh behave interactively when it comes to startapp selection"
-		>&2 printf "%12s%s\n" "" "\"state\" allows checking if any currently supported applications are installed on your system"
+		>&2 printf "%12s%s\n" "" "\"state\" allows discovering supporting applications installed on the system"
 		>&2 printf "%20s%s\n" "" "and attempts to integrate them into PieHelper when found"
 		>&2 printf "\n"
 		exit 1 ;;
