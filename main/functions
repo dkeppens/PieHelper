@@ -435,7 +435,7 @@ else
 	else
 		printf "%2s%s\n" "" "FAILED : Unknown $PH_TYPE application \"$PH_APP\""
 	fi
-	return $?
+	return 1
 fi
 return 0
 }
@@ -1661,12 +1661,6 @@ nawk -v runapp=^"$PH_RUNAPP"$ -v runapptty=$PH_RUNAPP_TTY '$1 ~ runapp { print $
 ## add error handling for this installed_apps nawk
 printf "%10s%s\n" "" "OK"
 PH_RUNAPP_USER=`nawk -v runapp=^"$PH_RUNAPP"$ '$1 ~ runapp { print $2 }' $PH_CONF_DIR/installed_apps`
-if [[ "$PH_RUNAPP_USER" != "$PH_RUN_USER" ]]
-then
-	printf "%8s%s\n" "" "--> Removing ACLs for $PH_RUNAPP_USER"
-	$PH_SUDO setfacl -R -x u:$PH_RUNAPP_USER $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
-	printf "%10s%s\n" "" "OK"
-fi
 return 0
 }
 
