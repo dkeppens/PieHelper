@@ -1511,7 +1511,7 @@ then
 	if [[ "$PH_APP_USER" != "$PH_RUN_USER" ]]
 	then
 		printf "%8s%s\n" "" "--> Installing ACLs for $PH_APP_USER"
-		$PH_SUDO setfacl -R -m u:"$PH_APP_USER":rx $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
+		$PH_SUDO setfacl -R -m u:"$PH_APP_USER":rwx $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
 		printf "%10s%s\n" "" "OK"
                 printf "%8s%s\n" "" "--> Installing sudo rules for $PH_APP_USER"
                 echo "$PH_APP_USER ALL=(ALL) NOPASSWD: ALL" >/tmp/020_pieh-"$PH_APP_USER"
