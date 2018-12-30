@@ -1516,7 +1516,7 @@ function ph_revoke_pieh_access {
 typeset PH_APP_USER="$1"
 
 printf "%8s%s\n" "" "--> Removing ACLs for user $PH_APP_USER"
-$PH_SUDO setfacl -R -x u:"$PH_APP_USER" $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
+$PH_SUDO setfacl -R -x u:"$PH_APP_USER" $PH_SCRIPTS_DIR/../../PieHelper >/dev/null 2>&1
 printf "%10s%s\n" "" "OK"
 printf "%8s%s\n" "" "--> Removing sudo rules for $PH_APP_USER"
 $PH_SUDO rm /etc/sudoers.d/020_pieh-"$PH_APP_USER" 2>/dev/null
@@ -1529,7 +1529,7 @@ function ph_grant_pieh_access {
 typeset PH_APP_USER="$1"
 
 printf "%8s%s\n" "" "--> Installing ACLs for $PH_APP_USER"
-$PH_SUDO setfacl -R -m u:"$PH_APP_USER":rwx $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
+$PH_SUDO setfacl -R -m u:"$PH_APP_USER":rwx $PH_SCRIPTS_DIR/../../PieHelper >/dev/null 2>&1
 printf "%10s%s\n" "" "OK"
 printf "%8s%s\n" "" "--> Installing sudo rules for $PH_APP_USER"
 echo "$PH_APP_USER ALL=(ALL) NOPASSWD: ALL" >/tmp/020_pieh-"$PH_APP_USER"
@@ -2120,6 +2120,11 @@ then
 		return 1
 	fi
 fi
+printf "%8s%s\n" "" "--> Checking location"
+[[ `ls -d $PH_SCRIPTS_DIR/../../PieHelper 2>/dev/null` == *PieHelper ]] && \
+	($PH_SUDO chmod -R 750 $PH_SCRIPTS_DIR/../../PieHelper ; chown -R $PH_RUN_USER:`id -gn $PH_RUN_USER` $PH_SCRIPTS_DIR/../../PieHelper) || \
+	(printf "%10s%s\n" "" "PieHelper should be not be stored outside it's default directory 'PieHelper'" ; printf "%2s%s\n" "" "FAILED" ; return 1) || exit $?
+printf "%10s%s\n" "" "OK"
 printf "%8s%s\n" "" "--> Creating supported applications configuration file"
 cat >$PH_CONF_DIR/supported_apps <<EOF
 PieHelper	$PH_SCRIPTS_DIR/startpieh.sh
