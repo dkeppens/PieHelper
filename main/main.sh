@@ -78,7 +78,7 @@ fi
 
 PH_RUN_USER=`nawk -v app=^"PieHelper"$ '$1 ~ app { print $2 }' $PH_CONF_DIR/installed_apps 2>/dev/null`
 typeset PH_ALLOW_USERS="$PH_RUN_USER"
-for PH_i in `$PH_SUDO ls /etc/sudoers.d/020_pieh-*`
+for PH_i in `ls /etc/sudoers.d/020_pieh-* 2>/dev/null`
 do
 	if [[ -z "$PH_ALLOW_USERS" ]]
 	then
