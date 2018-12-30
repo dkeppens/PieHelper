@@ -1519,7 +1519,7 @@ printf "%8s%s\n" "" "--> Removing ACLs for user $PH_APP_USER"
 $PH_SUDO setfacl -R -x u:"$PH_APP_USER" $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
 printf "%10s%s\n" "" "OK"
 printf "%8s%s\n" "" "--> Removing sudo rules for $PH_APP_USER"
-$PH_SUDO rm /etc/profile.d/020_pieh-"$PH_APP_USER" 2>/dev/null
+$PH_SUDO rm /etc/sudoers.d/020_pieh-"$PH_APP_USER" 2>/dev/null
 printf "%10s%s\n" "" "OK"
 return 0
 }
