@@ -1402,8 +1402,7 @@ else
 			printf "%10s%s\n" "" "OK (Found)"
 			PH_PATH="$PH_EMUL_SETUP_DIR"-Setup
 		fi
-		ph_set_option $PH_APP -r PH_EMUL_DIR='' || (printf "%2s%s\n" "" "FAILED" ; return 1) || return $?
-		ph_set_option $PH_APP -r PH_EMUL_SETUP_DIR='' || (printf "%2s%s\n" "" "FAILED" ; return 1) || return $?
+		ph_set_option $PH_APP -r PH_EMUL_DIR='' -r PH_EMUL_SETUP_DIR='' || (printf "%2s%s\n" "" "FAILED" ; return 1) || return $?
 		printf "%8s%s\n" "" "--> Executing $PH_APP setup script"
 		printf "%12s%s\n" "" "- Use this setup script to do an uninstall of $PH_APP"
 		printf "%12s%s\n" "" "- Exit the script normally after it finishes and uninstallation from PieHelper will resume"
@@ -2219,7 +2218,7 @@ echo -e "PieHelper\t$PH_RUN_USER\tno\t-" >$PH_CONF_DIR/installed_apps
 printf "%2s%s\n" "" "SUCCESS"
 ph_generate_installed_apps
 ph_set_app_for_start PieHelper || (rm $PH_CONF_DIR/installed_apps 2>/dev/null ; $PH_SUDO rm /etc/profile.d/PieHelper-path.sh 2>/dev/null ; \
-			ph_set_option Emulationstation -r PH_EMUL_DIR='' >/dev/null ; ph_set_option Emulationstation -r PH_EMUL_SETUP_DIR='' >/dev/null ; \
+			ph_set_option Emulationstation -r PH_EMUL_DIR='' -r PH_EMUL_SETUP_DIR='' >/dev/null ; \
 			ph_restore_emul_conf >/dev/null ; ph_set_default_tty_states >/dev/null ; ph_set_default_logind_conf >/dev/null ; \
 			return 1) || return $?
 PH_ANSWER=""
@@ -2231,7 +2230,7 @@ do
 	printf "%8s%s" "" "--> Do you want to perform this update (y/n) ? "
 	read PH_ANSWER 2>/dev/null
 	ph_screen_input $PH_ANSWER || (ph_set_app_for_start none >/dev/null ; rm $PH_CONF_DIR/installed_apps 2>/dev/null ; $PH_SUDO rm /etc/profile.d/PieHelper-path.sh 2>/dev/null ; \
-					ph_set_option Emulationstation -r PH_EMUL_DIR='' >/dev/null ; ph_set_option Emulationstation -r PH_EMUL_SETUP_DIR='' >/dev/null ; \
+					ph_set_option Emulationstation -r PH_EMUL_DIR='' -r PH_EMUL_SETUP_DIR='' >/dev/null ; \
 					ph_restore_emul_conf >/dev/null ; ph_set_default_tty_states >/dev/null ; ph_set_default_logind_conf >/dev/null ; \
 					return 1) || return $?
 	((PH_COUNT++))
