@@ -1,8 +1,8 @@
 * replace direct -m option + $3 stuff and possibly also -p for startpieh at least with PH_PIEH_CMD_OPTS
-* finish implementing -h parameter for start* and stop* scripts, then do template scripts then adapt for now 3 different move template scripts in confsupp_ph.sh, and verify everything
 * support for function mechanic in ALL *pieh*.sh scripts
 * support in ph_repair_pieh for protection against multiple instances of 1 app + verification whether all known info matches
 * changes for catching updated return result of ph_set_option function everywhere
+* change to one script for each action and use parameters : new branch !
 * use a better separator (') for multiple options confopts_ph.sh possibility
 * in interactive set for confopts_ph.sh : display for num_Ctrl and cmd_opts that changes will be reflected to the other
 * also for same : display notice about using PH_CTRL string when adding EBIDs to CMD_opts
