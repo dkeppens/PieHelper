@@ -43,8 +43,7 @@ do
 				exit 1
 			fi
 		fi
-		[[ -z "$OPTARG" ]] && OPTARG="Main"
-		if [[ "$PH_PIEH_CMD_OPTS" != "$OPTARG" ]]
+		if [[ -n "$OPTARG" && "$PH_PIEH_CMD_OPTS" != "$OPTARG" ]]
 		then
 			$PH_SCRIPTS_DIR/confopts_ph.sh -p set -a PieHelper -o PH_PIEH_CMD_OPTS="$OPTARG"
 			export PH_PIEH_CMD_OPTS="$OPTARG"
@@ -79,7 +78,7 @@ do
                 >&2 printf "%12s%s\n" "" "- Allowed values for [menu] are \"Main\", \"Controllers\", \"Apps\", \"Advanced\", \"Settings\", \"PS3\", \"PS4\", \"XBOX360\", \"AppManagement\","
                 >&2 printf "%12s%s\n" "" "  or the name of any supported application"
                 >&2 printf "%15s%s\n" "" "- Specifying a value for [menu] is optional"
-                >&2 printf "%15s%s\n" "" "  The Main menu will be selected by default is no value is given"
+                >&2 printf "%15s%s\n" "" "  The current value of option PH_PIEH_CMD_OPTS will be selected by default is no value is given"
                 >&2 printf "%12s%s\n" "" "- This setting will be ignored if a persistent instance of $PH_RUNAPP is already active"
                 >&2 printf "\n"
                 OPTIND=$PH_OLDOPTIND ; OPTARG="$PH_OLDOPTARG" ; exit 1 ;;
