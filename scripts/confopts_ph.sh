@@ -18,12 +18,15 @@ typeset PH_RESOLVE=""
 typeset PH_RESULT="SUCCESS"
 typeset PH_TYPE=""
 typeset PH_USE_WORD=""
+typeset PH_OLDOPTARG="$OPTARG"
 typeset -i PH_ANSWER=0
 typeset -i PH_COUNT=0
 typeset -i PH_COUNT2=0
 typeset -i PH_RET_CODE=0
+typeset -i PH_OLDOPTIND=$OPTIND
 set -A OPTAR
 set -A VALAR
+OPTIND=1
 
 while getopts a:o:p:hgsdrmn PH_OPTION 2>/dev/null
 do
@@ -141,9 +144,14 @@ do
 		>&2 printf "%18s%s\n" "" "- Specifying -r is optional"
 		>&2 printf "%18s%s\n" "" "- Variables are not expanded by default"
 		>&2 printf "\n"
+		OPTARG="$PH_OLDOPTARG"
+		OPTIND=$PH_OLDOPTIND
 		exit 1 ;;
 	esac
 done
+OPTARG="$PH_OLDOPTARG"
+OPTIND=$PH_OLDOPTIND
+
 [[ -n "$PH_RESOLVE" && "$PH_ACTION" != @(get|prompt) ]] && (! confopts_ph.sh -h) && exit 1
 [[ -z "$PH_RESOLVE" ]] && PH_RESOLVE="no"
 (([[ -z "$PH_TYPE" ]]) && ([[ "$PH_ACTION" == "set" || "$PH_I_ACTION" == "set" ]])) && PH_TYPE="r"

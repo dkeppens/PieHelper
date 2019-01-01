@@ -22,6 +22,7 @@ typeset -i PH_APP_TTY=0
 typeset -l PH_APPL=""
 typeset -l PH_APPL2=""
 typeset -u PH_APPU=""
+OPTIND=1
 
 while getopts p:a:c:u:b:irh PH_OPTION 2>/dev/null
 do

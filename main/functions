@@ -1067,7 +1067,7 @@ if [[ "$PH_APP" != "LoginScript" ]]
 then
 	if [[ "$PH_OLD_WAS_SET" == "no" ]]
 	then
-		unset OLD_"$PH_OPTARG_VAR" OLD_PH_"$PH_APPU"_NUM_CTRL OLD_PH_"$PH_APPU"_USE_CTRL OLD_PH_"PH_$APPU"_CMD_OPTS
+		unset OLD_"$PH_OPTARG_VAR" OLD_PH_"$PH_APPU"_NUM_CTRL OLD_PH_"$PH_APPU"_USE_CTRL OLD_PH_"$PH_APPU"_CMD_OPTS
 	fi
 	unset -n PH_OLDVALUE PH_CURVALUE PH_OLDVALUE_CMD_OPTS PH_OLDVALUE_USE_CTRL PH_OLDVALUE_NUM_CTRL PH_CURVALUE_CMD_OPTS PH_CURVALUE_USE_CTRL PH_CURVALUE_NUM_CTRL
 	[[ "$PH_SUFFIX" != "" ]] && unset -n PH_OLDVALUE"$PH_SUFFIX" PH_CURVALUE"$PH_SUFFIX"
@@ -2328,7 +2328,7 @@ case $1 in start)
 	PH_RUNAPP_CMD=`sed "s/PH_TTY/$PH_RUNAPP_TTY/" <<<$PH_RUNAPP_CMD`
 	if [[ "$PH_RUNAPP" == "PieHelper" ]]
 	then
-		[[ -z "$3" ]] && PH_RUNAPP_CMD="ph_show_menu Main" || PH_RUNAPP_CMD="ph_show_menu $3"
+		PH_RUNAPP_CMD="ph_show_menu"
 	fi
 	printf "%8s%s\n" "" "--> Starting $PH_RUNAPP"
 	$PH_SUDO systemctl start getty@tty$PH_RUNAPP_TTY >/dev/null 2>&1

@@ -24,6 +24,7 @@ typeset PH_STRING=""
 typeset PH_DEBUGSTATE=""
 typeset PH_RESULT="SUCCESS"
 typeset -i PH_COUNT=0
+OPTIND=1
 
 while getopts hp:m:gcsru PH_OPTION 2>/dev/null
 do

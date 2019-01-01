@@ -21,6 +21,7 @@ typeset PH_PAIRED="no"
 typeset PH_TRUSTED=""
 typeset PH_RESULT="SUCCESS"
 typeset -i PH_COUNT=0
+OPTIND=1
 
 while getopts hp:t:c:n: PH_OPTION 2>/dev/null
 do

@@ -1,4 +1,3 @@
-* replace direct -m option + $3 stuff and possibly also -p for startpieh at least with PH_PIEH_CMD_OPTS
 * support for function mechanic in ALL *pieh*.sh scripts
 * support in ph_repair_pieh for protection against multiple instances of 1 app + verification whether all known info matches
 * changes for catching updated return result of ph_set_option function everywhere

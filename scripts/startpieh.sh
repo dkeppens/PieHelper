@@ -10,7 +10,6 @@ typeset PH_RUNAPP="PieHelper"
 typeset PH_EXCEPTION=""
 typeset PH_OPTION=""
 typeset PH_OLDOPTARG="$OPTARG"
-typeset PH_MENU=""
 typeset PH_INST=""
 typeset PH_FLAG=""
 typeset PH_i=""
@@ -44,7 +43,12 @@ do
 				exit 1
 			fi
 		fi
-		[[ -n "$OPTARG" ]] && PH_MENU="$OPTARG" ;;	
+		[[ -z "$OPTARG" ]] && OPTARG="Main"
+		if [[ "$PH_PIEH_CMD_OPTS" != "$OPTARG" ]]
+		then
+			$PH_SCRIPTS_DIR/confopts_ph.sh -p set -a PieHelper -o PH_PIEH_CMD_OPTS="$OPTARG"
+			export PH_PIEH_CMD_OPTS="$OPTARG"
+		fi ;;
                            *)
                 >&2 printf "%s%s%s\n" "Usage : start" "$PH_RUNAPPL.sh" " '-m ['menu']' '-p' | -h"
                 >&2 printf "\n"
@@ -84,7 +88,10 @@ done
 OPTIND=$PH_OLDOPTIND
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_MENU" ]] && PH_MENU="Main"
+if [[ -z "$PH_PIEH_CMD_OPTS" ]]
+then
+	$PH_SCRIPTS_DIR/confopts_ph.sh -p set -a PieHelper -o PH_PIEH_CMD_OPTS="Main" && export PH_PIEH_CMD_OPTS="Main"
+fi
 if [[ `$PH_SUDO cat /proc/$PPID/comm` != restart*sh ]]
 then
         ph_check_app_name -i -a "$PH_RUNAPP" || exit $?
@@ -124,12 +131,12 @@ printf "%8s%s\n" "" "--> Attempting to determine TTY for $PH_RUNAPP"
 PH_RUNAPP_TTY=`ph_get_tty_for_app $PH_RUNAPP`
 printf "%10s%s\n" "" "OK (Found)"
 printf "%8s%s\n" "" "--> Checking for $PH_RUNAPP"
-PH_INST=`pgrep start$PH_RUNAPPL.sh | sed "s/^$$$//g" | paste -d" " -s`
+PH_INST=`pgrep start"$PH_RUNAPPL".sh | sed "s/^$$$//g" | paste -d" " -s`
 if [[ -n "$PH_INST" && `$PH_SUDO cat /proc/$PPID/comm` != "restart$PH_RUNAPPL.sh" ]]
 then
 	if [[ "$PH_FLAG" != "pseudo" ]]
 	then
-		if pgrep -t tty$PH_RUNAPP_TTY -f start$PH_RUNAPPL.sh >/dev/null
+		if pgrep -t tty$PH_RUNAPP_TTY -f start"$PH_RUNAPPL".sh >/dev/null
 		then
 	        	if [[ `eval echo "\\$PH_\$PH_RUNAPPU"_PERSISTENT` == "no" ]]
 			then
@@ -144,22 +151,22 @@ then
 		else
         		printf "%10s%s\n" "" "OK (Found on pseudo-terminal) -> Stopping"
 			printf "%2s%s\n" "" "SUCCESS"
-			$PH_SCRIPTS_DIR/stop$PH_RUNAPPL.sh -p || exit $?
+			$PH_SCRIPTS_DIR/stop"$PH_RUNAPPL".sh -p || exit $?
 			printf "%s\n" "- Restarting $PH_RUNAPP on a TTY"
-			ph_run_app_action start "$PH_RUNAPP" "$PH_MENU"
+			ph_run_app_action start "$PH_RUNAPP"
 			[[ $? -eq 0 ]] && printf "%2s%s\n" "" "SUCCESS" || (printf "%2s%s\n" "" "FAILED" ; return 1) || exit $?
 		fi
 	else
-		if pgrep -t tty$PH_RUNAPP_TTY -f start$PH_RUNAPPL.sh >/dev/null
+		if pgrep -t tty$PH_RUNAPP_TTY -f start"$PH_RUNAPPL".sh >/dev/null
 		then
         		printf "%10s%s\n" "" "OK (Found on TTY$PH_RUNAPP_TTY) -> Stopping"
 			printf "%2s%s\n" "" "SUCCESS"
-			$PH_SCRIPTS_DIR/stop$PH_RUNAPPL.sh force || exit $?
+			$PH_SCRIPTS_DIR/stop"$PH_RUNAPPL".sh force || exit $?
 			printf "%s\n" "- Restarting $PH_RUNAPP on a pseudo-terminal"
 			printf "%8s%s\n" "" "--> Starting $PH_RUNAPP"
 			printf "%10s%s\n" "" "OK"
 			printf "%2s%s\n" "" "SUCCESS"
-			ph_show_menu Main
+			ph_show_menu "$PH_PIEH_CMD_OPTS"
 		else
 			if [[ `eval echo "\\$PH_\$PH_RUNAPPU"_PERSISTENT` == "no" ]]
 			then
@@ -176,13 +183,13 @@ else
         printf "%10s%s\n" "" "OK (Not found)"
 	if [[ "$PH_FLAG" == "" ]]
 	then
-		ph_run_app_action start "$PH_RUNAPP" "$PH_MENU"
+		ph_run_app_action start "$PH_RUNAPP"
 		[[ $? -eq 0 ]] && printf "%2s%s\n" "" "SUCCESS" || (printf "%2s%s\n" "" "FAILED" ; return 1) || exit $?
 	else
 		printf "%8s%s\n" "" "--> Starting $PH_RUNAPP"
 		printf "%10s%s\n" "" "OK"
 		printf "%2s%s\n" "" "SUCCESS"
-		ph_show_menu "$PH_MENU"
+		ph_show_menu "$PH_PIEH_CMD_OPTS"
 	fi
 fi
 exit 0

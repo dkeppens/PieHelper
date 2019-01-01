@@ -15,6 +15,7 @@ typeset PH_APP_NEWTTY=""
 typeset -l PH_APPL=""
 typeset -i PH_APP_TTY=0
 typeset -i PH_COUNT=0
+OPTIND=1
 
 while getopts hp:l:a:t: PH_OPTION 2>/dev/null
 do

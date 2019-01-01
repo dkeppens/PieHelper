@@ -15,6 +15,7 @@ typeset PH_GIT_COMMSG=""
 typeset PH_ACL_USERS=""
 PH_BUILD_DIR=$PH_SCRIPTS_DIR/../build
 PH_REVERSE=""
+OPTIND=1
 
 while getopts v:hgm: PH_OPTION 2>/dev/null
 do
