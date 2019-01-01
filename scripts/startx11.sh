@@ -13,8 +13,8 @@ typeset PH_OPTION=""
 typeset PH_OLDOPTARG="$OPTARG"
 typeset PH_i=""
 typeset -l PH_APPSL=""
-typeset -l PH_RUNAPPL=""
-typeset -u PH_RUNAPPU=""
+typeset -l PH_RUNAPPL=`echo $PH_RUNAPP | cut -c1-4`
+typeset -u PH_RUNAPPU=`echo $PH_RUNAPP | cut -c1-4`
 typeset -i PH_RUNAPP_TTY=0
 typeset -i PH_OLDOPTIND=$OPTIND
 OPTIND=1
@@ -22,11 +22,22 @@ OPTIND=1
 while getopts h PH_OPTION 2>/dev/null
 do
         case $PH_OPTION in *)
-                >&2 printf "%s\n" "Usage : startx11.sh | -h"
+                >&2 printf "%s%s%s\n" "Usage : start" "$PH_RUNAPPL" ".sh | -h"
                 >&2 printf "\n"
                 >&2 printf "%3s%s\n" "" "Where -h displays this usage"
-                >&2 printf "%9s%s\n" "" "- Running this script without parameters will start an instance of X11 on it's allocated TTY if one is not already running"
-                >&2 printf "%9s%s\n" "" "  If a persistent instance is already running, the TTY allocated to that instance will become the active TTY"
+                >&2 printf "%9s%s\n" "" "- Running this script without parameters will start a new instance of $PH_RUNAPP on it's allocated TTY"
+                >&2 printf "%12s%s\n" "" "- The first unallocated TTY will be automatically assigned to any application without a TTY that attempts to start"
+                >&2 printf "%12s%s\n" "" "- A TTY is only deallocated when an application is removed from PieHelper"
+                >&2 printf "%12s%s\n" "" "- If an application in need of a TTY attempts to start but all TTY's are already allocated, startup will fail"
+                >&2 printf "%12s%s\n" "" "- At any application start, all other running applications marked non-persistent, will first be stopped"
+                >&2 printf "%12s%s\n" "" "  Two exceptions to this rule exist :"
+                >&2 printf "%15s%s\n" "" "- PieHelper starting on a pseudo-terminal will never stop running applications"
+                >&2 printf "%15s%s\n" "" "- To avoid unnecessary actions for move scripts, stop actions performed directly by those will not be repeated"
+                >&2 printf "%15s%s\n" "" "  A move script is defined as a script named 'xxxx'to'yyyy'.sh where 'xxxx' is the shortname of the application it will stop"
+                >&2 printf "%15s%s\n" "" "  and 'yyyy' is the shortname of the application it will start"
+                >&2 printf "%12s%s\n" "" "- Additionally, the following rules apply to the start of $PH_RUNAPP :"
+                >&2 printf "%15s%s\n" "" "- If a persistent $PH_RUNAPP instance is already running on that TTY, that TTY will become the active TTY"
+                >&2 printf "%15s%s\n" "" "- If a non-persistent $PH_RUNAPP instance is already running on that TTY, startup will fail"
                 >&2 printf "\n"
                 OPTIND=$PH_OLDOPTIND ; OPTARG="$PH_OLDOPTARG" ; exit 1 ;;
         esac
@@ -56,7 +67,7 @@ do
 			[[ -n "$PH_APPSL" ]] && PH_APPSL="$PH_APPSL $PH_RUNAPPL" || PH_APPSL="$PH_RUNAPPL"
 		else
 			[[ "$PH_i" == "PieHelper" ]] && printf "%10s%s\n" "" "OK (Not found or running on a pseudo-terminal)" || \
-				printf "%10s%s\n" "" "OK (Not found)"
+								printf "%10s%s\n" "" "OK (Not found)"
 		fi
 	fi
 done

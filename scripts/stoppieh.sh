@@ -6,15 +6,15 @@
 
 #set -x
 
-typeset PH_RUNAPP="PieHelper"
+typeset PH_STOPAPP="PieHelper"
 typeset PH_PARAM="$1"
 typeset PH_OPTION=""
 typeset PH_INST=""
 typeset PH_FLAG=""
 typeset PH_i=""
 typeset PH_OLDOPTARG="$OPTARG"
-typeset -l PH_RUNAPPL=`echo $PH_RUNAPP | cut -c1-4`
-typeset -i PH_RUNAPP_TTY=0
+typeset -l PH_STOPAPPL=`echo $PH_STOPAPP | cut -c1-4`
+typeset -i PH_STOPAPP_TTY=0
 typeset -i PH_OLDOPTIND=$OPTIND
 OPTIND=1
 
@@ -23,12 +23,20 @@ do
         case $PH_OPTION in p)
 		PH_FLAG="pseudo" ;;
                            *)
-                >&2 printf "%s\n" "Usage : stop$PH_RUNAPPL.sh '-p' | -h"
+                >&2 printf "%s%s%s\n" "Usage : stop" "$PH_STOPAPPL.sh" " '-p' | -h"
                 >&2 printf "\n"
                 >&2 printf "%3s%s\n" "" "Where -h displays this usage"
-                >&2 printf "%9s%s\n" "" "-p allows setting the stop of $PH_RUNAPP to be executed on a pseudo-terminal instead of it's allocated TTY"
+                >&2 printf "%9s%s\n" "" "- Running this script without parameters will stop an instance of $PH_STOPAPP running on it's allocated TTY"
+                >&2 printf "%12s%s\n" "" "- A TTY is only deallocated when an application is removed from PieHelper"
+                >&2 printf "%12s%s\n" "" "- Additionally, the following rules apply to the stop of $PH_STOPAPP :"
+                >&2 printf "%15s%s\n" "" "- If a $PH_RUNAPP instance is running on a pseudo-terminal, stop will fail"
+                >&2 printf "%15s%s\n" "" "- If no active instance of $PH_RUNAPP can be found on it's allocated TTY or"
+                >&2 printf "%15s%s\n" "" "  the TTY for $PH_RUNAPP cannot be determined, stop will be skipped but succeed with a warning"
+                >&2 printf "%9s%s\n" "" "-p allows setting the stop of $PH_STOPAPP to be executed on a pseudo-terminal instead of it's allocated TTY"
                 >&2 printf "%12s%s\n" "" "- Specifying -p is optional"
-                >&2 printf "%9s%s\n" "" "- Running this script without parameters will stop an instance of $PH_RUNAPP running on it's allocated TTY"
+                >&2 printf "%12s%s\n" "" "- The following rules replace these for a normal stop :"
+                >&2 printf "%15s%s\n" "" "- If a $PH_STOPAPP instance is running on it's allocated TTY, stop will fail"
+                >&2 printf "%15s%s\n" "" "- If no active instance of $PH_STOPAPP can be found on a pseudo-terminal, stop will be skipped but succeed with a warning"
                 >&2 printf "\n"
                 OPTIND=$PH_OLDOPTIND ; OPTARG="$PH_OLDOPTARG" ; exit 1 ;;
         esac
@@ -38,39 +46,39 @@ OPTARG="$PH_OLDOPTARG"
 
 if [[ `$PH_SUDO cat /proc/$PPID/comm` != start*sh ]]
 then
-	ph_check_app_name -i -a "$PH_RUNAPP" || exit $?
+	ph_check_app_name -i -a "$PH_STOPAPP" || exit $?
 fi
-printf "%s\n" "- Disabling $PH_RUNAPP"
+printf "%s\n" "- Disabling $PH_STOPAPP"
 if [[ "$PH_FLAG" != "pseudo" ]]
 then
-	printf "%8s%s\n" "" "--> Attempting to determine TTY for $PH_RUNAPP"
-	PH_RUNAPP_TTY=`ph_get_tty_for_app $PH_RUNAPP`
-	if [[ $? -eq 1 && $PH_RUNAPP_TTY -ne 0 ]]
+	printf "%8s%s\n" "" "--> Attempting to determine TTY for $PH_STOPAPP"
+	PH_STOPAPP_TTY=`ph_get_tty_for_app $PH_STOPAPP`
+	if [[ $? -eq 1 && $PH_STOPAPP_TTY -ne 0 ]]
 	then
 		printf "%10s%s\n" "" "OK (Found)"
 	else
-		printf "%10s%s\n" "" "Warning : Could not determine TTY for $PH_RUNAPP"
+		printf "%10s%s\n" "" "Warning : Could not determine TTY for $PH_STOPAPP"
 		printf "%2s%s\n" "" "SUCCESS"
 		exit 0
 	fi
 fi
-printf "%8s%s\n" "" "--> Checking for $PH_RUNAPP"
+printf "%8s%s\n" "" "--> Checking for $PH_STOPAPP"
 PH_INST=`pgrep startpieh.sh | sed "s/^$PPID$//g" | paste -d" " -s`
-[[ -z "$PH_INST" ]] && printf "%10s%s\n" "" "Warning : $PH_RUNAPP not running" && printf "%2s%s\n" "" "SUCCESS" && return 0
-pgrep -t tty$PH_RUNAPP_TTY start$PH_RUNAPPL.sh >/dev/null
+[[ -z "$PH_INST" ]] && printf "%10s%s\n" "" "Warning : $PH_STOPAPP not running" && printf "%2s%s\n" "" "SUCCESS" && return 0
+pgrep -t tty$PH_STOPAPP_TTY start"$PH_STOPAPPL".sh >/dev/null
 case $?_$PH_FLAG in 0_)
 	printf "%10s%s\n" "" "OK (Found)"
-        [[ -z "$1" && `$PH_SUDO cat /proc/$PPID/comm` != @(start*sh|+(?)to+(?).sh|restart!($PH_RUNAPPL).sh) ]] && \
+        [[ -z "$1" && `$PH_SUDO cat /proc/$PPID/comm` != @(start*sh|+(?)to+(?).sh|restart!($PH_STOPAPPL).sh) ]] && \
                         PH_PARAM="force"
-	[[ `tty` == "/dev/tty$PH_RUNAPP_TTY" ]] && PH_PARAM="force"
-	ph_run_app_action stop "$PH_RUNAPP" $PH_PARAM || (printf "%2s%s\n" "" "FAILED" ; return 1) || exit $? ;;
+	[[ `tty` == "/dev/tty$PH_STOPAPP_TTY" ]] && PH_PARAM="force"
+	ph_run_app_action stop "$PH_STOPAPP" $PH_PARAM || (printf "%2s%s\n" "" "FAILED" ; return 1) || exit $? ;;
 		    1_)
-	printf "%10s%s\n" "" "ERROR : $PH_RUNAPP currently running on a pseudo-terminal -> Use -p" && printf "%2s%s\n" "" "FAILED" && exit 1 ;;
+	printf "%10s%s\n" "" "ERROR : $PH_STOPAPP currently running on a pseudo-terminal -> Use -p" && printf "%2s%s\n" "" "FAILED" && exit 1 ;;
 	      0_pseudo)
-	printf "%10s%s\n" "" "ERROR : $PH_RUNAPP currently running on it's allocated TTY -> Don't use -p" && printf "%2s%s\n" "" "FAILED" && exit 1 ;;
+	printf "%10s%s\n" "" "ERROR : $PH_STOPAPP currently running on it's allocated TTY -> Don't use -p" && printf "%2s%s\n" "" "FAILED" && exit 1 ;;
 	      1_pseudo)
 	printf "%10s%s\n" "" "OK (Found)"
-	printf "%8s%s\n" "" "--> Stopping $PH_RUNAPP"
+	printf "%8s%s\n" "" "--> Stopping $PH_STOPAPP"
 	for PH_i in $PH_INST
 	do
 		kill $PH_i

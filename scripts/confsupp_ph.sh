@@ -63,10 +63,10 @@ do
                 >&2 printf "\n"
                 >&2 printf "%3s%s\n" "" "Where -h displays this usage"
                 >&2 printf "%9s%s\n" "" "-p specifies the action to take"
-                >&2 printf "%12s%s\n" "" "\"inst\" allows installing and adding an out-of-scope application [instapp] with a package [instpkg]"
-		>&2 printf "%19s%s\n" "" "to PieHelper under account [instusr] with a start command [instcmd]"
+                >&2 printf "%12s%s\n" "" "\"inst\" allows installing an out-of-scope application [instapp] with a package [instpkg]"
+		>&2 printf "%19s%s\n" "" "and integrate it with PieHelper under account [instusr] and with start command [instcmd]"
                 >&2 printf "%15s%s\n" "" "- A maximum of 5 out-of-scope applications can be added"
-                >&2 printf "%15s%s\n" "" "-a allows specifying an application name [instapp]"
+                >&2 printf "%15s%s\n" "" "-a allows specifying an application name for [instapp]"
                 >&2 printf "%18s%s\n" "" "- The first four letters should be a case-insensitive unique identifier for any new application"
                 >&2 printf "%15s%s\n" "" "-b allows specifying a packagename [instpkg]"
                 >&2 printf "%18s%s\n" "" "- A package is a requirement for out-of-scope applications"
@@ -103,12 +103,15 @@ case $PH_ACTION in inst)
 		    rem)
 	ph_check_app_name -s -a "$PH_APP" || exit $? ;;
 esac
-if ((! ph_show_pkg_info $PH_APP_PKG) && ([[ "$PH_ACTION" == @(inst|rem) ]]))
+if (([[ "$PH_ACTION" == "inst" ]]) || ([[ -n "$PH_APP_PKG" && "$PH_ACTION" == "rem" ]]))
 then
-	[[ "$PH_ACTION" == "inst" ]] && printf "%s\n" "- Adding a new out-of-scope application $PH_APP" || \
-					printf "%s\n" "- Removing out-of-scope application $PH_APP" || \
-	printf "%2s%s\n" "" "FAILED : Invalid package"
-	exit 1
+	if ! ph_show_pkg_info $PH_APP_PKG
+	then
+		[[ "$PH_ACTION" == "inst" ]] && printf "%s\n" "- Adding a new out-of-scope application $PH_APP" || \
+					printf "%s\n" "- Removing out-of-scope application $PH_APP"
+		printf "%2s%s\n" "" "FAILED : Invalid package"
+		exit 1
+	fi
 fi
 case $PH_ACTION in inst)
 		printf "%s\n" "- Running some checks"
@@ -301,7 +304,17 @@ EOF
 			PH_APPL2=`echo $PH_APP2 | cut -c1-4`
 			for PH_i in 1 2
 			do
-				cp -p $PH_FILES_DIR/MoveScript.template $PH_SCRIPTS_DIR/"$PH_APPL"to"$PH_APPL2".sh
+				if [[ "$PH_APPL" != "pieh" ]]
+				then
+					if [[ "$PH_APPL2" == "pieh" ]]
+					then
+						cp -p $PH_FILES_DIR/MovetoPieHScript.template $PH_SCRIPTS_DIR/"$PH_APPL"to"$PH_APPL2".sh
+					else
+						cp -p $PH_FILES_DIR/MoveScript.template $PH_SCRIPTS_DIR/"$PH_APPL"to"$PH_APPL2".sh
+					fi
+				else
+					cp -p $PH_FILES_DIR/MovefromPieHScript.template $PH_SCRIPTS_DIR/"$PH_APPL"to"$PH_APPL2".sh
+				fi
 				sed "s/#PH_APPL#/$PH_APPL/;s/#PH_APP#/$PH_APP/;s/#PH_APPL2#/$PH_APPL2/;s/#PH_APP2#/$PH_APP2/" $PH_SCRIPTS_DIR/"$PH_APPL"to"$PH_APPL2".sh >/tmp/"$PH_APPL"_to_tmp
 				[[ $? -eq 0 ]] && mv /tmp/"$PH_APPL"_to_tmp $PH_SCRIPTS_DIR/"$PH_APPL"to"$PH_APPL2".sh
 				PH_TMP="$PH_APP" ; PH_APP="$PH_APP2" ; PH_APP2="$PH_TMP"
@@ -313,7 +326,7 @@ EOF
 		printf "%8s%s\n" "" "--> Adding $PH_APP to supported applications configuration file"
 		echo -e "$PH_APP\t$PH_APP_CMD" >>$PH_CONF_DIR/supported_apps
 		printf "%10s%s\n" "" "OK"
-		printf "%8s%s\n" "" "--> Adding $PH_APP to installed applications configuration file"
+		printf "%8s%s\n" "" "--> Adding $PH_APP to integrated applications configuration file"
 		echo -e "$PH_APP\t$PH_APP_USER\tyes\t-" >>$PH_CONF_DIR/installed_apps
 		printf "%10s%s\n" "" "OK"
 		printf "%8s%s\n" "" "--> Adding user functions"
@@ -335,10 +348,10 @@ EOF
 		nawk -v app=^"$PH_APP"$ '$1 ~ app { next } { print }' $PH_CONF_DIR/supported_apps >/tmp/supported_apps_tmp
 		[[ $? -eq 0 ]] && (printf "%10s%s\n" "" "OK" ; mv /tmp/supported_apps_tmp $PH_CONF_DIR/supported_apps) || \
 					(printf "%10s%s\n" "" "ERROR : Could not remove $PH_APP from supported applications configuration file" ; return 1) || exit $?
-		printf "%8s%s\n" "" "--> Removing $PH_APP from installed applications configuration file"
+		printf "%8s%s\n" "" "--> Removing $PH_APP from integrated applications configuration file"
 		nawk -v app=^"$PH_APP"$ '$1 ~ app { next } { print }' $PH_CONF_DIR/installed_apps >/tmp/installed_apps_tmp
 		[[ $? -eq 0 ]] && (printf "%10s%s\n" "" "OK" ; mv /tmp/installed_apps_tmp $PH_CONF_DIR/installed_apps) || \
-					(printf "%10s%s\n" "" "ERROR : Could not remove $PH_APP from installed applications configuration file" ; return 1) || exit $?
+					(printf "%10s%s\n" "" "ERROR : Could not remove $PH_APP from integrated applications configuration file" ; return 1) || exit $?
 		printf "%8s%s\n" "" "--> Removing menu item"
 		rm $PH_FILES_DIR/menus/$PH_APP.lst 2>/dev/null
 		printf "%10s%s\n" "" "OK"

@@ -46,10 +46,10 @@ do
 		fi
 		[[ -n "$OPTARG" ]] && PH_MENU="$OPTARG" ;;	
                            *)
-                >&2 printf "%s\n" "Usage : start$PH_RUNAPPL.sh '-m ['menu']' '-p' | -h"
+                >&2 printf "%s%s%s\n" "Usage : start" "$PH_RUNAPPL.sh" " '-m ['menu']' '-p' | -h"
                 >&2 printf "\n"
                 >&2 printf "%3s%s\n" "" "Where -h displays this usage"
-                >&2 printf "%9s%s\n" "" "- Running this script without parameters will start an instance of $PH_RUNAPP on it's allocated TTY"
+                >&2 printf "%9s%s\n" "" "- Running this script without parameters will start a new instance of $PH_RUNAPP on it's allocated TTY"
                 >&2 printf "%12s%s\n" "" "- The first unallocated TTY will be automatically assigned to any application without a TTY that attempts to start"
                 >&2 printf "%12s%s\n" "" "- A TTY is only deallocated when an application is removed from PieHelper"
                 >&2 printf "%12s%s\n" "" "- If an application in need of a TTY attempts to start but all TTY's are already allocated, startup will fail"
@@ -57,9 +57,8 @@ do
                 >&2 printf "%12s%s\n" "" "  Two exceptions to this rule exist :"
                 >&2 printf "%15s%s\n" "" "- PieHelper starting on a pseudo-terminal will never stop running applications"
                 >&2 printf "%15s%s\n" "" "- To avoid unnecessary actions for move scripts, stop actions performed directly by those will not be repeated"
-                >&2 printf "%12s%s\n" "" "  One exception is the application just stopped by actions of our calling script if that script was a move script"
-                >&2 printf "%12s%s\n" "" "  A move script is defined as a script named 'xxxx'to'yyyy'.sh where 'xxxx' is the shortname of the application stopped"
-		>&2 printf "%12s%s\n" "" "  and 'yyyy' is the shortname of the application we're starting on behalf of the calling move script"
+                >&2 printf "%15s%s\n" "" "  A move script is defined as a script named 'xxxx'to'yyyy'.sh where 'xxxx' is the shortname of the application it will stop"
+                >&2 printf "%15s%s\n" "" "  and 'yyyy' is the shortname of the application it will start"
                 >&2 printf "%12s%s\n" "" "- Additionally, the following rules apply to the start of $PH_RUNAPP :" 
                 >&2 printf "%15s%s\n" "" "- If a persistent $PH_RUNAPP instance is already running on that TTY, that TTY will become the active TTY"
                 >&2 printf "%15s%s\n" "" "- If a non-persistent $PH_RUNAPP instance is already running on that TTY, startup will fail"
