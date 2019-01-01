@@ -26,3 +26,4 @@ PH_CTRL_TYPE:PS3, PS4 or XBOX360:$PH_OPTARG_VAL == @(PS3|PS4|XBOX360)
 PH_CTRL_BLUE_ADAPT:a valid mac address or none:`$(ph_check_mac_validity $PH_OPTARG_VAL) echo $?` -eq 0
 PH_TRAL_CIFS_SRV:a valid ipv4 address or an empty string:`$(ph_check_ip_validity $PH_OPTARG_VAL) echo $?` -eq 0
 PH_TRAL_CIFS_SRV:a valid ipv4 address or an empty string:`$(ph_check_ip_validity $PH_OPTARG_VAL) echo $?` -eq 0
+PH_TRAL_CIFS_SRV:a valid ipv4 address or an empty string:`$(ph_check_ip_validity $PH_OPTARG_VAL) echo $?` -eq 0

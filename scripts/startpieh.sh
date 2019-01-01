@@ -77,8 +77,9 @@ do
                 >&2 printf "%12s%s\n" "" "- Specifying -m is optional"
                 >&2 printf "%12s%s\n" "" "- Allowed values for [menu] are \"Main\", \"Controllers\", \"Apps\", \"Advanced\", \"Settings\", \"PS3\", \"PS4\", \"XBOX360\", \"AppManagement\","
                 >&2 printf "%12s%s\n" "" "  or the name of any supported application"
-                >&2 printf "%15s%s\n" "" "- Specifying a value for [menu] is optional"
-                >&2 printf "%15s%s\n" "" "  The current value of option PH_PIEH_CMD_OPTS will be selected by default is no value is given"
+                >&2 printf "%15s%s\n" "" "- By default, the current value of option PH_PIEH_CMD_OPTS will be used"
+                >&2 printf "%18s%s\n" "" "- If PH_PIEH_CMD_OPTS has no value, it will be set to 'Main'"
+                >&2 printf "%15s%s\n" "" "- If an empty string is specified for [menu], the default will be used"
                 >&2 printf "%12s%s\n" "" "- This setting will be ignored if a persistent instance of $PH_RUNAPP is already active"
                 >&2 printf "\n"
                 OPTIND=$PH_OLDOPTIND ; OPTARG="$PH_OLDOPTARG" ; exit 1 ;;

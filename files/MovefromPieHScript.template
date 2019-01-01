@@ -1,12 +1,12 @@
 #!/bin/ksh
-# Move from PieHelper to #PH_APP# (by Davy Keppens on 04/10/2018)
-# Enable/Disable debug by running confpieh_ph.sh -d piehto#PH_APPL#.sh
+# Move from PieHelper to #PH_APP2# (by Davy Keppens on 04/10/2018)
+# Enable/Disable debug by running confpieh_ph.sh -d piehto#PH_APPL2#.sh
 
 . $(dirname $0)/../main/main.sh || exit $? && set +x
 
 #set -x
 
-typeset PH_RUNAPP="#PH_APP#"
+typeset PH_RUNAPP="#PH_APP2#"
 typeset PH_STOPAPP="PieHelper"
 typeset PH_OPTION=""
 typeset PH_FLAG=""
