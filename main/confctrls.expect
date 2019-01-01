@@ -2,33 +2,29 @@
 # Interactively configure bluetooth controllers (by Davy Keppens on 25/12/2018)
 
 set adaptid [lindex $argv 0];
-set ctrltype [lindex $argv 1];
-set ctrlid [lindex $argv 2];
-set ctrlpaired [lindex $argv 3];
-set ctrltrusted [lindex $argv 4];
+set ctrlid [lindex $argv 1];
+set ctrlpaired [lindex $argv 2];
+set ctrltrusted [lindex $argv 3];
+set ctrlpin [lindex $argv 4];
 
 spawn /usr/bin/bluetoothctl
 send "select $adaptid\r"
 expect "#"
-if { "$ctrltype" == "PS3" } {
-	if { "$ctrltrusted" == "no" } {
-		send "trust $ctrlid\r"
-		expect "trust succeeded"
-	}
+if { "$ctrltrusted" == "no" } {
+	send "trust $ctrlid\r"
+	expect "trust succeeded"
+}
+if { "$ctrlpin" != "" } {
 	send "agent on\r"
 	expect "Agent registered"
 	if { "$ctrlpaired" == "no" } {
 		set timeout 10
 		send "pair $ctrlid\r"
 		expect -re {.*Enter PIN code.*}
-		send "0000\r"
+		send "$ctrlpin\r"
 		expect "Pairing successful"
 	}
 } else {
-	if { "$ctrltrusted" == "no" } {
-		send "trust $ctrlid\r"
-		expect "trust succeeded"
-	}
 	if { "$ctrlpaired" == "no" } {
 		set timeout 10
 		send "pair $ctrlid\r"

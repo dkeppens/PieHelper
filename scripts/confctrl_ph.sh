@@ -242,10 +242,10 @@ case $PH_ACTION in help)
 		fi
 		printf "%10s%s\n" "" "OK"
 	fi
-	echo "#!`which expect` -f" >/tmp/$PH_i.expect
-	tail -n +2 $PH_MAIN_DIR/$PH_i.expect >>/tmp/$PH_i.expect
-	mv /tmp/$PH_i.expect $PH_MAIN_DIR/$PH_i.expect
-	$PH_SUDO chmod 750 $PH_MAIN_DIR/$PH_i.expect
+	echo "#!`which expect` -f" >/tmp/confctrls.expect
+	tail -n +2 $PH_MAIN_DIR/confctrls.expect >>/tmp/confctrls.expect
+	mv /tmp/confctrls.expect $PH_MAIN_DIR/confctrls.expect
+	$PH_SUDO chmod 750 $PH_MAIN_DIR/confctrls.expect
 	printf "%8s%s\n" "" "--> Displaying additionally required manual action"
 	printf "%10s%s\n" "" "OK"
 	printf "\n"
@@ -322,7 +322,8 @@ case $PH_ACTION in help)
 			fi
 			echo "$PH_PAIRED_CTRL" | grep "$PH_i" >/dev/null 2>&1 && PH_PAIRED="yes" || PH_PAIRED="no"
 			printf "%8s%s\n" "" "--> Connecting to $PH_TYPE controller ($PH_i)"
-			$PH_MAIN_DIR/confctrls.expect "$PH_CTRL_BLUE_ADAPT" "$PH_TYPE" "$PH_i" "$PH_PAIRED" "$PH_TRUSTED" >/dev/null 2>&1
+			typeset -n PH_CTRL_PIN=PH_CTRL_"$PH_TYPE"_PIN
+			$PH_MAIN_DIR/confctrls.expect "$PH_CTRL_BLUE_ADAPT" "$PH_i" "$PH_PAIRED" "$PH_TRUSTED" `echo $PH_CTRL_PIN` >/dev/null 2>&1
 			if [[ $? -eq 0 ]]
 			then
 				printf "%10s%s\n" "" "OK"
@@ -332,6 +333,7 @@ case $PH_ACTION in help)
 				printf "%10s%s\n" "" "ERROR : Could not connect to controller $PH_i"
 				[[ $PH_COUNT -eq 1 && PH_RESULT="SUCCESS" ]] && PH_RESULT="FAILED" || PH_RESULT="PARTIALLY FAILED"
 			fi
+			unset -n PH_CTRL_PIN
 			((PH_COUNT--))
 			[[ $PH_COUNT -eq 0 ]] && break 2
 		done

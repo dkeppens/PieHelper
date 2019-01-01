@@ -4,7 +4,7 @@
 * in interactive set for confopts_ph.sh : display for num_Ctrl and cmd_opts that changes will be reflected to the other
 * also for same : display notice about using PH_CTRL string when adding EBIDs to CMD_opts
 * changes for using CMD_OPTS myself for all apps, also in supported_apps configuration file for all but basic start command + watch special position for graphical stuff in that case
-* if start using kodi cmd_opts -> kodi num_ctrl can no longer be read-only
+* if start using kodi cmd_opts -> kodi num_ctrl can no longer be read-only + in general impact on way graph appls are handled
 * more dynamic linked behaviour between num_ctrl and cmd_opts option valid for all applications
  - num_ctrl not to 0
  - if num_ctrl change -> check cmd_opts for event-based input-devices (EBID) and change to reflect (add on add and remove on remove)
@@ -13,8 +13,6 @@
 								if going to 0, no change to num_ctrl
 			if no EBID -> reflect new number after add/remove to num_ctrl
  - with  * check if CMD_OPTS or NUM_CTRL empty, no auto change the corresponding one in ph_set_option
-* user options for pin codes for PS3 and PS4 bluetooth
-* change everywhere where multiple options need to be set at once to new method of ph_set_option or confopts_ph.sh
 * multiple options at once with confopts interactive for help and get and prompt too ?
 * change ph_set_option for more than 2 controllers with _num_ctrl and _cmd_opts still needed ?
 * check EVERYWHERE for always echo and don't quote namerefs !

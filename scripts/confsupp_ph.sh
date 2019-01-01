@@ -380,7 +380,7 @@ EOF
 		done
 		printf "%10s%s\n" "" "OK"
 		printf "%8s%s\n" "" "--> Removing options from options.allowed"
-		for PH_j in PH_`echo $PH_APPU`_CIFS_SHARE PH_`echo $PH_APPU`_PERSISTENT PH_`echo $PH_APPU`_CIFS_DIR PH_`echo $PH_APPU`_CIFS_SUBDIR PH_`echo $PH_APPU`_CIFS_MPT PH_`echo $PH_APPU`_USE_CTRL PH_`echo $PH_APPU`_NUM_CTRL
+		for PH_j in PH_`echo $PH_APPU`_CIFS_SHARE PH_`echo $PH_APPU`_CIFS_SRV PH_`echo $PH_APPU`_PERSISTENT PH_`echo $PH_APPU`_CIFS_DIR PH_`echo $PH_APPU`_CIFS_SUBDIR PH_`echo $PH_APPU`_CIFS_MPT PH_`echo $PH_APPU`_USE_CTRL PH_`echo $PH_APPU`_NUM_CTRL
 		do
 			nawk -F':' -v app=^"$PH_j"$ '$1 ~ app { next } { print }' $PH_FILES_DIR/options.allowed >/tmp/options_allowed_tmp
 			[[ $? -eq 0 ]] && mv /tmp/options_allowed_tmp $PH_FILES_DIR/options.allowed

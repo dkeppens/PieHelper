@@ -23,7 +23,6 @@ PH_PIEH_CIFS_SUBDIR:starting with / or empty:$PH_OPTARG_VAL == @(/*|)
 PH_X11_PERSISTENT:yes or no:$PH_OPTARG_VAL == @(yes|no)
 PH_CTRL_MAP:yes or no:$PH_OPTARG_VAL == @(yes|no)
 PH_CTRL_TYPE:PS3, PS4 or XBOX360:$PH_OPTARG_VAL == @(PS3|PS4|XBOX360)
+PH_CTRL_PIN_PS3:a four-character word or an empty string:$PH_OPTARG_VAL == @({4}(@([a-Z]|[0-9]))|)
+PH_CTRL_PIN_PS4:a four-character word or an empty string:$PH_OPTARG_VAL == @({4}(@([a-Z]|[0-9]))|)
 PH_CTRL_BLUE_ADAPT:a valid mac address or none:`$(ph_check_mac_validity $PH_OPTARG_VAL) echo $?` -eq 0
-PH_TRAL_CIFS_SRV:a valid ipv4 address or an empty string:`$(ph_check_ip_validity $PH_OPTARG_VAL) echo $?` -eq 0
-PH_TRAL_CIFS_SRV:a valid ipv4 address or an empty string:`$(ph_check_ip_validity $PH_OPTARG_VAL) echo $?` -eq 0
-PH_TRAL_CIFS_SRV:a valid ipv4 address or an empty string:`$(ph_check_ip_validity $PH_OPTARG_VAL) echo $?` -eq 0
