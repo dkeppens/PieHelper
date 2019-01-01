@@ -52,8 +52,8 @@ do
 		fi
 		if [[ -n "$PH_OPT" ]]
 		then
-			PH_OPT="$PH_OPT"':'"${OPTARG%%=*}"
-			PH_VALUE="$PH_VALUE"':'"${OPTARG##*=}"
+			PH_OPT="$PH_OPT'${OPTARG%%=*}"
+			PH_VALUE="$PH_VALUE'${OPTARG##*=}"
 		else
 			PH_OPT="${OPTARG%%=*}"
 			PH_VALUE="${OPTARG##*=}"
@@ -168,10 +168,10 @@ then
 fi
 if [[ "$PH_ACTION" == @(set|get|help) ]]
 then
-	OPTAR+=(`echo -n $PH_OPT | sed 's/:/ /g'`)
-	for PH_COUNT in {1..`echo $PH_VALUE | nawk -F':' '{ next } END { print NF }'`}
+	OPTAR+=(`echo -n $PH_OPT | sed "s/'/ /g"`)
+	for PH_COUNT in {1..`echo $PH_VALUE | nawk -F\' '{ next } END { print NF }'`}
 	do
-		VALAR+=("`echo $PH_VALUE | cut -d':' -f$PH_COUNT`")
+		VALAR+=("`echo $PH_VALUE | cut -d\' -f$PH_COUNT`")
 	done
 	for PH_COUNT in {0..`echo $((${#OPTAR[@]}-1))`}
 	do
