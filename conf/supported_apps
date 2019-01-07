@@ -1,6 +1,6 @@
-PieHelper       /home/dkeppens/PieHelper/scripts/startpieh.sh
-Bash	/bin/bash 
+PieHelper	/home/dkeppens/PieHelper/scripts/startpieh.sh
+Bash	/bin/bash
 Moonlight	/usr/local/bin/moonlight stream
-Kodi    /usr/bin/xinit /usr/bin/kodi-standalone -- :0 -nolisten tcp vtPH_TTY
+Kodi	/usr/bin/xinit /usr/bin/kodi-standalone -- :0 -nolisten tcp vtPH_TTY
 X11	/usr/bin/startx -- :1 vtPH_TTY
-Emulationstation        /usr/bin/emulationstation
+Emulationstation	/usr/bin/emulationstation

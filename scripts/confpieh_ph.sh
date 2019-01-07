@@ -8,6 +8,7 @@ then
 	. $(dirname $0)/../main/main.sh || exit $? && set +x
 else
 	export PH_CONF_DIR="$(dirname $0)/../conf"
+	export PH_FILES_DIR="$(dirname $0)/../files"
 	export PH_VERSION=`cat $PH_CONF_DIR/VERSION`
 	. $PH_FILES_DIR/../main/functions
 fi
