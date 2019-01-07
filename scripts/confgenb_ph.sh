@@ -30,7 +30,7 @@ do
 		PH_GIT_COMMSG="$OPTARG" ;;
 			   *)
 		>&2 printf "%s\n" "Usage : confgenb_ph.sh -h |"
-		>&2 printf "%23s%s\n" "" "'-g '-m'' |"
+		>&2 printf "%23s%s\n" "" "'[-g '-m']' |"
 		>&2 printf "%23s%s\n" "" "-v [version]"
 		>&2 printf "\n"
 		>&2 printf "%3s%s\n" "" "Where -h displays this usage"
