@@ -429,9 +429,9 @@ then
 else
 	if [[ "$PH_TYPE" == "integrated" ]]
 	then
-		printf "%2s%s\n" "" "FAILED : Unknown $PH_TYPE application \"$PH_APP\""
-		printf "%2s%s\n" "" "INFO   : Application is not yet installed or still undiscovered"
-		printf "%2s%s\n" "" "         Both the PieHelper menu and the 'confapps_ph.sh' tool can be used for either installing the application or running a discovery scan"
+		ph_check_app_name -s -a "$PH_RUNAPP" >/dev/null 2>&1
+		[[ $? -ne 0 ]] && printf "%2s%s\n" "" "FAILED : Unknown $PH_TYPE application \"$PH_APP\" -> Not a supported application" || \
+			(printf "%2s%s\n" "" "FAILED : Application is still uninstalled or undiscovered" ; printf "%11s%s\n" "" "Both the PieHelper menu and the 'confapps_ph.sh' tool can be used for either installing the application or running a discovery scan")
 	else
 		printf "%2s%s\n" "" "FAILED : Unknown $PH_TYPE application \"$PH_APP\""
 	fi
