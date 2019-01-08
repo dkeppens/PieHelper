@@ -1,15 +1,15 @@
-Start or switch to Bash:startbash.sh
-Stop Bash:stopbash.sh force
-Restart Bash:restartbash.sh
-Update Bash to the latest version (only if installed as a package):ph_update_pkg $PH_BASH_PKG_NAME
-List all available options for Bash:confopts_ph.sh -p list -a Bash
+Start or switch to Bash:startbash.sh | more
+Stop Bash:stopbash.sh force | more
+Restart Bash:restartbash.sh | more
+Update Bash to the latest version (only if installed as a package):ph_update_pkg $PH_BASH_PKG_NAME | more
+List all available options for Bash:confopts_ph.sh -p list -a Bash | more
 View the current value of Bash option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Bash -g
 View the current value of Bash option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Bash -g -r
 Change the value of read-write Bash option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Bash -s
 Change the value of read-write Bash option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Bash -s -r
 Display help for Bash option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Bash -d
 Display help for Bash option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Bash -d -r
-Display TTY currently allocated to Bash:confapps_ph.sh -p tty -a Bash
+Display TTY currently allocated to Bash:confapps_ph.sh -p tty -a Bash | more
 Move Bash to another TTY:confapps_ph.sh -p move -a Bash -t prompt
 Go to Main menu:ph_show_menu Main
 Go to Apps menu:ph_show_menu Apps

@@ -47,7 +47,7 @@ done
 OPTIND=$PH_OLDOPTIND
 OPTARG="$PH_OLDOPTARG"
 
-if [[ `fgconsole` -ne `ph_get_tty_for_app $PH_STOPAPP` ]]
+if [[ `$PH_SUDO fgconsole` -ne `ph_get_tty_for_app $PH_STOPAPP` ]]
 then
 	printf "%s\n" "- Disabling $PH_STOPAPP"
 	printf "%2s%s\n" "" "FAILED : $PH_STOPAPP not currently on foreground"

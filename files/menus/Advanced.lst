@@ -1,5 +1,5 @@
-Check all current PieHelper TTY configurations and attempt a repair where needed:confpieh_ph.sh -r
-List all OS-relevant PieHelper modules and their current debugstate:confpieh_ph.sh -p list
+Check all current PieHelper TTY configurations and attempt a repair where needed:confpieh_ph.sh -r | more
+List all OS-relevant PieHelper modules and their current debugstate:confpieh_ph.sh -p list | more
 Switch the debug state for one or more relevant PieHelper modules:confpieh_ph.sh -p debug -m prompt
 Discover supported applications and integrate them into PieHelper:confapps_ph.sh -p state
 Go to Main menu:ph_show_menu Main

@@ -1,9 +1,9 @@
 Go to PieHelper submenu:ph_show_menu PieHelper
-Go to Kodi submenu:ph_show_menu Kodi
-Go to Emulationstation submenu:ph_show_menu Emulationstation
 Go to Bash submenu:ph_show_menu Bash
-Go to X11 submenu:ph_show_menu X11
 Go to Moonlight submenu:ph_show_menu Moonlight
+Go to Kodi submenu:ph_show_menu Kodi
+Go to X11 submenu:ph_show_menu X11
+Go to Emulationstation submenu:ph_show_menu Emulationstation
 Go to AppManagement submenu:ph_show_menu AppManagement
 Go to Main menu:ph_show_menu Main
 Go to Advanced menu:ph_show_menu Advanced

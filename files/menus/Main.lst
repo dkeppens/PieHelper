@@ -1,4 +1,4 @@
-Update your system:ph_update_system
+Update your system:ph_update_system | more
 Reboot your system:$PH_SUDO init 6
 Open shell to CLI tools location:ph_open_shell_session
 Quit to shell (Stop PieHelper):break

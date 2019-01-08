@@ -70,7 +70,6 @@ case $?_$PH_FLAG in 0_)
 	printf "%10s%s\n" "" "OK (Found)"
         [[ -z "$1" && `$PH_SUDO cat /proc/$PPID/comm` != @(start*sh|+(?)to+(?).sh|restart!($PH_STOPAPPL).sh) ]] && \
                         PH_PARAM="force"
-	[[ `tty` == "/dev/tty$PH_STOPAPP_TTY" ]] && PH_PARAM="force"
 	ph_run_app_action stop "$PH_STOPAPP" $PH_PARAM || (printf "%2s%s\n" "" "FAILED" ; return 1) || exit $? ;;
 		    1_)
 	printf "%10s%s\n" "" "ERROR : $PH_STOPAPP currently running on a pseudo-terminal -> Use -p" && printf "%2s%s\n" "" "FAILED" && exit 1 ;;

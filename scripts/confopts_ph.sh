@@ -176,7 +176,7 @@ then
 	for PH_COUNT in {0..`echo $((${#OPTAR[@]}-1))`}
 	do
 		[[ "${OPTAR[$PH_COUNT]}" == "PH_PIEH_DEBUG" ]] && (printf "%s\n" "- Changing value for $PH_USE_WORD ${OPTAR[$PH_COUNT]}" ; \
-				printf "%2s%s\n" "" "FAILED : Module debug should be handled by confpieh_ph.sh" ; return 0) && exit 1 
+				printf "%2s%s\n" "" "FAILED : Module debug should be handled by 'confpieh_ph.sh'" ; return 0) && exit 1 
 		[[ "${OPTAR[$PH_COUNT]}" == "PH_PIEH_STARTAPP" ]] && (printf "%s\n" "- Changing value for $PH_USE_WORD ${OPTAR[$PH_COUNT]}" ; \
 				printf "%2s%s\n" "" "FAILED : The application to start by default on system boot should be handled by confapps_ph.sh -p start" ; return 0) && exit 1 
 		while ((! grep ^"${OPTAR[$PH_COUNT]}=" $PH_CONF_DIR/$PH_APP.conf >/dev/null 2>&1) && ([[ "${OPTAR[$PH_COUNT]}" != "all" && "$PH_ACTION" != @(prompt|list) ]]))
@@ -202,7 +202,7 @@ PH_COUNT=0
 case $PH_ACTION in get)
 		if [[ "$PH_OPT" == "all" ]]
 		then
-			for PH_OPT in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | cut -d'=' -f1 | paste -d" " -s`
+			(for PH_OPT in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | cut -d'=' -f1 | paste -d" " -s`
 			do
 				[[ "$PH_RESOLVE" == "yes" ]] && confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT" -r || \
 					confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT"
@@ -211,9 +211,9 @@ case $PH_ACTION in get)
 			do
 				[[ "$PH_RESOLVE" == "yes" ]] && confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT" -r || \
 					confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT"
-			done
+			done) | more
 		else
-			printf "%s\n" "- Displaying value for $PH_OPT_TYPE $PH_USE_WORD $PH_OPT"
+			(printf "%s\n" "- Displaying value for $PH_OPT_TYPE $PH_USE_WORD $PH_OPT"
 			typeset -n PH_OPTVAL="$PH_OPT"
 			if [[ "$PH_RESOLVE" == "yes" ]]
 			then
@@ -222,7 +222,7 @@ case $PH_ACTION in get)
 				printf "%2s%s\n" "" "'$PH_OPTVAL'"
 			fi
 			printf "%2s%s\n" "" "$PH_RESULT"
-			unset -n PH_OPTVAL
+			unset -n PH_OPTVAL) | more
 		fi
 		unset OPTAR VALAR
 		exit 0 ;;
@@ -249,29 +249,29 @@ case $PH_ACTION in get)
 		  help)
 		if [[ "$PH_OPT" == "all" ]]
 		then
-			for PH_OPT in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | cut -d'=' -f1 | paste -d" " -s`
+			(for PH_OPT in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | cut -d'=' -f1 | paste -d" " -s`
 			do
 				confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
 			done
 			for PH_OPT in `nawk 'BEGIN { ORS = " " } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}' $PH_CONF_DIR/$PH_APP.conf`
 			do
 				confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
-			done
+			done) | more
 		else
-			printf "%s\n" "- Displaying help for $PH_OPT_TYPE $PH_USE_WORD $PH_OPT"
+			(printf "%s\n" "- Displaying help for $PH_OPT_TYPE $PH_USE_WORD $PH_OPT"
 			printf "%2s%s\n" "" "$PH_RESULT"
 			printf "\n"
 			ph_print_bannerline
 			printf "\n"
 			if [[ "$PH_OPT_TYPE" == "read-write" ]]
 			then
-				nawk -F'#' -v opt=^"$PH_OPT=" '$1 ~ opt { print $2 ; getline ; while ($1!~/^PH_/ && $0!~/^$/) { print $2 ; getline } ; exit }' $PH_CONF_DIR/$PH_APP.conf 
+				nawk -F'#' -v opt=^"$PH_OPT=" '$1 ~ opt { print $2 ; getline ; while ($1!~/^PH_/ && $0!~/^$/) { print $2 ; getline } ; exit }' $PH_CONF_DIR/$PH_APP.conf
 			else
 				nawk -F'#' -v opt=" typeset .* $PH_OPT=" '$1 ~ opt { print $2 ; getline ; while ($1!~/^PH_|^\[\[/ && $0!~/^$/) { print $2 ; getline } ; exit }' $PH_CONF_DIR/$PH_APP.conf
 			fi
 			printf "\n"
 			ph_print_bannerline
-			printf "\n"
+			printf "\n") | more
 		fi
 		unset OPTAR VALAR
 		exit 0 ;;

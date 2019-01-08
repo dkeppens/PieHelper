@@ -1,7 +1,7 @@
-PieHelper is an extensible, user-friendly, scripted software suite for Raspberry Pi,
+PieHelper is an extensible, user-friendly, gaming and media-oriented scripted software suite for Raspberry Pi,
 mostly intended for novice linux users that :
 
-* allows for easy CLI and text menu-based management of the RaspBerry's most-used applications :
+* allows for easy CLI and text menu-based management of the RaspBerry's most-used media and gaming-related applications :
 	- installation
 	- uninstallation
 	- basic configuration
@@ -34,6 +34,8 @@ mostly intended for novice linux users that :
 
 PieHelper binds each application to a specific TTY and uses autologin functionality at TTY selection 
 
+Since PieHelper creates custom TTY configurations, any pre-existing TTY customizations should be removed before configuring PieHelper
+
 Developed exclusively with ksh93, no other prerequisites exist except for the following assumptions :
 
 	- systemd as a service management facility
@@ -44,12 +46,10 @@ and compatibility should therefore be out-of-the-box for Pi-based Raspbian, Noob
 
 Currently however, only the official Raspbian distro has been tested
 
-Note : PieHelper is still under active development and certainly NOT bugfree
-
 Feedback, bug reports and feature requests can be reported on the official github repository
 or emailed to the address listed below
 
 OSMC support is planned
 
-PieHelper written by Davy Keppens on 04/10/08
+PieHelper written by Davy Keppens on 04/10/18
 PieHelper.official@gmail.com

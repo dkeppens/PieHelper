@@ -1,16 +1,16 @@
 Stop PieHelper (Quit to shell):break
-Uninstall PieHelper:confpieh_ph.sh -s
+Uninstall PieHelper:confpieh_ph.sh -s | more
 Configure PieHelper:confpieh_ph.sh -c
-Unconfigure PieHelper:confpieh_ph.sh -u
-List PieHelper current state and version:confpieh_ph.sh -g
-List all available options for PieHelper:confopts_ph.sh -p list -a PieHelper
+Unconfigure PieHelper:confpieh_ph.sh -u | more
+List PieHelper current state and version:confpieh_ph.sh -g | more
+List all available options for PieHelper:confopts_ph.sh -p list -a PieHelper | more
 View the current value of PieHelper option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a PieHelper -g
 View the current value of PieHelper option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a PieHelper -g -r
 Change the value of read-write PieHelper option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a PieHelper -s
 Change the value of read-write PieHelper option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a PieHelper -s -r
 Display help for PieHelper option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a PieHelper -d
 Display help for PieHelper option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a PieHelper -d -r
-Display TTY currently allocated to PieHelper:confapps_ph.sh -p tty -a PieHelper
+Display TTY currently allocated to PieHelper:confapps_ph.sh -p tty -a PieHelper | more
 Go to Main menu:ph_show_menu Main
 Go to Apps menu:ph_show_menu Apps
 Return to previous screen:return

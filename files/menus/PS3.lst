@@ -1,5 +1,5 @@
-View help on how to configure a usb PS3 controller:confctrl_ph.sh -p help -c usb -t PS3
-View help on how to configure a bluetooth PS3 controller:confctrl_ph.sh -p help -c bluetooth -t PS3
+View help on how to configure a usb PS3 controller:confctrl_ph.sh -p help -c usb -t PS3 | more
+View help on how to configure a bluetooth PS3 controller:confctrl_ph.sh -p help -c bluetooth -t PS3 | more
 Interactively configure bluetooth PS3 controller(s):confctrl_ph.sh -p prompt -t PS3
 Go to Main menu:ph_show_menu Main
 Go to Controllers menu:ph_show_menu Controllers

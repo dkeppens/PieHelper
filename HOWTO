@@ -1,6 +1,6 @@
 - PieHelper works by binding a supported application to a specific TTY
   When switching to a TTY, the application bound to it will autostart
-  Therefore, if you have already made custom setups to your system TTY's,
+  Therefore, if you already have pre-existing custom TTY setups, 
   they should be removed before configuring and using PieHelper
 - PieHelper will detect the initial run and automatically start configuration
   Alternatively, running confpieh_ph.sh -c will also start configure mode for PieHelper
@@ -19,25 +19,31 @@
 				   - Display the current state and version of PieHelper
 				   - List all available PieHelper modules relevant to your OS and their current debugstate 
 				   - Toggle the debugstate of any relevant PieHelper modules
+				   - For more information about all options available for confpieh_ph.sh, run 'confpieh_ph.sh -h'
 	* confapps_ph.sh : used to - List all applications currently integrated with PieHelper
 				   - List all applications currently supported by PieHelper
 				   - List the application currently configured as the application to start by default on system boot
 				   - List any integrated applications currently running
 				   - List all of the above
 				   - List all supported applications and their allocated TTY
-				   - Install and integrate a supported application
+				   - Install and integrate a supported application. Configuration for an application will automatically be run after it's installation
 				   - Remove an application from PieHelper as an integrated application and optionally uninstall it
 				   - Configure an integrated application
 				   - Move an integrated appplication from it's allocated to a different TTY
 				   - Configure an integrated application as the default application to start on system boot 
 				   - Detect the presence of any supported applications on your system and integrate them into PieHelper
+				   - For more information about all options available for confapps_ph.sh, run 'confapps_ph.sh -h'
 	* confopts_ph.sh : used to - View and change the value of options of any supported application
 				   - View the help for options of any supported application
+				   - For more information about all options available for confopts_ph.sh, run 'confopts_ph.sh -h'
 	* confsupp_ph.sh : used to - Add out-of-scope applications as supported and integrated applications
 				   - Remove previously out-of-scope applications from PieHelper as supported and integrated applications and optionally uninstall them
+				   - For more information about all options available for confsupp_ph.sh, run 'confsupp_ph.sh -h'
 	* confctrl_ph.sh : used to - Display manual configuration steps for different controller types and connection methods
 				   - Interactively configure bluetooth controllers
+				   - For more information about all options available for confctrl_ph.sh, run 'confctrl_ph.sh -h'
 	* confgenb_ph.sh : used to - Generate a new tar build archive, optionally create a timestamped backup and synchronize all changes to the remote github master repository
+				   - For more information about all options available for confgenb_ph.sh, run 'confgenb_ph.sh -h'
 	* startXXX.sh    : used to - Start an integrated application with shortname XXXX (shortnames are defined as a unique identifier consisting of maximum the 4 first letters of an application name)
 				   - On any integrated application start, any other integrated applications marked as non-persistent (read more on persistence below) will first be stopped
 				   - The startscript for PieHelper (startpieh.sh) can be launched with the following parameters :
@@ -46,17 +52,38 @@
 				     		     Starting PieHelper without -p will always stop any instances running on a remote pseudo-terminal
 						-m : To start PieHelper in a specific menu or submenu instead of the default Main menu
 						-h : To show help
+	* XXXXtoYYYY.sh  : used to - Move from one application with shortname XXXX to another with shortname YYYY. These scripts will from now on be referred to as 'movescripts'
+				   - Movescripts always take persistence settings into account
+				   - Movescripts that move to 'PieHelper' can be launched with the following parameters :
+						-p : To start the PieHelper menu on a remote pseudo-terminal instead of it's allocated TTY
+	          				     Using this option will prevent other running integrated applications being stopped first with the sole exception of other PieHelper instances running on a TTY
+				     		     Starting PieHelper without -p will always stop any instances running on a remote pseudo-terminal
+						-m : To start PieHelper in a specific menu or submenu instead of the default Main menu
+						-h : To show help
+				   - Movescripts that move from 'PieHelper' can be launched with the following parameters :
+						-p : To stop an instance of PieHelper currently running on a pseudo-terminal instead of it's allocated TTY
+						     This option should not be used if PieHelper is running on it's allocated TTY
+						-h : To show help
 	* stopXXXX.sh    : used to - Stop an integrated application with shortname XXXX
 				   - The stopscript for PieHelper (stoppieh.sh) can be launched with the following parameters :
 						-p : To stop an instance of PieHelper currently running on a pseudo-terminal instead of it's allocated TTY
 						     This option should not be used if PieHelper is running on it's allocated TTY
 						-h : To show help
+				   - Stopscripts will ignore persistence when they are not started by another script
 	* restartXXXX.sh : used to - Restart an integrated application with shortname XXXX
+				   - Restartscripts will always ignore persistence
+				   - The restartscript for PieHelper (restartpieh.sh) can be launched with the following parameters :
+						-p : To stop and start an instance of PieHelper currently running on a pseudo-terminal instead of it's allocated TTY
+	          				     Using this option will prevent other running integrated applications being stopped first on PieHelper start
+				     		     Starting PieHelper without -p will always stop any instances running on a remote pseudo-terminal
+						-m : To start PieHelper in a specific menu or submenu instead of the default Main menu
+						-h : To show help
 	* listmoon_ph.sh : used to - List all shared games for Moonlight
 	* listblue_ph.sh : used to - list available bluetooth adapters and the adapter currently configured as default
 
 - The -h parameter for showing help is available for all tools, not just the ones specific to PieHelper
-  Running the tools without any parameters will execute their default function
+  More detailed information about the behaviour of a specific script will be displayed when using '-h'
+  Running the tools without any parameters or with any combination of allowed parameters other than '-h' will execute their default function
 - A word on TTY switching and flexibility : 
 
 	* The PieHelper menu offers most, but not all of the options available through the CLI tools
@@ -66,15 +93,19 @@
 	     This implies remembering the TTY number allocated to the application you want to switch to
 	     For convenience however, the PieHelper menu will always be allocated to TTY 2 while TTY 1 stays reserved for system console messages
 	   - Some applications will intercept the TTY switch keystroke combination when running and need to be exited before the new TTY will become visible
-	     Moonlight is an example of such an application since all key strokes will be sent back through the stream and interpreted by the remote host
+	     Moonlight and Kodi are examples of such applications
 	     Moonlight streaming can be quit by typing 'Ctrl+Alt+Shift+Q' or exiting your game manually
+	     Kodi can be exited from the Kodi GUI
+	   - To avoid persistence related issues with applications rendering to an overlay (read more on persistence below), it is recommended not to use persistence for 'PieHelper'
 	* Using PieHelper, there is the option to mark an application as persistent
-	  This implies that the application will not be stopped when another starts (default behaviour) and such application will only ever be stopped
-	    if a direct stop or restart command is issued
-	  Some applications (e.g. Kodi, Emulationstation) do not render to the default frame buffer and will stay visible on foreground,
-	    even when switching to another TTY
-	  Never mark such applications as persistent to prevent them from overlaying the output of the default frame buffer
+	  This implies that the application will not be stopped when another starts (default behaviour) or when using a movescript to switch from that application to another
+	    Such applications will only ever be stopped if a direct stop or restart command is issued
+	  Some applications do not render to the default frame buffer and will stay visible on foreground, even when switching to another TTY
+	    Never mark such applications as persistent nor the applications to move to when using movescripts to prevent them from overlaying the output of the default frame buffer
+	    Moonlight, Emulationstation and Kodi are examples of such applications
 
 - To troubleshoot PieHelper functionality, attempt to run 'confpieh_ph.sh -r' or the corresponding menu option
-  If the issue remains, try unconfiguring and reconfiguring PieHelper
+  Alternatively, each PieHelper module (defined as either a script or a function) can be placed in debug mode by using 'confpieh_ph.sh' 
+  If the issue remains, try unconfiguring and reconfiguring PieHelper or open an issue on github
+  If required, i can also be contacted directly on the official email address for PieHelper listed in the README.md file
 - Enjoy !

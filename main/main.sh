@@ -71,7 +71,7 @@ PH_VERSION=`cat $PH_CONF_DIR/VERSION`
 
 if [[ -f $PH_FILES_DIR/first_run ]]
 then
-	ph_configure_pieh || exit 1
+	ph_configure_pieh && exit 0 || exit 1
 fi
 
 # Setting PH_RUN_USER and PH_ALLOW_USERS

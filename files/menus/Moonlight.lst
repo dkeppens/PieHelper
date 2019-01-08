@@ -1,19 +1,19 @@
-Start or switch to Moonlight:startmoon.sh
-Stop Moonlight:stopmoon.sh force
-Restart Moonlight:restartmoon.sh
+Start or switch to Moonlight:startmoon.sh | more
+Stop Moonlight:stopmoon.sh force | more
+Restart Moonlight:restartmoon.sh | more
 Install Moonlight:confapps_ph.sh -p int -a Moonlight
-Uninstall Moonlight:confapps_ph.sh -p rem -a Moonlight
+Uninstall Moonlight:confapps_ph.sh -p rem -a Moonlight | more
 Configure Moonlight (pair and set all options):confapps_ph.sh -p conf -a Moonlight
 Update Moonlight to the latest version (only if installed as a package):ph_update_pkg $PH_MOON_PKG_NAME
 List all games currently shared by Moonlight:listmoon_ph.sh
-List all available options for Moonlight:confopts_ph.sh -p list -a Moonlight
+List all available options for Moonlight:confopts_ph.sh -p list -a Moonlight | more
 View the current value of Moonlight option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Moonlight -g
 View the current value of Moonlight option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Moonlight -g -r
 Change the value of read-write Moonlight option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Moonlight -s
 Change the value of read-write Moonlight option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Moonlight -s -r
 Display help for Moonlight option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Moonlight -d
 Display help for Moonlight option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Moonlight -d -r
-Display TTY currently allocated to Moonlight:confapps_ph.sh -p tty -a Moonlight
+Display TTY currently allocated to Moonlight:confapps_ph.sh -p tty -a Moonlight | more
 Move Moonlight to another TTY:confapps_ph.sh -p move -a Moonlight -t prompt
 Go to Main menu:ph_show_menu Main
 Go to Apps menu:ph_show_menu Apps

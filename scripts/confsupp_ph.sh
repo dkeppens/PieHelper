@@ -436,7 +436,7 @@ EOF
 			done
 			printf "%10s%s\n" "" "OK"
 			printf "%2s%s\n" "" "SUCCESS"
-			confsupp_ph.sh -p inst -a "$PH_APP" -c "$PH_APP_CMD" -u "$PH_APP_USER" -b "$PH_APP_PKG"
+			confsupp_ph.sh -p inst -a "$PH_APP" -c "$PH_APP_CMD" -u "$PH_APP_USER" -b "$PH_APP_PKG" | more
 			exit $? ;;
 				   rem)
 			printf "%8s%s\n" "" "--> Please enter the package for $PH_APP (Optional)"
@@ -446,9 +446,9 @@ EOF
 			printf "%2s%s\n" "" "SUCCESS"
 			if [[ -z "$PH_APP_PKG" ]]
 			then
-				confsupp_ph.sh -p rem -a "$PH_APP"
+				confsupp_ph.sh -p rem -a "$PH_APP" | more
 			else
-				confsupp_ph.sh -p rem -a "$PH_APP" -b "$PH_APP_PKG"
+				confsupp_ph.sh -p rem -a "$PH_APP" -b "$PH_APP_PKG" | more
 			fi
 			exit $? ;;
 		esac ;;
