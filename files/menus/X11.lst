@@ -1,8 +1,9 @@
+Show X11 current state:ph_check_app_name -s -a X11 | more
 Start or switch to X11:startx11.sh | more
 Stop X11:stopx11.sh force | more
 Restart X11:restartx11.sh | more
-Install X11:confapps_ps.sh -p int -a X11 | more
-Uninstall X11:confapps_ph.sh -p rem -a X11 | more
+Install X11 and integrate with PieHelper:confapps_ps.sh -p int -a X11
+Remove X11 from PieHelper and uninstall:confapps_ph.sh -p rem -a X11
 Update X11 to the latest version (only if installed as a package):ph_update_pkg $PH_X11_PKG_NAME | more
 List all available options for X11:confopts_ph.sh -p list -a X11 | more
 View the current value of X11 option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a X11 -g

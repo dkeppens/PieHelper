@@ -177,21 +177,22 @@ case $PH_ACTION in inst)
 		fi
 		printf "%8s%s\n" "" "--> Adding a new menu item"
 		cat >$PH_FILES_DIR/menus/$PH_APP.lst <<EOF
-Start or switch to $PH_APP:start$PH_APPL.sh
-Stop $PH_APP:stop$PH_APPL.sh
-Restart $PH_APP:restart$PH_APPL.sh
-Install $PH_APP:confapps_ph.sh -p int -a $PH_APP
-Uninstall $PH_APP:confapps_ph.sh -p rem -a $PH_APP
-Configure $PH_APP:confapps_ph.sh -p conf -a $PH_APP
-Update $PH_APP to the latest version (only if installed as a package):ph_update_pkg \$PH_`echo $PH_APPU`_PKG_NAME
-List all available options for $PH_APP:confopts_ph.sh -p list -a $PH_APP
+Show $PH_APP current state:ph_check_app_name -s -a $PH_APP | more
+Start or switch to $PH_APP:start$PH_APPL.sh | more
+Stop $PH_APP:stop$PH_APPL.sh force | more
+Restart $PH_APP:restart$PH_APPL.sh | more
+Install $PH_APP and integrate with PieHelper:confapps_ph.sh -p int -a $PH_APP
+Remove $PH_APP from PieHelper and uninstall:confapps_ph.sh -p rem -a $PH_APP
+Configure $PH_APP (requires development from user):confapps_ph.sh -p conf -a $PH_APP
+Update $PH_APP to the latest version (only if installed as a package):ph_update_pkg \$PH_`echo $PH_APPU`_PKG_NAME | more
+List all available options for $PH_APP:confopts_ph.sh -p list -a $PH_APP | more
 View the current value of $PH_APP option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a $PH_APP -g
 View the current value of $PH_APP option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a $PH_APP -g -r
 Change the value of read-write $PH_APP option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a $PH_APP -s
 Change the value of read-write $PH_APP option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a $PH_APP -s -r
 Display help for $PH_APP option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a $PH_APP -d
 Display help for $PH_APP option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a $PH_APP -d -r
-Display TTY currently allocated to $PH_APP:confapps_ph.sh -p tty -a $PH_APP
+Display TTY currently allocated to $PH_APP:confapps_ph.sh -p tty -a $PH_APP | more
 Move $PH_APP to another TTY:confapps_ph.sh -p move -a $PH_APP -t prompt
 Go to Main menu:ph_show_menu Main
 Go to Apps menu:ph_show_menu Apps
@@ -414,13 +415,13 @@ EOF
 			do
 				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid reponse"
 				printf "%8s%s\n" "" "--> Please enter the full start command for $PH_APP"
-				printf "%12s%s" "" "- Any TTY number references should be replaced by the string PH_TTY : "
+				printf "%12s%s" "" "Any TTY number references should be replaced by the string 'PH_TTY' : "
 				read PH_APP_CMD 2>/dev/null
 				((PH_COUNT++))
 			done
 			printf "%10s%s\n" "" "OK"
 			PH_COUNT=0
-			printf "%8s%s\n" "" "--> Please enter the run account for $PH_APP (Optional)"
+			printf "%8s%s\n\n" "" "--> Please enter the run account for $PH_APP (Optional)"
 			printf "%12s%s\n" "" "- Leaving this empty will set the run account to the same as PieHelper's (\"$PH_RUN_USER\")"
                 	printf "%12s%s" "" "- Specifying a non-existent account will create that account and a matching group : "
 			read PH_APP_USER
@@ -440,7 +441,7 @@ EOF
 			exit $? ;;
 				   rem)
 			printf "%8s%s\n" "" "--> Please enter the package for $PH_APP (Optional)"
-			printf "%12s%s" "" "- Leaving this empty will leave the package installed : "
+			printf "%12s%s" "" "Leaving this empty will leave the package installed : "
 			read PH_APP_PKG
 			printf "%10s%s\n" "" "OK"
 			printf "%2s%s\n" "" "SUCCESS"

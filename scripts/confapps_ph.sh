@@ -70,12 +70,13 @@ do
 		>&2 printf "%15s%s\n" "" "-a allows specifying an application name for [intapp]"
 		>&2 printf "%18s%s\n" "" "- [intapp] cannot be \"PieHelper\" (duh)"
 		>&2 printf "%18s%s\n" "" "- [intapp] must already be known to PieHelper as a supported application"
-		>&2 printf "%18s%s\n" "" "- Moonlight and Emulationstation will attempt a packageless install if the package cannot be found or the packagename is left unspecified"
+		>&2 printf "%18s%s\n" "" "- Moonlight and Emulationstation will attempt a packageless install if the packagename is unset or cannot be found"
 		>&2 printf "%18s%s\n" "" "- The appropriate configure function for an application will automatically be run after an application's installation"
 		>&2 printf "%12s%s\n" "" "\"rem\" allows removing an application [remapp] from PieHelper and uninstalling it"
 		>&2 printf "%15s%s\n" "" "-a allows specifying an application name for [remapp]"
 		>&2 printf "%18s%s\n" "" "- [remapp] cannot be \"PieHelper\" which should be removed with confpieh_ph.sh -s"
-		>&2 printf "%18s%s\n" "" "- Moonlight and Emulationstation will attempt a packageless uninstall if the packagename specified"
+		>&2 printf "%18s%s\n" "" "- [remapp] must already be known to PieHelper as an integrated application"
+		>&2 printf "%18s%s\n" "" "- Moonlight and Emulationstation will attempt a packageless uninstall if the packagename is unset or cannot be found"
 		>&2 printf "%20s%s\n" "" "in their respective options is unavailable"
 		>&2 printf "%12s%s\n" "" "\"conf\" allows configuring an application [confapp]"
 		>&2 printf "%15s%s\n" "" "-a allows specifying an application name for [confapp]"
@@ -111,13 +112,13 @@ then
 	ph_check_app_name -i -a "$PH_APP" || exit $?
 fi
 [[ "$PH_APP" == "PieHelper" && "$PH_ACTION" == "rem" ]] && printf "%s\n" "- Removing $PH_APP" && \
-			printf "%2s%s\n" "" "FAILED : Invalid argument \"$PH_APP\" -> $PH_APP should be removed with confpieh_ph.sh -s" && \
+			printf "%2s%s\n" "" "FAILED : Invalid argument \"$PH_APP\" -> $PH_APP should be removed with 'confpieh_ph.sh -s'" && \
 			exit 1
 [[ "$PH_APP" == "PieHelper" && "$PH_ACTION" == "conf" ]] && printf "%s\n" "- Configuring $PH_APP" && \
-			printf "%2s%s\n" "" "FAILED : Invalid argument \"$PH_APP\" -> $PH_APP should be configured with confpieh_ph.sh -c" && \
+			printf "%2s%s\n" "" "FAILED : Invalid argument \"$PH_APP\" -> $PH_APP should be configured with 'confpieh_ph.sh -c'" && \
 			exit 1
 [[ "$PH_APP" == "PieHelper" && "$PH_ACTION" == "int" ]] && printf "%s\n" "- Installing $PH_APP" && \
-			printf "%2s%s\n" "" "FAILED : Invalid argument \"$PH_APP\" -> $PH_APP is already integrated with PieHelper" && \
+			printf "%2s%s\n" "" "FAILED : Invalid argument \"$PH_APP\" -> $PH_APP is already integrated into PieHelper" && \
 			exit 1
 case $PH_ACTION in list)
 	case $PH_LISTMODE in int)
@@ -149,11 +150,18 @@ case $PH_ACTION in list)
 				if pgrep -t tty$PH_APP_TTY -f "$PH_APP_CMD" >/dev/null
 				then
 					printf "%8s%s\n" "" "$PH_APP (TTY$PH_APP_TTY)"
+					((PH_COUNT++))
 				else
-					(([[ "$PH_APP" == "PieHelper" ]]) && (pgrep -f 'startpieh.sh -p' >/dev/null)) && printf "%8s%s\n" "" "$PH_APP (Running on a pseudo-terminal)"
+					if (([[ "$PH_APP" == "PieHelper" ]]) && (pgrep -f 'startpieh.sh -p' >/dev/null))
+					then
+						printf "%8s%s\n" "" "$PH_APP (Running on a pseudo-terminal)"
+						((PH_COUNT++))
+					fi
 				fi
 			fi
 		done
+		[[ $PH_COUNT -eq 0 ]] && printf "%8s%s\n" "" "\"none\""
+		PH_COUNT=0
 		printf "%2s%s\n" "" "SUCCESS" ;;
 		              all)
 		confapps_ph.sh -p list -l int

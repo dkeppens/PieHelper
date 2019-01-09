@@ -1,8 +1,8 @@
 Stop PieHelper (Quit to shell):break
-Uninstall PieHelper:confpieh_ph.sh -s | more
 Configure PieHelper:confpieh_ph.sh -c
-Unconfigure PieHelper:confpieh_ph.sh -u | more
-List PieHelper current state and version:confpieh_ph.sh -g | more
+Unconfigure PieHelper:confpieh_ph.sh -u
+Unconfigure and uninstall PieHelper:confpieh_ph.sh -s
+List PieHelper configuration state and version:confpieh_ph.sh -g | more
 List all available options for PieHelper:confopts_ph.sh -p list -a PieHelper | more
 View the current value of PieHelper option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a PieHelper -g
 View the current value of PieHelper option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a PieHelper -g -r

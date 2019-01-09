@@ -1,9 +1,10 @@
+Show Emulationstation current state:ph_check_app_name -s -a Emulationstation | more
 Start or switch to Emulationstation:startemul.sh | more
 Stop Emulationstation:stopemul.sh force | more
 Restart Emulationstation:restartemul.sh | more
-Install Emulationstation:confapps_ph.sh -p int -a Emulationstation
-Uninstall Emulationstation:confapps_ph.sh -p rem -a Emulationstation | more
-Configure Emulationstation:confapps_ph.sh -p conf -a Emulationstation | more
+Install Emulationstation and integrate with PieHelper:confapps_ph.sh -p int -a Emulationstation
+Remove Emulationstation from PieHelper and uninstall:confapps_ph.sh -p rem -a Emulationstation
+Configure Emulationstation (configures ALSA audio):confapps_ph.sh -p conf -a Emulationstation | more
 List all available options for Emulationstation:confopts_ph.sh -p list -a Emulationstation | more
 View the current value of Emulationstation option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Emulationstation -g
 View the current value of Emulationstation option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Emulationstation -g -r

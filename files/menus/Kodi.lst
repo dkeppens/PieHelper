@@ -1,8 +1,9 @@
+Show Kodi current state:ph_check_app_name -s -a Kodi | more
 Start or switch to Kodi:startkodi.sh | more
 Stop Kodi:stopkodi.sh force | more
 Restart Kodi:restartkodi.sh | more
-Install Kodi:confapps_ph.sh -p int -a Kodi | more
-Uninstall Kodi:confapps_ph.sh -p rem -a Kodi | more
+Install Kodi and integrate with PieHelper:confapps_ph.sh -p int -a Kodi
+Remove Kodi from PieHelper and uninstall:confapps_ph.sh -p rem -a Kodi
 Update Kodi to the latest version (only if installed as a package):ph_update_pkg $PH_KODI_PKG_NAME | more
 List all available options for Kodi:confopts_ph.sh -p list -a Kodi | more
 View the current value of Kodi option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Kodi -g

@@ -1,3 +1,4 @@
+Show Bash current state:ph_check_app_name -s -a Bash | more
 Start or switch to Bash:startbash.sh | more
 Stop Bash:stopbash.sh force | more
 Restart Bash:restartbash.sh | more
