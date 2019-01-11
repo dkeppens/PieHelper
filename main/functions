@@ -897,6 +897,8 @@ typeset PH_OPT_DEFS=""
 typeset PH_OPT_REGEX=""
 typeset -u PH_APPU=`echo $PH_APP | cut -c1-4`
 typeset -i PH_LENGTH=0
+typeset -i PH_NOW=0
+typeset -i PH_END=0
 typeset -i PH_RET_CODE=0
 typeset -i PH_OLDOPTIND=$OPTIND
 OPTIND=2
@@ -1036,18 +1038,35 @@ do
 			printf "%10s%s\n" "" "OK" ; mv /tmp/$PH_APP.conf_tmp $PH_CONF_DIR/$PH_APP.conf
 			if (([[ "$PH_OPTARG_VAR" == PH_"$PH_APPU"_NUM_CTRL ]]) && (echo $PH_CURVALUE_CMD_OPTS | grep ' /dev/input/eventPH_CTRL' >/dev/null))
 			then
-				if [[ "$PH_OPTARG_VAL" != `echo $PH_CURVALUE_CMD_OPTS | nawk 'BEGIN { count=0 } { for (i=1;i<=NF;i++) { if ($i ~ "/dev/input/eventPH_CTRL.") { count++ }}} END { print count }'` ]]
+				PH_END=$PH_OPTARG_VAL
+				PH_NOW=`echo $PH_CURVALUE_CMD_OPTS | nawk 'BEGIN { count=0 } { for (i=1;i<=NF;i++) { if ($i ~ "/dev/input/eventPH_CTRL.") { count++ }}} END { print count }'`
+				if [[ $PH_END -ne $PH_NOW ]]
 				then
-					if [[ "$PH_OPTARG_VAL" == "1" ]]
+					if [[ $PH_NOW -gt $PH_END ]]
 					then
-						PH_NEWVALUE="`echo $PH_CURVALUE_CMD_OPTS | nawk 'BEGIN { ORS = \"\" } \
-							{ for (i=1;i<=NF;i++) { if ($(i+1) !~ "/dev/input/eventPH_CTRL2" && $i !~ "/dev/input/eventPH_CTRL2") { print $i ; if (i<(NF-2)) { print \" \" }}}}'`"
+						PH_NEWVALUE="`echo $PH_CURVALUE_CMD_OPTS | nawk -v curval=$PH_NOW 'BEGIN { ORS = \"\" ; compare = "/dev/input/eventPH_CTRL"curval } \
+							{ for (i=1;i<=NF;i++) { if ($(i+1) !~ compare && $i !~ compare) { print $i ; if (i<(NF-2)) { print \" \" }}}}'`"
+						while [[ $((PH_NOW-1)) -gt $PH_END ]]
+						do
+							PH_NOW=`echo $PH_NEWVALUE | nawk 'BEGIN { count=0 } { for (i=1;i<=NF;i++) { if ($i ~ "/dev/input/eventPH_CTRL.") { count++ }}} END { print count }'`
+							PH_NEWVALUE="`echo $PH_NEWVALUE | nawk -v curval=$PH_NOW 'BEGIN { ORS = \"\" ; compval = "/dev/input/eventPH_CTRL"curval } \
+								{ for (i=1;i<=NF;i++) { if ($(i+1) !~ compval && $i !~ compval) { print $i ; if (i<(NF-2)) { print \" \" }}}}'`"
+						done
 					else
-						PH_NEWVALUE="`echo $PH_CURVALUE_CMD_OPTS | nawk 'BEGIN { ORS = \"\" ; ind = 0 } \
-							{ for (i=1;i<=NF;i++) { if ($(i+1) ~ "/dev/input/eventPH_CTRL1") { param = $i ; ind = i ; print $i \" \" } \
-										else { if (i==NF) { if (i==(ind+1)) { print $i \" \" param \" /dev/input/eventPH_CTRL2\" } else { print $i }} \
-													else { if (i==(ind+1) && ind>0) { print $i \" \" param \" /dev/input/eventPH_CTRL2 \" } \
-														else { print $i \" \" }}}}}'`"
+						PH_NEWVALUE="`echo $PH_CURVALUE_CMD_OPTS | nawk -v curval=$PH_NOW 'BEGIN { ORS = \"\" ; ind = 0 ; compval = "/dev/input/eventPH_CTRL"curval ; printval = "/dev/input/eventPH_CTRL"(curval+1) } \
+							{ for (i=1;i<=NF;i++) { if ($(i+1) ~ compval) { param = $i ; ind = i ; print $i \" \" } \
+								else { if (i==NF) { if (i==(ind+1)) { print $i \" \" param \" \" printval } else { print $i }} \
+									else { if (i==(ind+1) && ind>0) { print $i \" \" param \" \" printval \" \" } \
+										else { print $i \" \" }}}}}'`"
+						while [[ $((PH_NOW+1)) -lt $PH_END ]]
+						do
+							PH_NOW=`echo $PH_NEWVALUE | nawk 'BEGIN { count=0 } { for (i=1;i<=NF;i++) { if ($i ~ "/dev/input/eventPH_CTRL.") { count++ }}} END { print count }'`
+							PH_NEWVALUE="`echo $PH_NEWVALUE | nawk -v curval=$PH_NOW 'BEGIN { ORS = \"\" ; ind = 0 ; compval = "/dev/input/eventPH_CTRL"curval ; printval = "/dev/input/eventPH_CTRL"(curval+1) } \
+								{ for (i=1;i<=NF;i++) { if ($(i+1) ~ compval) { param = $i ; ind = i ; print $i \" \" } \
+									else { if (i==NF) { if (i==(ind+1)) { print $i \" \" param \" \" printval } else { print $i }} \
+										else { if (i==(ind+1) && ind>0) { print $i \" \" param \" \" printval \" \" } \
+											else { print $i \" \" }}}}}'`"
+						done
 					fi
 					if ! ph_set_option "$PH_APP" -r PH_"$PH_APPU"_CMD_OPTS="$PH_NEWVALUE"
 					then
@@ -1056,18 +1075,18 @@ do
 					fi
 				fi
 			fi
-			if (([[ "$PH_OPTARG_VAR" == PH_"$PH_APPU"_CMD_OPTS ]]) && (echo "$PH_OPTARG_VAL" | grep ' /dev/input/eventPH_CTRL' >/dev/null))
-			then
-				PH_NEWVALUE="`echo $PH_OPTARG_VAL | nawk 'BEGIN { count=0 } { for (i=1;i<=NF;i++) { if ($i ~ "/dev/input/eventPH_CTRL.") { count++ }}} END { print count }'`"
-				if [[ `echo $PH_CURVALUE_NUM_CTRL` != "$PH_NEWVALUE" ]]
-				then
-					if ! ph_set_option "$PH_APP" -r PH_"$PH_APPU"_NUM_CTRL="$PH_NEWVALUE"
-					then
-						ph_set_option "$PH_APP" -r PH_"$PH_APPU"_CMD_OPTS="`echo $PH_OLDVALUE`"
-						((PH_RET_CODE++))
-					fi
-				fi
-			fi
+                        if (([[ "$PH_OPTARG_VAR" == PH_"$PH_APPU"_CMD_OPTS ]]) && (echo "$PH_OPTARG_VAL" | grep ' /dev/input/eventPH_CTRL' >/dev/null))
+                        then
+                                PH_NEWVALUE="`echo $PH_OPTARG_VAL | nawk 'BEGIN { count=0 } { for (i=1;i<=NF;i++) { if ($i ~ "/dev/input/eventPH_CTRL.") { count++ }}} END { print count }'`"
+                                if [[ `echo $PH_CURVALUE_NUM_CTRL` != "$PH_NEWVALUE" ]]
+                                then
+                                        if ! ph_set_option "$PH_APP" -r PH_"$PH_APPU"_NUM_CTRL="$PH_NEWVALUE"
+                                        then
+                                                ph_set_option "$PH_APP" -r PH_"$PH_APPU"_CMD_OPTS="`echo $PH_OLDVALUE`"
+                                                ((PH_RET_CODE++))
+                                        fi
+                                fi
+                        fi
 			[[ "$PH_OLD_WAS_SET" == "no" && "$PH_APP" != "LoginScript" ]] && eval export OLD_"$PH_OPTARG_VAR"=\'$PH_OPTARG_VAL\' ;;
 	esac
 done
