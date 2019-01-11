@@ -1,7 +1,7 @@
 * support in ph_repair_pieh for protection against multiple instances of 1 app + verification whether all known info matches
 * change to one script for each action and use parameters : new branch !
 * in interactive set for confopts_ph.sh : display for num_Ctrl and cmd_opts that changes will be reflected to the other
-* also for same : display notice about using PH_CTRL string when adding EBIDs to CMD_opts
+* also for confopts_ph.sh : display notice about using PH_CTRL string when adding EBIDs to CMD_opts
 * changes for using CMD_OPTS myself for all apps, also in supported_apps configuration file for all but basic start command + watch special position for graphical stuff in that case
 * if start using kodi cmd_opts -> kodi num_ctrl can no longer be read-only + in general impact on way graph appls are handled
 * more dynamic linked behaviour between num_ctrl and cmd_opts option valid for all applications
@@ -13,21 +13,17 @@
 			if no EBID -> reflect new number after add/remove to num_ctrl
  - with  * check if CMD_OPTS or NUM_CTRL empty, no auto change the corresponding one in ph_set_option
 * multiple options at once with confopts interactive for help and get and prompt too ?
-* change ph_set_option for more than 2 controllers with _num_ctrl and _cmd_opts still needed ?
-* check EVERYWHERE for always echo and don't quote namerefs !
-* test new dualshock3 controllers
+* check for always echo and no quoting namerefs
+* solve bluetooth pairing dualshock3 controllers
 * treat remaining remarks in codebase
-* change ph_setup_controllers for working together with confctrl_ph.sh and use mac addresses
 * create button configuration files for the different controller types for emulationstation with configure script
 * change confpieh_ph.sh -p debug for partial results and for fasttrack bypass to set all modules to debug/no debug 
 * change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
-* cifs mount problem which occurs after first game done ? for Emulationstation
-* option for startpieh.sh and same -p for starting up in specific submenu
+* occasional cifs mount problem which for Emulationstation remains ?
 * check for entered single quotes and report error on them in all interactive prompts for new option values + test what happens on non-interactive ones
 * only sed CMD_OPTS vars on startup of app if 'PH_CTRL' string present in current value of CMD_OPTS
-* check for /proc, systemd and ksh93 prereqs
+* write confoper_ph.sh and check for /proc, systemd and ksh93 prereqs
 * no change TTY and stop all other apps on just restart of application ? works for kodi,moonlight,emul stuff too ?
-* recheck possibility hiding initial output scroll when running startpieh.sh -p
 * check for /etc/apt/apt.conf on debian and turn off option don't install recommended packages
 * test for controllers actually online
 * test listblue_ph.sh with more than one bluetooth adapter
