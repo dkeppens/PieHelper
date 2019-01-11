@@ -71,8 +71,10 @@ do
 		>&2 printf "%12s%s\n" "" "\"debug\" allows switching the debug state of all specified relevant module names"
 		>&2 printf "%15s%s\n" "" "-m allows specifying a list of module names"
 		>&2 printf "%18s%s\n" "" "- Valid module names are PieHelper script names and any PieHelper functions relevant to the Operating system being used"
-		>&2 printf "%18s%s\n" "" "- Multiple module names can be entered using a comma-separator"
-		>&2 printf "%18s%s\n" "" "- Any invalid module names entered will be skipped and generate an error without blocking remaining module processing"
+		>&2 printf "%18s%s\n" "" "- Multiple module names can be specified using a comma-separator"
+		>&2 printf "%18s%s\n" "" "- Any invalid module names specified will be skipped and generate an error without blocking remaining module processing"
+		>&2 printf "%18s%s\n" "" "- Any valid module names specified with their current debug state set to 'no' will be switched to 'yes'"
+		>&2 printf "%18s%s\n" "" "- Any valid module names specified with their current debug state set to 'yes' will be set to 'no'"
 		>&2 printf "%18s%s\n" "" "- 'confpieh_ph.sh' is not a valid module name and should be debugged manually"
 		>&2 printf "%18s%s\n" "" "- The keyword \"all\" can be used to switch the debug state on all relevant PieHelper modules"
 		>&2 printf "%18s%s\n" "" "- The keyword \"prompt\" makes confpieh_ph.sh behave interactively when it comes to module selection"
@@ -177,7 +179,8 @@ case $PH_ACTION in repair)
                                 else
 					PH_RESULT="FAILED"
 					printf "%s\n" "- Enabling debug module for $PH_j"
-					printf "%2s%s\n" "" "$PH_RESULT : Unknown module $PH_j"
+					[[ "$PH_j" != "confpieh_ph.sh" ]] && printf "%2s%s\n" "" "$PH_RESULT : Unknown module $PH_j" || \
+								printf "%2s%s\n" "" "$PH_RESULT : Debug for module 'confpieh_ph.sh' must be handled manually"
                                 fi ;;
                                       *)
 				PH_RESULT="SUCCESS"
@@ -220,7 +223,7 @@ case $PH_ACTION in repair)
                 exit 0 ;;
 		    list)
                 printf "%s\n" "- Listing all modules"
-                for PH_j in `find $PH_MAIN_DIR/.. ! -name confpieh_ph.sh ! -name 10-retropie.sh -name "*.sh" 2>/dev/null | sort`
+                for PH_j in `find $PH_MAIN_DIR/.. ! -name 10-retropie.sh -name "*.sh" 2>/dev/null | sort`
                 do
                         if grep ^'set -x' $PH_j >/dev/null
                         then
