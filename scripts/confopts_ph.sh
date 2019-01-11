@@ -169,7 +169,7 @@ fi
 if [[ "$PH_ACTION" == @(set|get|help) ]]
 then
 	OPTAR+=(`echo -n $PH_OPT | sed "s/'/ /g"`)
-	for PH_COUNT in {1..`echo $PH_VALUE | nawk -F\' '{ next } END { print NF }'`}
+	for PH_COUNT in {1..${#OPTAR[@]}}
 	do
 		VALAR+=("`echo $PH_VALUE | cut -d\' -f$PH_COUNT`")
 	done

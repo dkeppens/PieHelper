@@ -1,0 +1,61 @@
+function ph_configure_moon {
+
+typeset PH_ANSWER=""
+typeset PH_APP="Moonlight"
+typeset -i PH_COUNT=0
+typeset -i PH_OPT=0
+set -A PH_OPTAR PH_MOON_RES PH_MOON_FPS PH_MOON_BITRATE PH_MOON_PCKTSIZE PH_MOON_USE_CTRL PH_MOON_NUM_CTRL PH_MOON_CMD_OPTS PH_MOON_GAME PH_MOON_SRV
+
+for PH_OPT in {0..$((${#PH_OPTAR[@]}-1))}
+do
+        PH_COUNT=0
+        confopts_ph.sh -p get -a Moonlight -o "${PH_OPTAR[$PH_OPT]}" | tail -n +3
+        confopts_ph.sh -p help -a Moonlight -o "${PH_OPTAR[$PH_OPT]}" | tail -n +3
+        printf "%s\n" "- Prompting for requested change"
+        while [[ $PH_ANSWER != @(y|n) ]]
+        do
+                [[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+                printf "%8s%s" "" "--> Do you want the change the value for ${PH_OPTAR[$PH_OPT]} (y/n) ? "
+                [[ "${PH_OPTAR[$PH_OPT]}" == "PH_MOON_SRV" ]] && (printf "\n\n%12s%s\n" "" "- A value for PH_MOON_SRV is required for further configuration" ; \
+                                printf "%12s%s" "" "- An empty value for PH_MOON_SRV will end configuration but it can later be restarted using either 'confapps_ph.sh' or the PieHelper menu : ")
+                read PH_ANSWER 2>/dev/null
+                if ! ph_screen_input $PH_ANSWER
+                then
+                        unset PH_OPTAR
+                        return 1
+                fi
+                ((PH_COUNT++))
+        done
+        [[ "${PH_OPTAR[$PH_OPT]}" == "PH_MOON_SRV" ]] && printf "\n%10s%s\n" "" "OK" || printf "%10s%s\n" "" "OK"
+        if [[ "$PH_ANSWER" == "y" ]]
+        then
+                false
+                while [[ $? -ne 0 ]]
+                do
+                        [[ "$PH_ANSWER" != "y" ]] && printf "%s\n" "- Prompting for requested change"
+                        PH_ANSWER=""
+                        while [[ "$PH_ANSWER" == "" ]]
+                        do
+                                printf "%8s%s" "" "--> Please enter the new value for ${PH_OPTAR[$PH_OPT]} : "
+                                read PH_ANSWER 2>/dev/null
+                                [[ "$PH_i" == "PH_MOON_GAME" ]] && break
+                        done
+                        printf "%10s%s\n" "" "OK"
+                        ph_set_option Moonlight -r "${PH_OPTAR[$PH_OPT]}"="$PH_ANSWER" && printf "%2s%s\n" "" "SUCCESS" || printf "%2s%s\n" "" "FAILED"
+                done
+        else
+                printf "%2s%s\n" "" "SUCCESS"
+                if [[ "${PH_OPTAR[$PH_OPT]}" == "PH_MOON_SRV" && -z "$PH_MOON_SRV" ]]
+                then
+                        unset PH_OPTAR
+                        return 0
+                fi
+        fi
+        PH_ANSWER=""
+done
+printf "%s\n" "- Pairing with $PH_MOON_SRV"
+moonlight pair "$PH_MOON_SRV"
+unset PH_OPTAR
+return 0
+}
+

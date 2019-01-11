@@ -1,0 +1,13 @@
+#!/usr/bin/ksh
+
+echo "entering setopt menu"
+
+echo "VAR is $VAR"
+
+echo "setting export VAR to 'newvalue'"
+
+VAR="newvalue"
+
+echo "VAR is $VAR"
+
+echo "returning to menu"
