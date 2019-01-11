@@ -102,20 +102,38 @@ EOF
 	then
 		if [[ -z "$PH_GIT_COMMSG" ]]
 		then
-			printf "%8s%s\n" "" "--> Syncing $PH_NEW_VERSION changes to github master --> Skippping (Empty commit message)"
-			printf "%10s%s\n" "" "OK"
+			printf "%8s%s\n" "" "--> Locally committing $PH_NEW_VERSION changes to git"
+			printf "%10s%s\n" "" "Warning : Empty commit message -> Skipping"
+			printf "%8s%s\n" "" "--> Tagging local git build as $PH_NEW_VERSION"
+			printf "%10s%s\n" "" "Warning : Empty commit message -> Skipping"
+			printf "%8s%s\n" "" "--> Committing all changes to remote github master repository"
+			printf "%10s%s\n" "" "Warning : Empty commit message -> Skipping"
 		else
-			printf "%8s%s\n" "" "--> Syncing $PH_NEW_VERSION changes to github master"
 			cd $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
 			git add . >/dev/null 2>&1
-			git commit -a --message="$PH_GIT_COMMSG" >/dev/null 2>&1
-#			git tag -a $PH_NEW_VERSION -m "$PH_GIT_COMMSG" >/dev/null 2>&1
+			printf "%8s%s\n" "" "--> Locally committing $PH_NEW_VERSION changes to git"
+			if git commit -a --message="$PH_GIT_COMMSG" >/dev/null 2>&1
+			then
+				printf "%10s%s\n" "" "OK"
+			else
+				printf "%10s%s\n" "" "ERROR : Issues encountered locally committing $PH_NEW_VERSION changes to git"
+				PH_RESULT="PARTIALLY FAILED"
+			fi
+#			printf "%8s%s\n" "" "--> Tagging local git build as $PH_NEW_VERSION"
+#			if git tag -a $PH_NEW_VERSION -m "$PH_GIT_COMMSG" >/dev/null 2>&1
+#			then
+#				printf "%10s%s\n" "" "OK"
+#			else
+#				printf "%10s%s\n" "" "ERROR : Issues encountered tagging local git build as $PH_NEW_VERSION"
+#				PH_RESULT="PARTIALLY FAILED"
+#			fi
+			printf "%8s%s\n" "" "--> Committing all changes to remote github master repository"
 			git push --mirror >/dev/null 2>&1
 			if [[ $? -eq 0 ]]
 			then
 				printf "%10s%s\n" "" "OK"
 			else
-				printf "%10s%s\n" "" "ERROR : Issues encountered during repo synchronisation"
+				printf "%10s%s\n" "" "ERROR : Issues encountered committing all changes to remote github master repository"
 				PH_RESULT="PARTIALLY FAILED"
 			fi
 			cd - >/dev/null 2>&1
