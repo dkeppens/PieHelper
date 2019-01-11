@@ -1080,12 +1080,12 @@ do
                                 PH_NEWVALUE="`echo $PH_OPTARG_VAL | nawk 'BEGIN { count=0 } { for (i=1;i<=NF;i++) { if ($i ~ "/dev/input/eventPH_CTRL.") { count++ }}} END { print count }'`"
                                 if [[ `echo $PH_CURVALUE_NUM_CTRL` != "$PH_NEWVALUE" ]]
                                 then
-                                        if ! ph_set_option "$PH_APP" -r PH_"$PH_APPU"_NUM_CTRL="$PH_NEWVALUE"
-                                        then
-                                                ph_set_option "$PH_APP" -r PH_"$PH_APPU"_CMD_OPTS="`echo $PH_OLDVALUE`"
-                                                ((PH_RET_CODE++))
-                                        fi
-                                fi
+					if ! ph_set_option "$PH_APP" -r PH_"$PH_APPU"_NUM_CTRL="$PH_NEWVALUE"
+					then
+						ph_set_option "$PH_APP" -r PH_"$PH_APPU"_CMD_OPTS="`echo $PH_OLDVALUE`"
+						((PH_RET_CODE++))
+					fi
+				fi
                         fi
 			[[ "$PH_OLD_WAS_SET" == "no" && "$PH_APP" != "LoginScript" ]] && eval export OLD_"$PH_OPTARG_VAR"=\'$PH_OPTARG_VAL\' ;;
 	esac
