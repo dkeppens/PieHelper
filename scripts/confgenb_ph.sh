@@ -13,6 +13,8 @@ typeset PH_RESULT="SUCCESS"
 typeset PH_GIT_UPDATE="no"
 typeset PH_GIT_COMMSG=""
 typeset PH_ACL_USERS=""
+typeset PH_OLDOPTARG="$OPTARG"
+typeset -i PH_OLDOPTIND=$OPTIND
 PH_BUILD_DIR=$PH_SCRIPTS_DIR/../build
 PH_REVERSE=""
 OPTIND=1
@@ -20,9 +22,9 @@ OPTIND=1
 while getopts v:hgm: PH_OPTION 2>/dev/null
 do
 	case $PH_OPTION in v)
-		[[ -n "$PH_NEW_VERSION" ]] && (! confgenb_ph.sh -h) && exit 1
-		ph_screen_input "$OPTARG" || exit $?
-		[[ "$OPTARG" != +([[:digit:]])\.+([[:digit:]]) ]] && (! confgenb_ph.sh -h) && exit 1
+		[[ -n "$PH_NEW_VERSION" ]] && (! confgenb_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && unset PH_REVERSE && exit 1
+		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && unset PH_REVERSE && exit 1
+		[[ "$OPTARG" != +([[:digit:]])\.+([[:digit:]]) ]] && (! confgenb_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && unset PH_REVERSE && exit 1
 		PH_NEW_VERSION="$OPTARG" ;;
 			   g)
 		PH_GIT_UPDATE="yes" ;;
@@ -51,10 +53,15 @@ do
 		>&2 printf "%12s%s\n" "" "  will also be created in directory PH_PIEH_CIFS_SUBDIR on local network server PH_PIEH_CIFS_SRV"
 		>&2 printf "%12s%s\n" "" "  More info on these settings can be viewed using 'confopts_ph.sh' or the PieHelper menu"
 		>&2 printf "\n"
+		OPTIND=$PH_OLDOPTIND
+		OPTARG="$PH_OLDOPTARG"
 		unset PH_REVERSE
 		exit 1 ;;
 	esac
 done
+OPTIND=$PH_OLDOPTIND
+OPTARG="$PH_OLDOPTARG"
+
 if [[ -n "$PH_NEW_VERSION" ]]
 then
 	printf "%s\n" "- Creating a new build archive for PieHelper version $PH_NEW_VERSION"
@@ -192,5 +199,4 @@ EOF
 	unset PH_REVERSE
 	exit 0
 fi
-confgenb_ph.sh -h || unset PH_REVERSE
-exit 1
+(! confgenb_ph.sh -h) && unset PH_REVERSE && exit 1

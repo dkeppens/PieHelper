@@ -16,9 +16,11 @@ typeset PH_APP_USER=""
 typeset PH_APP_CMD=""
 typeset PH_APP_PKG=""
 typeset PH_j=""
+typeset PH_OLDOPTARG="$OPTARG"
 typeset -i PH_i=0
 typeset -i PH_COUNT=0
 typeset -i PH_APP_TTY=0
+typeset -i PH_OLDOPTIND=$OPTIND
 typeset -l PH_APPL=""
 typeset -l PH_APPL2=""
 typeset -u PH_APPU=""
@@ -27,34 +29,34 @@ OPTIND=1
 while getopts p:a:c:u:b:irh PH_OPTION 2>/dev/null
 do
 	case $PH_OPTION in p)
-		ph_screen_input "$OPTARG" || exit 1
-		[[ "$OPTARG" != @(inst|rem|prompt) ]] && (! confsupp_ph.sh -h) && exit 1
-		[[ -n "$PH_I_ACTION" && "$OPTARG" != "prompt" ]] && (! confsupp_ph.sh -h) && exit 1
-		[[ -n "$PH_ACTION" ]] && (! confsupp_ph.sh -h) && exit 1
+		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$OPTARG" != @(inst|rem|prompt) ]] && (! confsupp_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_I_ACTION" && "$OPTARG" != "prompt" ]] && (! confsupp_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_ACTION" ]] && (! confsupp_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_ACTION="$OPTARG" ;;
 			  a)
-		ph_screen_input "$OPTARG" || exit 1
-		[[ -n "$PH_APP" ]] && (! confsupp_ph.sh -h) && exit 1
+		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_APP" ]] && (! confsupp_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_APP="$OPTARG"
 		PH_APPL=`echo $PH_APP | cut -c1-4`
 		PH_APPU=`echo $PH_APP | cut -c1-4` ;;
 			  c)
-		[[ -n "$PH_APP_CMD" ]] && (! confsupp_ph.sh -h) && exit 1
+		[[ -n "$PH_APP_CMD" ]] && (! confsupp_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_APP_CMD="$OPTARG" ;;
 			  u)
-		ph_screen_input "$OPTARG" || exit 1
-		[[ -n "$PH_APP_USER" ]] && (! confsupp_ph.sh -h) && exit 1
+		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_APP_USER" ]] && (! confsupp_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_APP_USER="$OPTARG" ;;
 			  b)
-		[[ -n "$PH_APP_PKG" ]] && (! confsupp_ph.sh -h) && exit 1
+		[[ -n "$PH_APP_PKG" ]] && (! confsupp_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_APP_PKG="$OPTARG" ;;
 			  i)
-		[[ "$PH_ACTION" != @(prompt|) || -n "$PH_APP" || -n "$PH_APP_CMD" || -n "$PH_APP_PKG" ]] && (! confsupp_ph.sh -h) && exit 1
-		[[ -n "$PH_I_ACTION" ]] && (! confsupp_ph.sh -h) && exit 1
+		[[ "$PH_ACTION" != @(prompt|) || -n "$PH_APP" || -n "$PH_APP_CMD" || -n "$PH_APP_PKG" ]] && (! confsupp_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_I_ACTION" ]] && (! confsupp_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_I_ACTION="inst" ;;
 			  r)
-		[[ "$PH_ACTION" != @(prompt|) || -n "$PH_APP" || -n "$PH_APP_CMD" || -n "$PH_APP_PKG" ]] && (! confsupp_ph.sh -h) && exit 1
-		[[ -n "$PH_I_ACTION" ]] && (! confsupp_ph.sh -h) && exit 1
+		[[ "$PH_ACTION" != @(prompt|) || -n "$PH_APP" || -n "$PH_APP_CMD" || -n "$PH_APP_PKG" ]] && (! confsupp_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_I_ACTION" ]] && (! confsupp_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_I_ACTION="rem" ;;
 			  *)
                 >&2 printf "%s\n" "Usage : confsupp_ph.sh -h |"
@@ -106,9 +108,14 @@ do
                 >&2 printf "%24s%s\n" "" "- Entering a new value for the package name is optional"
 		>&2 printf "%24s%s\n" "" "  If one is specified the package will also be uninstalled"
                 >&2 printf "\n"
+		OPTIND=$PH_OLDOPTIND
+		OPTARG="$PH_OLDOPTARG"
                 exit 1 ;;
         esac
 done
+OPTIND=$PH_OLDOPTIND
+OPTARG="$PH_OLDOPTARG"
+
 [[ -z "$PH_APP_USER" ]] && PH_APP_USER="$PH_RUN_USER"
 [[ "$PH_APP" == @(Kodi|Emulationstation|Moonlight|X11|Bash|PieHelper) ]] && printf "%s\n" "- Managing an out-of-scope application $PH_APP" && \
 				printf "%2s%s\n" "" "FAILED : Standard application detected -> Use confapps_ph.sh" && exit 1

@@ -12,32 +12,34 @@ typeset PH_APP=""
 typeset PH_APP_CMD=""
 typeset PH_STATE=""
 typeset PH_APP_NEWTTY=""
+typeset PH_OLDOPTARG="$OPTARG"
 typeset -l PH_APPL=""
 typeset -i PH_APP_TTY=0
 typeset -i PH_COUNT=0
+typeset -i PH_OLDOPTIND=$OPTIND
 OPTIND=1
 
 while getopts hp:l:a:t: PH_OPTION 2>/dev/null
 do
 	case $PH_OPTION in p)
                 ph_screen_input "$OPTARG" || exit $?
-		[[ "$PH_LISTMODE" != @(int|supp|start|run|all|) ]] && (! confapps_ph.sh -h) && exit 1
-		[[ "$OPTARG" != @(list|tty|int|rem|conf|move|start|state) ]] && (! confapps_ph.sh -h) && exit 1
-		[[ -n "$PH_ACTION" ]] && (! confapps_ph.sh -h) && exit 1
+		[[ "$PH_LISTMODE" != @(int|supp|start|run|all|) ]] && (! confapps_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$OPTARG" != @(list|tty|int|rem|conf|move|start|state) ]] && (! confapps_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_ACTION" ]] && (! confapps_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_ACTION="$OPTARG" ;;
 			   l)
                 ph_screen_input "$OPTARG" || exit $?
-		[[ "$OPTARG" != @(int|supp|start|run|all) ]] && (! confapps_ph.sh -h) && exit 1
-		[[ -n "$PH_LISTMODE" ]] && (! confapps_ph.sh -h) && exit 1
+		[[ "$OPTARG" != @(int|supp|start|run|all) ]] && (! confapps_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_LISTMODE" ]] && (! confapps_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_LISTMODE="$OPTARG" ;;
 			   a)
-                ph_screen_input "$OPTARG" || exit $?
-		[[ -n "$PH_APP" ]] && (! confapps_ph.sh -h) && exit 1
+                ! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_APP" ]] && (! confapps_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_APP="$OPTARG" ;;
 			   t)
-                ph_screen_input "$OPTARG" || exit $?
-		[[ -n "$PH_APP_NEWTTY" ]] && (! confapps_ph.sh -h) && exit 1
-		[[ "$OPTARG" != @(+([[:digit:]])|prompt) ]] && (! confapps_ph.sh -h) && exit 1
+                ! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit $?
+		[[ -n "$PH_APP_NEWTTY" ]] && (! confapps_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$OPTARG" != @(+([[:digit:]])|prompt) ]] && (! confapps_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_APP_NEWTTY="$OPTARG" ;;
 			   *)
 		>&2 printf "%s\n" "Usage : confapps_ph.sh -h |"
@@ -104,9 +106,14 @@ do
 		>&2 printf "%12s%s\n" "" "\"state\" allows discovering supporting applications installed on the system"
 		>&2 printf "%20s%s\n" "" "and attempts to integrate them into PieHelper when found"
 		>&2 printf "\n"
+		OPTARG="$PH_OLDOPTARG"
+		OPTIND=$PH_OLDOPTIND
 		exit 1 ;;
 	esac
 done
+OPTARG="$PH_OLDOPTARG"
+OPTIND=$PH_OLDOPTIND
+
 [[ "$PH_ACTION" == "list" && -n "$PH_APP" ]] && (! confapps_ph.sh -h) && exit 1
 [[ "$PH_ACTION" == "list" && -z "$PH_LISTMODE" ]] && (! confapps_ph.sh -h) && exit 1
 [[ "$PH_ACTION" != "tty" && "$PH_APP" == "all" ]] && (! confapps_ph.sh -h) && exit 1

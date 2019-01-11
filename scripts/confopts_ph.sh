@@ -221,16 +221,19 @@ case $PH_ACTION in get)
 		then
 			(for PH_OPT in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | cut -d'=' -f1 | paste -d" " -s`
 			do
+				printf "\n"
 				[[ "$PH_RESOLVE" == "yes" ]] && confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT" -r || \
 					confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT"
 			done
 			for PH_OPT in `nawk 'BEGIN { ORS = " " } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}' $PH_CONF_DIR/$PH_APP.conf`
 			do
+				printf "\n"
 				[[ "$PH_RESOLVE" == "yes" ]] && confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT" -r || \
 					confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT"
 			done) | more
 		else
-			(printf "%s\n" "- Displaying value for $PH_OPT_TYPE $PH_USE_WORD $PH_OPT"
+			([[ "$PH_RESOLVE" == "yes" ]] && printf "%s\n" "- Displaying value for $PH_OPT_TYPE $PH_USE_WORD $PH_OPT (Variable expansion enabled)" || \
+							printf "%s\n" "- Displaying value for $PH_OPT_TYPE $PH_USE_WORD $PH_OPT"
 			typeset -n PH_OPTVAL="$PH_OPT"
 			if [[ "$PH_RESOLVE" == "yes" ]]
 			then
@@ -269,12 +272,12 @@ case $PH_ACTION in get)
 			(for PH_OPT in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | cut -d'=' -f1 | paste -d" " -s`
 			do
 				confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
-				printf "\n\n\n\n"
+				printf "\n\n"
 			done
 			for PH_OPT in `nawk 'BEGIN { ORS = " " } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}' $PH_CONF_DIR/$PH_APP.conf`
 			do
 				confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
-				printf "\n\n\n\n"
+				printf "\n\n"
 			done) | more
 		else
 			(printf "%s\n" "- Displaying help for $PH_OPT_TYPE $PH_USE_WORD $PH_OPT"
@@ -320,16 +323,16 @@ case $PH_ACTION in get)
 				PH_COUNT=1
 				for PH_i in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | nawk -F'=' '{ print $1 }'`
 				do
-					printf "%8s%4s%s%-30s%s\n" "" "$((PH_COUNT))" ". " "$PH_i " "(read-write)"
+					printf "%2s%-13s%4s%2s%s%s\n" "" "(read-write)" "" "$((PH_COUNT))" ". " "$PH_i"
 					((PH_COUNT++))
 				done
 				PH_COUNT2=$PH_COUNT
 				for PH_i in `nawk 'BEGIN { ORS = " " } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}' $PH_CONF_DIR/$PH_APP.conf`
 				do
-					printf "%8s%4s%s%-30s%s\n" "" "$((PH_COUNT))" ". " "${PH_i%%=*} " "(read-only)"
+					printf "%2s%-13s%4s%2s%s%s\n" "" "(read-only)" "" "$((PH_COUNT))" ". " "${PH_i%%=*}"
 					((PH_COUNT++))
 				done
-				printf "%8s%4s%s%s\n" "" "$((PH_COUNT))" ". " "All"
+				printf "%23s%s\n" "$PH_COUNT. " "All"
 				printf "\n%8s%s" "" "Your choice ? "
 				read PH_ANSWER 2>/dev/null
 			done
@@ -353,7 +356,8 @@ case $PH_ACTION in get)
 			unset OPTAR VALAR
 			exit 0 ;;
 				     set)
-			printf "%8s%s\n\n" "" "--> Which read-write $PH_USE_WORD do you want to change the value of ?"
+			[[ "$PH_RESOLVE" == "yes" ]] && printf "%8s%s\n\n" "" "--> Which read-write $PH_USE_WORD do you want to change the value of ? (Variable expansion enabled)" || \
+							printf "%8s%s\n\n" "" "--> Which read-write $PH_USE_WORD do you want to change the value of ?"
                 	while [[ $PH_ANSWER -eq 0 || $PH_ANSWER -gt $PH_COUNT ]]
                 	do
 				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
@@ -364,13 +368,13 @@ case $PH_ACTION in get)
 					do
 						typeset -n PH_OPTVAL="$PH_i"
 						PH_OPTVAL=`echo $PH_OPTVAL | sed 's/"/\\\"/g'`
-						printf "%8s%4s%s%s%s%s\n" "" "$((PH_COUNT+1))" ". " "$PH_i" "=" "'`eval echo $PH_OPTVAL`'"
+						printf "%23s%4s%s%s\n" "$((PH_COUNT+1)). " "$PH_i" "=" "'`eval echo $PH_OPTVAL`'"
 						PH_OPTVAL=`echo $PH_OPTVAL | sed 's/\\\"/"/g'`
 						((PH_COUNT++))
 						unset -n PH_OPTVAL
 					done
 				else
-					nawk -F'\t' 'BEGIN { count = 1 } $1 ~ /^PH_/ && $1 !~ /^PH_PIEH_DEBUG=/ && $1 !~ /^PH_PIEH_STARTAPP=/ { printf "%8s%s%s\n", "", count ". ", $1 ; count++ ; next }' \
+					nawk -F'\t' 'BEGIN { count = 1 } $1 ~ /^PH_/ && $1 !~ /^PH_PIEH_DEBUG=/ && $1 !~ /^PH_PIEH_STARTAPP=/ { printf "%23s%4s\n", count ". ", $1 ; count++ ; next }' \
 												$PH_CONF_DIR/$PH_APP.conf
 					PH_COUNT=`nawk -F'\t' 'BEGIN { count = 0 } $1 ~ /^PH_/ && $1 !~ /^PH_PIEH_DEBUG=/ && $1 !~ /^PH_PIEH_STARTAPP=/ { count++ } END { print count }' $PH_CONF_DIR/$PH_APP.conf`
 				fi
@@ -399,7 +403,8 @@ case $PH_ACTION in get)
 			unset OPTAR VALAR
 			exit $? ;;
 				    help)
-			printf "%8s%s\n\n" "" "--> Which $PH_USE_WORD do you want to display help for ?"
+			[[ "$PH_RESOLVE" == "yes" ]] && printf "%8s%s\n\n" "" "--> Which $PH_USE_WORD do you want to display help for ? (Variable expansion enabled)" || \
+							printf "%8s%s\n\n" "" "--> Which $PH_USE_WORD do you want to display help for ?"
                 	while [[ $PH_ANSWER -eq 0 || $PH_ANSWER -gt $PH_COUNT ]]
                 	do
 				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
@@ -411,7 +416,7 @@ case $PH_ACTION in get)
 					do
 						typeset -n PH_OPTVAL="$PH_i"
 						PH_OPTVAL=`echo $PH_OPTVAL | sed 's/"/\\\"/g'`
-						printf "%2s%-13s%4s%4s%s%s%s%s\n" "" "(read-write)" "" "$((PH_COUNT))" ". " "$PH_i" "=" "'`eval echo $PH_OPTVAL`'"
+						printf "%2s%-13s%4s%2s%s%s%s%s\n" "" "(read-write)" "" "$((PH_COUNT))" ". " "$PH_i" "=" "'`eval echo $PH_OPTVAL`'"
 						PH_OPTVAL=`echo $PH_OPTVAL | sed 's/\\\"/"/g'`
 						((PH_COUNT++))
 						unset -n PH_OPTVAL
@@ -421,20 +426,21 @@ case $PH_ACTION in get)
 					for PH_i in `nawk 'BEGIN { ORS = " " } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}' $PH_CONF_DIR/$PH_APP.conf`
 					do
 						typeset -n PH_OPTVAL="${PH_i%%=*}"
-						printf "%2s%-13s%4s%4s%s%s%s%s\n" "" "(read-only)" "" "$((PH_COUNT+1))" ". " "${PH_i%%=*}" "=" "'$(echo $PH_OPTVAL | sed 's/"/\\\"/g' | eval echo `cat`)'" 
+						printf "%2s%-13s%4s%2s%s%s%s%s\n" "" "(read-only)" "" "$((PH_COUNT+1))" ". " "${PH_i%%=*}" "=" "'$(echo $PH_OPTVAL | sed 's/"/\\\"/g' | eval echo `cat`)'" 
 						((PH_COUNT++))
 						unset -n PH_OPTVAL
 					done
 				else
-					nawk -F'\t' 'BEGIN { count = 1 } $1 ~ /^PH_/ && $1 !~ /^PH_PIEH_DEBUG=/ && $1 !~ /^PH_PIEH_STARTAPP=/ { printf "%8s%s%s\n", "", count ". ", $1 ; count++ ; next } \
+					nawk -F'\t' 'BEGIN { count = 1 } $1 ~ /^PH_/ && $1 !~ /^PH_PIEH_DEBUG=/ && $1 !~ /^PH_PIEH_STARTAPP=/ { printf "%2s%-13s%4s%4s%s\n", "", "(read-write)", "", count ". ", $1 ; count++ ; next } \
 														{ next }' $PH_CONF_DIR/$PH_APP.conf
 					PH_COUNT=`nawk -F'\t' 'BEGIN { count = 0 } $1 ~ /^PH_/ && $1 !~ /^PH_PIEH_DEBUG=/ && $1 !~ /^PH_PIEH_STARTAPP=/ { count++ } END { print count }' $PH_CONF_DIR/$PH_APP.conf`
 					PH_COUNT2=$PH_COUNT
-					nawk -v count=$((PH_COUNT+1)) '$0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { printf "%8s%s%s\n", "", count ". ", $i }} ; count++ ; next }' $PH_CONF_DIR/$PH_APP.conf
+					nawk -v count=$((PH_COUNT+1)) '$0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { printf "%2s%-13s%4s%4s%s\n", "", "(read-only)", "", count ". ", $i }} ; count++ ; next }' \
+																									$PH_CONF_DIR/$PH_APP.conf
 					PH_COUNT=$((PH_COUNT+`nawk 'BEGIN { count = 0 } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { count++ }}} END { print count }' $PH_CONF_DIR/$PH_APP.conf`))
 				fi
 				((PH_COUNT++))
-				printf "%25s%s\n" "$PH_COUNT. " "All"
+				printf "%23s%s\n" "$PH_COUNT. " "All"
 				printf "\n%8s%s" "" "Your choice ? "
 				read PH_ANSWER 2>/dev/null
 			done

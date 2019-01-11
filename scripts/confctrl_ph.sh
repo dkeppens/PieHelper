@@ -20,31 +20,33 @@ typeset PH_CONN=""
 typeset PH_PAIRED="no"
 typeset PH_TRUSTED=""
 typeset PH_RESULT="SUCCESS"
+typeset PH_OLDOPTARG="$OPTARG"
 typeset -i PH_COUNT=0
+typeset -i PH_OLDOPTIND=$OPTIND
 OPTIND=1
 
 while getopts hp:t:c:n: PH_OPTION 2>/dev/null
 do
 	case $PH_OPTION in p)
-		ph_screen_input "$OPTARG" || exit $?
-		[[ "$OPTARG" != @(conf|help|prompt) ]] && (! confctrl_ph.sh -h) && exit 1
-		[[ -n "$PH_ACTION" ]] && (! confctrl_ph.sh -h) && exit 1
+		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$OPTARG" != @(conf|help|prompt) ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_ACTION" ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_ACTION="$OPTARG" ;;
 			   t)
-		ph_screen_input "$OPTARG" || exit $?
-		[[ "$OPTARG" != @(PS3|PS4|XBOX360) ]] && (! confctrl_ph.sh -h) && exit 1
-		[[ -n "$PH_TYPE" ]] && (! confctrl_ph.sh -h) && exit 1
+		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$OPTARG" != @(PS3|PS4|XBOX360) ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_TYPE" ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_TYPE="$OPTARG" ;;
 			   c)
-		ph_screen_input "$OPTARG" || exit $?
-		[[ "$PH_ACTION" != @(help|) ]] && (! confctrl_ph.sh -h) && exit 1
-		[[ "$OPTARG" != @(usb|bluetooth|xboxurecv|sonywadapt) ]] && (! confctrl_ph.sh -h) && exit 1
-		[[ -n "$PH_CONN" ]] && (! confctrl_ph.sh -h) && exit 1
+		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$PH_ACTION" != @(help|) ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$OPTARG" != @(usb|bluetooth|xboxurecv|sonywadapt) ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_CONN" ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_CONN="$OPTARG" ;;
 			   n)
-		ph_screen_input "$OPTARG" || exit $?
-		[[ "$PH_ACTION" != @(conf|) ]] && (! confctrl_ph.sh -h) && exit 1
-		[[ -n "$PH_NUM_CTRL" ]] && (! confctrl_ph.sh -h) && exit 1
+		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$PH_ACTION" != @(conf|) ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_NUM_CTRL" ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_NUM_CTRL="$OPTARG" ;;
 			   *)
 		>&2 printf "%s\n" "Usage : confctrl_ph.sh -h |"
@@ -72,9 +74,14 @@ do
 		>&2 printf "%21s%s\n" "" "- connection method \"bluetooth\" is only valid for PS3 or PS4 controllers"
 		>&2 printf "%21s%s\n" "" "- connection method \"sonywadapt\" (Sony Wireless Adapter) is only valid for PS4 controllers"
 		>&2 printf "\n"
+		OPTIND=$PH_OLDOPTIND
+		OPTARG="$PH_OLDOPTARG"
 		exit 1 ;;
 	esac
 done
+OPTIND=$PH_OLDOPTIND
+OPTARG="$PH_OLDOPTARG"
+
 [[ "$PH_ACTION" == @(conf|prompt) && -n "$PH_CONN" ]] && (! confctrl_ph.sh -h) && exit 1
 [[ "$PH_ACTION" == @(conf|prompt) ]] && PH_CONN="bluetooth"
 (([[ -z "$PH_CONN" || -z "$PH_TYPE" ]]) || ([[ -z "$PH_ACTION" ]])) && (! confctrl_ph.sh -h) && exit 1

@@ -24,35 +24,37 @@ typeset PH_SSTRING=""
 typeset PH_STRING=""
 typeset PH_DEBUGSTATE=""
 typeset PH_RESULT="SUCCESS"
+typeset PH_OLDOPTARG="$OPTARG"
 typeset -i PH_COUNT=0
+typeset -i PH_OLDOPTIND=$OPTIND
 OPTIND=1
 
 while getopts hp:m:gcsru PH_OPTION 2>/dev/null
 do
 	case $PH_OPTION in p)
-		ph_screen_input "$OPTARG" || exit $?
-		[[ "$OPTARG" != @(list|debug) ]] && (! confpieh_ph.sh -h) && exit 1
-		[[ -n "$PH_ACTION" ]] && (! confpieh_ph.sh -h) && exit 1
+		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$OPTARG" != @(list|debug) ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_ACTION" ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_ACTION="$OPTARG" ;;
 			   m)
-                ph_screen_input "$OPTARG" || exit $?
-		[[ "$PH_ACTION" != @(debug|) ]] && (! confpieh_ph.sh -h) && exit 1
-		[[ -n "$PH_MODULES" ]] && (! confpieh_ph.sh -h) && exit 1
+                ! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$PH_ACTION" != @(debug|) ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_MODULES" ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_MODULES="$OPTARG" ;;
 			   g)
-		[[ -n "$PH_ACTION" ]] && (! confpieh_ph.sh -h) && exit 1
+		[[ -n "$PH_ACTION" ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_ACTION="getstate" ;;
 		           c)
-		[[ -n "$PH_ACTION" ]] && (! confpieh_ph.sh -h) && exit 1
+		[[ -n "$PH_ACTION" ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_ACTION="configure" ;;
 		           s)
-		[[ -n "$PH_ACTION" ]] && (! confpieh_ph.sh -h) && exit 1
+		[[ -n "$PH_ACTION" ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_ACTION="scratch" ;;
 		           r)
-		[[ -n "$PH_ACTION" ]] && (! confpieh_ph.sh -h) && exit 1
+		[[ -n "$PH_ACTION" ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_ACTION="repair" ;;
 		           u)
-		[[ -n "$PH_ACTION" ]] && (! confpieh_ph.sh -h) && exit 1
+		[[ -n "$PH_ACTION" ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_ACTION="unconfigure" ;;
 			   *)
 		>&2 printf "%s\n" "Usage : confpieh_ph.sh -h | -c | -s | -r | -u | -g |"
@@ -81,9 +83,14 @@ do
 		>&2 printf "%21s%s\n" "" "- The following info will be prompted for during interactive debug state actions :"
 		>&2 printf "%24s%s\n" "" "- PieHelper module name(s) (required)"
 		>&2 printf "\n"
+		OPTIND=$PH_OLDOPTIND
+		OPTARG="$PH_OLDOPTARG"
 		exit 1 ;;
 	esac
 done
+OPTIND=$PH_OLDOPTIND
+OPTARG="$PH_OLDOPTARG"
+
 [[ -n "$PH_MODULES" && "$PH_ACTION" != "debug" ]] && (! confpieh_ph.sh -h) && exit 1
 [[ -z "$PH_MODULES" && "$PH_ACTION" == "debug" ]] && (! confpieh_ph.sh -h) && exit 1
 case $PH_ACTION in repair)
