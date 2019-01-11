@@ -113,12 +113,15 @@ do
 		>&2 printf "%15s%s\n" "" "-a allows specifying an application name for [setapp]"
 		>&2 printf "%15s%s\n" "" "-o allows specifying an optionname for [setopt] and it's new value"
 		>&2 printf "%18s%s\n" "" "- Multiple instances of -o are allowed"
-		>&2 printf "%18s%s\n" "" "- Surround [value] with single quotes whenever possible in the form option='[value]'"
+		>&2 printf "%18s%s\n" "" "- Always surround [value] with single quotes in the form option='[value]' when [value] does not contain variables or no variables which should be expanded by the current shell"
+		>&2 printf "%18s%s\n" "" "  Use double quotes to surround [value] in the form option="[value]" in all other cases"
 		>&2 printf "%18s%s\n" "" "- Composite strings (containing spaces) in [value] should be surrounded with double quotes"
-		>&2 printf "%18s%s\n" "" "- Any event-based input device id references in [value] should have the numeric id replaced by the string 'PH_CTRL#' where '#' is '1' for controller 1, '2' for controller 2, etc"
+		>&2 printf "%18s%s\n" "" "- Using single quotes within [value] is not permitted due to being a POSIX limitation"
+		>&2 printf "%18s%s\n" "" "- Any event-based input device id references in [value] for an option holding an application's command line options should have the"
+		>&2 printf "%18s%s\n" "" "  numeric id replaced by the string 'PH_CTRL#' where '#' is '1' for controller 1, '2' for controller 2, etc"
 		>&2 printf "%18s%s\n" "" "- Changes to an option that sets the controller amount for an application will automatically be reflected to"
-		>&2 printf "%18s%s\n" "" "  the application's command line options if event-based input devices are present as command-line parameters"
-		>&2 printf "%18s%s\n" "" "- Changes to an option for an application's command line options where event-based input devices are present will automatically be reflected to"
+		>&2 printf "%18s%s\n" "" "  the option holding an application's command line options if event-based input devices are present as command-line parameters"
+		>&2 printf "%18s%s\n" "" "- Changes to an option holding an application's command line options where event-based input devices are present will automatically be reflected to"
 		>&2 printf "%18s%s\n" "" "  the application's option determining the controller amount unless all event device parameters are being removed"
 		>&2 printf "%15s%s\n" "" "-m allows marking the operation as mandatory"
 		>&2 printf "%18s%s\n" "" "- Mandatory operations will return an error when they fail"
@@ -132,8 +135,15 @@ do
 		>&2 printf "%15s%s\n" "" "-g specifies a get action in interactive mode"
 		>&2 printf "%15s%s\n" "" "-s specifies a set action in interactive mode"
 		>&2 printf "%18s%s\n" "" "- Set actions will fail on read-only options"
-		>&2 printf "%18s%s\n" "" "- No surrounding quotes are required for [value] in interactive mode"
-		>&2 printf "%18s%s\n" "" "- Composite strings (containing spaces) in [value] should still be surrounded with double quotes"
+		>&2 printf "%18s%s\n" "" "- No surrounding quotes are required when entering the new value in interactive mode"
+		>&2 printf "%18s%s\n" "" "- Composite strings (containing spaces) in the new value entered should be surrounded with double quotes"
+		>&2 printf "%18s%s\n" "" "- Using single quotes within the new vale entered is not permitted due to being a POSIX limitation"
+		>&2 printf "%18s%s\n" "" "- Any event-based input device id references in the new value entered for an option holding an application's command line options should have the"
+		>&2 printf "%18s%s\n" "" "  numeric id replaced by the string 'PH_CTRL#' where '#' is '1' for controller 1, '2' for controller 2, etc"
+		>&2 printf "%18s%s\n" "" "- Changes to an option that sets the controller amount for an application will automatically be reflected to"
+		>&2 printf "%18s%s\n" "" "  the option holding that application's command line options if event-based input devices are present as command-line parameters"
+		>&2 printf "%18s%s\n" "" "- Changes to an option holding an application's command line options where event-based input devices are present will automatically be reflected to"
+		>&2 printf "%18s%s\n" "" "  the application's option determining the controller amount unless all event device parameters are being removed"
 		>&2 printf "%18s%s\n" "" "-m allows marking the operation as mandatory"
 		>&2 printf "%21s%s\n" "" "- Mandatory operations will return an error when they fail"
 		>&2 printf "%21s%s\n" "" "- Specifying -m is optional"
@@ -364,11 +374,11 @@ case $PH_ACTION in get)
 			PH_OPT=`grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | egrep -v ^"PH_PIEH_DEBUG=|PH_PIEH_STARTAPP=" | nawk -F"=" -v choice=$PH_ANSWER 'NR==choice { print $1 }'`
 			printf "%8s%s\n\n" "" "--> Displaying additional info for read-write $PH_USE_WORD $PH_OPT : "
 			[[ "$PH_OPT" == *_NUM_CTRL ]] && (printf "%12s%s\n" "" "- Changes to an option that sets the controller amount for an application will automatically be reflected to" ; \
-							  printf "%12s%s\n\n" "" "  the application's command line options if event-based input devices are present as command-line parameters") 
-			[[ "$PH_OPT" == *_CMD_OPTS ]] && (printf "%12s%s\n" "" "- Changes to an option for an application's command line options where event-based input devices are present will automatically be reflected to" ; \
+							  printf "%12s%s\n\n" "" "  the option holding that application's command line options if event-based input devices are present as command-line parameters") 
+			[[ "$PH_OPT" == *_CMD_OPTS ]] && (printf "%12s%s\n" "" "- Changes to an option holding an application's command line options where event-based input devices are present will automatically be reflected to" ; \
 							  printf "%12s%s\n" "" "  the application's option determining the controller amount unless all event device parameters are being removed" ; \
-							  printf "%12s%s\n" "" "- Any event-based input device id references in the new value should have the numeric id replaced by the string 'PH_CTRL#' where" ; \
-							  printf "%12s%s\n\n" "" "  '#' is '1' for controller 1, '2' for controller 2, etc")
+							  printf "%12s%s\n" "" "- Any event-based input device id references in the new value entered for an option holding an application's command line options should have the" ; \ 
+							  printf "%12s%s\n\n" "" "  numeric id replaced by the string 'PH_CTRL#' where '#' is '1' for controller 1, '2' for controller 2, etc")
 			printf "%10s%s\n" "" "OK"
 			printf "%8s%s" "" "--> Please enter the new value for read-write $PH_USE_WORD $PH_OPT : "
 			read PH_VALUE 2>/dev/null

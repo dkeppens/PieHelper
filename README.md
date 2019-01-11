@@ -1,4 +1,4 @@
-PieHelper is an extensible, user-friendly, gaming and media-oriented scripted software suite for Raspberry Pi,
+PieHelper is an extensible, user-friendly, scripted software suite for Raspberry Pi,
 mostly intended for novice linux users that :
 
 * allows for easy CLI and text menu-based management of the RaspBerry's most-used media and gaming-related applications :
