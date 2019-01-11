@@ -115,13 +115,15 @@ do
 		>&2 printf "%18s%s\n" "" "- Multiple instances of -o are allowed"
 		>&2 printf "%18s%s\n" "" "- Surround [value] with single quotes whenever possible in the form option='[value]'"
 		>&2 printf "%18s%s\n" "" "- Composite strings (containing spaces) in [value] should be surrounded with double quotes"
-		>&2 printf "%18s%s\n" "" "- Any controller device id references in [value] should have the numeric id replaced by the string 'PH_CTRL#' where '#' is '1' for controller 1, '2' for controller 2, etc"
+		>&2 printf "%18s%s\n" "" "- Any event-based input device id references in [value] should have the numeric id replaced by the string 'PH_CTRL#' where '#' is '1' for controller 1, '2' for controller 2, etc"
 		>&2 printf "%18s%s\n" "" "- Changes to an option that sets the controller amount for an application will automatically be reflected to"
-		>&2 printf "%18s%s\n" "" "  the application's command line options if event-based input devices are present as command-line parameters, and vice versa"
+		>&2 printf "%18s%s\n" "" "  the application's command line options if event-based input devices are present as command-line parameters"
+		>&2 printf "%18s%s\n" "" "- Changes to an option for an application's command line options where event-based input devices are present will automatically be reflected to"
+		>&2 printf "%18s%s\n" "" "  the application's option determining the controller amount unless all event device parameters are being removed"
 		>&2 printf "%15s%s\n" "" "-m allows marking the operation as mandatory"
 		>&2 printf "%18s%s\n" "" "- Mandatory operations will return an error when they fail"
 		>&2 printf "%18s%s\n" "" "- Specifying -m is optional"
-		>&2 printf "%18s%s\n" "" "- Operations are by default marked as mandatory"
+		>&2 printf "%18s%s\n" "" "- Operations are marked mandatory by default"
 		>&2 printf "%15s%s\n" "" "-n allows marking the operation as non-mandatory"
 		>&2 printf "%18s%s\n" "" "- Specifying -n is optional"
 		>&2 printf "%18s%s\n" "" "- Non-mandatory operations will return a warning when they fail"
@@ -130,7 +132,7 @@ do
 		>&2 printf "%15s%s\n" "" "-g specifies a get action in interactive mode"
 		>&2 printf "%15s%s\n" "" "-s specifies a set action in interactive mode"
 		>&2 printf "%18s%s\n" "" "- Set actions will fail on read-only options"
-		>&2 printf "%18s%s\n" "" "- No quotes are required for [value] in interactive mode"
+		>&2 printf "%18s%s\n" "" "- No surrounding quotes are required for [value] in interactive mode"
 		>&2 printf "%18s%s\n" "" "- Composite strings (containing spaces) in [value] should still be surrounded with double quotes"
 		>&2 printf "%18s%s\n" "" "-m allows marking the operation as mandatory"
 		>&2 printf "%21s%s\n" "" "- Mandatory operations will return an error when they fail"
@@ -301,16 +303,16 @@ case $PH_ACTION in get)
 				PH_COUNT=1
 				for PH_i in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | nawk -F'=' '{ print $1 }'`
 				do
-					printf "%8s%s%s%s\n" "" "$((PH_COUNT))" ". " "$PH_i"
+					printf "%8s%4s%s%-30s%s\n" "" "$((PH_COUNT))" ". " "$PH_i " "(read-write)"
 					((PH_COUNT++))
 				done
 				PH_COUNT2=$PH_COUNT
 				for PH_i in `nawk 'BEGIN { ORS = " " } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}' $PH_CONF_DIR/$PH_APP.conf`
 				do
-					printf "%8s%s%s%s\n" "" "$((PH_COUNT))" ". " "${PH_i%%=*}"
+					printf "%8s%4s%s%-30s%s\n" "" "$((PH_COUNT))" ". " "${PH_i%%=*} " "(read-only)"
 					((PH_COUNT++))
 				done
-				printf "%8s%s%s%s\n" "" "$((PH_COUNT))" ". " "All"
+				printf "%8s%4s%s%s\n" "" "$((PH_COUNT))" ". " "All"
 				printf "\n%8s%s" "" "Your choice ? "
 				read PH_ANSWER 2>/dev/null
 			done
@@ -334,7 +336,7 @@ case $PH_ACTION in get)
 			unset OPTAR VALAR
 			exit 0 ;;
 				     set)
-			printf "%8s%s\n\n" "" "--> Which $PH_USE_WORD do you want to change the value of ?"
+			printf "%8s%s\n\n" "" "--> Which read-write $PH_USE_WORD do you want to change the value of ?"
                 	while [[ $PH_ANSWER -eq 0 || $PH_ANSWER -gt $PH_COUNT ]]
                 	do
 				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
@@ -345,7 +347,7 @@ case $PH_ACTION in get)
 					do
 						typeset -n PH_OPTVAL="$PH_i"
 						PH_OPTVAL=`echo $PH_OPTVAL | sed 's/"/\\\"/g'`
-						printf "%8s%s%s%s%s%s\n" "" "$((PH_COUNT+1))" ". " "$PH_i" "=" "'`eval echo $PH_OPTVAL`'"
+						printf "%8s%4s%s%s%s%s\n" "" "$((PH_COUNT+1))" ". " "$PH_i" "=" "'`eval echo $PH_OPTVAL`'"
 						PH_OPTVAL=`echo $PH_OPTVAL | sed 's/\\\"/"/g'`
 						((PH_COUNT++))
 						unset -n PH_OPTVAL
@@ -360,6 +362,14 @@ case $PH_ACTION in get)
 			done
 			printf "%10s%s\n" "" "OK"
 			PH_OPT=`grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | egrep -v ^"PH_PIEH_DEBUG=|PH_PIEH_STARTAPP=" | nawk -F"=" -v choice=$PH_ANSWER 'NR==choice { print $1 }'`
+			printf "%8s%s\n\n" "" "--> Displaying additional info for read-write $PH_USE_WORD $PH_OPT : "
+			[[ "$PH_OPT" == *_NUM_CTRL ]] && (printf "%12s%s\n" "" "- Changes to an option that sets the controller amount for an application will automatically be reflected to" ; \
+							  printf "%12s%s\n\n" "" "  the application's command line options if event-based input devices are present as command-line parameters") 
+			[[ "$PH_OPT" == *_CMD_OPTS ]] && (printf "%12s%s\n" "" "- Changes to an option for an application's command line options where event-based input devices are present will automatically be reflected to" ; \
+							  printf "%12s%s\n" "" "  the application's option determining the controller amount unless all event device parameters are being removed" ; \
+							  printf "%12s%s\n" "" "- Any event-based input device id references in the new value should have the numeric id replaced by the string 'PH_CTRL#' where" ; \
+							  printf "%12s%s\n\n" "" "  '#' is '1' for controller 1, '2' for controller 2, etc")
+			printf "%10s%s\n" "" "OK"
 			printf "%8s%s" "" "--> Please enter the new value for read-write $PH_USE_WORD $PH_OPT : "
 			read PH_VALUE 2>/dev/null
 			printf "%10s%s\n" "" "OK"
@@ -381,7 +391,7 @@ case $PH_ACTION in get)
 					do
 						typeset -n PH_OPTVAL="$PH_i"
 						PH_OPTVAL=`echo $PH_OPTVAL | sed 's/"/\\\"/g'`
-						printf "%8s%s%s%s%s%s\n" "" "$((PH_COUNT))" ". " "$PH_i" "=" "'`eval echo $PH_OPTVAL`'"
+						printf "%2s%-13s%4s%4s%s%s%s%s\n" "" "(read-write)" "" "$((PH_COUNT))" ". " "$PH_i" "=" "'`eval echo $PH_OPTVAL`'"
 						PH_OPTVAL=`echo $PH_OPTVAL | sed 's/\\\"/"/g'`
 						((PH_COUNT++))
 						unset -n PH_OPTVAL
@@ -391,7 +401,7 @@ case $PH_ACTION in get)
 					for PH_i in `nawk 'BEGIN { ORS = " " } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}' $PH_CONF_DIR/$PH_APP.conf`
 					do
 						typeset -n PH_OPTVAL="${PH_i%%=*}"
-						printf "%8s%s%s%s%s%s\n" "" "$((PH_COUNT+1))" ". " "${PH_i%%=*}" "=" "'$(echo $PH_OPTVAL | sed 's/"/\\\"/g' | eval echo `cat`)'" 
+						printf "%2s%-13s%4s%4s%s%s%s%s\n" "" "(read-only)" "" "$((PH_COUNT+1))" ". " "${PH_i%%=*}" "=" "'$(echo $PH_OPTVAL | sed 's/"/\\\"/g' | eval echo `cat`)'" 
 						((PH_COUNT++))
 						unset -n PH_OPTVAL
 					done
@@ -404,7 +414,7 @@ case $PH_ACTION in get)
 					PH_COUNT=$((PH_COUNT+`nawk 'BEGIN { count = 0 } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { count++ }}} END { print count }' $PH_CONF_DIR/$PH_APP.conf`))
 				fi
 				((PH_COUNT++))
-				printf "%8s%s%s\n" "" "$PH_COUNT. " "All"
+				printf "%25s%s\n" "$PH_COUNT. " "All"
 				printf "\n%8s%s" "" "Your choice ? "
 				read PH_ANSWER 2>/dev/null
 			done
