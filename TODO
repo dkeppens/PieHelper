@@ -1,5 +1,5 @@
 * support in ph_repair_pieh for protection against multiple instances of 1 app + verification whether all known info matches
-* change to one script for each action and use parameters : new branch !
+* change to one script for each action and use parameters : 'consolidated' branch
 * changes for using CMD_OPTS for all apps, also in supported_apps configuration file for all but basic start command + watch special position for graphical stuff in that case
 * if using kodi + cmd_opts -> kodi num_ctrl can no longer be read-only + general impact on way graphical applications are handled
 * support for passing multiple instances of -o for confopts interactive + for help and get
@@ -10,7 +10,6 @@
 * change confpieh_ph.sh -p debug for partial results and for fasttrack bypass to set all modules to debug/no debug 
 * change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
 * occasional cifs mount problem which for Emulationstation remains ?
-* check for entered single quotes and report error on them in all interactive prompts for new option values + test what happens on non-interactive ones
 * only sed CMD_OPTS vars on startup of app if 'PH_CTRL' string present in current value of CMD_OPTS
 * write confoper_ph.sh and check for /proc, systemd and ksh93 prereqs
 * no change TTY and stop all other apps on just restart of application ? works for kodi,moonlight,emul stuff too ?

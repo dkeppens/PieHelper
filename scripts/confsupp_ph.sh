@@ -65,10 +65,10 @@ do
                 >&2 printf "%3s%s\n" "" "Where -h displays this usage"
                 >&2 printf "%9s%s\n" "" "-p specifies the action to take"
                 >&2 printf "%12s%s\n" "" "\"inst\" allows installing an out-of-scope application [instapp] with a package [instpkg]"
-		>&2 printf "%19s%s\n" "" "and integrate it with PieHelper under account [instusr] and with start command [instcmd]"
+		>&2 printf "%19s%s\n" "" "and integrating it into PieHelper under account [instusr] and with start command [instcmd]"
                 >&2 printf "%15s%s\n" "" "- A maximum of 5 out-of-scope applications can be added"
                 >&2 printf "%15s%s\n" "" "-a allows specifying an application name for [instapp]"
-                >&2 printf "%18s%s\n" "" "- The first four letters should be a case-insensitive unique identifier for any new application"
+                >&2 printf "%18s%s\n" "" "- The first four letters should be a case-insensitive unique identifier of the application"
                 >&2 printf "%15s%s\n" "" "-b allows specifying a packagename [instpkg]"
                 >&2 printf "%18s%s\n" "" "- A package is a requirement for out-of-scope applications"
                 >&2 printf "%18s%s\n" "" "- If the specified package is currently uninstalled it will be installed first"
@@ -77,8 +77,9 @@ do
                 >&2 printf "%20s%s\n" "" "The run account for PieHelper will be used if no other is specified"
                 >&2 printf "%18s%s\n" "" "- Specifying a non-existent run account will create that account and a matching group"
                 >&2 printf "%15s%s\n" "" "-c allows specifying a start command [instcmd]"
-                >&2 printf "%18s%s\n" "" "- Any TTY number references in [instcmd] should have the numeric TTY id replaced by the string PH_TTY"
-                >&2 printf "%18s%s\n" "" "- Any display number references in [instcmd] should always be 0" 
+                >&2 printf "%18s%s\n" "" "- A start command is a requirement for out-of-scope applications"
+                >&2 printf "%18s%s\n" "" "- Any TTY number references in [instcmd] should have the numeric TTY id replaced by the string 'PH_TTY'"
+                >&2 printf "%18s%s\n" "" "- Any display number references in [instcmd] should always be '0'" 
                 >&2 printf "%18s%s\n" "" "- Start commands should always be surrounded with double quotes"
                 >&2 printf "%12s%s\n" "" "\"rem\" allows removing an out-of-scope application [remapp] from PieHelper and (optionally) uninstalling package [rempkg]"
                 >&2 printf "%15s%s\n" "" "-a allows specifying an application name [remapp]"
@@ -87,7 +88,23 @@ do
 		>&2 printf "%20s%s\n" "" "If one is specified the package will also be uninstalled"
                 >&2 printf "%12s%s\n" "" "\"prompt\" makes confsupp_ph.sh behave interactively when it comes to required application info"
                 >&2 printf "%15s%s\n" "" "-i specifies an install action in interactive mode"
+                >&2 printf "%18s%s\n" "" "- No surrounding quotes are required when entering any new value in interactive mode"
+                >&2 printf "%18s%s\n" "" "- The following application info will be prompted for during interactive install actions :"
+                >&2 printf "%21s%s\n" "" "- Application name (required)"
+                >&2 printf "%21s%s\n" "" "- Application package name (required)"
+                >&2 printf "%21s%s\n" "" "- Application run account"
+                >&2 printf "%24s%s\n" "" "- Entering a new value for the run account is optional"
+                >&2 printf "%24s%s\n" "" "  The run account for PieHelper will be used if no other is specified"
+                >&2 printf "%24s%s\n" "" "- Specifying a non-existent run account will create that account and a matching group"
+                >&2 printf "%21s%s\n" "" "- Application start command (required)"
+                >&2 printf "%24s%s\n" "" "- Any TTY number references in the value entered for the application's start command should have the numeric TTY id replaced by the string 'PH_TTY'"
+                >&2 printf "%24s%s\n" "" "- Any display number references in the value entered for the application's start command should always be '0'" 
                 >&2 printf "%15s%s\n" "" "-r specifies a remove action in interactive mode"
+                >&2 printf "%18s%s\n" "" "- The following application info will be prompted for during interactive remove actions :"
+                >&2 printf "%21s%s\n" "" "- Application name (required)"
+                >&2 printf "%21s%s\n" "" "- Application package name"
+                >&2 printf "%24s%s\n" "" "- Entering a new value for the package name is optional"
+		>&2 printf "%24s%s\n" "" "  If one is specified the package will also be uninstalled"
                 >&2 printf "\n"
                 exit 1 ;;
         esac
@@ -217,13 +234,13 @@ PH_`echo $PH_APPU`_PKG_NAME='$PH_APP_PKG'						# - This is the package name for 
 											# - Default is '$PH_APP_PKG'
 PH_`echo $PH_APPU`_CMD_OPTS=''								# - These are the command line options you wish to launch $PH_APP with
 											# - Amongst others, this can be used for passing event-based input devices when required as parameters by $PH_APP
-											#   When passing event-based input devices, replace the numeric id in the device reference with the string 'PH_CTRL#' where
-											#   where '#' is '1' for device 1, '2' for device 2, etc
+											#   When passing event-based input devices, replace the numeric id in the device reference with the string 'PH_CTRL%' where
+											#   where '%' is '1' for device 1, '2' for device 2, etc
 											# - Changes to an option holding an application's command line options where event-based input devices are present will automatically be reflected
 											#   to the application's option determining the controller amount unless all event device parameters are being removed
 											# - Default is ''
 PH_`echo $PH_APPU`_USE_CTRL='no'							# - This indicates whether you want to use controllers with $PH_APP or not
-											# - Controller type to be used and the toggle for optional mapping with xboxdrv should be configured first using confopts_ph.sh
+											# - Controller type to be used and the toggle for optional mapping with xboxdrv should be configured first using 'confopts_ph.sh'
 											#   or the PieHelper menu
 											# - The amount of controllers to use can be set with option PH_`echo $PH_APPU`_NUM_CTRL
 											# - If this is set to 'yes' and the specified amount of controllers of the type configured can not be detected on $PH_APP startup,

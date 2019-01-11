@@ -4,7 +4,7 @@
 
 . $(dirname $0)/../main/main.sh || exit $? && set +x
 
-#set -x
+set -x
 
 typeset PH_i=""
 typeset PH_OLD_VERSION=""
@@ -34,8 +34,10 @@ do
 		>&2 printf "%23s%s\n" "" "-v [version]"
 		>&2 printf "\n"
 		>&2 printf "%3s%s\n" "" "Where -h displays this usage"
-		>&2 printf "%9s%s\n" "" "-g allows updating the remote git master repository with all new changes for [version] in the new build"
+		>&2 printf "%9s%s\n" "" "-g allows committing all changes between the build being generated and the remote master github repository to the repo and"
+		>&2 printf "%9s%s\n" "" "   tagging the github update with version number [version]"
 		>&2 printf "%12s%s\n" "" "- Specifying -g is optional"
+		>&2 printf "%12s%s\n" "" "- Any commit attempts to the github master repository will fail if upstream access has not been previously granted"
 		>&2 printf "%12s%s\n" "" "-m allows setting a commit message for git"
 		>&2 printf "%15s%s\n" "" "- Specifying -m is optional"
 		>&2 printf "%15s%s\n" "" "- Commit messages should always be surrounded with single or double quotes"
@@ -44,10 +46,10 @@ do
 		>&2 printf "%12s%s\n" "" "- [version] should be specified as a decimal number"
 		>&2 printf "%12s%s\n" "" "- The archive will be placed in $PH_BUILD_DIR"
 		>&2 printf "%12s%s\n" "" "- Any old archives in $PH_BUILD_DIR with the same version number"
-		>&2 printf "%14s%s\n" "" "will be overwritten"
+		>&2 printf "%12s%s\n" "" "  will be overwritten"
 		>&2 printf "%12s%s\n" "" "- If PH_PIEH_CIFS_SHARE is set to \"yes\" a uniquely timestamped backup copy of this archive"
-		>&2 printf "%14s%s\n" "" "will also be created in directory PH_PIEH_CIFS_SUBDIR on local network server PH_PIEH_CIFS_SRV"
-		>&2 printf "%14s%s\n" "" "More info on these settings can be viewed using confopts_ph.sh or the PieHelper menu"
+		>&2 printf "%12s%s\n" "" "  will also be created in directory PH_PIEH_CIFS_SUBDIR on local network server PH_PIEH_CIFS_SRV"
+		>&2 printf "%12s%s\n" "" "  More info on these settings can be viewed using 'confopts_ph.sh' or the PieHelper menu"
 		>&2 printf "\n"
 		unset PH_REVERSE
 		exit 1 ;;

@@ -31,23 +31,26 @@ OPTIND=1
 while getopts a:o:p:hgsdrmn PH_OPTION 2>/dev/null
 do
 	case $PH_OPTION in a)
-		ph_screen_input "$OPTARG" || exit $?
-		[[ -n "$PH_APP" ]] && (! confopts_ph.sh -h) && exit 1
+		! ph_screen_input "$OPTARG" && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_APP" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_APP="$OPTARG"
 		[[ "$PH_APP" == "Ctrls" ]] && PH_USE_WORD="setting" || PH_USE_WORD="option" ;;
 			   p)
-		ph_screen_input "$OPTARG" || exit $?
-		[[ "$OPTARG" != @(set|get|help|prompt|list) ]] && (! confopts_ph.sh -h) && exit 1
-		[[ -n "$PH_ACTION" ]] && (! confopts_ph.sh -h) && exit 1
-		[[ -n "$PH_I_ACTION" && "$OPTARG" != "prompt" ]] && (! confopts_ph.sh -h) && exit 1
+		! ph_screen_input "$OPTARG" && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$OPTARG" != @(set|get|help|prompt|list) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_ACTION" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_I_ACTION" && "$OPTARG" != "prompt" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_ACTION="$OPTARG" ;;
 			   o)
-		[[ -n "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && exit 1
-		[[ -z "${OPTARG%%=*}" ]] && (! confopts_ph.sh -h) && exit 1
+		[[ -n "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -z "${OPTARG%%=*}" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		if [[ "${OPTARG%%=*}" == "all" && $PH_ACTION == "set" ]]
 		then
 			printf "%s\n" "- Changing value for option ${OPTARG%%=*}"
 			printf "%2s%s\n" "" "FAILED : Unknown option"
+			unset OPTAR VALAR
+			OPTARG="$PH_OLDOPTARG"
+			OPTIND=$PH_OLDOPTIND
 			exit 1	
 		fi
 		if [[ -n "$PH_OPT" ]]
@@ -59,30 +62,30 @@ do
 			PH_VALUE="${OPTARG##*=}"
 		fi ;;
                           g)
-                [[ "$PH_ACTION" != @(prompt|) ]] && (! confopts_ph.sh -h) && exit 1
-		[[ -n "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && exit 1
+                [[ "$PH_ACTION" != @(prompt|) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
                 PH_I_ACTION="get" ;;
                           s)
-                [[ "$PH_ACTION" != @(prompt|) ]] && (! confopts_ph.sh -h) && exit 1
-		[[ -n "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && exit 1
+                [[ "$PH_ACTION" != @(prompt|) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
                 PH_I_ACTION="set" ;;
                           d)
-                [[ "$PH_ACTION" != @(prompt|) ]] && (! confopts_ph.sh -h) && exit 1
-		[[ -n "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && exit 1
+                [[ "$PH_ACTION" != @(prompt|) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
                 PH_I_ACTION="help" ;;
                           r)
-                [[ "$PH_ACTION" != @(get|prompt|set|) ]] && (! confopts_ph.sh -h) && exit 1
-		[[ -n "$PH_RESOLVE" ]] && (! confopts_ph.sh -h) && exit 1
+                [[ "$PH_ACTION" != @(get|prompt|set|) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_RESOLVE" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
                 PH_RESOLVE="yes" ;;
 			  m)
-		[[ "$PH_ACTION" != @(set|prompt|) ]] && (! confopts_ph.sh -h) && exit 1
-		[[ "$PH_I_ACTION" != @(set|) ]] && (! confopts_ph.sh -h) && exit 1
-		[[ -n "$PH_TYPE" ]] && (! confopts_ph.sh -h) && exit 1
+		[[ "$PH_ACTION" != @(set|prompt|) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$PH_I_ACTION" != @(set|) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_TYPE" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
                 PH_TYPE="r" ;;
 			  n)
-		[[ "$PH_ACTION" != @(set|prompt|) ]] && (! confopts_ph.sh -h) && exit 1
-		[[ "$PH_I_ACTION" != @(set|) ]] && (! confopts_ph.sh -h) && exit 1
-		[[ -n "$PH_TYPE" ]] && (! confopts_ph.sh -h) && exit 1
+		[[ "$PH_ACTION" != @(set|prompt|) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$PH_I_ACTION" != @(set|) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_TYPE" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
                 PH_TYPE="o" ;;
 			   *)
 		>&2 printf "%s\n" "Usage : confopts_ph.sh -h |"
@@ -109,7 +112,7 @@ do
 		>&2 printf "%15s%s\n" "" "-o allows specifying an optionname for [helpopt]"
 		>&2 printf "%18s%s\n" "" "- The keyword \"all\" can be used to request displaying information about all options of [helpapp]"
 		>&2 printf "%12s%s\n" "" "\"set\" allows changing the value of an option [setopt] of an application [setapp] or a read-write controller setting to [value]"
-		>&2 printf "%15s%s\n" "" "- The value of a read-only option cannot be changed"
+		>&2 printf "%15s%s\n" "" "- Set actions will fail on read-only options"
 		>&2 printf "%15s%s\n" "" "-a allows specifying an application name for [setapp]"
 		>&2 printf "%15s%s\n" "" "-o allows specifying an optionname for [setopt] and it's new value"
 		>&2 printf "%18s%s\n" "" "- Multiple instances of -o are allowed"
@@ -118,7 +121,7 @@ do
 		>&2 printf "%18s%s\n" "" "- Composite strings (containing spaces) in [value] should be surrounded with double quotes"
 		>&2 printf "%18s%s\n" "" "- Using single quotes within [value] is not permitted due to being a POSIX limitation"
 		>&2 printf "%18s%s\n" "" "- Any event-based input device id references in [value] for an option holding an application's command line options should have the"
-		>&2 printf "%18s%s\n" "" "  numeric id replaced by the string 'PH_CTRL#' where '#' is '1' for controller 1, '2' for controller 2, etc"
+		>&2 printf "%18s%s\n" "" "  numeric id replaced by the string 'PH_CTRL%' where '%' is '1' for controller 1, '2' for controller 2, etc"
 		>&2 printf "%18s%s\n" "" "- Changes to an option that sets the controller amount for an application will automatically be reflected to"
 		>&2 printf "%18s%s\n" "" "  the option holding an application's command line options if event-based input devices are present as command-line parameters"
 		>&2 printf "%18s%s\n" "" "- Changes to an option holding an application's command line options where event-based input devices are present will automatically be reflected to"
@@ -139,7 +142,7 @@ do
 		>&2 printf "%18s%s\n" "" "- Composite strings (containing spaces) in the new value entered should be surrounded with double quotes"
 		>&2 printf "%18s%s\n" "" "- Using single quotes within the new vale entered is not permitted due to being a POSIX limitation"
 		>&2 printf "%18s%s\n" "" "- Any event-based input device id references in the new value entered for an option holding an application's command line options should have the"
-		>&2 printf "%18s%s\n" "" "  numeric id replaced by the string 'PH_CTRL#' where '#' is '1' for controller 1, '2' for controller 2, etc"
+		>&2 printf "%18s%s\n" "" "  numeric id replaced by the string 'PH_CTRL%' where '%' is '1' for controller 1, '2' for controller 2, etc"
 		>&2 printf "%18s%s\n" "" "- Changes to an option that sets the controller amount for an application will automatically be reflected to"
 		>&2 printf "%18s%s\n" "" "  the option holding that application's command line options if event-based input devices are present as command-line parameters"
 		>&2 printf "%18s%s\n" "" "- Changes to an option holding an application's command line options where event-based input devices are present will automatically be reflected to"
@@ -158,24 +161,25 @@ do
 		>&2 printf "\n"
 		OPTARG="$PH_OLDOPTARG"
 		OPTIND=$PH_OLDOPTIND
+		unset OPTAR VALAR
 		exit 1 ;;
 	esac
 done
 OPTARG="$PH_OLDOPTARG"
 OPTIND=$PH_OLDOPTIND
 
-[[ -n "$PH_RESOLVE" && "$PH_ACTION" != @(get|prompt) ]] && (! confopts_ph.sh -h) && exit 1
+[[ -n "$PH_RESOLVE" && "$PH_ACTION" != @(get|prompt) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && exit 1
 [[ -z "$PH_RESOLVE" ]] && PH_RESOLVE="no"
 (([[ -z "$PH_TYPE" ]]) && ([[ "$PH_ACTION" == "set" || "$PH_I_ACTION" == "set" ]])) && PH_TYPE="r"
-(([[ -n "$PH_TYPE" ]]) && ([[ "$PH_ACTION" == @(help|get|list) || "$PH_I_ACTION" == @(get|help) ]])) && (! confopts_ph.sh -h) && exit 1
-(([[ -z "$PH_ACTION" || -z "$PH_APP" ]]) || ([[ "$PH_ACTION" != @(prompt|list) && -z "$PH_OPT" ]])) && (! confopts_ph.sh -h) && exit 1
-[[ -n "$PH_OPT" && "$PH_ACTION" == @(prompt|list) ]] && (! confopts_ph.sh -h) && exit 1
-[[ "$PH_ACTION" == "prompt" && -z "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && exit 1
+(([[ -n "$PH_TYPE" ]]) && ([[ "$PH_ACTION" == @(help|get|list) || "$PH_I_ACTION" == @(get|help) ]])) && (! confopts_ph.sh -h) && unset OPTAR VALAR && exit 1
+(([[ -z "$PH_ACTION" || -z "$PH_APP" ]]) || ([[ "$PH_ACTION" != @(prompt|list) && -z "$PH_OPT" ]])) && (! confopts_ph.sh -h) && unset OPTAR VALAR && exit 1
+[[ -n "$PH_OPT" && "$PH_ACTION" == @(prompt|list) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && exit 1
+[[ "$PH_ACTION" == "prompt" && -z "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && exit 1
 if [[ `$PH_SUDO cat /proc/$PPID/comm` != "confopts_ph.sh" ]]
 then
 	if [[ "$PH_APP" != "Ctrls" ]]
 	then
-		ph_check_app_name -s -a "$PH_APP" || exit $?
+		! ph_check_app_name -s -a "$PH_APP" && unset OPTAR VALAR && exit 1
 	fi
 fi
 if [[ "$PH_ACTION" == @(set|get|help) ]]
@@ -188,9 +192,9 @@ then
 	for PH_COUNT in {0..`echo $((${#OPTAR[@]}-1))`}
 	do
 		[[ "${OPTAR[$PH_COUNT]}" == "PH_PIEH_DEBUG" ]] && (printf "%s\n" "- Changing value for $PH_USE_WORD ${OPTAR[$PH_COUNT]}" ; \
-				printf "%2s%s\n" "" "FAILED : Module debug should be handled by 'confpieh_ph.sh'" ; return 0) && exit 1 
+				printf "%2s%s\n" "" "FAILED : Module debug should be handled by 'confpieh_ph.sh'" ; return 0) && unset OPTAR VALAR && exit 1 
 		[[ "${OPTAR[$PH_COUNT]}" == "PH_PIEH_STARTAPP" ]] && (printf "%s\n" "- Changing value for $PH_USE_WORD ${OPTAR[$PH_COUNT]}" ; \
-				printf "%2s%s\n" "" "FAILED : The application to start by default on system boot should be handled by confapps_ph.sh -p start" ; return 0) && exit 1 
+				printf "%2s%s\n" "" "FAILED : The application to start by default on system boot should be handled by confapps_ph.sh -p start" ; return 0) && unset OPTAR VALAR && exit 1 
 		while ((! grep ^"${OPTAR[$PH_COUNT]}=" $PH_CONF_DIR/$PH_APP.conf >/dev/null 2>&1) && ([[ "${OPTAR[$PH_COUNT]}" != "all" && "$PH_ACTION" != @(prompt|list) ]]))
 		do
 			for PH_i in `nawk 'BEGIN { ORS = " " } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}' $PH_CONF_DIR/$PH_APP.conf`
@@ -206,6 +210,7 @@ then
 				printf "%s\n" "- Displaying help for $PH_USE_WORD ${OPTAR[$PH_COUNT]}" ;;
 			esac
 			printf "%2s%s\n" "" "FAILED : Unknown $PH_USE_WORD"
+			unset OPTAR VALAR
 			exit 1
 		done
 	done
@@ -264,10 +269,12 @@ case $PH_ACTION in get)
 			(for PH_OPT in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | cut -d'=' -f1 | paste -d" " -s`
 			do
 				confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
+				printf "\n\n\n\n"
 			done
 			for PH_OPT in `nawk 'BEGIN { ORS = " " } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}' $PH_CONF_DIR/$PH_APP.conf`
 			do
 				confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
+				printf "\n\n\n\n"
 			done) | more
 		else
 			(printf "%s\n" "- Displaying help for $PH_OPT_TYPE $PH_USE_WORD $PH_OPT"
@@ -291,8 +298,8 @@ case $PH_ACTION in get)
 		printf "%s%s%s\n" "- Changing value for $PH_USE_WORD" "s" " $(for PH_COUNT in {0..`echo $((${#OPTAR[@]}-1))`};do;echo -n "${OPTAR[$PH_COUNT]} ";done)"
 		for PH_COUNT in {0..`echo $((${#OPTAR[@]}-1))`}
 		do
-			[[ "${OPTAR[$PH_COUNT]}" == "PH_PIEH_DEBUG" ]] && printf "%2s%s\n" "" "FAILED : Module debug should be handled by confpieh_ph.sh" && exit 1 
-			[[ "${OPTAR[$PH_COUNT]}" == "PH_PIEH_STARTAPP" ]] && printf "%2s%s\n" "" "FAILED : The application to start by default on system boot should be handled by confapps_ph.sh -p start" && exit 1 
+			[[ "${OPTAR[$PH_COUNT]}" == "PH_PIEH_DEBUG" ]] && printf "%2s%s\n" "" "FAILED : Module debug should be handled by confpieh_ph.sh" && unset OPTAR VALAR && exit 1 
+			[[ "${OPTAR[$PH_COUNT]}" == "PH_PIEH_STARTAPP" ]] && printf "%2s%s\n" "" "FAILED : The application to start by default on system boot should be handled by confapps_ph.sh -p start" && unset OPTAR VALAR && exit 1 
 		done
 		eval ph_set_option "$PH_APP" `echo -n "$(for PH_COUNT in {0..\`echo -n $((${#OPTAR[@]}-1))\`};do;eval echo -en -$PH_TYPE ${OPTAR[$PH_COUNT]}='\"\\${VALAR[$PH_COUNT]}\"'\" \";done)"`
 		PH_RET_CODE=$?
@@ -372,14 +379,17 @@ case $PH_ACTION in get)
 			done
 			printf "%10s%s\n" "" "OK"
 			PH_OPT=`grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | egrep -v ^"PH_PIEH_DEBUG=|PH_PIEH_STARTAPP=" | nawk -F"=" -v choice=$PH_ANSWER 'NR==choice { print $1 }'`
-			printf "%8s%s\n\n" "" "--> Displaying additional info for read-write $PH_USE_WORD $PH_OPT : "
-			[[ "$PH_OPT" == *_NUM_CTRL ]] && (printf "%12s%s\n" "" "- Changes to an option that sets the controller amount for an application will automatically be reflected to" ; \
-							  printf "%12s%s\n\n" "" "  the option holding that application's command line options if event-based input devices are present as command-line parameters") 
-			[[ "$PH_OPT" == *_CMD_OPTS ]] && (printf "%12s%s\n" "" "- Changes to an option holding an application's command line options where event-based input devices are present will automatically be reflected to" ; \
-							  printf "%12s%s\n" "" "  the application's option determining the controller amount unless all event device parameters are being removed" ; \
-							  printf "%12s%s\n" "" "- Any event-based input device id references in the new value entered for an option holding an application's command line options should have the" ; \ 
-							  printf "%12s%s\n\n" "" "  numeric id replaced by the string 'PH_CTRL#' where '#' is '1' for controller 1, '2' for controller 2, etc")
-			printf "%10s%s\n" "" "OK"
+			[[ "$PH_OPT" == *_NUM_CTRL ]] && (printf "%8s%s\n\n" "" "--> Displaying additional info for read-write $PH_USE_WORD $PH_OPT : " ; \
+							  printf "%12s%s\n" "" "- Changes to an option that sets the controller amount for an application will automatically be reflected to" ; \
+							  printf "%12s%s\n\n" "" "  the option holding that application's command line options if event-based input devices are present as command-line parameters" ; \
+							  printf "%10s%s\n" "" "OK")
+			[[ "$PH_OPT" == *_CMD_OPTS ]] && (printf "%8s%s\n\n" "" "--> Displaying additional info for read-write $PH_USE_WORD $PH_OPT : " ; \
+							  printf "%12s%s\n" "" "- Changes to an option holding an application's command line options where event-based input devices are present will automatically be reflected to" ; \
+							  printf "%12s%s\n" "" "  the application's option determining the controller amount unless all event device parameters are being removed")
+			[[ "$PH_OPT" == "PH_MOON_CMD_OPTS" ]] && printf "%12s%s\n" "" "  For Moonlight, the number of event-based input devices cannot be zero"
+			[[ "$PH_OPT" == *_CMD_OPTS ]] && (printf "%12s%s\n" "" "- Any event-based input device id references in the new value entered for an option holding an application's command line options should have the" ; \
+							  printf "%12s%s\n\n" "" "  numeric id replaced by the string 'PH_CTRL%' where '%' is '1' for controller 1, '2' for controller 2, etc" ; \
+							  printf "%10s%s\n" "" "OK")
 			printf "%8s%s" "" "--> Please enter the new value for read-write $PH_USE_WORD $PH_OPT : "
 			read PH_VALUE 2>/dev/null
 			printf "%10s%s\n" "" "OK"
@@ -443,9 +453,9 @@ case $PH_ACTION in get)
 					PH_OPT="${PH_OPT%%=*}" 
 				fi
 			fi
-			confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
 			unset OPTAR VALAR
+			confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
 			exit $? ;;
 		esac ;;
 esac
-confopts_ph.sh -h || exit $?
+(! confopts_ph.sh -h) && unset OPTAR VALAR && exit 1

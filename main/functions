@@ -27,8 +27,10 @@ set -A PH_OPTAR PH_MOON_RES PH_MOON_FPS PH_MOON_BITRATE PH_MOON_PCKTSIZE PH_MOON
 
 for PH_OPT in {0..$((${#PH_OPTAR[@]}-1))}
 do
+	printf "\n"
         PH_COUNT=0
         confopts_ph.sh -p get -a Moonlight -o "${PH_OPTAR[$PH_OPT]}" | tail -n +3
+	printf "\n"
         confopts_ph.sh -p help -a Moonlight -o "${PH_OPTAR[$PH_OPT]}" | tail -n +3
         printf "%s\n" "- Prompting for requested change"
         while [[ $PH_ANSWER != @(y|n) ]]
