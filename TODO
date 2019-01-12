@@ -2,7 +2,6 @@
 * change to one script for each action and use parameters : 'consolidated' branch
 * changes for using CMD_OPTS for all apps, also in supported_apps configuration file for all but basic start command + watch special position for graphical stuff in that case
 * if using kodi + cmd_opts -> kodi num_ctrl can no longer be read-only + general impact on way graphical applications are handled
-* support for passing multiple instances of -o for confopts interactive + for help and get
 * check for always echo and no quoting namerefs
 * solve bluetooth pairing dualshock3 controllers
 * treat remaining remarks in codebase

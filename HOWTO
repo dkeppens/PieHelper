@@ -87,6 +87,7 @@
 - A word on TTY switching and flexibility : 
 
 	* The PieHelper menu offers most, but not all of the options available through the CLI tools
+	  Some operations can be combined into one when using the CLI tools
 	  Also, using the CLI tools from a remote terminal offers slightly more flexibility because TTY switching is handled automatically
 	  The main differences when using the menu directly on a TTY and not from a remote terminal are the following :
 	   - Instead of the scripts, the linux built-in mechanism of Ctrl-LeftAlt-Functionkey#TTY will need to be used to switch to a TTY number '#TTY'

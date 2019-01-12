@@ -422,7 +422,7 @@ then
 	for PH_j in `nawk 'BEGIN { ORS = " " } { print $1 }' $PH_CONF_DIR/supported_apps`
 	do
 		[[ `echo $PH_j | cut -c1-4 | tr "[:upper:]" "[:lower:]"` == "$PH_APPL" ]] && \
-			printf "%2s%s\n" "" "FAILED : Application shortname \"$PH_APPL\" already in use" && \
+			printf "%2s%s\n\n" "" "FAILED : Application shortname \"$PH_APPL\" already in use" && \
 			return 1
 	done
 	printf "%2s%s\n" "" "SUCCESS"
@@ -440,14 +440,14 @@ fi
 if [[ -z "$PH_STATE" ]]
 then
 	printf "%2s%s\n" "" "FAILED : Application is still uninstalled or undiscovered"
-	printf "%11s%s\n" "" "Both the PieHelper menu and the 'confapps_ph.sh' tool can be used for either installing the application or running a discovery scan"
+	printf "%11s%s\n\n" "" "Both the PieHelper menu and the 'confapps_ph.sh' tool can be used for either installing the application or running a discovery scan"
 	return 1
 fi
 if $PH_SCRIPTS_DIR/confapps_ph.sh -p list -l "$PH_FILE" | tail -n +2 | nawk '{ print $1 }' | grep ^"$PH_APP"$ >/dev/null
 then
 	printf "%2s%s\n" "" "SUCCESS : $PH_STATE"
 else
-	printf "%2s%s\n" "" "FAILED : $PH_STATE"
+	printf "%2s%s\n\n" "" "FAILED : $PH_STATE"
 	return 1
 fi
 return 0
@@ -713,7 +713,7 @@ do
 	ph_screen_input $PH_ANSWER || return $?
 	((PH_COUNT++))
 done
-[[ "$PH_ANSWER" == "n" ]] && printf "%10s%s\n" "" "OK" && printf "%2s%s\n" "" "USER ABORTED" && return 1
+[[ "$PH_ANSWER" == "n" ]] && printf "%10s%s\n" "" "OK" && printf "%2s%s\n\n" "" "USER ABORTED" && return 1
 printf "%10s%s\n" "" "OK" && printf "%2s%s\n" "" "SUCCESS"
 ph_check_conf_files supp || (printf "%s\n" "- Checking for supported applications configuration file" ; \
 			printf "%2s%s\n" "" "FAILED" ; return 1) || return $?
@@ -1159,7 +1159,7 @@ function ph_screen_input {
 
 if [[ `echo "$*" | sed 's/[ ,/.]//g'` == *+([![:word:]])* ]] 2>/dev/null
 then
-	printf "%2s%s\n" "" "ABORT : Invalid input characters detected"
+	printf "%2s%s\n\n" "" "ABORT : Invalid input characters detected"
 	return 1
 fi
 return 0

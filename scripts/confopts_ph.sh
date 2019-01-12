@@ -24,31 +24,31 @@ typeset -i PH_COUNT=0
 typeset -i PH_COUNT2=0
 typeset -i PH_RET_CODE=0
 typeset -i PH_OLDOPTIND=$OPTIND
-set -A OPTAR
-set -A VALAR
+set -A PH_OPTAR
+set -A PH_VALAR
 OPTIND=1
 
 while getopts a:o:p:hgsdrmn PH_OPTION 2>/dev/null
 do
 	case $PH_OPTION in a)
-		! ph_screen_input "$OPTARG" && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ -n "$PH_APP" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		! ph_screen_input "$OPTARG" && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_APP" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_APP="$OPTARG"
 		[[ "$PH_APP" == "Ctrls" ]] && PH_USE_WORD="setting" || PH_USE_WORD="option" ;;
 			   p)
-		! ph_screen_input "$OPTARG" && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$OPTARG" != @(set|get|help|prompt|list) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ -n "$PH_ACTION" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ -n "$PH_I_ACTION" && "$OPTARG" != "prompt" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		! ph_screen_input "$OPTARG" && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$OPTARG" != @(set|get|help|prompt|list) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_ACTION" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_I_ACTION" && "$OPTARG" != "prompt" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_ACTION="$OPTARG" ;;
 			   o)
-		[[ -n "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ -z "${OPTARG%%=*}" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -z "${OPTARG%%=*}" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		if [[ "${OPTARG%%=*}" == "all" && $PH_ACTION == "set" ]]
 		then
 			printf "%s\n" "- Changing value for option ${OPTARG%%=*}"
-			printf "%2s%s\n" "" "FAILED : Unknown option"
-			unset OPTAR VALAR
+			printf "%2s%s\n\n" "" "FAILED : Unknown option"
+			unset PH_OPTAR PH_VALAR
 			OPTARG="$PH_OLDOPTARG"
 			OPTIND=$PH_OLDOPTIND
 			exit 1	
@@ -62,36 +62,36 @@ do
 			PH_VALUE="${OPTARG##*=}"
 		fi ;;
                           g)
-                [[ "$PH_ACTION" != @(prompt|) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ -n "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+                [[ "$PH_ACTION" != @(prompt|) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
                 PH_I_ACTION="get" ;;
                           s)
-                [[ "$PH_ACTION" != @(prompt|) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ -n "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+                [[ "$PH_ACTION" != @(prompt|) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
                 PH_I_ACTION="set" ;;
                           d)
-                [[ "$PH_ACTION" != @(prompt|) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ -n "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+                [[ "$PH_ACTION" != @(prompt|) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
                 PH_I_ACTION="help" ;;
                           r)
-                [[ "$PH_ACTION" != @(get|prompt|set|) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ -n "$PH_RESOLVE" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+                [[ "$PH_ACTION" != @(get|prompt|set|) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_RESOLVE" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
                 PH_RESOLVE="yes" ;;
 			  m)
-		[[ "$PH_ACTION" != @(set|prompt|) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$PH_I_ACTION" != @(set|) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ -n "$PH_TYPE" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$PH_ACTION" != @(set|prompt|) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$PH_I_ACTION" != @(set|) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_TYPE" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
                 PH_TYPE="r" ;;
 			  n)
-		[[ "$PH_ACTION" != @(set|prompt|) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$PH_I_ACTION" != @(set|) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ -n "$PH_TYPE" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$PH_ACTION" != @(set|prompt|) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$PH_I_ACTION" != @(set|) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_TYPE" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
                 PH_TYPE="o" ;;
 			   *)
 		>&2 printf "%s\n" "Usage : confopts_ph.sh -h |"
-		>&2 printf "%23s%s\n" "" "-p \"get\" -a [[getapp]|\"Ctrls\"] -o [[getopt]|\"all\"] '-r' |"
+		>&2 printf "%23s%s\n" "" "-p \"get\" -a [[getapp]|\"Ctrls\"] [-o [getopt] -o [getopt] ...|-o \"all\"] '-r' |"
 		>&2 printf "%23s%s\n" "" "-p \"list\" -a [[listapp]|\"Ctrls\"] |"
-		>&2 printf "%23s%s\n" "" "-p \"help\" -a [[helpapp]|\"Ctrls\"] -o [[helpopt]|\"all\"] |"
+		>&2 printf "%23s%s\n" "" "-p \"help\" -a [[helpapp]|\"Ctrls\"] [-o [helpopt] -o [helpopt] ...|-o \"all\"] |"
 		>&2 printf "%23s%s\n" "" "-p \"set\" -a [[setapp]|\"Ctrls\"] -o [setopt]='[value]' -o [setopt]='[value]' -o ... '[-m|-n]' |"
 		>&2 printf "%23s%s\n" "" "-p \"prompt\" -a [[promptapp]|\"Ctrls\"] '-r' [-g|-s '[-m|-n]'|-d]"
 		>&2 printf "\n"
@@ -101,7 +101,9 @@ do
 		>&2 printf "%15s%s\n" "" "- Variables in option values will automatically be expanded when displaying"
 		>&2 printf "%15s%s\n" "" "-a allows specifying an application name for [getapp]"
 		>&2 printf "%15s%s\n" "" "-o allows specifying an optionname for [getopt]"
+		>&2 printf "%18s%s\n" "" "- Multiple instances of -o are allowed"
 		>&2 printf "%18s%s\n" "" "- The keyword \"all\" can be used to request displaying the value of all options of [getapp]"
+		>&2 printf "%21s%s\n" "" "- The keyword \"all\" is unsupported when using multiple instances of -o"
 		>&2 printf "%15s%s\n" "" "-r allows requesting expansion of all variables present in the value for option [getopt]"
 		>&2 printf "%18s%s\n" "" "- Specifying -r is optional"
 		>&2 printf "%18s%s\n" "" "- Variables are not expanded by default"
@@ -110,7 +112,9 @@ do
 		>&2 printf "%15s%s\n" "" "-a allows specifying an application name for [helpapp]"
 		>&2 printf "%18s%s\n" "" "- The keyword \"Ctrls\" can be used to operate on the controller settings instead"
 		>&2 printf "%15s%s\n" "" "-o allows specifying an optionname for [helpopt]"
+		>&2 printf "%18s%s\n" "" "- Multiple instances of -o are allowed"
 		>&2 printf "%18s%s\n" "" "- The keyword \"all\" can be used to request displaying information about all options of [helpapp]"
+		>&2 printf "%21s%s\n" "" "- The keyword \"all\" is unsupported when using multiple instances of -o"
 		>&2 printf "%12s%s\n" "" "\"set\" allows changing the value of an option [setopt] of an application [setapp] or a read-write controller setting to [value]"
 		>&2 printf "%15s%s\n" "" "- Set actions will fail on read-only options"
 		>&2 printf "%15s%s\n" "" "-a allows specifying an application name for [setapp]"
@@ -155,96 +159,111 @@ do
 		>&2 printf "%21s%s\n" "" "- Non-mandatory operations will return a warning when they fail"
 		>&2 printf "%21s%s\n" "" "- Specifying -n is optional"
 		>&2 printf "%15s%s\n" "" "-d specifies a display help action in interactive mode"
-		>&2 printf "%15s%s\n" "" "-r allows requesting expansion of all variables present in all option values displayed"
+		>&2 printf "%15s%s\n" "" "-r allows requesting expansion of all variables present in all option values displayed in any interactive mode"
 		>&2 printf "%18s%s\n" "" "- Specifying -r is optional"
 		>&2 printf "%18s%s\n" "" "- Variables are not expanded by default"
 		>&2 printf "\n"
 		OPTARG="$PH_OLDOPTARG"
 		OPTIND=$PH_OLDOPTIND
-		unset OPTAR VALAR
+		unset PH_OPTAR PH_VALAR
 		exit 1 ;;
 	esac
 done
 OPTARG="$PH_OLDOPTARG"
 OPTIND=$PH_OLDOPTIND
 
-[[ -n "$PH_RESOLVE" && "$PH_ACTION" != @(get|prompt) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && exit 1
+[[ -n "$PH_RESOLVE" && "$PH_ACTION" != @(get|prompt) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && exit 1
 [[ -z "$PH_RESOLVE" ]] && PH_RESOLVE="no"
 (([[ -z "$PH_TYPE" ]]) && ([[ "$PH_ACTION" == "set" || "$PH_I_ACTION" == "set" ]])) && PH_TYPE="r"
-(([[ -n "$PH_TYPE" ]]) && ([[ "$PH_ACTION" == @(help|get|list) || "$PH_I_ACTION" == @(get|help) ]])) && (! confopts_ph.sh -h) && unset OPTAR VALAR && exit 1
-(([[ -z "$PH_ACTION" || -z "$PH_APP" ]]) || ([[ "$PH_ACTION" != @(prompt|list) && -z "$PH_OPT" ]])) && (! confopts_ph.sh -h) && unset OPTAR VALAR && exit 1
-[[ -n "$PH_OPT" && "$PH_ACTION" == @(prompt|list) ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && exit 1
-[[ "$PH_ACTION" == "prompt" && -z "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && unset OPTAR VALAR && exit 1
+(([[ -n "$PH_TYPE" ]]) && ([[ "$PH_ACTION" == @(help|get|list) || "$PH_I_ACTION" == @(get|help) ]])) && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && exit 1
+(([[ -z "$PH_ACTION" || -z "$PH_APP" ]]) || ([[ "$PH_ACTION" != @(prompt|list) && -z "$PH_OPT" ]])) && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && exit 1
+[[ -n "$PH_OPT" && "$PH_ACTION" == @(prompt|list) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && exit 1
+[[ "$PH_ACTION" == "prompt" && -z "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && exit 1
 if [[ `$PH_SUDO cat /proc/$PPID/comm` != "confopts_ph.sh" ]]
 then
 	if [[ "$PH_APP" != "Ctrls" ]]
 	then
-		! ph_check_app_name -s -a "$PH_APP" && unset OPTAR VALAR && exit 1
+		! ph_check_app_name -s -a "$PH_APP" && unset PH_OPTAR PH_VALAR && exit 1
 	fi
 fi
 if [[ "$PH_ACTION" == @(set|get|help) ]]
 then
-	OPTAR+=(`echo -n $PH_OPT | sed "s/'/ /g"`)
-	for PH_COUNT in {1..${#OPTAR[@]}}
+	PH_OPTAR+=(`echo -n $PH_OPT | sed "s/'/ /g"`)
+	for PH_COUNT in {1..${#PH_OPTAR[@]}}
 	do
-		VALAR+=("`echo $PH_VALUE | cut -d\' -f$PH_COUNT`")
+		PH_VALAR+=("`echo $PH_VALUE | cut -d\' -f$PH_COUNT`")
 	done
-	for PH_COUNT in {0..`echo $((${#OPTAR[@]}-1))`}
+	for PH_COUNT in {0..`echo $((${#PH_OPTAR[@]}-1))`}
 	do
-		[[ "${OPTAR[$PH_COUNT]}" == "PH_PIEH_DEBUG" ]] && (printf "%s\n" "- Changing value for $PH_USE_WORD ${OPTAR[$PH_COUNT]}" ; \
-				printf "%2s%s\n" "" "FAILED : Module debug should be handled by 'confpieh_ph.sh'" ; return 0) && unset OPTAR VALAR && exit 1 
-		[[ "${OPTAR[$PH_COUNT]}" == "PH_PIEH_STARTAPP" ]] && (printf "%s\n" "- Changing value for $PH_USE_WORD ${OPTAR[$PH_COUNT]}" ; \
-				printf "%2s%s\n" "" "FAILED : The application to start by default on system boot should be handled by confapps_ph.sh -p start" ; return 0) && unset OPTAR VALAR && exit 1 
-		while ((! grep ^"${OPTAR[$PH_COUNT]}=" $PH_CONF_DIR/$PH_APP.conf >/dev/null 2>&1) && ([[ "${OPTAR[$PH_COUNT]}" != "all" && "$PH_ACTION" != @(prompt|list) ]]))
+		if (([[ "${PH_OPTAR[$PH_COUNT]}" == "all" && ${#PH_OPTAR[@]} -gt 1 ]]) && ([[ "$PH_ACTION" == "get" ]]))
+		then
+			printf "%s\n" "- Displaying value for $PH_USE_WORD ${PH_OPTAR[0]}"
+			printf "%2s%s\n\n" "" "FAILED : Unsupported use of the keyword \"all\""
+			exit 1
+		fi
+		if (([[ "${PH_OPTAR[$PH_COUNT]}" == "all" && ${#PH_OPTAR[@]} -gt 1 ]]) && ([[ "$PH_ACTION" == "help" ]]))
+		then
+			printf "%s\n" "- Displaying help for $PH_USE_WORD ${PH_OPTAR[0]}"
+			printf "%2s%s\n\n" "" "FAILED : Unsupported use of the keyword \"all\""
+			exit 1
+		fi
+		[[ "${PH_OPTAR[$PH_COUNT]}" == "PH_PIEH_DEBUG" && "$PH_ACTION" == "set" ]] && (printf "%s\n" "- Changing value for $PH_USE_WORD ${PH_OPTAR[$PH_COUNT]}" ; \
+				printf "%2s%s\n\n" "" "FAILED : Module debug should be handled by 'confpieh_ph.sh' or the PieHelper menu" ; return 0) && unset PH_OPTAR PH_VALAR && exit 1 
+		[[ "${PH_OPTAR[$PH_COUNT]}" == "PH_PIEH_STARTAPP" && "$PH_ACTION" == "set" ]] && (printf "%s\n" "- Changing value for $PH_USE_WORD ${PH_OPTAR[$PH_COUNT]}" ; \
+				printf "%2s%s\n\n" "" "FAILED : The application to start by default on system boot should be handled by 'confapps_ph.sh -p start' or the PieHelper menu" ; return 0) && unset PH_OPTAR PH_VALAR && exit 1 
+		while ((! grep ^"${PH_OPTAR[$PH_COUNT]}=" $PH_CONF_DIR/$PH_APP.conf >/dev/null 2>&1) && ([[ "${PH_OPTAR[$PH_COUNT]}" != "all" && "$PH_ACTION" != @(prompt|list) ]]))
 		do
 			for PH_i in `nawk 'BEGIN { ORS = " " } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}' $PH_CONF_DIR/$PH_APP.conf`
 			do
 				PH_i="${PH_i%%=*}"
-				[[ "$PH_i" == "${OPTAR[$PH_COUNT]}" ]] && PH_OPT_TYPE="read-only" && break 2
+				[[ "$PH_i" == "${PH_OPTAR[$PH_COUNT]}" ]] && PH_OPT_TYPE="read-only" && break 2
 			done
 			case $PH_ACTION in get)
-				printf "%s\n" "- Displaying value for $PH_USE_WORD ${OPTAR[$PH_COUNT]}" ;;
+				printf "%s\n" "- Displaying value for $PH_USE_WORD ${PH_OPTAR[$PH_COUNT]}" ;;
 					   set)
-				printf "%s\n" "- Changing value for $PH_USE_WORD ${OPTAR[$PH_COUNT]}" ;;
+				printf "%s\n" "- Changing value for $PH_USE_WORD ${PH_OPTAR[$PH_COUNT]}" ;;
 					  help)
-				printf "%s\n" "- Displaying help for $PH_USE_WORD ${OPTAR[$PH_COUNT]}" ;;
+				printf "%s\n" "- Displaying help for $PH_USE_WORD ${PH_OPTAR[$PH_COUNT]}" ;;
 			esac
-			printf "%2s%s\n" "" "FAILED : Unknown $PH_USE_WORD"
-			unset OPTAR VALAR
+			printf "%2s%s\n\n" "" "FAILED : Unknown $PH_USE_WORD"
+			unset PH_OPTAR PH_VALAR
 			exit 1
 		done
 	done
 fi
 PH_COUNT=0
 case $PH_ACTION in get)
-		if [[ "$PH_OPT" == "all" ]]
-		then
-			(for PH_OPT in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | cut -d'=' -f1 | paste -d" " -s`
-			do
-				printf "\n"
-				[[ "$PH_RESOLVE" == "yes" ]] && confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT" -r || \
-					confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT"
-			done
-			for PH_OPT in `nawk 'BEGIN { ORS = " " } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}' $PH_CONF_DIR/$PH_APP.conf`
-			do
-				printf "\n"
-				[[ "$PH_RESOLVE" == "yes" ]] && confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT" -r || \
-					confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT"
-			done) | more
-		else
-			([[ "$PH_RESOLVE" == "yes" ]] && printf "%s\n" "- Displaying value for $PH_OPT_TYPE $PH_USE_WORD $PH_OPT (Variable expansion enabled)" || \
-							printf "%s\n" "- Displaying value for $PH_OPT_TYPE $PH_USE_WORD $PH_OPT"
-			typeset -n PH_OPTVAL="$PH_OPT"
-			if [[ "$PH_RESOLVE" == "yes" ]]
+		for PH_COUNT in {0..$((${#PH_OPTAR[@]}-1))}
+		do
+			PH_OPT="${PH_OPTAR[$PH_COUNT]}"
+			if [[ "$PH_OPT" == "all" ]]
 			then
-				printf "%2s%s\n" "" "'$(echo $PH_OPTVAL | sed 's/"/\\\"/g' | eval echo `cat`)'"
+				(for PH_OPT in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | cut -d'=' -f1 | paste -d" " -s`
+				do
+					[[ "$PH_RESOLVE" == "yes" ]] && confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT" -r || \
+						confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT"
+				done
+				for PH_OPT in `nawk 'BEGIN { ORS = " " } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}' $PH_CONF_DIR/$PH_APP.conf`
+				do
+					[[ "$PH_RESOLVE" == "yes" ]] && confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT" -r || \
+						confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT"
+				done) | more
 			else
-				printf "%2s%s\n" "" "'$PH_OPTVAL'"
+				([[ "$PH_RESOLVE" == "yes" ]] && printf "%s\n" "- Displaying value for $PH_OPT_TYPE $PH_USE_WORD $PH_OPT (Variable expansion enabled)" || \
+								printf "%s\n" "- Displaying value for $PH_OPT_TYPE $PH_USE_WORD $PH_OPT"
+				typeset -n PH_OPTVAL="$PH_OPT"
+				if [[ "$PH_RESOLVE" == "yes" ]]
+				then
+					printf "%2s%s\n" "" "'$(echo $PH_OPTVAL | sed 's/"/\\\"/g' | eval echo `cat`)'"
+				else
+					printf "%2s%s\n" "" "'$PH_OPTVAL'"
+				fi
+				printf "%2s%s\n" "" "$PH_RESULT"
+				printf "\n"
+				unset -n PH_OPTVAL) | more
 			fi
-			printf "%2s%s\n" "" "$PH_RESULT"
-			unset -n PH_OPTVAL) | more
-		fi
-		unset OPTAR VALAR
+		done
+		unset PH_OPTAR PH_VALAR
 		exit 0 ;;
 		  list)
 		printf "%s%s\n" "- Listing all available read-only $PH_USE_WORD" "s for $PH_APP"
@@ -258,65 +277,70 @@ case $PH_ACTION in get)
 			done
 		fi
 		printf "%2s%s\n" "" "$PH_RESULT"
+		printf "\n"
 		printf "%s%s\n" "- Listing all available read-write $PH_USE_WORD" "s for $PH_APP"
 		for PH_OPT in `nawk -F'=' '$1 ~ /^PH_/ { print $1 ; next } { next }' $PH_CONF_DIR/$PH_APP.conf | paste -d" " -s`
 		do
 			printf "%8s%s\n" "" "$PH_OPT"
 		done
-		printf "%2s%s\n" "" "$PH_RESULT"
-		unset OPTAR VALAR
+		printf "%2s%s\n\n" "" "$PH_RESULT"
+		unset PH_OPTAR PH_VALAR
 		exit 0 ;;
 		  help)
-		if [[ "$PH_OPT" == "all" ]]
-		then
-			(for PH_OPT in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | cut -d'=' -f1 | paste -d" " -s`
-			do
-				confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
-				printf "\n\n"
-			done
-			for PH_OPT in `nawk 'BEGIN { ORS = " " } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}' $PH_CONF_DIR/$PH_APP.conf`
-			do
-				confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
-				printf "\n\n"
-			done) | more
-		else
-			(printf "%s\n" "- Displaying help for $PH_OPT_TYPE $PH_USE_WORD $PH_OPT"
-			printf "%2s%s\n" "" "$PH_RESULT"
-			printf "\n"
-			ph_print_bannerline
-			printf "\n"
-			if [[ "$PH_OPT_TYPE" == "read-write" ]]
+		for PH_COUNT in {0..$((${#PH_OPTAR[@]}-1))}
+		do
+			PH_OPT="${PH_OPTAR[$PH_COUNT]}"
+			if [[ "$PH_OPT" == "all" ]]
 			then
-				nawk -F'#' -v opt=^"$PH_OPT=" '$1 ~ opt { print $2 ; getline ; while ($1!~/^PH_/ && $0!~/^$/) { print $2 ; getline } ; exit }' $PH_CONF_DIR/$PH_APP.conf
+				(for PH_OPT in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | cut -d'=' -f1 | paste -d" " -s`
+				do
+					confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
+				done
+				for PH_OPT in `nawk 'BEGIN { ORS = " " } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}' $PH_CONF_DIR/$PH_APP.conf`
+				do
+					confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
+				done) | more
 			else
-				nawk -F'#' -v opt=" typeset .* $PH_OPT=" '$1 ~ opt { print $2 ; getline ; while ($1!~/^PH_|^\[\[/ && $0!~/^$/) { print $2 ; getline } ; exit }' $PH_CONF_DIR/$PH_APP.conf
+				(printf "%s\n" "- Displaying help for $PH_OPT_TYPE $PH_USE_WORD $PH_OPT"
+				printf "%2s%s\n" "" "$PH_RESULT"
+				printf "\n"
+				ph_print_bannerline
+				printf "\n"
+				if [[ "$PH_OPT_TYPE" == "read-write" ]]
+				then
+					nawk -F'#' -v opt=^"$PH_OPT=" '$1 ~ opt { print $2 ; getline ; while ($1!~/^PH_/ && $0!~/^$/) { print $2 ; getline } ; exit }' $PH_CONF_DIR/$PH_APP.conf
+				else
+					nawk -F'#' -v opt=" typeset .* $PH_OPT=" '$1 ~ opt { print $2 ; getline ; while ($1!~/^PH_|^\[\[/ && $0!~/^$/) { print $2 ; getline } ; exit }' $PH_CONF_DIR/$PH_APP.conf
+				fi
+				printf "\n"
+				ph_print_bannerline
+				printf "\n") | more
 			fi
-			printf "\n"
-			ph_print_bannerline
-			printf "\n") | more
-		fi
-		unset OPTAR VALAR
+		done
+		unset PH_OPTAR PH_VALAR
 		exit 0 ;;
 		   set)
-		printf "%s%s%s\n" "- Changing value for $PH_USE_WORD" "s" " $(for PH_COUNT in {0..`echo $((${#OPTAR[@]}-1))`};do;echo -n "${OPTAR[$PH_COUNT]} ";done)"
-		for PH_COUNT in {0..`echo $((${#OPTAR[@]}-1))`}
+		printf "%s%s%s\n" "- Changing value for $PH_USE_WORD" "s" " $(for PH_COUNT in {0..`echo $((${#PH_OPTAR[@]}-1))`};do;echo -n "${PH_OPTAR[$PH_COUNT]} ";done)"
+		for PH_COUNT in {0..`echo $((${#PH_OPTAR[@]}-1))`}
 		do
-			[[ "${OPTAR[$PH_COUNT]}" == "PH_PIEH_DEBUG" ]] && printf "%2s%s\n" "" "FAILED : Module debug should be handled by confpieh_ph.sh" && unset OPTAR VALAR && exit 1 
-			[[ "${OPTAR[$PH_COUNT]}" == "PH_PIEH_STARTAPP" ]] && printf "%2s%s\n" "" "FAILED : The application to start by default on system boot should be handled by confapps_ph.sh -p start" && unset OPTAR VALAR && exit 1 
+			[[ "${PH_OPTAR[$PH_COUNT]}" == "PH_PIEH_DEBUG" ]] && printf "%2s%s\n\n" "" "FAILED : Module debug should be handled by confpieh_ph.sh" && unset PH_OPTAR PH_VALAR && exit 1 
+			[[ "${PH_OPTAR[$PH_COUNT]}" == "PH_PIEH_STARTAPP" ]] && printf "%2s%s\n\n" "" "FAILED : The application to start by default on system boot should be handled by confapps_ph.sh -p start" && \
+											unset PH_OPTAR PH_VALAR && exit 1 
 		done
-		eval ph_set_option "$PH_APP" `echo -n "$(for PH_COUNT in {0..\`echo -n $((${#OPTAR[@]}-1))\`};do;eval echo -en -$PH_TYPE ${OPTAR[$PH_COUNT]}='\"\\${VALAR[$PH_COUNT]}\"'\" \";done)"`
+		eval ph_set_option "$PH_APP" `echo -n "$(for PH_COUNT in {0..\`echo -n $((${#PH_OPTAR[@]}-1))\`};do;eval echo -en -$PH_TYPE ${PH_OPTAR[$PH_COUNT]}='\"\\${PH_VALAR[$PH_COUNT]}\"'\" \";done)"`
 		PH_RET_CODE=$?
 		if [[ $PH_RET_CODE -ne 0 ]]
 		then
-			[[ $PH_RET_CODE -eq ${#OPTAR[@]} ]] && PH_RESULT="FAILED" || PH_RESULT="PARTIALLY FAILED"
+			[[ $PH_RET_CODE -eq ${#PH_OPTAR[@]} ]] && PH_RESULT="FAILED" || PH_RESULT="PARTIALLY FAILED"
 		fi
-		printf "%2s%s\n" "" "$PH_RESULT"
-		unset OPTAR VALAR
+		printf "%2s%s\n\n" "" "$PH_RESULT"
+		unset PH_OPTAR PH_VALAR
 		exit $PH_RET_CODE ;;
 		  prompt)
 		printf "%s\n" "- Using interactive mode"
 		case $PH_I_ACTION in get)
-			printf "%8s%s\n\n" "" "--> Which $PH_USE_WORD do you want to view the value of ?"
+			[[ "$PH_RESOLVE" == "yes" ]] && printf "%8s%s\n\n" "" "--> Which $PH_USE_WORD do you want to view the value of ? (Variable expansion enabled)" || \
+							printf "%8s%s\n\n" "" "--> Which $PH_USE_WORD do you want to view the value of ?"
                 	while [[ $PH_ANSWER -eq 0 || $PH_ANSWER -gt $((PH_COUNT)) ]]
                 	do
 				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
@@ -353,7 +377,7 @@ case $PH_ACTION in get)
 			fi
 			[[ "$PH_RESOLVE" == "yes" ]] && confopts_ph.sh -p get -a "$PH_APP" -o "${PH_OPT%%=*}" -r || \
 					confopts_ph.sh -p get -a "$PH_APP" -o "${PH_OPT%%=*}"
-			unset OPTAR VALAR
+			unset PH_OPTAR PH_VALAR
 			exit 0 ;;
 				     set)
 			[[ "$PH_RESOLVE" == "yes" ]] && printf "%8s%s\n\n" "" "--> Which read-write $PH_USE_WORD do you want to change the value of ? (Variable expansion enabled)" || \
@@ -364,7 +388,7 @@ case $PH_ACTION in get)
 				if [[ "$PH_RESOLVE" == "yes" ]]
 				then
 					PH_COUNT=0
-					for PH_i in `nawk -F'=' '$1 ~ /^PH_/ && $1 !~ /^PH_PIEH_DEBUG=/ && $1 !~ /^PH_PIEH_STARTAPP=/ { print $1 }' $PH_CONF_DIR/$PH_APP.conf`
+					for PH_i in `nawk -F'=' -v xcpt1=^"PH_PIEH_DEBUG"$ -v xcpt2=^"PH_PIEH_STARTAPP"$ '$1 ~ /^PH_/ && $1 !~ xcpt1 && $1 !~ xcpt2 { print $1 } { next}' $PH_CONF_DIR/$PH_APP.conf`
 					do
 						typeset -n PH_OPTVAL="$PH_i"
 						PH_OPTVAL=`echo $PH_OPTVAL | sed 's/"/\\\"/g'`
@@ -374,15 +398,16 @@ case $PH_ACTION in get)
 						unset -n PH_OPTVAL
 					done
 				else
-					nawk -F'\t' 'BEGIN { count = 1 } $1 ~ /^PH_/ && $1 !~ /^PH_PIEH_DEBUG=/ && $1 !~ /^PH_PIEH_STARTAPP=/ { printf "%23s%4s\n", count ". ", $1 ; count++ ; next }' \
+					nawk -F'\t' -v xcpt1=^'PH_PIEH_DEBUG=' -v xcpt2=^'PH_PIEH_STARTAPP=' 'BEGIN { count = 1 } $1 ~ /^PH_/ && $1 !~ xcpt1 && $1 !~ xcpt2 { printf "%23s%4s\n", count ". ", $1 ; count++ ; next }' \
 												$PH_CONF_DIR/$PH_APP.conf
-					PH_COUNT=`nawk -F'\t' 'BEGIN { count = 0 } $1 ~ /^PH_/ && $1 !~ /^PH_PIEH_DEBUG=/ && $1 !~ /^PH_PIEH_STARTAPP=/ { count++ } END { print count }' $PH_CONF_DIR/$PH_APP.conf`
+					PH_COUNT=`nawk -F'\t' -v xcpt1=^'PH_PIEH_DEBUG=' -v xcpt2=^'PH_PIEH_STARTAPP=' 'BEGIN { count = 0 } $1 ~ /^PH_/ && $1 !~ xcpt1 && $1 !~ xcpt2 { count++ } END { print count }' \
+												$PH_CONF_DIR/$PH_APP.conf`
 				fi
 				printf "\n%8s%s" "" "Your choice ? "
 				read PH_ANSWER 2>/dev/null
 			done
 			printf "%10s%s\n" "" "OK"
-			PH_OPT=`grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | egrep -v ^"PH_PIEH_DEBUG=|PH_PIEH_STARTAPP=" | nawk -F"=" -v choice=$PH_ANSWER 'NR==choice { print $1 }'`
+			PH_OPT=`grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | egrep -v ^"PH_PIEH_DEBUG=|PH_PIEH_STARTAPP=" | nawk -F"=" -v choice=$PH_ANSWER 'NR == choice { print $1 }'`
 			[[ "$PH_OPT" == *_NUM_CTRL ]] && (printf "%8s%s\n\n" "" "--> Displaying additional info for read-write $PH_USE_WORD $PH_OPT : " ; \
 							  printf "%12s%s\n" "" "- Changes to an option that sets the controller amount for an application will automatically be reflected to" ; \
 							  printf "%12s%s\n\n" "" "  the option holding that application's command line options if event-based input devices are present as command-line parameters" ; \
@@ -400,7 +425,7 @@ case $PH_ACTION in get)
 			printf "%2s%s\n" "" "SUCCESS"
 			[[ "$PH_TYPE" == "o" ]] && PH_TYPE="n" || PH_TYPE="m"
 			confopts_ph.sh -p set -a "$PH_APP" -"$PH_TYPE" -o "$PH_OPT"="$PH_VALUE"
-			unset OPTAR VALAR
+			unset PH_OPTAR PH_VALAR
 			exit $? ;;
 				    help)
 			[[ "$PH_RESOLVE" == "yes" ]] && printf "%8s%s\n\n" "" "--> Which $PH_USE_WORD do you want to display help for ? (Variable expansion enabled)" || \
@@ -412,7 +437,7 @@ case $PH_ACTION in get)
 				PH_COUNT2=$PH_COUNT
 				if [[ "$PH_RESOLVE" == "yes" ]]
 				then
-					for PH_i in `nawk -F'=' '$1 ~ /^PH_/ && $1 !~ /^PH_PIEH_DEBUG=/ && $1 !~ /^PH_PIEH_STARTAPP=/ { print $1 }' $PH_CONF_DIR/$PH_APP.conf`
+					for PH_i in `nawk -F'=' '$1 ~ /^PH_/ { print $1 }' $PH_CONF_DIR/$PH_APP.conf`
 					do
 						typeset -n PH_OPTVAL="$PH_i"
 						PH_OPTVAL=`echo $PH_OPTVAL | sed 's/"/\\\"/g'`
@@ -431,9 +456,9 @@ case $PH_ACTION in get)
 						unset -n PH_OPTVAL
 					done
 				else
-					nawk -F'\t' 'BEGIN { count = 1 } $1 ~ /^PH_/ && $1 !~ /^PH_PIEH_DEBUG=/ && $1 !~ /^PH_PIEH_STARTAPP=/ { printf "%2s%-13s%4s%4s%s\n", "", "(read-write)", "", count ". ", $1 ; count++ ; next } \
+					nawk -F'\t' 'BEGIN { count = 1 } $1 ~ /^PH_/ { printf "%2s%-13s%4s%4s%s\n", "", "(read-write)", "", count ". ", $1 ; count++ ; next } \
 														{ next }' $PH_CONF_DIR/$PH_APP.conf
-					PH_COUNT=`nawk -F'\t' 'BEGIN { count = 0 } $1 ~ /^PH_/ && $1 !~ /^PH_PIEH_DEBUG=/ && $1 !~ /^PH_PIEH_STARTAPP=/ { count++ } END { print count }' $PH_CONF_DIR/$PH_APP.conf`
+					PH_COUNT=`nawk -F'\t' 'BEGIN { count = 0 } $1 ~ /^PH_/ { count++ } END { print count }' $PH_CONF_DIR/$PH_APP.conf`
 					PH_COUNT2=$PH_COUNT
 					nawk -v count=$((PH_COUNT+1)) '$0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { printf "%2s%-13s%4s%4s%s\n", "", "(read-only)", "", count ". ", $i }} ; count++ ; next }' \
 																									$PH_CONF_DIR/$PH_APP.conf
@@ -452,16 +477,16 @@ case $PH_ACTION in get)
 			else
 				if [[ $PH_ANSWER -le $PH_COUNT2 ]]
 				then
-					PH_OPT=`grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | egrep -v ^"PH_PIEH_STARTAPP|PH_PIEH_DEBUG" | nawk -F'=' -v choice=$PH_ANSWER 'NR==choice { print $1 }'`
+					PH_OPT=`grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | nawk -F'=' -v choice=$PH_ANSWER 'NR==choice { print $1 }'`
 				else
 					PH_OPT=$(grep ' typeset ' $PH_CONF_DIR/$PH_APP.conf | \
 						nawk -v choice=$((PH_ANSWER-$PH_COUNT2)) 'NR == choice { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}')
 					PH_OPT="${PH_OPT%%=*}" 
 				fi
 			fi
-			unset OPTAR VALAR
+			unset PH_OPTAR PH_VALAR
 			confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
 			exit $? ;;
 		esac ;;
 esac
-(! confopts_ph.sh -h) && unset OPTAR VALAR && exit 1
+(! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && exit 1
