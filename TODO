@@ -1,5 +1,5 @@
 * support in ph_repair_pieh for protection against multiple instances of 1 app + verification whether all known info matches
-* change to one script for each action and use parameters : 'consolidated' branch
+* 'consolidated' branch
 * changes for using CMD_OPTS for all apps, also in supported_apps configuration file for all but basic start command + watch special position for graphical stuff in that case
 * if using kodi + cmd_opts -> kodi num_ctrl can no longer be read-only + general impact on way graphical applications are handled
 * check for always echo and no quoting namerefs

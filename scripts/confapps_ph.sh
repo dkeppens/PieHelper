@@ -16,6 +16,7 @@ typeset PH_OLDOPTARG="$OPTARG"
 typeset -l PH_APPL=""
 typeset -i PH_APP_TTY=0
 typeset -i PH_COUNT=0
+typeset -i PH_RET_CODE=0
 typeset -i PH_OLDOPTIND=$OPTIND
 OPTIND=1
 
@@ -66,7 +67,7 @@ do
 		>&2 printf "%15s%s\n" "" "-l \"all\" selects all of the above"
 		>&2 printf "%12s%s\n" "" "\"tty\" allows displaying the TTY currently allocated to application [ttyapp]"
 		>&2 printf "%15s%s\n" "" "-a allows specifying an application name for [ttyapp]"
-		>&2 printf "%18s%s\n" "" "- [ttyapp] must already be known to PieHelper as a supported application"
+		>&2 printf "%18s%s\n" "" "- [ttyapp] must already be known to PieHelper as an integrated application"
 		>&2 printf "%18s%s\n" "" "- The keyword \"all\" can be used to display the currently allocated TTY for every integrated application"
 		>&2 printf "%12s%s\n" "" "\"int\" allows installing an application [intapp] and integrating it with PieHelper"
 		>&2 printf "%15s%s\n" "" "-a allows specifying an application name for [intapp]"
@@ -123,27 +124,27 @@ then
 	ph_check_app_name -i -a "$PH_APP" || exit $?
 fi
 [[ "$PH_APP" == "PieHelper" && "$PH_ACTION" == "rem" ]] && printf "%s\n" "- Removing $PH_APP" && \
-			printf "%2s%s\n" "" "FAILED : Invalid argument \"$PH_APP\" -> $PH_APP should be removed with 'confpieh_ph.sh -s'" && \
+			printf "%2s%s\n\n" "" "FAILED : Invalid argument \"$PH_APP\" -> $PH_APP should be removed with 'confpieh_ph.sh -s'" && \
 			exit 1
 [[ "$PH_APP" == "PieHelper" && "$PH_ACTION" == "conf" ]] && printf "%s\n" "- Configuring $PH_APP" && \
-			printf "%2s%s\n" "" "FAILED : Invalid argument \"$PH_APP\" -> $PH_APP should be configured with 'confpieh_ph.sh -c'" && \
+			printf "%2s%s\n\n" "" "FAILED : Invalid argument \"$PH_APP\" -> $PH_APP should be configured with 'confpieh_ph.sh -c'" && \
 			exit 1
 [[ "$PH_APP" == "PieHelper" && "$PH_ACTION" == "int" ]] && printf "%s\n" "- Installing $PH_APP" && \
-			printf "%2s%s\n" "" "FAILED : Invalid argument \"$PH_APP\" -> $PH_APP is already integrated into PieHelper" && \
+			printf "%2s%s\n\n" "" "FAILED : Invalid argument \"$PH_APP\" -> $PH_APP is already integrated into PieHelper" && \
 			exit 1
 case $PH_ACTION in list)
 	case $PH_LISTMODE in int)
 		printf "%s\n" "- Listing applications currently integrated with PieHelper"
 		nawk '{ printf "%8s%s\n", "", $1 }' $PH_CONF_DIR/installed_apps
-		printf "%2s%s\n" "" "SUCCESS" ;;
+		printf "%2s%s\n\n" "" "SUCCESS" ;;
 			     supp)
 		printf "%s\n" "- Listing currently supported applications"
 		nawk '{ printf "%8s%s\n", "", $1 }' $PH_CONF_DIR/supported_apps
-		printf "%2s%s\n" "" "SUCCESS" ;;
+		printf "%2s%s\n\n" "" "SUCCESS" ;;
 			    start)
 		printf "%s\n" "- Listing application currently configured to start by default on system boot"
 		printf "%8s%s\n" "" "$PH_PIEH_STARTAPP"
-		printf "%2s%s\n" "" "SUCCESS" ;;
+		printf "%2s%s\n\n" "" "SUCCESS" ;;
 			      run)
 		printf "%s\n" "- Listing applications currently running"
 		for PH_APP in `nawk 'BEGIN { ORS = " " } { print $1 }' $PH_CONF_DIR/installed_apps`
@@ -173,7 +174,7 @@ case $PH_ACTION in list)
 		done
 		[[ $PH_COUNT -eq 0 ]] && printf "%8s%s\n" "" "\"none\""
 		PH_COUNT=0
-		printf "%2s%s\n" "" "SUCCESS" ;;
+		printf "%2s%s\n\n" "" "SUCCESS" ;;
 		              all)
 		confapps_ph.sh -p list -l int
 		confapps_ph.sh -p list -l supp
@@ -188,7 +189,7 @@ case $PH_ACTION in list)
 		    tty)
 	if [[ "$PH_APP" != "all" ]]
 	then
-		ph_check_app_name -s -a "$PH_APP" || exit $?
+		ph_check_app_name -i -a "$PH_APP" || exit $?
 		printf "%s\n" "- Displaying TTY currently allocated to $PH_APP"
 		PH_APP_TTY=`nawk -v app=^"$PH_APP"$ '$1 ~ app { if ($4!~/^-$/) { print $4 } else { print 0 }}' $PH_CONF_DIR/installed_apps`
 		if [[ $PH_APP_TTY -ne 0 ]]
@@ -197,11 +198,11 @@ case $PH_ACTION in list)
 		else
 			printf "%2s%s\n" "" "\"none\""
 		fi
-		printf "%2s%s\n" "" "SUCCESS"
+		printf "%2s%s\n\n" "" "SUCCESS"
 	else
-		for PH_APP in `nawk 'BEGIN { ORS = " " } { print $1 }' $PH_CONF_DIR/supported_apps`
+		for PH_APP in `nawk 'BEGIN { ORS = " " } { print $1 }' $PH_CONF_DIR/installed_apps`
 		do
-			confapps_ph.sh -p tty -a "$PH_APP" | tail -n +3
+			confapps_ph.sh -p tty -a "$PH_APP"
 		done
 	fi
 	exit 0 ;;
@@ -220,7 +221,7 @@ case $PH_ACTION in list)
 	if [[ $? -eq 0 || $PH_APP_TTY -eq 0 ]]
 	then
 		printf "%s\n" "- Executing TTY move for $PH_APP"
-		printf "%2s%s\n" "" "FAILED : No TTY currently allocated to $PH_APP"
+		printf "%2s%s\n\n" "" "FAILED : No TTY currently allocated to $PH_APP"
 		exit 1
 	fi
 	PH_APP_CMD=`nawk -v app=^"$PH_APP"$ 'BEGIN { ORS=" " } $1 ~ app { for (i=2;i<=NF;i++) { if (i==NF) { ORS="" ; print $i } else { print $i }}}' $PH_CONF_DIR/supported_apps`
@@ -235,7 +236,7 @@ case $PH_ACTION in list)
 	case $PH_APP_NEWTTY in +([[:digit:]]))
 		if [[ $PH_APP_NEWTTY -le 1 || $PH_APP_NEWTTY -gt $PH_PIEH_MAX_TTYS || `cut -f4 $PH_CONF_DIR/installed_apps | grep ^$PH_APP_NEWTTY$` ]]
 		then
-			printf "%2s%s\n" "" "FAILED : Invalid or allocated TTY given"
+			printf "%2s%s\n\n" "" "FAILED : Invalid or allocated TTY given"
 			exit 1
 		fi ;;
 			               prompt)
@@ -257,7 +258,7 @@ case $PH_ACTION in list)
                 if [[ $? -eq 1 && $PH_APP_NEWTTY -eq 0 ]]
                 then
                         printf "%10s%s\n" "" "ERROR : All TTY's already allocated"
-                        printf "%2s%s\n" "" "FAILED"
+                        printf "%2s%s\n\n" "" "FAILED"
 			exit 1
 		else
                         printf "%10s%s\n" "" "OK"
@@ -270,29 +271,36 @@ case $PH_ACTION in list)
                 if [[ $? -eq 1 && $PH_APP_NEWTTY -eq 0 ]]
                 then
                         printf "%10s%s\n" "" "ERROR : All TTY's already allocated"
-                        printf "%2s%s\n" "" "FAILED"
+                        printf "%2s%s\n\n" "" "FAILED"
 			exit 1
 		else
                         printf "%10s%s\n" "" "OK"
 		fi
 	fi
 	ph_change_app_tty $PH_APP_NEWTTY "$PH_APP"
+	[[ $? -eq 1 ]] && printf "\n" && exit 1
 	if [[ -n "$PH_STATE" ]]
 	then
 		$PH_SCRIPTS_DIR/start"$PH_APPL".sh
+		PH_RET_CODE=$?
 	fi
-	exit $? ;;
+	printf "\n"
+	exit $PH_RET_CODE ;;
 		  start)
 	if [[ "$PH_APP" == "prompt" ]]
 	then
 		ph_set_app_for_start
-		exit $?
+		PH_RET_CODE=$?
 	else
 		ph_set_app_for_start "$PH_APP"
-		exit $?
-	fi ;;
+		PH_RET_CODE=$?
+	fi
+	printf "\n"
+	exit $PH_RET_CODE ;;
 		  state)
 	ph_generate_installed_apps
-	exit $? ;;
+	PH_RET_CODE=$?
+	printf "\n"
+	exit $PH_RET_CODE ;;
 esac
 confapps_ph.sh -h || exit $?

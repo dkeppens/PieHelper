@@ -87,13 +87,13 @@ OPTARG="$PH_OLDOPTARG"
 (([[ -z "$PH_CONN" || -z "$PH_TYPE" ]]) || ([[ -z "$PH_ACTION" ]])) && (! confctrl_ph.sh -h) && exit 1
 [[ -n "$PH_NUM_CTRL" && "$PH_ACTION" != "conf" ]] && (! confctrl_ph.sh -h) && exit 1
 [[ -z "$PH_NUM_CTRL" && "$PH_ACTION" != "prompt" ]] && PH_NUM_CTRL="1"
-[[ "$PH_NUM_CTRL" != @([1-9]|+([1-9])+([0-9])) && "$PH_ACTION" != "prompt" ]] && (printf "%s\n" "- Configuring a $PH_CONN $PH_TYPE controller" ; printf "%2s%s\n" "" "FAILED : Not a numeric value" ; return 0) && exit 1
+[[ "$PH_NUM_CTRL" != @([1-9]|+([1-9])+([0-9])) && "$PH_ACTION" != "prompt" ]] && (printf "%s\n" "- Configuring a $PH_CONN $PH_TYPE controller" ; printf "%2s%s\n\n" "" "FAILED : Not a numeric value" ; return 0) && exit 1
 [[ "$PH_TYPE" == "XBOX360" && "$PH_CONN" != @(usb|xboxurecv) ]] && (printf "%s\n" "- Displaying help for configuring $PH_CONN $PH_TYPE controllers" ; \
-			printf "%2s%s\n" "" "FAILED : Unsupported connection method") && exit 1 
+			printf "%2s%s\n\n" "" "FAILED : Unsupported connection method") && exit 1 
 [[ "$PH_TYPE" == "PS3" && "$PH_CONN" == @(xboxurecv|sonywadapt) ]] && (printf "%s\n" "- Displaying help for configuring $PH_CONN $PH_TYPE controllers" ; \
-			printf "%2s%s\n" "" "FAILED : Unsupported connection method") && exit 1 
+			printf "%2s%s\n\n" "" "FAILED : Unsupported connection method") && exit 1 
 [[ "$PH_TYPE" == "PS4" && "$PH_CONN" == "xboxurecv" ]] && (printf "%s\n" "- Displaying help for configuring $PH_CONN $PH_TYPE controllers" ; \
-			printf "%2s%s\n" "" "FAILED : Unsupported connection method") && exit 1 
+			printf "%2s%s\n\n" "" "FAILED : Unsupported connection method") && exit 1 
 case $PH_ACTION in help)
 	printf "%s\n" "- Displaying configuration steps for $PH_CONN $PH_TYPE controllers"
 	printf "%2s%s\n" "" "$PH_RESULT"
@@ -208,14 +208,14 @@ case $PH_ACTION in help)
 	then
 		printf "%8s%s\n" "" "--> Enabling bluetooth service"
 		$PH_SUDO systemctl enable bluetooth >/dev/null 2>&1 && printf "%10s%s\n" "" "OK" || \
-			(printf "%10s%s\n" "" "ERROR : Could not enable bluetooth service" ; printf "%2s%s\n" "" "FAILED" ; return 1) || \
+			(printf "%10s%s\n" "" "ERROR : Could not enable bluetooth service" ; printf "%2s%s\n\n" "" "FAILED" ; return 1) || \
 			 return $?
 	fi
 	if ! systemctl is-active bluetooth >/dev/null 2>&1
 	then
 		printf "%8s%s\n" "" "--> Starting bluetooth service"
 		$PH_SUDO systemctl start bluetooth >/dev/null 2>&1 && printf "%10s%s\n" "" "OK" || \
-			(printf "%10s%s\n" "" "ERROR : Could not start bluetooth service" ; printf "%2s%s\n" "" "FAILED" ; return 1) || \
+			(printf "%10s%s\n" "" "ERROR : Could not start bluetooth service" ; printf "%2s%s\n\n" "" "FAILED" ; return 1) || \
 			 return $?
 	fi
         printf "%8s%s\n" "" "--> Detecting $PH_CONN adapter(s)"
@@ -223,10 +223,10 @@ case $PH_ACTION in help)
         then
                 PH_ADAPTER=`$PH_SCRIPTS_DIR/listblue_ph.sh | tail -n +5 | nawk '$0 !~ /SUCCESS/ { print $1 ; exit 0 }'`
                 [[ -z "$PH_ADAPTER" ]] && (printf "%10s%s\n" "" "ERROR : Not found" ; \
-                                                        printf "%2s%s\n" "" "FAILED" ; return 0) && exit 1
+                                                        printf "%2s%s\n\n" "" "FAILED" ; return 0) && exit 1
                 printf "%10s%s\n" "" "OK (Using first available : $PH_ADAPTER) -> Setting as default"
-                $PH_SCRIPTS_DIR/confopts_ph.sh -p set -a Ctrls -o PH_CTRL_BLUE_ADAPT="$PH_ADAPTER" || \
-                                (printf "%2s%s\n" "" "FAILED" ; return 1) || exit $?
+                ph_set_option Ctrls -r PH_CTRL_BLUE_ADAPT="$PH_ADAPTER" || \
+                                (printf "%2s%s\n\n" "" "FAILED" ; return 1) || exit $?
         else
                 printf "%10s%s\n" "" "OK (Using default : $PH_CTRL_BLUE_ADAPT)"
         fi
@@ -234,7 +234,8 @@ case $PH_ACTION in help)
         do
                 printf "%8s%s\n" "" "--> Enabling bluetooth adapter \"$PH_i\" mode"
                 bt-adapter -a "$PH_CTRL_BLUE_ADAPT" -s "$PH_i" 1 >/dev/null 2>&1 && printf "%10s%s\n" "" "OK" || \
-						(printf "%10s%s\n" "" "ERROR : Could not enable $PH_i mode" ; return 1) || \
+						(printf "%10s%s\n" "" "ERROR : Could not enable $PH_i mode" ; \
+						 printf "%2s%s\n\n" "" "FAILED" ; return 1) || \
 						 exit $?
         done
 	if ! pgrep bt-adapter >/dev/null 2>&1
@@ -244,7 +245,7 @@ case $PH_ACTION in help)
 		if ! pgrep bt-adapter >/dev/null 2>&1
 		then
 			printf "%10s%s\n" "" "ERROR : Could not start bluetooth discovery mode"
-			printf "%2s%s\n" "" "FAILED"
+			printf "%2s%s\n\n" "" "FAILED"
 			exit 1
 		fi
 		printf "%10s%s\n" "" "OK"
@@ -277,7 +278,7 @@ case $PH_ACTION in help)
         PH_ALL_CTRL=`bt-device -a "$PH_CTRL_BLUE_ADAPT" -l 2>/dev/null | nawk -F'\(' 'BEGIN { ORS = " " } $0 ~ /No devices found/ { print "none" ; exit 0 } \
                                                         $0 ~ /PLAYSTATION\(R\)3 Controller/ { print "PS3:" substr($NF,1,length($NF)-1) }
                                                         $0 ~ /Wireless Controller/ { print "PS4:" substr($NF,1,length($NF)-1) } { next }'`
-	[[ "$PH_ALL_CTRL" == "none" ]] && (printf "%10s%s\n" "" "ERROR : Not found" ; printf "%2s%s\n" "" "FAILED" ; return 0) && exit 1 
+	[[ "$PH_ALL_CTRL" == "none" ]] && (printf "%10s%s\n" "" "ERROR : Not found" ; printf "%2s%s\n\n" "" "FAILED" ; return 0) && exit 1 
         for PH_i in $PH_ALL_CTRL
         do
 		bt-device -a "$PH_CTRL_BLUE_ADAPT" -i "${PH_i#*:}" 2>/dev/null | nawk '$0 ~ /Paired:/ { exit $2 } { next }'
@@ -311,7 +312,7 @@ case $PH_ACTION in help)
 	printf "%10s%s\n" "" "OK"
 	printf "%8s%s\n" "" "--> Verifying $PH_TYPE controller count"
 	[[ $PH_COUNT -lt $PH_NUM_CTRL ]] && (printf "%10s%s\n" "" "ERROR : Insufficient number of unconfigured $PH_TYPE controllers found" ; \
-				printf "%2s%s\n" "" "FAILED" ; return 0) && exit 1
+				printf "%2s%s\n\n" "" "FAILED" ; return 0) && exit 1
 	printf "%10s%s\n" "" "OK"
 	while [[ $PH_COUNT -gt 0 ]]
 	do
@@ -360,7 +361,7 @@ case $PH_ACTION in help)
 	printf "\n"
 	ph_print_bannerline
 	printf "\n"
-	printf "%2s%s\n" "" "$PH_RESULT"
+	printf "%2s%s\n\n" "" "$PH_RESULT"
 	exit 0 ;;
 esac
 confctrl_ph.sh -h || exit $?

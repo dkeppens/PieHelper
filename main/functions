@@ -77,6 +77,7 @@ done
 printf "%s\n" "- Pairing with $PH_MOON_SRV"
 moonlight pair "$PH_MOON_SRV"
 unset PH_OPTAR
+printf "\n"
 return 0
 }
 
@@ -158,28 +159,28 @@ nawk -v card=$PH_ALSA_CARD -v dev=$PH_ALSA_DEVICE '$1 ~ /^audio_enable$/ { print
 	{ print }' /opt/retropie/configs/all/retroarch.cfg >/tmp/retroarch.cfg_tmp
 [[ $? -eq 0 ]] && $PH_SUDO mv /tmp/retroarch.cfg_tmp /opt/retropie/configs/all/retroarch.cfg
 printf "%10s%s\n" "" "OK"
-printf "%2s%s\n" "" "SUCCESS"
+printf "%2s%s\n\n" "" "SUCCESS"
 return 0
 }
 
 function ph_configure_x11 {
 
 printf "%s\n" "- Configuring X11"
-printf "%2s%s\n" "" "SUCCESS : Nothing to configure"
+printf "%2s%s\n\n" "" "SUCCESS : Nothing to configure"
 return 0
 }
 
 function ph_configure_bash {
 
 printf "%s\n" "- Configuring Bash"
-printf "%2s%s\n" "" "SUCCESS : Nothing to configure"
+printf "%2s%s\n\n" "" "SUCCESS : Nothing to configure"
 return 0
 }
 
 function ph_configure_kodi {
 
 printf "%s\n" "- Configuring Kodi"
-printf "%2s%s\n" "" "SUCCESS : Nothing to configure"
+printf "%2s%s\n\n" "" "SUCCESS : Nothing to configure"
 return 0
 }
 
@@ -1502,7 +1503,7 @@ then
 		ph_revoke_pieh_access "$PH_APP_USER"
 	fi
 fi
-printf "%2s%s\n" "" "$PH_RESULT"
+printf "%2s%s\n\n" "" "$PH_RESULT"
 return 0
 }
 

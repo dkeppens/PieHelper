@@ -32,26 +32,34 @@ do
 		PH_GIT_COMMSG="$OPTARG" ;;
 			   *)
 		>&2 printf "%s\n" "Usage : confgenb_ph.sh -h |"
-		>&2 printf "%23s%s\n" "" "'[-g '-m']' |"
-		>&2 printf "%23s%s\n" "" "-v [version]"
+		>&2 printf "%23s%s\n" "" "-v [version] |"
+		>&2 printf "%23s%s\n" "" "'[-g '-m']'"
 		>&2 printf "\n"
 		>&2 printf "%3s%s\n" "" "Where -h displays this usage"
-		>&2 printf "%9s%s\n" "" "-g allows committing all changes between the build being generated and the remote master github repository to the repo and"
-		>&2 printf "%9s%s\n" "" "   tagging the github update with version number [version]"
+		>&2 printf "%9s%s\n" "" "-v allows setting a new version number [version] and will make all the files and settings modifications required to"
+		>&2 printf "%9s%s\n" "" "   generate a new build archive named PieHelper-[version].tar"
+		>&2 printf "%12s%s\n" "" "- [version] should be specified as a decimal number"
+		>&2 printf "%12s%s\n" "" "- Non-recoverable errors encountered will reset all settings and files modified so far to their initial"
+		>&2 printf "%12s%s\n" "" "  state or value before ending build generation"
+		>&2 printf "%12s%s\n" "" "- Recoverable errors encountered will generate error messages and continue with build generation"
+		>&2 printf "%12s%s\n" "" "- Warnings encountered will generate warning messages and continue with build generation"
+		>&2 printf "%12s%s\n" "" "- The archive will be placed in $PH_BUILD_DIR"
+		>&2 printf "%15s%s\n" "" "- Failure to generate the archive will generate a non-recoverable error"
+		>&2 printf "%15s%s\n" "" "- Any old archives in $PH_BUILD_DIR with the same version number"
+		>&2 printf "%15s%s\n" "" "  will be deleted before writing the new archive"
+		>&2 printf "%15s%s\n" "" "- If PH_PIEH_CIFS_SHARE is set to \"yes\" a uniquely timestamped backup copy of this archive"
+		>&2 printf "%15s%s\n" "" "  will also be created in directory PH_PIEH_CIFS_SUBDIR on local network server PH_PIEH_CIFS_SRV"
+		>&2 printf "%15s%s\n" "" "  More info on these settings can be viewed using 'confopts_ph.sh' or the PieHelper menu"
+		>&2 printf "%18s%s\n" "" "- Failure to generate the timestamped backup will generate a recoverable error"
+		>&2 printf "%9s%s\n" "" "-g allows committing all changes between the build being generated and the remote master github repository to the master as"
+		>&2 printf "%9s%s\n" "" "   well as tagging the github update with version number [version]"
 		>&2 printf "%12s%s\n" "" "- Specifying -g is optional"
+		>&2 printf "%12s%s\n" "" "- Any git-related failures will generate a recoverable error"
 		>&2 printf "%12s%s\n" "" "- Any commit attempts to the github master repository will fail if upstream access has not been previously granted"
 		>&2 printf "%12s%s\n" "" "-m allows setting a commit message for git"
 		>&2 printf "%15s%s\n" "" "- Specifying -m is optional"
 		>&2 printf "%15s%s\n" "" "- Commit messages should always be surrounded with single or double quotes"
-		>&2 printf "%15s%s\n" "" "- Empty or left-out commit messages will cancel the commit operation"
-		>&2 printf "%9s%s\n" "" "-v allows setting a new version number [version] and will generate a new build archive named PieHelper-[version].tar"
-		>&2 printf "%12s%s\n" "" "- [version] should be specified as a decimal number"
-		>&2 printf "%12s%s\n" "" "- The archive will be placed in $PH_BUILD_DIR"
-		>&2 printf "%12s%s\n" "" "- Any old archives in $PH_BUILD_DIR with the same version number"
-		>&2 printf "%12s%s\n" "" "  will be overwritten"
-		>&2 printf "%12s%s\n" "" "- If PH_PIEH_CIFS_SHARE is set to \"yes\" a uniquely timestamped backup copy of this archive"
-		>&2 printf "%12s%s\n" "" "  will also be created in directory PH_PIEH_CIFS_SUBDIR on local network server PH_PIEH_CIFS_SRV"
-		>&2 printf "%12s%s\n" "" "  More info on these settings can be viewed using 'confopts_ph.sh' or the PieHelper menu"
+		>&2 printf "%15s%s\n" "" "- Empty or left-out commit messages will cancel the commit operation and generate a warning"
 		>&2 printf "\n"
 		OPTIND=$PH_OLDOPTIND
 		OPTARG="$PH_OLDOPTARG"
@@ -69,13 +77,19 @@ then
 	for PH_i in $PH_ACL_USERS
 	do
 		printf "%8s%s\n" "" "--> Removing ACLs for user $PH_i"
-		$PH_SUDO setfacl -R -x u:"$PH_i" $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
-		printf "%10s%s\n" "" "OK"
+		if $PH_SUDO setfacl -R -x u:"$PH_i" $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
+		then
+			printf "%10s%s\n" "" "OK"
+		else
+			printf "%10s%s\n" "" "ERROR : Issues encountered removing ACLs"
+			printf "%2s%s\n\n" "" "FAILED"
+			exit 1
+		fi
 	done
-	ph_set_all_options_to_default || (printf "%2s%s\n" "" "FAILED" ; return 1) || exit $?
+	ph_set_all_options_to_default || (printf "%2s%s\n\n" "" "FAILED" ; return 1) || exit $?
 	printf "%8s%s\n" "" "--> Creating new first_run file in $PH_FILES_DIR"
 	touch $PH_FILES_DIR/first_run 2>/dev/null || (printf "%10s%s\n" "" "ERROR : Could not create new first_run file in $PH_FILES_DIR" ; \
-							ph_restore_options ; printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+							ph_restore_options ; printf "%2s%s\n\n" "" "FAILED" ; exit 1) || exit $?
 	printf "%10s%s\n" "" "OK"
 	printf "%8s%s\n" "" "--> Updating version number to $PH_NEW_VERSION"
 	PH_OLD_VERSION="$PH_VERSION"
@@ -100,10 +114,10 @@ EOF
 	mv $PH_CONF_DIR/installed_apps /tmp/installed_apps_tmp 2>/dev/null
 	[[ $? -eq 0 ]] && printf "%10s%s\n" "" "OK" || (printf "%10s%s\n" "" "ERROR : Could not remove installed applications configuration file" ; \
 							mv /tmp/supported_apps_tmp $PH_CONF_DIR/supported_apps ; mv /tmp/controller_cli_ids_tmp $PH_CONF_DIR/controller_cli_ids ; \
-							echo "$PH_OLD_VERSION" >$PH_CONF_DIR/VERSION ; rm $PH_FILES_DIR/first_run ; ph_restore_options ; printf "%2s%s\n" "" "FAILED" ; return 1) || \
+							echo "$PH_OLD_VERSION" >$PH_CONF_DIR/VERSION ; rm $PH_FILES_DIR/first_run ; ph_restore_options ; printf "%2s%s\n\n" "" "FAILED" ; return 1) || \
 							exit 1
 	printf "%8s%s\n" "" "--> Removing any old build archives"
-	rm $PH_BUILD_DIR/PieHelper-*.tar 2>/dev/null
+	rm $PH_BUILD_DIR/PieHelper-$PH_NEW_VERSION.tar 2>/dev/null
 	printf "%10s%s\n" "" "OK"
 	if [[ "$PH_GIT_UPDATE" == "yes" ]]
 	then
@@ -150,7 +164,7 @@ EOF
 	cd $PH_SCRIPTS_DIR/.. ; tar -X $PH_FILES_DIR/exclude -cvf $PH_BUILD_DIR/PieHelper-$PH_NEW_VERSION.tar ./* >/dev/null 2>&1 || \
 		(printf "%10s%s\n" "" "ERROR : Could not create a new tarball archive for PieHelper $PH_NEW_VERSION" ; mv /tmp/installed_apps_tmp $PH_CONF_DIR/installed_apps ; \
 		 mv /tmp/supported_apps_tmp $PH_CONF_DIR/supported_apps ; mv /tmp/controller_cli_ids_tmp $PH_CONF_DIR/controller_cli_ids ; \
-		 echo "$PH_OLD_VERSION" >$PH_CONF_DIR/VERSION ; rm $PH_FILES_DIR/first_run ; ph_restore_options ; printf "%2s%s\n" "" "FAILED" ; exit 1) || \
+		 echo "$PH_OLD_VERSION" >$PH_CONF_DIR/VERSION ; rm $PH_FILES_DIR/first_run ; ph_restore_options ; printf "%2s%s\n\n" "" "FAILED" ; exit 1) || \
 		 exit $?
 	printf "%10s%s\n" "" "OK"
 	printf "%8s%s\n" "" "--> Attempting to determine required remote mounts for PieHelper"
@@ -165,7 +179,7 @@ EOF
 			if [[ $? -ne 0 ]]
 			then
 				PH_RESULT="PARTIALLY FAILED"
-				printf "%10s%s\n" "" "Warning : Could not create timestamped backup of PieHelper-$PH_NEW_VERSION.tar"
+				printf "%10s%s\n" "" "ERROR : Issues encountered creating timestamped backup"
 			else
 				printf "%10s%s\n" "" "OK"
 			fi
@@ -192,10 +206,15 @@ EOF
 	for PH_i in $PH_ACL_USERS
 	do
 		printf "%8s%s\n" "" "--> Restoring ACLs for user $PH_i"
-		$PH_SUDO setfacl -R -m u:"$PH_i":rwx $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
-		printf "%10s%s\n" "" "OK"
+		if $PH_SUDO setfacl -R -m u:"$PH_i":rwx $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
+		then
+			printf "%10s%s\n" "" "OK"
+		else
+			printf "%10s%s\n" "" "ERROR : Issues encountered restoring ACLs"
+			PH_RESULT="PARTIALLY FAILED"
+		fi
 	done
-	printf "%2s%s\n" "" "$PH_RESULT"
+	printf "%2s%s\n\n" "" "$PH_RESULT"
 	unset PH_REVERSE
 	exit 0
 fi
