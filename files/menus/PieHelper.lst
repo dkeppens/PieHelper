@@ -1,4 +1,4 @@
-Stop PieHelper (Quit to shell):break
+Stop PieHelper (Quit to shell at CLI tools location):break
 Configure PieHelper:confpieh_ph.sh -c
 Unconfigure PieHelper:confpieh_ph.sh -u
 Unconfigure and uninstall PieHelper:confpieh_ph.sh -s

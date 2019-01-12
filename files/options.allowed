@@ -8,6 +8,10 @@ PH_EMUL_CIFS_SRV:a valid ipv4 address or an empty string:`$(ph_check_ip_validity
 PH_EMUL_CIFS_DIR:starting with / or empty:$PH_OPTARG_VAL == @(/*|)
 PH_EMUL_CIFS_SUBDIR:starting with / or empty:$PH_OPTARG_VAL == @(/*|)
 PH_KODI_USE_CTRL:yes or no:$PH_OPTARG_VAL == @(yes|no)
+PH_KODI_CIFS_SHARE:yes or no:$PH_OPTARG_VAL == @(yes|no)
+PH_KODI_CIFS_SRV:a valid ipv4 address or an empty string:`$(ph_check_ip_validity $PH_OPTARG_VAL) echo $?` -eq 0
+PH_KODI_CIFS_DIR:starting with / or empty:$PH_OPTARG_VAL == @(/*|)
+PH_KODI_CIFS_SUBDIR:starting with / or empty:$PH_OPTARG_VAL == @(/*|)
 PH_MOON_USE_CTRL:yes or no:$PH_OPTARG_VAL == @(yes|no)
 PH_MOON_NUM_CTRL:1, 2, 3 or 4:$PH_OPTARG_VAL == @(1|2|3|4)
 PH_MOON_RES:720, 1080 or 4k:$PH_OPTARG_VAL == @(720|1080|4k)

@@ -1,7 +1,6 @@
 Update your system:ph_update_system | more
 Reboot your system:$PH_SUDO init 6
-Open shell to CLI tools location:ph_open_shell_session
-Quit to shell (Stop PieHelper):break
+Quit to shell at CLI tools location (Stop PieHelper):break
 Go to Apps menu:ph_show_menu Apps
 Go to Controllers menu:ph_show_menu Controllers
 Go to Advanced menu:ph_show_menu Advanced

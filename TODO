@@ -1,3 +1,8 @@
+* use kodi cifs again for exporting & importing preferences dir
+* when switch to a tty that is running without app running, always stop tty first
+* piehelper always persistence required when menu used to start apps even when set to no
+* show allowed values in interactive setopt
+* stop scripts need to check for integrated applications first
 * support in ph_repair_pieh for protection against multiple instances of 1 app + verification whether all known info matches
 * 'consolidated' branch
 * use _CMD_OPTS for all apps as well as in supported_apps configuration file for all but basic start command + general impact on way graphical applications are handled

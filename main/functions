@@ -82,16 +82,15 @@ printf "\n"
 return 0
 }
 
-function ph_open_shell_session {
+function ph_open_tools_location {
 
 clear
 printf "%s\n\n" "List of available tools : "
 cd $PH_SCRIPTS_DIR >/dev/null 2>&1
 ls
 printf "\n%s\n\n" "Run any tool with the '-h' parameter to see help"
-printf "\n%s\n\n" "Run any tool without parameters to execute their default function"
-printf "%s\n\n" "Return to the PieHelper menu by typing 'exit' or CTRL-D"
-/bin/bash
+printf "\n%s\n\n" "Run any tool with supported parameters or without parameters to execute their main function"
+printf "%s\n" "You can always return to the PieHelper menu by typing 'startpieh.sh' or use 'startpieh.sh -p' to restart on a pseudo-terminal"
 return 0
 }
 
@@ -441,15 +440,17 @@ then
 fi
 if [[ -z "$PH_STATE" ]]
 then
-	printf "%2s%s\n" "" "FAILED : Application is still uninstalled or undiscovered"
-	printf "%11s%s\n" "" "Both the PieHelper menu and the 'confapps_ph.sh' tool can be used for either installing the application or running a discovery scan"
+	printf "%2s%s\n" "" "FAILED : Application is neither integrated nor supported"
+	printf "%11s%s\n" "" "Both the PieHelper menu and the 'confsupp_ph.sh' tool can be used for adding out-of-scope applications"
 	return 1
 fi
 if $PH_SCRIPTS_DIR/confapps_ph.sh -p list -l "$PH_FILE" | tail -n +2 | nawk '{ print $1 }' | grep ^"$PH_APP"$ >/dev/null
 then
 	printf "%2s%s\n" "" "SUCCESS : $PH_STATE"
 else
-	printf "%2s%s\n" "" "FAILED : $PH_STATE"
+	printf "%2s%s\n\n" "" "FAILED : $PH_STATE (Needed integrated) :"
+	printf "%11s%s\n" "" "- Application is either not yet installed or undiscovered"
+	printf "%11s%s\n" "" "- Both the PieHelper menu and the 'confapps_ph.sh' tool can be used for both operations"
 	return 1
 fi
 return 0
@@ -657,10 +658,8 @@ do
 	fi
 	[[ $PH_ANSWER -eq 0 || $PH_ANSWER -eq 1 ]] && printf "%s" "Press Enter to continue" && read 2>/dev/null
 done
-echo "You can always return to the PieHelper menu by typing 'startpieh.sh -p' to start on a pseudo-terminal"
-echo "Or by typing 'startpieh.sh' to start on a TTY"
-echo "Use 'startpieh.sh -h' to see all available options"
-echo ''
+ph_open_tools_location
+printf "\n"
 exit 0
 }
 
@@ -1119,6 +1118,8 @@ case $1 in Emulationstation)
 	typeset PH_EMUL_CIFS_MPT="$PH_EMUL_SETUP_DIR/roms" ;;
 		  PieHelper)
 	typeset PH_PIEH_CIFS_MPT="$PH_CONF_DIR/../mnt" ;;
+		       Kodi)
+	typeset PH_KODI_CIFS_MPT="$PH_CONF_DIR/../mnt" ;;
 esac
 for PH_i in PH_"$PH_APPU"_CIFS_USER PH_"$PH_APPU"_CIFS_PASS PH_"$PH_APPU"_CIFS_SRV PH_"$PH_APPU"_CIFS_DIR PH_"$PH_APPU"_CIFS_SUBDIR
 do
@@ -1250,7 +1251,7 @@ then
 	printf "%8s%s\n" "" "--> Installing `eval echo \\$PH_"$PH_APPU"_PKG_NAME` package (This may take a while)"
 	if ! ph_install_pkg `eval echo \\$PH_"$PH_APPU"_PKG_NAME`
 	then
-		printf "%10s%s\n" "" "Warning : Could not install `eval echo \\$PH_"$PH_APPU"_PKG_NAME` package"
+		printf "%10s%s\n" "" "Warning : Could not locate or install `eval echo \\$PH_"$PH_APPU"_PKG_NAME` package"
 	else
 		printf "%10s%s\n" "" "OK"
 		printf "%2s%s\n" "" "SUCCESS"
@@ -1555,12 +1556,19 @@ then
 			$PH_SUDO groupadd -f $PH_APP_USER >/dev/null
 			printf "%10s%s\n" "" "OK"
 			printf "%8s%s\n" "" "--> Creating user $PH_APP_USER"
-			$PH_SUDO useradd -d /home/$PH_APP_USER -c "${PH_APP_READ[$PH_i]} application" -g $PH_APP_USER \
+			$PH_SUDO useradd -d /home/$PH_APP_USER -m -c "${PH_APP_READ[$PH_i]} application" -g $PH_APP_USER \
 							-G tty,audio,video,input -s /bin/bash $PH_APP_USER >/dev/null 2>&1
 			printf "%10s%s\n" "" "OK"
 		fi
 		break
 	done
+fi
+if nawk -v user=^"$PH_APP_USER"$ '$2 ~ user { exit 1 } { next }' $PH_CONF_DIR/installed_apps >/dev/null 2>&1
+then
+	if [[ "$PH_APP_USER" != "$PH_RUN_USER" ]]
+	then
+		ph_grant_pieh_access "$PH_APP_USER"
+	fi
 fi
 printf "%8s%s\n" "" "--> Adding ${PH_APP_READ[$PH_i]} to integrated applications configuration file"
 echo -e "${PH_APP_READ[$PH_i]}\t$PH_APP_USER\t$PH_PACKAGED\t-" >>$PH_CONF_DIR/installed_apps
@@ -1576,13 +1584,6 @@ fi
 nawk -v app="${PH_APP_READ[$PH_i]}" -v cmd="$PH_APP_CMD" '$1 ~ app { print $1 "\t" cmd ; next } { print }' $PH_CONF_DIR/supported_apps >/tmp/supported_apps 2>/dev/null
 [[ $? -eq 0 ]] && mv /tmp/supported_apps $PH_CONF_DIR/supported_apps	
 printf "%10s%s\n" "" "OK"
-if nawk -v user=^"$PH_APP_USER"$ '$2 ~ user { exit 1 } { next }' $PH_CONF_DIR/installed_apps >/dev/null 2>&1
-then
-	if [[ "$PH_APP_USER" != "$PH_RUN_USER" ]]
-	then
-		ph_grant_pieh_access "$PH_APP_USER"
-	fi
-fi
 return 0
 }
 
