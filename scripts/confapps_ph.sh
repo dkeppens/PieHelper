@@ -121,7 +121,7 @@ OPTIND=$PH_OLDOPTIND
 [[ "$PH_ACTION" == @(tty|int|rem|conf|move|start) && -z "$PH_APP" ]] && (! confapps_ph.sh -h) && exit 1
 if [[ "$PH_ACTION" == "start" && "$PH_APP" != @(none|prompt) ]]
 then
-	ph_check_app_name -i -a "$PH_APP" || exit $?
+	! ph_check_app_name -i -a "$PH_APP" && printf "\n" && exit 1
 fi
 [[ "$PH_APP" == "PieHelper" && "$PH_ACTION" == "rem" ]] && printf "%s\n" "- Removing $PH_APP" && \
 			printf "%2s%s\n\n" "" "FAILED : Invalid argument \"$PH_APP\" -> $PH_APP should be removed with 'confpieh_ph.sh -s'" && \
@@ -183,13 +183,13 @@ case $PH_ACTION in list)
 	esac
 	exit 0 ;;
 		   int)
-	ph_check_app_name -s -a "$PH_APP" || exit $?
+	! ph_check_app_name -s -a "$PH_APP" && printf "\n" && exit 1
 	ph_install_app "$PH_APP"
 	exit $? ;;
 		    tty)
 	if [[ "$PH_APP" != "all" ]]
 	then
-		ph_check_app_name -i -a "$PH_APP" || exit $?
+		! ph_check_app_name -i -a "$PH_APP" && printf "\n" && exit 1
 		printf "%s\n" "- Displaying TTY currently allocated to $PH_APP"
 		PH_APP_TTY=`nawk -v app=^"$PH_APP"$ '$1 ~ app { if ($4!~/^-$/) { print $4 } else { print 0 }}' $PH_CONF_DIR/installed_apps`
 		if [[ $PH_APP_TTY -ne 0 ]]
@@ -207,16 +207,16 @@ case $PH_ACTION in list)
 	fi
 	exit 0 ;;
 		    rem)
-	ph_check_app_name -i -a "$PH_APP" || exit $?
+	! ph_check_app_name -i -a "$PH_APP" && printf "\n" && exit 1
 	ph_remove_app "$PH_APP"
 	exit $? ;;
 	      	   conf)
-	ph_check_app_name -i -a "$PH_APP" || exit $?
+	! ph_check_app_name -i -a "$PH_APP" && printf "\n" && exit 1
 	PH_APPL=`echo $PH_APP | cut -c1-4`
 	eval ph_configure_$PH_APPL
 	exit $? ;;
 		   move)
-	ph_check_app_name -i -a "$PH_APP" || return $?
+	! ph_check_app_name -i -a "$PH_APP" && printf "\n" && exit 1
 	PH_APP_TTY=`ph_get_tty_for_app $PH_APP`
 	if [[ $? -eq 0 || $PH_APP_TTY -eq 0 ]]
 	then
