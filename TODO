@@ -1,17 +1,16 @@
 * support in ph_repair_pieh for protection against multiple instances of 1 app + verification whether all known info matches
 * 'consolidated' branch
-* changes for using CMD_OPTS for all apps, also in supported_apps configuration file for all but basic start command + watch special position for graphical stuff in that case
-* if using kodi + cmd_opts -> kodi num_ctrl can no longer be read-only + general impact on way graphical applications are handled
-* check for always echo and no quoting namerefs
+* use _CMD_OPTS for all apps as well as in supported_apps configuration file for all but basic start command + general impact on way graphical applications are handled
+* using kodi + cmd_opts -> kodi num_ctrl can no longer be read-only
+* check nameref behaviour
 * solve bluetooth pairing dualshock3 controllers
 * treat remaining remarks in codebase
 * create button configuration files for the different controller types for emulationstation with configure script
 * change confpieh_ph.sh -p debug for partial results and for fasttrack bypass to set all modules to debug/no debug 
 * change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
-* occasional cifs mount problem which for Emulationstation remains ?
-* only sed CMD_OPTS vars on startup of app if 'PH_CTRL' string present in current value of CMD_OPTS
+* occasional cifs mount problem for Emulationstation
 * write confoper_ph.sh and check for /proc, systemd and ksh93 prereqs
-* no change TTY and stop all other apps on just restart of application ? works for kodi,moonlight,emul stuff too ?
+* additional option for application restarts to not auto-switch to TTY restarted app + check compatibility with Kodi, Emulationstation and Moonlight
 * check for /etc/apt/apt.conf on debian and turn off option don't install recommended packages
 * test for controllers actually online
 * test listblue_ph.sh with more than one bluetooth adapter

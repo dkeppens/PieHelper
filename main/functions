@@ -2402,7 +2402,7 @@ case $1 in start)
 		PH_CTRL_COUNT=`cat $PH_CONF_DIR/controller_cli_ids | wc -l`
 		for PH_i in {1..$PH_RUNAPPU_NUM_CTRL}
 		do
-			printf "%8s%s\n" "" "--> Retrieving CLI id for $PH_CTRL_TYPE controller $PH_i"
+			printf "%8s%s\n" "" "--> Retrieving event id for $PH_CTRL_TYPE controller with CLI id $PH_i"
 			if [[ "$PH_CTRL_MAP" == "no" ]]
 			then
 				eval typeset -i "PH_EVENT"$PH_i=`ph_get_controller_cli_id $PH_i`
@@ -2411,7 +2411,16 @@ case $1 in start)
 			fi
 			typeset -n PH_EVENT="PH_EVENT"$PH_i
 			printf "%10s%s\n" "" "OK"
-			PH_RUNAPPU_CMD_OPTS="$(eval echo `sed 's/PH_CTRL'$PH_i'/'$PH_EVENT'/g;s/"/\\\"/g' <<<$PH_RUNAPPU_CMD_OPTS`)"
+			printf "%8s%s\n" "" "--> Checking for event-based input device $PH_i in command-line options"
+			if echo "$PH_RUNAPPU_CMD_OPTS" | egrep -e "PH_CTRL$PH_i$|PH_CTRL$PH_i " >/dev/null
+			then
+				printf "%10s%s\n" "" "OK (Found)"
+				printf "%8s%s\n" "" "--> Assigning event id $PH_EVENT to input device with CLI id $PH_i in command-line options"
+				PH_RUNAPPU_CMD_OPTS="$(eval echo `sed 's/PH_CTRL'$PH_i'/'$PH_EVENT'/g;s/"/\\\"/g' <<<$PH_RUNAPPU_CMD_OPTS`)"
+				printf "%10s%s\n" "" "OK"
+			else
+				printf "%10s%s\n" "" "OK (Not found)"
+			fi
 			unset -n PH_EVENT
 		done
 	fi
