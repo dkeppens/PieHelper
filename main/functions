@@ -1114,47 +1114,37 @@ typeset PH_i=""
 typeset -u PH_APPU=`echo $1 | cut -c1-4`
 typeset -i PH_LENGTH=`echo $PH_APPU | wc -c`
 typeset -i PH_RET_CODE=0
-case $1 in Emulationstation)
-	typeset PH_EMUL_CIFS_MPT="$PH_EMUL_SETUP_DIR/roms" ;;
-		  PieHelper)
-	typeset PH_PIEH_CIFS_MPT="$PH_CONF_DIR/../mnt" ;;
-		       Kodi)
-	typeset PH_KODI_CIFS_MPT="$PH_CONF_DIR/../mnt" ;;
-esac
-for PH_i in PH_"$PH_APPU"_CIFS_USER PH_"$PH_APPU"_CIFS_PASS PH_"$PH_APPU"_CIFS_SRV PH_"$PH_APPU"_CIFS_DIR PH_"$PH_APPU"_CIFS_SUBDIR
+for PH_i in PH_"$PH_APPU"_CIFS_USER PH_"$PH_APPU"_CIFS_PASS PH_"$PH_APPU"_CIFS_SRV PH_"$PH_APPU"_CIFS_DIR PH_"$PH_APPU"_CIFS_SUBDIR PH_"$PH_APPU"_CIFS_MPT
 do
 	eval [[ -n \$OLD_$PH_i ]] && typeset -n TMP_`echo $PH_i | cut -c$((PH_LENGTH+4))-`=OLD_"$PH_i" || \
-					typeset -n TMP_`echo $PH_i | cut -c$((PH_LENGTH+4))-`="$PH_i" 
+					typeset -n TMP_`echo $PH_i | cut -c$((PH_LENGTH+4))-`="$PH_i"
 done
 
 printf "%8s%s\n" "" "--> Mounting cifs share"
-for PH_i in _CIFS_USER _CIFS_PASS _CIFS_SRV _CIFS_DIR _CIFS_SUBDIR
+for PH_i in _CIFS_USER _CIFS_PASS _CIFS_SRV _CIFS_DIR _CIFS_SUBDIR _CIFS_MPT
 do
-	eval [[ -z \"\$TMP$PH_i\" ]] && printf "%10s%s\n" "" "ERROR : User to access roms share undefined" && PH_RET_CODE=1 && break
+	eval [[ -z \"\$TMP$PH_i\" ]] && printf "%10s%s\n" "" "ERROR : Required variable PH_$PH_APPU$PH_i is unset" && PH_RET_CODE=1 && break
 done
 if [[ $PH_RET_CODE -eq 0 ]]
 then
 	$PH_SUDO `which mount` -t cifs -o username="$TMP_CIFS_USER" -o password="$TMP_CIFS_PASS" -o rw,uid="$TMP_CIFS_USER" \
-					"//$TMP_CIFS_SRV$TMP_CIFS_DIR$TMP_CIFS_SUBDIR" `eval echo \\$PH_"$PH_APPU"_CIFS_MPT` 2>/dev/null
-	[[ $? -ne 0 ]] && printf "%10s%s\n" "" "ERROR : Could not mount \"$TMP_CIFS_DIR$TMP_CIFS_SUBDIR\" from server $TMP_CIFS_SRV to \"`eval echo \\$PH_"$PH_APPU"_CIFS_MPT`\"" && PH_RET_CODE=1 || \
+					"//$TMP_CIFS_SRV$TMP_CIFS_DIR$TMP_CIFS_SUBDIR" `eval echo -n "$TMP_CIFS_MPT"` 2>/dev/null
+	[[ $? -ne 0 ]] && printf "%10s%s\n" "" "ERROR : Could not mount \"$TMP_CIFS_DIR$TMP_CIFS_SUBDIR\" from server $TMP_CIFS_SRV to `eval echo -n \"$TMP_CIFS_MPT\"`" && PH_RET_CODE=1 || \
 			printf "%10s%s\n" "" "OK"
 fi
-unset -n TMP_CIFS_USER TMP_CIFS_PASS TMP_CIFS_SRV TMP_CIFS_DIR TMP_CIFS_SUBDIR
+unset -n TMP_CIFS_USER TMP_CIFS_PASS TMP_CIFS_SRV TMP_CIFS_DIR TMP_CIFS_SUBDIR TMP_CIFS_MPT
 return $PH_RET_CODE
 }
 
 function ph_umount_cifs_share {
 
 typeset -u PH_APPU=`echo $1 | cut -c1-4`
-case $1 in Emulationstation)
-	typeset PH_EMUL_CIFS_MPT="$PH_EMUL_SETUP_DIR/roms" ;;
-		  PieHelper)
-	typeset PH_PIEH_CIFS_MPT="$PH_CONF_DIR/../mnt" ;;
-esac
+typeset -n PH_CIFS_MPT=PH_"$PH_APPU"_CIFS_MPT
 
 printf "%8s%s\n" "" "--> Unmounting cifs share"
-$PH_SUDO `which umount` -f `eval echo \\$PH_"$PH_APPU"_CIFS_MPT` 2>/dev/null || (printf "%10s%s\n" "" "ERROR : Could not unmount \"`eval echo \\$PH_"$PH_APPU"_CIFS_MPT`\"" ; return 1) || return $?
+$PH_SUDO `which umount` -f `eval echo -n "$PH_CIFS_MPT"` 2>/dev/null || (printf "%10s%s\n" "" "ERROR : Could not unmount `eval echo -n \"$PH_CIFS_MPT\"`" ; return 1) || return $?
 printf "%10s%s\n" "" "OK"
+unset -n PH_CIFS_MPT
 return 0
 }
 
@@ -1498,6 +1488,9 @@ printf "%8s%s\n" "" "--> Removing $PH_APP as an integrated application"
 nawk -v app=^"$PH_APP"$ '$1 ~ app { next } { print }' $PH_CONF_DIR/installed_apps >/tmp/installed_apps_tmp 2>/dev/null
 [[ $? -eq 0 ]] && mv /tmp/installed_apps_tmp $PH_CONF_DIR/installed_apps
 printf "%10s%s\n" "" "OK"
+printf "%8s%s\n" "" "--> Removing default mountpoint for CIFS mounts ($PH_CONF_DIR/../mnt/$PH_APP)"
+rmdir $PH_CONF_DIR/../mnt/$PH_APP >/dev/null 2>&1
+printf "%10s%s\n" "" "OK"
 if nawk -v user=^"$PH_APP_USER"$ '$2 ~ user { exit 1 } { next }' $PH_CONF_DIR/installed_apps >/dev/null 2>&1
 then
 	if [[ "$PH_RUN_USER" != "$PH_APP_USER" ]]
@@ -1583,6 +1576,9 @@ fi
 ## error handling for below nawk and correct print cmd for newlines
 nawk -v app="${PH_APP_READ[$PH_i]}" -v cmd="$PH_APP_CMD" '$1 ~ app { print $1 "\t" cmd ; next } { print }' $PH_CONF_DIR/supported_apps >/tmp/supported_apps 2>/dev/null
 [[ $? -eq 0 ]] && mv /tmp/supported_apps $PH_CONF_DIR/supported_apps	
+printf "%10s%s\n" "" "OK"
+printf "%8s%s\n" "" "--> Creating default mountpoint for CIFS mounts ($PH_CONF_DIR/../mnt/${PH_APP_READ[$PH_i]})"
+mkdir -p $PH_CONF_DIR/../mnt/${PH_APP_READ[$PH_i]} >/dev/null 2>&1
 printf "%10s%s\n" "" "OK"
 return 0
 }
@@ -2360,6 +2356,8 @@ function ph_run_app_action {
 typeset PH_RUNAPP="$2"
 typeset PH_i=""
 typeset PH_BASH_TTY=""
+typeset PH_KODI_HOME=""
+typeset PH_KODI_USER=""
 typeset -l PH_RUNAPPL=""
 typeset -u PH_RUNAPPU=""
 typeset -i PH_RUNAPP_TTY=0
@@ -2389,6 +2387,16 @@ case $1 in start)
 			ph_mount_cifs_share "$PH_RUNAPP" || return 1
 		else
 			printf "%10s%s\n" "" "OK (found)"
+		fi
+		if [[ "$PH_RUNAPP" == "Kodi" ]]
+		then
+			PH_KODI_USER="`nawk -v app=^"Kodi"$ '$1 ~ app { print $2 }' $PH_CONF_DIR/installed_apps`"
+			PH_KODI_HOME="`echo -n $(getent passwd $PH_KODI_USER | cut -d':' -f6)`"
+			printf "%8s%s\n" "" "--> Restoring last backup of Kodi preferences directory for run account $PH_KODI_USER"
+			$PH_SUDO cd "$PH_KODI_HOME" >/dev/null 2>&1
+			$PH_SUDO tar -xvf `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar >/dev/null 2>&1
+			[[ $? -eq 0 ]] && printf "%10s%s\n" "" "OK" || printf "%10s%s\n" "" "Warning : Could not restore backup of Kodi preferences directory"
+			$PH_SUDO cd - >/dev/null 2>&1
 		fi
 	fi
 	typeset -n PH_RUNAPPU_CMD_OPTS=PH_"$PH_RUNAPPU"_CMD_OPTS
@@ -2472,6 +2480,16 @@ case $1 in start)
 	else
 		printf "%10s%s\n" "" "OK (Found)"
 		ph_umount_cifs_share "$PH_RUNAPP"
+		if [[ "$PH_RUNAPP" == "Kodi" ]]
+		then
+			PH_KODI_USER="`nawk -v app=^"Kodi"$ '$1 ~ app { print $2 }' $PH_CONF_DIR/installed_apps`"
+			PH_KODI_HOME="`echo -n $(getent passwd $PH_KODI_USER | cut -d':' -f6)`"
+			printf "%8s%s\n" "" "--> Creating backup of Kodi preferences directory for run account $PH_KODI_USER"
+			$PH_SUDO cd "$PH_KODI_HOME" >/dev/null 2>&1
+			$PH_SUDO tar -cvf `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar ./.kodi >/dev/null 2>&1
+			[[ $? -eq 0 ]] && printf "%10s%s\n" "" "OK" || printf "%10s%s\n" "" "Warning : Could not create backup of Kodi preferences directory"
+			$PH_SUDO cd - >/dev/null 2>&1
+		fi
 	fi
 	if [[ `eval echo "\\$PH_$PH_RUNAPPU"_USE_CTRL` == "yes" ]]
 	then

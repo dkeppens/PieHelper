@@ -281,9 +281,11 @@ PH_`echo $PH_APPU`_CIFS_SUBDIR=''							# - This is the relative path to PH_`ech
 											#   as well as the directory that holds your files
 											# - Default is ''
 											# - Accepted values are pathnames (Values starting with '/') and empty
-PH_`echo $PH_APPU`_CIFS_MPT=''								# - This is the full pathname of a directory on your PI where you want to mount PH_`echo $PH_APPU`_CIFS_SUBDIR if PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes'
-											#   The directory specified should always be empty
-											# - Default is ''
+PH_`echo $PH_APPU`_CIFS_MPT='\$PH_CONF_DIR/../mnt/$PH_APP'				# - This is the full pathname of a directory on your PI where you want to mount PH_`echo $PH_APPU`_CIFS_SUBDIR if PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes'
+											# - A default directory named 'mnt' with a subfolder for each integrated application is automatically created under the root of the PieHelper
+											#   install location but other values can be set if preferred
+											#   If a different value is set, make sure the directory specified is empty
+											# - Default is '\$PH_CONF_DIR/../mnt/$PH_APP'
 											# - Accepted values are pathnames (Values starting with '/') and empty
 
 # Exports
@@ -303,7 +305,7 @@ EOF
 		echo "PH_`echo $PH_APPU`_CIFS_SRV=''" >>$PH_FILES_DIR/options.defaults
 		echo "PH_`echo $PH_APPU`_CIFS_DIR=''" >>$PH_FILES_DIR/options.defaults
 		echo "PH_`echo $PH_APPU`_CIFS_SUBDIR=''" >>$PH_FILES_DIR/options.defaults
-		echo "PH_`echo $PH_APPU`_CIFS_MPT=''" >>$PH_FILES_DIR/options.defaults
+		echo "PH_`echo $PH_APPU`_CIFS_MPT='\$PH_CONF_DIR/../mnt/$PH_APP'" >>$PH_FILES_DIR/options.defaults
 		printf "%10s%s\n" "" "OK"
 		printf "%8s%s\n" "" "--> Adding options to options.allowed"
 		echo "PH_`echo $PH_APPU`_PERSISTENT:yes or no:\$PH_OPTARG_VAL == @(yes|no)" >>$PH_FILES_DIR/options.allowed
@@ -314,6 +316,9 @@ EOF
 		echo "PH_`echo $PH_APPU`_CIFS_MPT:starting with / or empty:\$PH_OPTARG_VAL == @(/*|)" >>$PH_FILES_DIR/options.allowed
 		echo "PH_`echo $PH_APPU`_USE_CTRL:yes or no:\$PH_OPTARG_VAL == @(yes|no)" >>$PH_FILES_DIR/options.allowed
 		echo "PH_`echo $PH_APPU`_NUM_CTRL:1, 2, 3 or 4:\$PH_OPTARG_VAL == @(1|2|3|4)" >>$PH_FILES_DIR/options.allowed
+		printf "%10s%s\n" "" "OK"
+		printf "%8s%s\n" "" "--> Creating default mountpoint for CIFS mounts"
+		mkdir -p "$PH_CONF_DIR"/../mnt/"$PH_APP" >/dev/null 2>&1
 		printf "%10s%s\n" "" "OK"
 		printf "%8s%s\n" "" "--> Adding scripts"
 		cp -p $PH_FILES_DIR/StartScript.template $PH_SCRIPTS_DIR/start"$PH_APPL".sh
@@ -393,6 +398,9 @@ EOF
 			rm $PH_SCRIPTS_DIR/"$PH_APPL"to"$PH_APPL2".sh 2>/dev/null
 			rm $PH_SCRIPTS_DIR/"$PH_APPL2"to"$PH_APPL".sh 2>/dev/null
 		done
+		printf "%10s%s\n" "" "OK"
+		printf "%8s%s\n" "" "--> Removing default mountpoint for CIFS mounts"
+		rmdir "$PH_CONF_DIR"/../mnt/"$PH_APP" >/dev/null 2>&1
 		printf "%10s%s\n" "" "OK"
 		if [[ -n "$PH_APP_PKG" ]]
 		then
