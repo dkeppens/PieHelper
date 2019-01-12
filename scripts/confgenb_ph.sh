@@ -175,7 +175,7 @@ EOF
 		if [[ $? -eq 0 ]]
 		then
 			printf "%8s%s\n" "" "--> Creating timestamped backup of $PH_BUILD_DIR/PieHelper-$PH_NEW_VERSION.tar to $OLD_PH_PIEH_CIFS_SRV:$OLD_PH_PIEH_CIFS_DIR$OLD_PH_PIEH_CIFS_SUBDIR"
-			cp -p $PH_BUILD_DIR/PieHelper-$PH_NEW_VERSION.tar "$PH_CONF_DIR/../mnt/PieHelper-$PH_NEW_VERSION-`date +'%d%m%y-%Hh%M'`.tar" 2>/dev/null
+			cp -p "$PH_BUILD_DIR"/PieHelper-"$PH_NEW_VERSION".tar `eval echo -n "$OLD_PH_PIEH_CIFS_MPT"`/PieHelper-"$PH_NEW_VERSION"-`date +'%d%m%y-%Hh%M'`.tar 2>/dev/null
 			if [[ $? -ne 0 ]]
 			then
 				PH_RESULT="PARTIALLY FAILED"
