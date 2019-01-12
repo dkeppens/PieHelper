@@ -118,7 +118,7 @@ OPTARG="$PH_OLDOPTARG"
 
 [[ -z "$PH_APP_USER" ]] && PH_APP_USER="$PH_RUN_USER"
 [[ "$PH_APP" == @(Kodi|Emulationstation|Moonlight|X11|Bash|PieHelper) ]] && printf "%s\n" "- Managing an out-of-scope application $PH_APP" && \
-				printf "%2s%s\n" "" "FAILED : Standard application detected -> Use confapps_ph.sh" && exit 1
+				printf "%2s%s\n\n" "" "FAILED : Standard application detected -> Use confapps_ph.sh" && exit 1
 [[ "$PH_ACTION" == @(inst|rem) && -z "$PH_APP" ]] && (! confsupp_ph.sh -h) && exit 1
 [[ "$PH_ACTION" == @(inst) && -z "$PH_APP_PKG" ]] && (! confsupp_ph.sh -h) && exit 1
 [[ "$PH_ACTION" == "prompt" && ("$PH_APP_PKG" != "" || "$PH_APP" != "" || "$PH_APP_CMD" != "" || "$PH_APP_USR" != "") ]] && (! confsupp_ph.sh -h) && exit 1
@@ -126,7 +126,7 @@ OPTARG="$PH_OLDOPTARG"
 case $PH_ACTION in inst)
 	ph_check_app_name -n -a "$PH_APP" || exit $? ;;
 		    rem)
-	ph_check_app_name -s -a "$PH_APP" || exit $? ;;
+	! ph_check_app_name -s -a "$PH_APP" && printf "\n" && exit 1 ;;
 esac
 if (([[ "$PH_ACTION" == "inst" ]]) || ([[ -n "$PH_APP_PKG" && "$PH_ACTION" == "rem" ]]))
 then
@@ -134,7 +134,7 @@ then
 	then
 		[[ "$PH_ACTION" == "inst" ]] && printf "%s\n" "- Adding a new out-of-scope application $PH_APP" || \
 					printf "%s\n" "- Removing out-of-scope application $PH_APP"
-		printf "%2s%s\n" "" "FAILED : Invalid package"
+		printf "%2s%s\n\n" "" "FAILED : Invalid package"
 		exit 1
 	fi
 fi
@@ -142,7 +142,7 @@ case $PH_ACTION in inst)
 		printf "%s\n" "- Running some checks"
 		printf "%8s%s\n" "" "--> Checking current number of out-of-scope applications"
 		[[ `cat $PH_CONF_DIR/supported_apps | wc -l` -ge 11 ]] && printf "%10s%s\n" "" "ERROR : The maximum number of out-of-scope applications has been reached" && \
-										printf "%2s%s\n" "" "FAILED" && exit 1
+										printf "%2s%s\n\n" "" "FAILED" && exit 1
 		printf "%10s%s\n" "" "OK ($(echo $((`cat $PH_CONF_DIR/supported_apps | wc -l`-6))))"
 		printf "%8s%s\n" "" "--> Checking for package \"$PH_APP_PKG\""
 		if ph_get_pkg_inststate "$PH_APP_PKG"
@@ -152,7 +152,7 @@ case $PH_ACTION in inst)
 			printf "%10s%s\n" "" "Warning : Could not find package $PH_APP_PKG -> Installing"
 			printf "%8s%s\n" "" "--> Installing package \"$PH_APP_PKG\""
 			ph_install_pkg "$PH_APP_PKG" && printf "%10s%s\n" "" "OK" || (printf "%10s%s\n" "" "ERROR : Could not install package $PH_APP_PKG" ; \
-											printf "%2s%s\n" "" "FAILED" ; return 1) || exit $?
+											printf "%2s%s\n\n" "" "FAILED" ; return 1) || exit $?
 		fi
 		printf "%8s%s\n" "" "--> Checking run account"
                 id $PH_APP_USER >/dev/null 2>&1
@@ -188,7 +188,7 @@ case $PH_ACTION in inst)
 				printf "%10s%s\n" "" "Warning : X11 Not found -> Installing"
 				printf "%2s%s\n" "" "SUCCESS"
 				ph_install_app X11 || (printf "%s\n" "- Adding a new out-of-scope application $PH_APP" ; \
-					printf "%2s%s\n" "" "FAILED" ; return 1) || exit $?
+					printf "%2s%s\n\n" "" "FAILED" ; return 1) || exit $?
 			fi
 			printf "%s\n" "- Adding a new out-of-scope application $PH_APP"
 			printf "%8s%s\n" "" "--> Attempting to detect next available display"
@@ -365,19 +365,21 @@ return 0
 }
 EOF
 		printf "%10s%s\n" "" "OK (You can optionally add configuration code for $PH_APP in $PH_MAIN_DIR/functions.user)"
-		printf "%2s%s\n" "" "SUCCESS"
+		printf "%2s%s\n\n" "" "SUCCESS"
 		exit 0 ;;
 		    rem)
-		stop"$PH_APPL".sh || exit $?
+		! stop"$PH_APPL".sh && printf "\n" && exit 1
 		printf "%s\n" "- Removing out-of-scope application $PH_APP"
 		printf "%8s%s\n" "" "--> Removing $PH_APP from supported applications configuration file"
 		nawk -v app=^"$PH_APP"$ '$1 ~ app { next } { print }' $PH_CONF_DIR/supported_apps >/tmp/supported_apps_tmp
 		[[ $? -eq 0 ]] && (printf "%10s%s\n" "" "OK" ; mv /tmp/supported_apps_tmp $PH_CONF_DIR/supported_apps) || \
-					(printf "%10s%s\n" "" "ERROR : Could not remove $PH_APP from supported applications configuration file" ; return 1) || exit $?
+					(printf "%10s%s\n" "" "ERROR : Could not remove $PH_APP from supported applications configuration file" ; \
+					 printf "%2s%s\n\n" "" "FAILED" ; return 1) || exit $?
 		printf "%8s%s\n" "" "--> Removing $PH_APP from integrated applications configuration file"
 		nawk -v app=^"$PH_APP"$ '$1 ~ app { next } { print }' $PH_CONF_DIR/installed_apps >/tmp/installed_apps_tmp
 		[[ $? -eq 0 ]] && (printf "%10s%s\n" "" "OK" ; mv /tmp/installed_apps_tmp $PH_CONF_DIR/installed_apps) || \
-					(printf "%10s%s\n" "" "ERROR : Could not remove $PH_APP from integrated applications configuration file" ; return 1) || exit $?
+					(printf "%10s%s\n" "" "ERROR : Could not remove $PH_APP from integrated applications configuration file" ; \
+					 printf "%2s%s\n\n" "" "FAILED" ; return 1) || exit $?
 		printf "%8s%s\n" "" "--> Removing menu item"
 		rm $PH_FILES_DIR/menus/$PH_APP.lst 2>/dev/null
 		printf "%10s%s\n" "" "OK"
@@ -419,7 +421,7 @@ EOF
 										{ if (FLAG==0) { print $0 }}' $PH_MAIN_DIR/functions.user >/tmp/functions.user_tmp 2>&1
 		[[ $? -eq 0 ]] && mv /tmp/functions.user_tmp $PH_MAIN_DIR/functions.user 2>&1
 		printf "%10s%s\n" "" "OK"
-		printf "%2s%s\n" "" "SUCCESS"
+		printf "%2s%s\n\n" "" "SUCCESS"
 		exit 0 ;;
 		 prompt)
 		printf "%s\n" "- Using interactive mode"

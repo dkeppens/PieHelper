@@ -69,6 +69,7 @@ do
                 if [[ "${PH_OPTAR[$PH_OPT]}" == "PH_MOON_SRV" && -z "$PH_MOON_SRV" ]]
                 then
                         unset PH_OPTAR
+			printf "\n"
                         return 0
                 fi
         fi
@@ -124,7 +125,7 @@ typeset PH_STATE=""
                 PH_STATE="configured"
 printf "%s\n" "- Displaying PieHelper current version and configuration state"
 printf "%2s%s\n" "" "PieHelper $PH_VERSION is currently : \"$PH_STATE\""
-printf "%2s%s\n" "" "SUCCESS"
+printf "%2s%s\n\n" "" "SUCCESS"
 return 0
 }
 
@@ -441,14 +442,14 @@ fi
 if [[ -z "$PH_STATE" ]]
 then
 	printf "%2s%s\n" "" "FAILED : Application is still uninstalled or undiscovered"
-	printf "%11s%s\n\n" "" "Both the PieHelper menu and the 'confapps_ph.sh' tool can be used for either installing the application or running a discovery scan"
+	printf "%11s%s\n" "" "Both the PieHelper menu and the 'confapps_ph.sh' tool can be used for either installing the application or running a discovery scan"
 	return 1
 fi
 if $PH_SCRIPTS_DIR/confapps_ph.sh -p list -l "$PH_FILE" | tail -n +2 | nawk '{ print $1 }' | grep ^"$PH_APP"$ >/dev/null
 then
 	printf "%2s%s\n" "" "SUCCESS : $PH_STATE"
 else
-	printf "%2s%s\n\n" "" "FAILED : $PH_STATE"
+	printf "%2s%s\n" "" "FAILED : $PH_STATE"
 	return 1
 fi
 return 0
@@ -1217,11 +1218,11 @@ typeset -l PH_APPL=`echo $PH_APP | cut -c1-4`
 printf "%s\n" "- Running some checks"
 printf "%8s%s\n" "" "--> Checking for out-of-scope applications"
 [[ "$PH_APP" != @(Moonlight|Emulationstation|Bash|X11|Kodi) ]] && printf "%10s%s\n" "" "ERROR : Out-of-scope applications should be managed with confsupp_ph.sh" && \
-		printf "%2s%s\n" "" "FAILED" && return 1
+		printf "%2s%s\n\n" "" "FAILED" && return 1
 printf "%10s%s\n" "" "OK (No)"
 printf "%8s%s\n" "" "--> Checking for $PH_APP integration"
 ph_check_app_name -i -a "$PH_APP" >/dev/null && printf "%10s%s\n" "" "Warning : $PH_APP already integrated" && \
-				printf "%2s%s\n" "" "SUCCESS" && return 0
+				printf "%2s%s\n\n" "" "SUCCESS" && return 0
 printf "%10s%s\n" "" "OK (Not integrated)"
 printf "%8s%s\n" "" "--> Checking dependencies"
 if [[ "$PH_APP" == "Kodi" ]]
@@ -1233,7 +1234,7 @@ then
 		printf "%10s%s\n" "" "Warning : X11 not found -> Installing"
 		printf "%2s%s\n" "" "SUCCESS"
 		ph_install_app X11 || (printf "%s\n" "- Integrating $PH_APP" ; \
-			printf "%2s%s\n" "" "FAILED" ; return 1) || return $?
+			printf "%2s%s\n\n" "" "FAILED" ; return 1) || return $?
 	else
 		printf "%10s%s\n" "" "OK (Found)"
 	fi
@@ -1269,7 +1270,7 @@ case $PH_APP in Moonlight)
 		printf "%8s%s\n" "" "--> Downloading $PH_APP source"
 		git clone https://github.com/irtimmer/moonlight-embedded.git >/dev/null 2>&1
 		[[ $? -eq 0 ]] && printf "%10s%s\n" "" "OK" || (printf "%10s%s\n" "" "ERROR : Could not download Moonlight source" ; \
-				printf "%2s%s\n" "" "FAILED" ; return 1) || return $?
+				printf "%2s%s\n\n" "" "FAILED" ; return 1) || return $?
 		cd moonlight-embedded
 		git submodule update --init >/dev/null 2>&1
 		mkdir build
@@ -1287,7 +1288,7 @@ case $PH_APP in Moonlight)
 			printf "\n"
 			ph_print_bannerline
 			printf "\n"
-			printf "%2s%s\n" "" "FAILED"
+			printf "%2s%s\n\n" "" "FAILED"
 			return 1
 		fi
 		printf "%10s%s\n" "" "OK (build location is $HOME/moonlight-embedded)"
@@ -1304,7 +1305,7 @@ case $PH_APP in Moonlight)
 			printf "\n"
 			ph_print_bannerline
 			printf "\n"
-			printf "%2s%s\n" "" "FAILED"
+			printf "%2s%s\n\n" "" "FAILED"
 			return 1
 		fi
 		printf "%10s%s\n" "" "OK"
@@ -1319,7 +1320,7 @@ case $PH_APP in Moonlight)
 		printf "%8s%s\n" "" "--> Downloading $PH_APP setup script"
 		git clone --depth=1 https://github.com/RetroPie/RetroPie-Setup.git >/dev/null 2>&1
 		[[ $? -eq 0 ]] && printf "%10s%s\n" "" "OK" || (printf "%10s%s\n" "" "ERROR : Could not download $PH_APP setup script" ; \
-				printf "%2s%s\n" "" "FAILED" ; return 1) || return $?
+				printf "%2s%s\n\n" "" "FAILED" ; return 1) || return $?
 		cd RetroPie-Setup
 		$PH_SUDO chmod +x retropie_setup.sh
 		printf "%8s%s\n\n" "" "--> Executing $PH_APP setup script"
@@ -1347,17 +1348,17 @@ case $PH_APP in Moonlight)
 			[[ -d /opt/retropie ]] && PH_EMUL_DIR_INIT="/opt/retropie" && printf "%10s%s\n" "" "OK"
 		fi
 		PH_EMUL_SETUP_DIR_INIT="$HOME/RetroPie"
-		ph_set_option $PH_APP -r PH_EMUL_DIR="$PH_EMUL_DIR_INIT" || return $?
+		! ph_set_option $PH_APP -r PH_EMUL_DIR="$PH_EMUL_DIR_INIT" && printf "%2s%s\n\n" "" "FAILED" && return 1
 		[[ -z "$PH_EMUL_DIR" ]] && (printf "%10s%s\n" "" "Warning : Could not determine $PH_APP base directory" ; \
 					printf "%20s%s\n" "" "Try manually setting PH_EMUL_DIR to the correct value using 'confopts_ph.sh' or the PieHelper menu" ; \
-					printf "%2s%s\n" "" "FAILED" ; return 0) && return 1
-		ph_set_option $PH_APP -r PH_EMUL_SETUP_DIR="$PH_EMUL_SETUP_DIR_INIT" || return $?
+					printf "%2s%s\n\n" "" "FAILED" ; return 0) && return 1
+		! ph_set_option $PH_APP -r PH_EMUL_SETUP_DIR="$PH_EMUL_SETUP_DIR_INIT" && printf "%2s%s\n\n" "" "FAILED" && return 1
 		ph_show_emul_info
 		[[ -f /etc/profile.d/10-retropie.sh ]] && ph_move_emul_conf ;;
 			*)
 		printf "%10s%s\n" "" "ERROR : Could not integrate $PH_APP without a valid packagename"
 		printf "%18s%s\n" "" "Try manually setting PH_`echo $PH_APPU`_PKG_NAME to the correct value using 'confopts_ph.sh' or the PieHelper menu"
-		printf "%2s%s\n" "" "FAILED"
+		printf "%2s%s\n\n" "" "FAILED"
 		return 1 ;;
 esac
 printf "%2s%s\n" "" "SUCCESS"
@@ -1388,17 +1389,17 @@ fi
 printf "%s\n" "- Running some checks"
 printf "%8s%s\n" "" "--> Checking for Bash"
 [[ "$PH_APP" == "Bash" ]] && printf "%10s%s\n" "" "ERROR : Bash cannot be removed from PieHelper" && \
-		printf "%2s%s\n" "" "FAILED" && return 1
+		printf "%2s%s\n\n" "" "FAILED" && return 1
 printf "%10s%s\n" "" "OK (No)"
 printf "%8s%s\n" "" "--> Checking for out-of-scope applications"
 [[ "$PH_APP" != @(Moonlight|Emulationstation|X11|Kodi) ]] && printf "%10s%s\n" "" "ERROR : Out-of-scope applications should be managed with confsupp_ph.sh" && \
-		printf "%2s%s\n" "" "FAILED" && return 1
+		printf "%2s%s\n\n" "" "FAILED" && return 1
 printf "%10s%s\n" "" "OK (No)"
 printf "%8s%s\n" "" "--> Checking dependencies"
 if ([[ "$PH_APP" == "X11" ]] && ph_check_app_name -i -a Kodi >/dev/null ]])
 then
 	printf "%10s%s\n" "" "ERROR : Could not remove X11 from PieHelper (Kodi is dependent)"
-	printf "%2s%s\n" "" "FAILED"
+	printf "%2s%s\n\n" "" "FAILED"
 	return 1
 else
 	printf "%10s%s\n" "" "OK (None)"
@@ -1408,7 +1409,7 @@ if [[ "$PH_PIEH_STARTAPP" == "$PH_APP" ]]
 then
 	printf "%10s%s\n" "" "Warning : Yes -> Unconfiguring"
 	printf "%2s%s\n" "SUCCESS"
-	ph_set_app_for_start none || return $?
+	! ph_set_app_for_start none && printf "%2s%s\n\n" "" "FAILED" && return 1
 else
 	printf "%10s%s\n" "" "OK (No)"
 	printf "%2s%s\n" "" "SUCCESS"
@@ -1422,7 +1423,7 @@ then
 	if ! ph_remove_pkg `eval echo \\$PH_"$PH_APPU"_PKG_NAME`
 	then
 		printf "%10s%s\n" "" "ERROR : Could not uninstall package `eval echo \\$PH_"$PH_APPU"_PKG_NAME`"
-		printf "%2s%s\n" "" "FAILED"
+		printf "%2s%s\n\n" "" "FAILED"
 		return 1
 	else
 		printf "%10s%s\n" "" "OK"
@@ -2113,7 +2114,7 @@ do
         fi
         ((PH_i ++))
 done
-printf "%2s%s\n" "" "$PH_RESULT"
+printf "%2s%s\n\n" "" "$PH_RESULT"
 unset PH_i
 return 0
 }

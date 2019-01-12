@@ -93,10 +93,10 @@ done
 if [[ `whoami` != @($PH_ALLOW_USERS) ]]
 then
 	printf "%s\n" "- Running PieHelper $PH_VERSION"
-	[[ -n "$PH_RUN_USER" ]] || (printf "%2s%s\n" "" "FAILED : Cannot run PieHelper $PH_VERSION" ; \
+	[[ -n "$PH_RUN_USER" ]] || (printf "%2s%s\n\n" "" "FAILED : Cannot run PieHelper $PH_VERSION" ; \
 				       printf "%10s%s\n" "" "Variable PH_RUN_USER which defines the run account is uninitialized" ; \
 				       printf "%10s%s\n" "" "PieHelper needs to be configured first by running  \"$PH_SCRIPTS_DIR/confpieh_ph.sh -c\"" ; \
 				       printf "%10s%s\n" "" "Rerun your original command afterwards" ; return 1) || exit $?
-	printf "%2s%s\n" "" "FAILED : Only these acounts can run PieHelper : `echo $PH_ALLOW_USERS | sed 's/|/ /g'`"
+	printf "%2s%s\n\n" "" "FAILED : Only these acounts can run PieHelper : `echo $PH_ALLOW_USERS | sed 's/|/ /g'`"
 	exit 1
 fi
