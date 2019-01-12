@@ -1,6 +1,7 @@
 * support in ph_repair_pieh for protection against multiple instances of 1 app + verification whether all known info matches
 * 'consolidated' branch
 * use _CMD_OPTS for all apps as well as in supported_apps configuration file for all but basic start command + general impact on way graphical applications are handled
+* keyword "all" support for confopts_ph.sh interactive and non-interactive set
 * using kodi + cmd_opts -> kodi num_ctrl can no longer be read-only
 * check nameref behaviour
 * solve bluetooth pairing dualshock3 controllers
