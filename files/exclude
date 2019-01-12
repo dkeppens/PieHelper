@@ -3,3 +3,5 @@
 build/PieHelper*
 files/autologin.conf
 files/10-retropie.sh
+mnt/Kodi/*
+mnt/PieHelper/*

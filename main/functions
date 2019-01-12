@@ -2332,12 +2332,11 @@ printf "%10s%s\n\n" "" "OK"
 ph_print_bannerline
 printf "\n\n%8s%s\n\n" "" "PieHelper allows easy switching between it's integrated applications"
 printf "%8s%s\n" "" "- If you're connected over the network you can use the CLI tools available in $PH_SCRIPTS_DIR"
-printf "%8s%s\n" "" "- If you're connected directly you can use the linux built-in keycombo of Ctrl-LeftAlt-Functionkey#TTY"
+printf "%8s%s\n" "" "- If you're connected directly you can use the linux built-in keycombo of Ctrl-LeftAlt-Functionkey%TTY"
 printf "%10s%s\n\n" "" "For direct control with a mouse and keyboard, the following notes apply : "
 printf "%12s%s\n" "" "- Any applications that do not render to the default frame buffer need to be quit first before switching TTYs if"
 printf "%14s%s\n" "" "the application that is being switched to is marked as persistent"
 printf "%14s%s\n" "" "Neither should these types of applications be marked as persistent themselves"
-printf "%14s%s\n" "" "More info on persistence can be found in the HOWTO"
 printf "%14s%s\n" "" "Examples are Moonlight, Kodi and Emulationstation"
 printf "%12s%s\n" "" "- Any application that intercepts and interprets the keycombo for TTY switching itself always have to be quit before switching TTYs"
 printf "%14s%s\n" "" "Examples are Moonlight and Kodi"
@@ -2372,6 +2371,8 @@ ph_check_conf_files cont || (printf "%8s%s\n" "" "--> Checking for controller CL
 			printf "%2s%s\n" "" "FAILED" ; return 1) || return $?
 PH_RUNAPPU=`echo "$PH_RUNAPP" | cut -c1-4`
 PH_RUNAPPL=`echo "$PH_RUNAPP" | cut -c1-4`
+
+PH_PIEH_TTY=`ph_get_tty_for_app PieHelper`
 case $1 in start)
 	printf "%8s%s\n" "" "--> Attempting to determine required remote mounts for $PH_RUNAPP"
 	if ([[ `eval echo "\\$PH_$PH_RUNAPPU"_CIFS_SHARE` == @(no|) ]] || [[ "$PH_RUNAPP" == "PieHelper" ]])
@@ -2393,10 +2394,10 @@ case $1 in start)
 			PH_KODI_USER="`nawk -v app=^"Kodi"$ '$1 ~ app { print $2 }' $PH_CONF_DIR/installed_apps`"
 			PH_KODI_HOME="`echo -n $(getent passwd $PH_KODI_USER | cut -d':' -f6)`"
 			printf "%8s%s\n" "" "--> Restoring last backup of Kodi preferences directory for run account $PH_KODI_USER"
-			$PH_SUDO cd "$PH_KODI_HOME" >/dev/null 2>&1
+			cd "$PH_KODI_HOME" >/dev/null 2>&1
 			$PH_SUDO tar -xvf `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar >/dev/null 2>&1
 			[[ $? -eq 0 ]] && printf "%10s%s\n" "" "OK" || printf "%10s%s\n" "" "Warning : Could not restore backup of Kodi preferences directory"
-			$PH_SUDO cd - >/dev/null 2>&1
+			cd - >/dev/null 2>&1
 		fi
 	fi
 	typeset -n PH_RUNAPPU_CMD_OPTS=PH_"$PH_RUNAPPU"_CMD_OPTS
@@ -2439,6 +2440,10 @@ case $1 in start)
 	[[ "$PH_RUNAPP" == "PieHelper" ]] && PH_RUNAPP_CMD="ph_show_menu"
 	printf "%8s%s\n" "" "--> Starting $PH_RUNAPP"
 	$PH_SUDO systemctl start getty@tty$PH_RUNAPP_TTY >/dev/null 2>&1
+	if [[ `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY && "$PH_RUNAPP" != "PieHelper" ]]
+	then
+		$PH_SUDO systemctl stop getty@tty$PH_PIEH_TTY >/dev/null 2>&1
+	fi
 	[[ `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY && "$PH_RUNAPP_CMD" != "/bin/bash" ]] && eval $PH_RUNAPP_CMD $PH_RUNAPPU_CMD_OPTS || $PH_SUDO `which chvt` $PH_RUNAPP_TTY
 	[[ $? -ne 0 ]] && unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_NUM_CTRL && printf "%10s%s\n" "" "ERROR : Could not start $PH_RUNAPP" && return 1
 	unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_NUM_CTRL
@@ -2459,14 +2464,8 @@ case $1 in start)
 	PH_RUNAPP_TTY=`ph_get_tty_for_app $PH_RUNAPP`
 	if [[ `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY && "$PH_RUNAPP" != "PieHelper" ]]
 	then
-		PH_PIEH_TTY=`ph_get_tty_for_app PieHelper`
-		if [[ ($? -ne 0) && ($PH_PIEH_TTY -le $PH_PIEH_MAX_TTYS && $PH_PIEH_TTY -gt 0) ]]
-		then
-			pgrep -t tty$PH_PIEH_TTY "startpieh.sh" >/dev/null && $PH_SUDO `which chvt` $PH_PIEH_TTY || \
+		pgrep -t tty$PH_PIEH_TTY "startpieh.sh" >/dev/null && $PH_SUDO `which chvt` $PH_PIEH_TTY || \
 										$PH_SUDO `which chvt` 1
-		else
-			$PH_SUDO `which chvt` 1
-		fi
 	else
 		[[ "$PH_RUNAPP" == "PieHelper" && `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY ]] && $PH_SUDO `which chvt` 1
 	fi
@@ -2479,17 +2478,17 @@ case $1 in start)
 		printf "%10s%s\n" "" "OK (Not found)"
 	else
 		printf "%10s%s\n" "" "OK (Found)"
-		ph_umount_cifs_share "$PH_RUNAPP"
 		if [[ "$PH_RUNAPP" == "Kodi" ]]
 		then
 			PH_KODI_USER="`nawk -v app=^"Kodi"$ '$1 ~ app { print $2 }' $PH_CONF_DIR/installed_apps`"
 			PH_KODI_HOME="`echo -n $(getent passwd $PH_KODI_USER | cut -d':' -f6)`"
 			printf "%8s%s\n" "" "--> Creating backup of Kodi preferences directory for run account $PH_KODI_USER"
-			$PH_SUDO cd "$PH_KODI_HOME" >/dev/null 2>&1
+			cd "$PH_KODI_HOME" >/dev/null 2>&1
 			$PH_SUDO tar -cvf `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar ./.kodi >/dev/null 2>&1
 			[[ $? -eq 0 ]] && printf "%10s%s\n" "" "OK" || printf "%10s%s\n" "" "Warning : Could not create backup of Kodi preferences directory"
-			$PH_SUDO cd - >/dev/null 2>&1
+			cd - >/dev/null 2>&1
 		fi
+		ph_umount_cifs_share "$PH_RUNAPP"
 	fi
 	if [[ `eval echo "\\$PH_$PH_RUNAPPU"_USE_CTRL` == "yes" ]]
 	then

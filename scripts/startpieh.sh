@@ -64,7 +64,8 @@ do
                 >&2 printf "%15s%s\n" "" "  and 'yyyy' is the shortname of the application it will start"
                 >&2 printf "%12s%s\n" "" "- Additionally, the following rules apply to the start of $PH_RUNAPP :" 
                 >&2 printf "%15s%s\n" "" "- If a persistent $PH_RUNAPP instance is already running on that TTY, that TTY will become the active TTY"
-                >&2 printf "%15s%s\n" "" "- If a non-persistent $PH_RUNAPP instance is already running on that TTY, startup will fail"
+                >&2 printf "%15s%s\n" "" "- $PH_RUNAPP will always activate persistence for itself before starting on a TTY"
+                >&2 printf "%15s%s\n" "" "- $PH_RUNAPP will always terminate after any other application startup completes fully"
                 >&2 printf "%15s%s\n" "" "- If a $PH_RUNAPP instance is already running on a pseudo-terminal, that instance will be replaced by the new instance on it's allocated TTY"
                 >&2 printf "%9s%s\n" "" "-p allows setting the start of $PH_RUNAPP to be executed on a pseudo-terminal instead of it's allocated TTY"
                 >&2 printf "%12s%s\n" "" "- Specifying -p is optional"
@@ -138,21 +139,15 @@ then
 	then
 		if pgrep -t tty$PH_RUNAPP_TTY -f start"$PH_RUNAPPL".sh >/dev/null
 		then
-	        	if [[ `eval echo "\\$PH_\$PH_RUNAPPU"_PERSISTENT` == "no" ]]
-			then
-				printf "%10s%s\n" "" "ERROR : $PH_RUNAPP already running on TTY$PH_RUNAPP_TTY"
-				printf "%2s%s\n" "" "FAILED"
-				exit 1
-			else
-				printf "%10s%s\n" "" "Warning : $PH_RUNAPP already persistent on TTY$PH_RUNAPP_TTY"
-				printf "%2s%s\n" "" "SUCCESS"
-				$PH_SUDO chvt $PH_RUNAPP_TTY
-			fi
+			printf "%10s%s\n" "" "Warning : $PH_RUNAPP already persistent on TTY$PH_RUNAPP_TTY"
+			printf "%2s%s\n" "" "SUCCESS"
+			$PH_SUDO chvt $PH_RUNAPP_TTY
 		else
         		printf "%10s%s\n" "" "OK (Found on pseudo-terminal) -> Stopping"
 			printf "%2s%s\n" "" "SUCCESS"
 			$PH_SCRIPTS_DIR/stop"$PH_RUNAPPL".sh -p || exit $?
 			printf "%s\n" "- Restarting $PH_RUNAPP on a TTY"
+			ph_set_option PieHelper -r PH_PIEH_PERSISTENT='yes' || (printf "%2s%s\n" "" "FAILED" ; return 1) || exit $?
 			ph_run_app_action start "$PH_RUNAPP"
 			[[ $? -eq 0 ]] && printf "%2s%s\n" "" "SUCCESS" || (printf "%2s%s\n" "" "FAILED" ; return 1) || exit $?
 		fi
@@ -183,6 +178,7 @@ else
         printf "%10s%s\n" "" "OK (Not found)"
 	if [[ "$PH_FLAG" == "" ]]
 	then
+		ph_set_option PieHelper -r PH_PIEH_PERSISTENT='yes' || (printf "%2s%s\n" "" "FAILED" ; return 1) || exit $?
 		ph_run_app_action start "$PH_RUNAPP"
 		[[ $? -eq 0 ]] && printf "%2s%s\n" "" "SUCCESS" || (printf "%2s%s\n" "" "FAILED" ; return 1) || exit $?
 	else

@@ -90,23 +90,22 @@
 	  Some operations can be combined into one when using the CLI tools
 	  Also, using the CLI tools from a remote terminal offers slightly more flexibility because TTY switching is handled automatically
 	  The main differences when using the menu directly on a TTY and not from a remote terminal are the following :
-	   - Instead of the scripts, the linux built-in mechanism of Ctrl-LeftAlt-Functionkey#TTY will need to be used to switch to a TTY number '#TTY'
+	   - Instead of the scripts, the linux built-in mechanism of Ctrl-LeftAlt-Functionkey%TTY will need to be used to switch to a TTY number '%TTY'
 	     This implies remembering the TTY number allocated to the application you want to switch to
-	     For convenience however, the PieHelper menu will always be allocated to TTY 2 while TTY 1 stays reserved for system console messages
-	   - Some applications will intercept the TTY switch keystroke combination when running and need to be exited before the new TTY will become visible
+	     For convenience however, the PieHelper menu will normally always be allocated to TTY 2 while TTY 1 is reserved for system console messages
+	   - Some applications will intercept the TTY switch keystroke combination when running and need to be exited manually before switching to a new TTY
 	     Moonlight and Kodi are examples of such applications
 	     Moonlight streaming can be quit by typing 'Ctrl+Alt+Shift+Q' or exiting your game manually
 	     Kodi can be exited from the Kodi GUI
-	   - To avoid persistence related issues with applications rendering to an overlay (read more on persistence below), it is recommended not to use persistence for 'PieHelper'
 	* Using PieHelper, there is the option to mark an application as persistent
 	  This implies that the application will not be stopped when another starts (default behaviour) or when using a movescript to switch from that application to another
 	    Such applications will only ever be stopped if a direct stop or restart command is issued
 	  Some applications do not render to the default frame buffer and will stay visible on foreground, even when switching to another TTY
-	    Never mark such applications as persistent nor the applications to move to when using movescripts to prevent them from overlaying the output of the default frame buffer
+	    Never mark such applications as persistent nor the applications to move to, to prevent them from overlaying the output of the default frame buffer
 	    Moonlight, Emulationstation and Kodi are examples of such applications
 
-- To troubleshoot PieHelper functionality, attempt to run 'confpieh_ph.sh -r' or the corresponding menu option
+- To troubleshoot PieHelper functionality, attempt to run 'confpieh_ph.sh -r' or the corresponding PieHelper menu option
   Alternatively, each PieHelper module (defined as either a script or a function) can be placed in debug mode by using 'confpieh_ph.sh' 
   If the issue remains, try unconfiguring and reconfiguring PieHelper or open an issue on github
-  If required, i can also be contacted directly on the official email address for PieHelper listed in the README.md file
+  If required, i can also be contacted directly on the official email address listed at the bottom of the README.md file
 - Enjoy !

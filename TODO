@@ -1,6 +1,6 @@
+* on chvt : check if active already and not running it's app : kill it first
 * test Kodi prefs dir backup and restore
-* when switch to a tty that is running without app running, always stop tty first
-* piehelper always persistence required when menu used to start apps even when set to no
+* test piehelper always persistence required when menu used to start apps even when set to no
 * show allowed values in interactive setopt
 * stop scripts need to check for integrated applications first
 * support in ph_repair_pieh for protection against multiple instances of 1 app + verification whether all known info matches
