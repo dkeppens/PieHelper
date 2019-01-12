@@ -1,21 +1,23 @@
-* use kodi cifs again for exporting & importing preferences dir
+* test Kodi prefs dir backup and restore
 * when switch to a tty that is running without app running, always stop tty first
 * piehelper always persistence required when menu used to start apps even when set to no
 * show allowed values in interactive setopt
 * stop scripts need to check for integrated applications first
 * support in ph_repair_pieh for protection against multiple instances of 1 app + verification whether all known info matches
+* controller detection for XBOX360 usb receiver
 * 'consolidated' branch
 * use _CMD_OPTS for all apps as well as in supported_apps configuration file for all but basic start command + general impact on way graphical applications are handled
-* keyword "all" support for confopts_ph.sh interactive and non-interactive set
 * using kodi + cmd_opts -> kodi num_ctrl can no longer be read-only
+* keyword "all" support for confopts_ph.sh interactive and non-interactive set
 * check nameref behaviour
 * solve bluetooth pairing dualshock3 controllers
 * treat remaining remarks in codebase
+* re-examine possibility of using ph_show_menu instead of startpieh.sh in installed_apps for PieHelper
 * create button configuration files for the different controller types for emulationstation with configure script
 * change confpieh_ph.sh -p debug for partial results and for fasttrack bypass to set all modules to debug/no debug 
 * change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
-* occasional cifs mount problem for Emulationstation
-* write confoper_ph.sh and check for /proc, systemd and ksh93 prereqs
+* occasional cifs mount problem for Emulationstation + test extended use session
+* write confoper_ph.sh and check for /proc, systemd and ksh93 prereqs + include OS.lst with duplicates of most functionality
 * additional option for application restarts to not auto-switch to TTY restarted app + check compatibility with Kodi, Emulationstation and Moonlight
 * check for /etc/apt/apt.conf on debian and turn off option don't install recommended packages
 * test for controllers actually online
@@ -24,33 +26,25 @@
 * test integrated new bluetooth method for newest modelPI -> change ph_setup_controllers if needed
 * rename installed_apps to integrated_apps
 * test from menus to see if increase in PH_PIEH_MAX_TTYS viable or not and if so : remove limit check in confsupp_ph.sh + mentions of it everywhere
-* test persistence ignored for piehelper when stop issued from menu and revert + also in conf file if non-functional
+* test persistence apps stop from menu
 * test all confxxxx_ph.sh scripts now have all checks needed
 * remove all code for move scripts and all move scripts and move template
 * check for nowhere empty reads where not permitted
-* Get list of necessary paths for PATH (include shells) -> packages required (fi aplay)
-* Configure option VRAM for Kodi config gpu_mem_** based on raspberry model
 * possibility of using ph_show_menu Main in installed_apps for PieHelper
 * move script logic to ph_run_action -> rebuild templates & all scripts
-* check and possibly format some more input stuff in functions
 * recursive going back to original settings when error occured ala confgenb also in confsupp
 * empty line remains in functions.user in confsupp on remove app
-* correct code ph_configure_moon for pairing and test Moonlight when GFE back OK
+* test Moonlight when GFE back OK
 * test controller mappings
 * test second controller input
-* test fresh install on new model Raspberry
-* test emulationstation gaming for a couple successive games
-* test ph_install_app and ph_remove_app for Emulationstation and Kodi
 * check all conf files for ALL TABS
 * test ph_remove_pieh from menus and through confpieh_ph.sh
-* test keyboard/mouse functionality on TTYs for Bash and X11
 * hashing of passwords functionality
 * signal catching where possible
 * mention supported controllers in README and mixing controller types not supported
 * mention no support for multiple physical displays in README
-* test all from menus
+* test remaining from menus
 * test confsupp_ph.sh for graphical stuff
-* test acls for different users
 * test and support all other linux-based distros
 * REST interface for calling scripts and android app : use vtutil && android app
 * change README

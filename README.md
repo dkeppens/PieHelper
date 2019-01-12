@@ -29,8 +29,6 @@ mostly intended for novice linux users that :
 	- PieHelper (Menu and CLI based management of all listed)
 * Currently uninplemented :
 	- Controller detection for XBOX360 controllers using an XBOX360 USB Receiver
-* Needs verification :
-	- xboxdrv mapping for usb PS3 controllers, bluetooth PS3 controllers and bluetooth PS4 controllers
 
 PieHelper binds each application to a specific TTY and uses autologin functionality at TTY selection 
 
