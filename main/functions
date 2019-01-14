@@ -2399,13 +2399,13 @@ case $1 in start)
 			cd "$PH_KODI_HOME" >/dev/null 2>&1
 			if [[ -f `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar ]]
 			then
-				mv `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar $PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar >/dev/null 2>&1
+				$PH_SUDO mv `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" >/dev/null 2>&1
 				for PH_i in $($PH_SUDO tar --diff -f $PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar | nawk -F':' 'BEGIN { ORS = " " } { print $1 }')
 				do
 					$PH_SUDO tar --extract -f $PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar --overwrite --keep-newer-files "$PH_i" >/dev/null 2>&1
 					[[ $? -ne 0 ]] && printf "%10s%s\n" "" "Warning : Could not succesfully restore last preferences backup" && PH_i=NOK && break
 				done
-				[[ "$PH_i" != "NOK" ]] && printf "%10s%s\n" "" "OK" && mv $PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar >/dev/null 2>&1
+				[[ "$PH_i" != "NOK" ]] && printf "%10s%s\n" "" "OK" && $PH_SUDO mv "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar >/dev/null 2>&1
 			else
 				printf "%10s%s\n" "" "Warning : Not found"
 			fi
@@ -2497,7 +2497,7 @@ case $1 in start)
 			cd "$PH_KODI_HOME" >/dev/null 2>&1
 			if [[ -f `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar ]]
 			then
-				mv `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar $PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar >/dev/null 2>&1
+				$PH_SUDO mv `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" >/dev/null 2>&1
 				$PH_SUDO tar -X $PH_FILES_DIR/exclude.Kodi -uvf $PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar ./.kodi >/dev/null 2>&1
 				if [[ $? -eq 0 ]]
 				then
@@ -2515,10 +2515,10 @@ case $1 in start)
 			if [[ "$PH_i" != "NOK" ]]
 			then
 				printf "%10s%s\n" "" "OK"
-				mv $PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar >/dev/null 2>&1
+				$PH_SUDO mv "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar >/dev/null 2>&1
 			else
 				printf "%10s%s\n" "" "Warning : Could not create valid up-to-date preferences backup -> Removing"
-				rm $PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar
+				$PH_SUDO rm "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar"
 			fi
 			cd - >/dev/null 2>&1
 		fi
