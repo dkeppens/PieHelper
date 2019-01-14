@@ -2482,9 +2482,14 @@ case $1 in start)
 		then
 			PH_KODI_USER="`nawk -v app=^"Kodi"$ '$1 ~ app { print $2 }' $PH_CONF_DIR/installed_apps`"
 			PH_KODI_HOME="`echo -n $(getent passwd $PH_KODI_USER | cut -d':' -f6)`"
-			printf "%8s%s\n" "" "--> Creating backup of Kodi preferences directory for run account $PH_KODI_USER"
+			printf "%8s%s\n" "" "--> Backing up latest Kodi preferences directory for run account $PH_KODI_USER"
 			cd "$PH_KODI_HOME" >/dev/null 2>&1
-			$PH_SUDO tar -cvf `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar ./.kodi >/dev/null 2>&1
+			if [[ -f `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar ]]
+			then
+				$PH_SUDO tar -X $PH_FILES_DIR/exclude.Kodi -uvf `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar ./.kodi >/dev/null 2>&1
+			else
+				$PH_SUDO tar -X $PH_FILES_DIR/exclude.Kodi -cvf `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar ./.kodi >/dev/null 2>&1
+			fi
 			[[ $? -eq 0 ]] && printf "%10s%s\n" "" "OK" || printf "%10s%s\n" "" "Warning : Could not create backup of Kodi preferences directory"
 			cd - >/dev/null 2>&1
 		fi
