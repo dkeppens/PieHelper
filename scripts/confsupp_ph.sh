@@ -319,6 +319,7 @@ EOF
 		printf "%10s%s\n" "" "OK"
 		printf "%8s%s\n" "" "--> Creating default mountpoint for CIFS mounts"
 		mkdir -p "$PH_CONF_DIR"/../mnt/"$PH_APP" >/dev/null 2>&1
+		touch "$PH_CONF_DIR/../mnt/$PH_APP/.gitignore"
 		printf "%10s%s\n" "" "OK"
 		printf "%8s%s\n" "" "--> Adding scripts"
 		cp -p $PH_FILES_DIR/StartScript.template $PH_SCRIPTS_DIR/start"$PH_APPL".sh
@@ -400,7 +401,7 @@ EOF
 		done
 		printf "%10s%s\n" "" "OK"
 		printf "%8s%s\n" "" "--> Removing default mountpoint for CIFS mounts"
-		rmdir "$PH_CONF_DIR"/../mnt/"$PH_APP" >/dev/null 2>&1
+		rm -r "$PH_CONF_DIR"/../mnt/"$PH_APP" >/dev/null 2>&1
 		printf "%10s%s\n" "" "OK"
 		if [[ -n "$PH_APP_PKG" ]]
 		then
