@@ -1,3 +1,4 @@
+* extra option for interactively setting options : return, otherwise, stay in same menu 
 * on chvt : check if active already and not running it's app : kill it first
 * test Kodi prefs dir backup and restore
 * test piehelper always persistence required when menu used to start apps even when set to no

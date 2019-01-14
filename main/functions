@@ -1578,7 +1578,8 @@ nawk -v app="${PH_APP_READ[$PH_i]}" -v cmd="$PH_APP_CMD" '$1 ~ app { print $1 "\
 [[ $? -eq 0 ]] && mv /tmp/supported_apps $PH_CONF_DIR/supported_apps	
 printf "%10s%s\n" "" "OK"
 printf "%8s%s\n" "" "--> Creating default mountpoint for CIFS mounts ($PH_CONF_DIR/../mnt/${PH_APP_READ[$PH_i]})"
-mkdir -p $PH_CONF_DIR/../mnt/${PH_APP_READ[$PH_i]} >/dev/null 2>&1
+mkdir -p "$PH_CONF_DIR/../mnt/${PH_APP_READ[$PH_i]}" >/dev/null 2>&1
+touch "$PH_CONF_DIR/../mnt/${PH_APP_READ[$PH_i]}/.gitignore"
 printf "%10s%s\n" "" "OK"
 return 0
 }
@@ -2374,6 +2375,7 @@ PH_RUNAPPL=`echo "$PH_RUNAPP" | cut -c1-4`
 
 PH_PIEH_TTY=`ph_get_tty_for_app PieHelper`
 case $1 in start)
+	PH_RUNAPP_TTY=`ph_get_tty_for_app $PH_RUNAPP`
 	printf "%8s%s\n" "" "--> Attempting to determine required remote mounts for $PH_RUNAPP"
 	if ([[ `eval echo "\\$PH_$PH_RUNAPPU"_CIFS_SHARE` == @(no|) ]] || [[ "$PH_RUNAPP" == "PieHelper" ]])
 	then
@@ -2389,14 +2391,24 @@ case $1 in start)
 		else
 			printf "%10s%s\n" "" "OK (found)"
 		fi
-		if [[ "$PH_RUNAPP" == "Kodi" ]]
+		if [[ "$PH_RUNAPP" == "Kodi" && `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY ]]
 		then
 			PH_KODI_USER="`nawk -v app=^"Kodi"$ '$1 ~ app { print $2 }' $PH_CONF_DIR/installed_apps`"
 			PH_KODI_HOME="`echo -n $(getent passwd $PH_KODI_USER | cut -d':' -f6)`"
 			printf "%8s%s\n" "" "--> Restoring last backup of Kodi preferences directory for run account $PH_KODI_USER"
 			cd "$PH_KODI_HOME" >/dev/null 2>&1
-			$PH_SUDO tar -xvf `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar >/dev/null 2>&1
-			[[ $? -eq 0 ]] && printf "%10s%s\n" "" "OK" || printf "%10s%s\n" "" "Warning : Could not restore backup of Kodi preferences directory"
+			if [[ -f `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar ]]
+			then
+				mv `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar $PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar >/dev/null 2>&1
+				for PH_i in $($PH_SUDO tar --diff -f $PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar | nawk -F':' 'BEGIN { ORS = " " } { print $1 }')
+				do
+					$PH_SUDO tar --extract -f $PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar --overwrite --keep-newer-files "$PH_i" >/dev/null 2>&1
+					[[ $? -ne 0 ]] && printf "%10s%s\n" "" "Warning : Could not succesfully restore last preferences backup" && PH_i=NOK && break
+				done
+				[[ "$PH_i" != "NOK" ]] && printf "%10s%s\n" "" "OK" && mv $PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar >/dev/null 2>&1
+			else
+				printf "%10s%s\n" "" "Warning : Not found"
+			fi
 			cd - >/dev/null 2>&1
 		fi
 	fi
@@ -2434,7 +2446,6 @@ case $1 in start)
 			unset -n PH_EVENT
 		done
 	fi
-	PH_RUNAPP_TTY=`ph_get_tty_for_app $PH_RUNAPP`
 	PH_RUNAPP_CMD=`nawk -v runapp=^"$PH_RUNAPP"$ 'BEGIN { ORS=" " } $1 ~ runapp { for (i=2;i<=NF;i++) { if (i==NF) { ORS="" ; print $i } else { print $i }}}' $PH_CONF_DIR/supported_apps`
 	PH_RUNAPP_CMD=`sed "s/PH_TTY/$PH_RUNAPP_TTY/" <<<$PH_RUNAPP_CMD`
 	[[ "$PH_RUNAPP" == "PieHelper" ]] && PH_RUNAPP_CMD="ph_show_menu"
@@ -2486,11 +2497,29 @@ case $1 in start)
 			cd "$PH_KODI_HOME" >/dev/null 2>&1
 			if [[ -f `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar ]]
 			then
-				$PH_SUDO tar -X $PH_FILES_DIR/exclude.Kodi -uvf `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar ./.kodi >/dev/null 2>&1
+				mv `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar $PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar >/dev/null 2>&1
+				$PH_SUDO tar -X $PH_FILES_DIR/exclude.Kodi -uvf $PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar ./.kodi >/dev/null 2>&1
+				if [[ $? -eq 0 ]]
+				then
+					for PH_i in $($PH_SUDO tar --diff -f $PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar | nawk -F':' 'BEGIN { ORS = " " } { print $1 }')
+					do
+						$PH_SUDO tar --delete -f $PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar "$PH_i" >/dev/null 2>&1
+						[[ $? -ne 0 ]] && PH_i="NOK" && break
+					done
+				else
+					PH_i="NOK"
+				fi
 			else
-				$PH_SUDO tar -X $PH_FILES_DIR/exclude.Kodi -cvf `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar ./.kodi >/dev/null 2>&1
+				$PH_SUDO tar -X $PH_FILES_DIR/exclude.Kodi -cvf $PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar ./.kodi >/dev/null 2>&1 || PH_i="NOK"
 			fi
-			[[ $? -eq 0 ]] && printf "%10s%s\n" "" "OK" || printf "%10s%s\n" "" "Warning : Could not create backup of Kodi preferences directory"
+			if [[ "$PH_i" != "NOK" ]]
+			then
+				printf "%10s%s\n" "" "OK"
+				mv $PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar >/dev/null 2>&1
+			else
+				printf "%10s%s\n" "" "Warning : Could not create valid up-to-date preferences backup -> Removing"
+				rm $PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar
+			fi
 			cd - >/dev/null 2>&1
 		fi
 		ph_umount_cifs_share "$PH_RUNAPP"

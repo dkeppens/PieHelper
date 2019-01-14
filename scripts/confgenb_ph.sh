@@ -39,6 +39,7 @@ do
 		>&2 printf "%9s%s\n" "" "-v allows setting a new version number [version] and will make all the files and settings modifications required to"
 		>&2 printf "%9s%s\n" "" "   generate a new build archive named PieHelper-[version].tar"
 		>&2 printf "%12s%s\n" "" "- [version] should be specified as a decimal number"
+		>&2 printf "%12s%s\n" "" "- No active CIFS mounts related to PieHelper-integrated applications should be present or build generation will refuse to start"
 		>&2 printf "%12s%s\n" "" "- Non-recoverable errors encountered will reset all settings and files modified so far to their initial"
 		>&2 printf "%12s%s\n" "" "  state or value before ending build generation"
 		>&2 printf "%12s%s\n" "" "- Recoverable errors encountered will generate error messages and continue with build generation"
@@ -73,6 +74,14 @@ OPTARG="$PH_OLDOPTARG"
 if [[ -n "$PH_NEW_VERSION" ]]
 then
 	printf "%s\n" "- Creating a new build archive for PieHelper version $PH_NEW_VERSION"
+	for PH_i in `nawk 'BEGIN { ORS = " " } { print $1 }' $PH_CONF_DIR/installed_apps`
+	do
+		if [[ `ls "$PH_SCRIPTS_DIR/../mnt/$PH_i" 2>/dev/null | wc -l` -ge 1 ]]
+		then
+			printf "%2s%s\n" "" "FAILED : Data detected in $PH_SCRIPTS_DIR/../mnt/$PH_i indicating an active CIFS mount for $PH_i"
+			exit 1
+		fi
+	done
 	PH_ACL_USERS=`getfacl $PH_SCRIPTS_DIR 2>/dev/null | nawk -F':' 'BEGIN { ORS = " " } $1 ~ /^user$/ && $2 !~ /^$/ { print $2 }'`
 	for PH_i in $PH_ACL_USERS
 	do
