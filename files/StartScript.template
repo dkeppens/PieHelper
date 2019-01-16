@@ -103,7 +103,7 @@ if pgrep -t tty$PH_RUNAPP_TTY -f "$PH_RUNAPP_CMD" >/dev/null
 then
 	if [[ "$PH_RUNAPP" == "Bash" ]]
 	then
-		if [[ -n `ps --ppid \`pgrep -t tty$PH_RUNAPP_TTY $PH_RUNAPP_CMD\` 2>/dev/null | tail -n +2` ]]
+		if [[ -n `ps --ppid \`pgrep -t tty$PH_RUNAPP_TTY -f "$PH_RUNAPP_CMD"\` 2>/dev/null | tail -n +2` ]]
 		then
 			printf "%10s%s\n" "" "OK (Not found)"
 			ph_run_app_action start "$PH_RUNAPP" || (printf "%2s%s\n" "" "FAILED" ; return 1) || exit $?

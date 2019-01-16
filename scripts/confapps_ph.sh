@@ -135,11 +135,11 @@ fi
 case $PH_ACTION in list)
 	case $PH_LISTMODE in int)
 		printf "%s\n" "- Listing applications currently integrated with PieHelper"
-		nawk '{ printf "%8s%s\n", "", $1 }' $PH_CONF_DIR/installed_apps
+		nawk '{ printf "%8s%s\n", "", $1 }' "$PH_CONF_DIR/installed_apps"
 		printf "%2s%s\n\n" "" "SUCCESS" ;;
 			     supp)
 		printf "%s\n" "- Listing currently supported applications"
-		nawk '{ printf "%8s%s\n", "", $1 }' $PH_CONF_DIR/supported_apps
+		nawk '{ printf "%8s%s\n", "", $1 }' "$PH_CONF_DIR/supported_apps"
 		printf "%2s%s\n\n" "" "SUCCESS" ;;
 			    start)
 		printf "%s\n" "- Listing application currently configured to start by default on system boot"
@@ -147,9 +147,9 @@ case $PH_ACTION in list)
 		printf "%2s%s\n\n" "" "SUCCESS" ;;
 			      run)
 		printf "%s\n" "- Listing applications currently running"
-		for PH_APP in `nawk 'BEGIN { ORS = " " } { print $1 }' $PH_CONF_DIR/installed_apps`
+		for PH_APP in `nawk 'BEGIN { ORS = " " } { print $1 }' "$PH_CONF_DIR/installed_apps"`
 		do
-			PH_APP_TTY=`ph_get_tty_for_app $PH_APP`
+			PH_APP_TTY=`ph_get_tty_for_app "$PH_APP"`
 			if [[ $? -eq 1 && $PH_APP_TTY -ne 0 ]]
 			then
 				if [[ "$PH_APP" == "Bash" ]]

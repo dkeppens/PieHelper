@@ -62,7 +62,7 @@ fi
 printf "%8s%s\n" "" "--> Checking for $PH_STOPAPP"
 PH_INST=`pgrep startpieh.sh | sed "s/^$PPID$//g" | paste -d" " -s`
 [[ -z "$PH_INST" ]] && printf "%10s%s\n" "" "Warning : $PH_STOPAPP not running" && printf "%2s%s\n" "" "SUCCESS" && return 0
-pgrep -t tty$PH_STOPAPP_TTY start"$PH_STOPAPPL".sh >/dev/null
+pgrep -t tty$PH_STOPAPP_TTY -f start"$PH_STOPAPPL".sh >/dev/null
 case $?_$PH_FLAG in 0_)
 	printf "%10s%s\n" "" "OK (Found)"
         [[ -z "$1" && `$PH_SUDO cat /proc/$PPID/comm` != @(start*sh|+(?)to+(?).sh|restart!($PH_STOPAPPL).sh) ]] && \
