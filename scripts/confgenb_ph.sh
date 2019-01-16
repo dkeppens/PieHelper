@@ -142,7 +142,7 @@ EOF
 			cd $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
 			git add . >/dev/null 2>&1
 			printf "%8s%s\n" "" "--> Locally committing $PH_NEW_VERSION changes to git"
-			if git commit -a --message="$PH_GIT_COMMSG"
+			if git commit -a --message="$PH_GIT_COMMSG" >/dev/null 2>&1
 			then
 				printf "%10s%s\n" "" "OK"
 			else
@@ -158,7 +158,7 @@ EOF
 #				PH_RESULT="PARTIALLY FAILED"
 #			fi
 			printf "%8s%s\n" "" "--> Committing all changes to remote github master repository"
-			git push --mirror
+			git push --mirror >/dev/null 2>&1
 			if [[ $? -eq 0 ]]
 			then
 				printf "%10s%s\n" "" "OK"
