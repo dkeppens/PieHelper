@@ -44,10 +44,7 @@ done
 OPTIND=$PH_OLDOPTIND
 OPTARG="$PH_OLDOPTARG"
 
-if [[ `$PH_SUDO cat /proc/$PPID/comm` != start*sh ]]
-then
-	ph_check_app_name -i -a "$PH_STOPAPP" || exit $?
-fi
+ph_check_app_name -i -a "$PH_STOPAPP" || exit $?
 printf "%s\n" "- Disabling $PH_STOPAPP"
 if [[ "$PH_FLAG" != "pseudo" ]]
 then

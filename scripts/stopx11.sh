@@ -34,10 +34,7 @@ done
 OPTIND=$PH_OLDOPTIND
 OPTARG="$PH_OLDOPTARG"
 
-if [[ `$PH_SUDO cat /proc/$PPID/comm` != start*sh ]]
-then
-	ph_check_app_name -i -a "$PH_STOPAPP" || exit $?
-fi
+ph_check_app_name -i -a "$PH_STOPAPP" || exit $?
 printf "%s\n" "- Disabling $PH_STOPAPP"
 printf "%8s%s\n" "" "--> Attempting to determine TTY for $PH_STOPAPP"
 PH_STOPAPP_TTY=`ph_get_tty_for_app $PH_STOPAPP`

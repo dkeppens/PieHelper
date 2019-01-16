@@ -39,7 +39,7 @@ do
 		>&2 printf "%9s%s\n" "" "-v allows setting a new version number [version] and will make all the files and settings modifications required to"
 		>&2 printf "%9s%s\n" "" "   generate a new build archive named PieHelper-[version].tar"
 		>&2 printf "%12s%s\n" "" "- [version] should be specified as a decimal number"
-		>&2 printf "%12s%s\n" "" "- No active CIFS mounts related to PieHelper-integrated applications should be present or build generation will refuse to start"
+		>&2 printf "%12s%s\n" "" "- No active CIFS mounts related to PieHelper-integrated applications on default mountpoints should be present or build generation will refuse to start"
 		>&2 printf "%12s%s\n" "" "- Non-recoverable errors encountered will reset all settings and files modified so far to their initial"
 		>&2 printf "%12s%s\n" "" "  state or value before ending build generation"
 		>&2 printf "%12s%s\n" "" "- Recoverable errors encountered will generate error messages and continue with build generation"
@@ -76,9 +76,9 @@ then
 	printf "%s\n" "- Creating a new build archive for PieHelper version $PH_NEW_VERSION"
 	for PH_i in `nawk 'BEGIN { ORS = " " } { print $1 }' $PH_CONF_DIR/installed_apps`
 	do
-		if [[ `ls "$PH_SCRIPTS_DIR/../mnt/$PH_i" 2>/dev/null | wc -l` -ge 1 ]]
+		if mount | nawk '{ for (i=0;i<NF;i++) { if ($i == "type") { print $(i-1) }}}' | grep ^"${PH_SCRIPTS_DIR%/*}/mnt/$PH_i"$ >/dev/null 2>&1
 		then
-			printf "%2s%s\n" "" "FAILED : Data detected in $PH_SCRIPTS_DIR/../mnt/$PH_i indicating an active CIFS mount for $PH_i"
+			printf "%2s%s\n" "" "FAILED : Active CIFS mount for $PH_i present on default mountpoint"
 			exit 1
 		fi
 	done
@@ -126,7 +126,7 @@ EOF
 							echo "$PH_OLD_VERSION" >$PH_CONF_DIR/VERSION ; rm $PH_FILES_DIR/first_run ; ph_restore_options ; printf "%2s%s\n\n" "" "FAILED" ; return 1) || \
 							exit 1
 	printf "%8s%s\n" "" "--> Removing any old build archives"
-	rm $PH_BUILD_DIR/PieHelper-$PH_NEW_VERSION.tar 2>/dev/null
+	rm "$PH_BUILD_DIR/PieHelper-*.tar" 2>/dev/null
 	printf "%10s%s\n" "" "OK"
 	if [[ "$PH_GIT_UPDATE" == "yes" ]]
 	then
@@ -142,7 +142,7 @@ EOF
 			cd $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
 			git add . >/dev/null 2>&1
 			printf "%8s%s\n" "" "--> Locally committing $PH_NEW_VERSION changes to git"
-			if git commit -a --message="$PH_GIT_COMMSG" >/dev/null 2>&1
+			if git commit -a --message="$PH_GIT_COMMSG"
 			then
 				printf "%10s%s\n" "" "OK"
 			else
@@ -158,7 +158,7 @@ EOF
 #				PH_RESULT="PARTIALLY FAILED"
 #			fi
 			printf "%8s%s\n" "" "--> Committing all changes to remote github master repository"
-			git push --mirror >/dev/null 2>&1
+			git push --mirror
 			if [[ $? -eq 0 ]]
 			then
 				printf "%10s%s\n" "" "OK"

@@ -276,17 +276,17 @@ PH_`echo $PH_APPU`_CIFS_SRV=''								# - This is the ip address of your local n
 											# - Accepted values are valid ipv4 addresses and an empty string
 PH_`echo $PH_APPU`_CIFS_DIR=''								# - This is the pathname of the shared CIFS directory on local network server PH_`echo $PH_APPU`_CIFS_SRV if PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes'
 											# - Default is ''
-											# - Accepted values are pathnames (Values starting with '/') and empty
+											# - Accepted values are pathnames (Values starting with '/' or '\$') and an empty string
 PH_`echo $PH_APPU`_CIFS_SUBDIR=''							# - This is the relative path to PH_`echo $PH_APPU`_CIFS_DIR on local network server PH_`echo $PH_APPU`_CIFS_SRV if PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes'
 											#   as well as the directory that holds your files
 											# - Default is ''
-											# - Accepted values are pathnames (Values starting with '/') and empty
+											# - Accepted values are pathnames (Values starting with '/' or '\$') and an empty string
 PH_`echo $PH_APPU`_CIFS_MPT='\$PH_CONF_DIR/../mnt/$PH_APP'				# - This is the full pathname of a directory on your PI where you want to mount PH_`echo $PH_APPU`_CIFS_SUBDIR if PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes'
 											# - A default directory named 'mnt' with a subfolder for each integrated application is automatically created under the root of the PieHelper
 											#   install location but other values can be set if preferred
 											#   If a different value is set, make sure the directory specified is empty
 											# - Default is '\$PH_CONF_DIR/../mnt/$PH_APP'
-											# - Accepted values are pathnames (Values starting with '/') and empty
+											# - Accepted values are pathnames (Values starting with '/' or '\$') and an empty string
 
 # Exports
 
@@ -308,14 +308,14 @@ EOF
 		echo "PH_`echo $PH_APPU`_CIFS_MPT='\$PH_CONF_DIR/../mnt/$PH_APP'" >>$PH_FILES_DIR/options.defaults
 		printf "%10s%s\n" "" "OK"
 		printf "%8s%s\n" "" "--> Adding options to options.allowed"
-		echo "PH_`echo $PH_APPU`_PERSISTENT:yes or no:\$PH_OPTARG_VAL == @(yes|no)" >>$PH_FILES_DIR/options.allowed
-		echo "PH_`echo $PH_APPU`_CIFS_SHARE:yes or no:\$PH_OPTARG_VAL == @(yes|no)" >>$PH_FILES_DIR/options.allowed
-		echo "PH_`echo $PH_APPU`_CIFS_SRV:a valid ipv4 address or an empty string:\`\$(ph_check_ip_validity \$PH_OPTARG_VAL) echo \$?\` -eq 0" >>$PH_FILES_DIR/options.allowed
-		echo "PH_`echo $PH_APPU`_CIFS_DIR:starting with / or empty:\$PH_OPTARG_VAL == @(/*|)" >>$PH_FILES_DIR/options.allowed
-		echo "PH_`echo $PH_APPU`_CIFS_SUBDIR:starting with / or empty:\$PH_OPTARG_VAL == @(/*|)" >>$PH_FILES_DIR/options.allowed
-		echo "PH_`echo $PH_APPU`_CIFS_MPT:starting with / or empty:\$PH_OPTARG_VAL == @(/*|)" >>$PH_FILES_DIR/options.allowed
-		echo "PH_`echo $PH_APPU`_USE_CTRL:yes or no:\$PH_OPTARG_VAL == @(yes|no)" >>$PH_FILES_DIR/options.allowed
-		echo "PH_`echo $PH_APPU`_NUM_CTRL:1, 2, 3 or 4:\$PH_OPTARG_VAL == @(1|2|3|4)" >>$PH_FILES_DIR/options.allowed
+		echo "PH_`echo $PH_APPU`_PERSISTENT:yes or no:\"\$PH_OPTARG_VAL\" == @(yes|no)" >>$PH_FILES_DIR/options.allowed
+		echo "PH_`echo $PH_APPU`_CIFS_SHARE:yes or no:\"\$PH_OPTARG_VAL\" == @(yes|no)" >>$PH_FILES_DIR/options.allowed
+		echo "PH_`echo $PH_APPU`_CIFS_SRV:a valid ipv4 address or an empty string:\`\$(ph_check_ip_validity \"\$PH_OPTARG_VAL\") echo \$?\` -eq 0" >>$PH_FILES_DIR/options.allowed
+		echo "PH_`echo $PH_APPU`_CIFS_DIR:an empty string or starting with / or \$:\"\$PH_OPTARG_VAL\" == @(/*|\\\$*|)" >>$PH_FILES_DIR/options.allowed
+		echo "PH_`echo $PH_APPU`_CIFS_SUBDIR:an empty string or starting with / or \$:\"\$PH_OPTARG_VAL\" == @(/*|\\\$*|)" >>$PH_FILES_DIR/options.allowed
+		echo "PH_`echo $PH_APPU`_CIFS_MPT:an empty string or starting with / or \$:\"\$PH_OPTARG_VAL\" == @(/*|\\\$*|)" >>$PH_FILES_DIR/options.allowed
+		echo "PH_`echo $PH_APPU`_USE_CTRL:yes or no:\"\$PH_OPTARG_VAL\" == @(yes|no)" >>$PH_FILES_DIR/options.allowed
+		echo "PH_`echo $PH_APPU`_NUM_CTRL:1, 2, 3 or 4:\"\$PH_OPTARG_VAL\" == @(1|2|3|4)" >>$PH_FILES_DIR/options.allowed
 		printf "%10s%s\n" "" "OK"
 		printf "%8s%s\n" "" "--> Creating default mountpoint for CIFS mounts"
 		mkdir -p "$PH_CONF_DIR"/../mnt/"$PH_APP" >/dev/null 2>&1

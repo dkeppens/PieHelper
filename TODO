@@ -1,10 +1,6 @@
-* tests in confsupp for removal ok of mnt/PH_APP dirs
-* extra option for interactively setting options : return, otherwise, stay in same menu 
 * on chvt : check if active already and not running it's app : kill it first
 * test Kodi prefs dir backup and restore
 * test piehelper always persistence required when menu used to start apps even when set to no
-* show allowed values in interactive setopt
-* stop scripts need to check for integrated applications first
 * support in ph_repair_pieh for protection against multiple instances of 1 app + verification whether all known info matches
 * controller detection for XBOX360 usb receiver
 * 'consolidated' branch
