@@ -1,5 +1,6 @@
 * test piehelper always persistence required when menu used to start apps even when set to no
 * test on pseudo and TTY : remove active TTY's with no running app before chvt 
+* test Moonlight when GFE back OK
 * controller detection for XBOX360 usb receiver
 * solve bluetooth pairing dualshock3 controllers
 * change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
@@ -33,7 +34,6 @@
 * move script logic to ph_run_action -> rebuild templates & all scripts
 * recursive going back to original settings when error occured ala confgenb also in confsupp
 * empty line remains in functions.user in confsupp on remove app
-* test Moonlight when GFE back OK
 * test controller mappings
 * test second controller input
 * check all conf files for ALL TABS

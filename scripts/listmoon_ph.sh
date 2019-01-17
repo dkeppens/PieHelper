@@ -31,6 +31,8 @@ ph_check_app_name -i -a Moonlight || exit $?
 PH_MOON_PATH=`nawk '$1 ~ /^Moonlight$/ { printf $2 }' $PH_CONF_DIR/supported_apps`
 printf "%s\n" "- Listing Moonlight shared games"
 [[ -z "$PH_MOON_SRV" ]] && printf "%2s%s\n" "" "FAILED : Option PH_MOON_SRV is not configured" && exit 1
-$PH_MOON_PATH list $PH_MOON_SRV | tail -n +3
-$PH_MOON_PATH list $PH_MOON_SRV >/dev/null 2>&1
-[[ $? -eq 0 ]] && printf "%2s%s\n" "" "SUCCESS" || (printf "%2s%s\n" "" "FAILED" ; return 1) || return $?
+[[ -z `"$PH_MOON_PATH" list "$PH_MOON_SRV" | tail -n +3` ]] && printf "%2s%s\n" "" "\"none\"" && exit 0
+"$PH_MOON_PATH" list "$PH_MOON_SRV" | tail -n +3
+"$PH_MOON_PATH" list "$PH_MOON_SRV" >/dev/null 2>&1
+[[ $? -eq 0 ]] && printf "%2s%s\n" "" "SUCCESS" || (printf "%2s%s\n" "" "FAILED" ; return 1) || exit $?
+exit 0
