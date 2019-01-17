@@ -1,5 +1,5 @@
 * test on pseudo and TTY : remove active TTY's with no running app before chvt 
-* option for confpieh_ph.sh -p list : only modules with specific debugstate
+* option for confpieh_ph.sh -p debug : switch all enabled or disabled modules
 * incremental backup for Kodi autobackup OR switch to only use CIFS option for kodi on remove and install Kodi + change related conf file information
 * test piehelper always persistence required when menu used to start apps even when set to no
 * support in ph_repair_pieh for protection against multiple instances of 1 app + verification whether all known info matches

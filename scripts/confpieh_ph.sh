@@ -39,7 +39,7 @@ do
 		PH_ACTION="$OPTARG" ;;
 			   m)
                 ! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$PH_ACTION" != @(debug|) ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$PH_ACTION" != @(debug|list|) ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		[[ -n "$PH_MODULES" ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_MODULES="$OPTARG" ;;
 			   g)
@@ -59,7 +59,7 @@ do
 		PH_ACTION="unconfigure" ;;
 			   *)
 		>&2 printf "%s\n" "Usage : confpieh_ph.sh -h | -c | -s | -r | -u | -g |"
-		>&2 printf "%23s%s\n" "" "-p \"list\" |"
+		>&2 printf "%23s%s\n" "" "-p \"list\" -m [module1,module2,...|\"all\"|\"enabled\"|\"disabled\"] |"
 		>&2 printf "%23s%s\n" "" "-p \"debug\" -m [module1,module2,...|\"all\"|\"prompt\"]"
 		>&2 printf "\n"
 		>&2 printf "%3s%s\n" "" "Where -h displays this usage"
@@ -69,8 +69,14 @@ do
 		>&2 printf "%9s%s\n" "" "-u sets PieHelper configuration state to \"unconfigured\""
 		>&2 printf "%9s%s\n" "" "-g displays the current version and configuration state of PieHelper"
 		>&2 printf "%9s%s\n" "" "-p specifies the action to take"
-		>&2 printf "%12s%s\n" "" "\"list\" allows the listing of all relevant PieHelper modules and their current debugstate"
-		>&2 printf "%15s%s\n" "" "- Relevant module names are defined as all PieHelper script names and any PieHelper functions relevant to the Operating system being used"
+		>&2 printf "%12s%s\n" "" "\"list\" allows the listing of all specified relevant PieHelper modules and their current debugstate"
+		>&2 printf "%15s%s\n" "" "-m allows specifying a list of module names"
+		>&2 printf "%18s%s\n" "" "- Valid module names are PieHelper script names and any PieHelper functions relevant to the Operating system being used"
+		>&2 printf "%18s%s\n" "" "- Multiple module names can be specified using a comma-separator"
+		>&2 printf "%18s%s\n" "" "- Any invalid module names specified will be skipped and generate an error without blocking remaining module processing"
+		>&2 printf "%18s%s\n" "" "- The keyword \"all\" can be used to list the debug state for all relevant PieHelper modules"
+		>&2 printf "%18s%s\n" "" "- The keyword \"enabled\" can be used to list all relevant PieHelper modules with a currently enabled debug state"
+		>&2 printf "%18s%s\n" "" "- The keyword \"disabled\" can be used to list all relevant PieHelper modules with a currently disabled debug state"
 		>&2 printf "%12s%s\n" "" "\"debug\" allows switching the debug state of all specified relevant module names"
 		>&2 printf "%15s%s\n" "" "-m allows specifying a list of module names"
 		>&2 printf "%18s%s\n" "" "- Valid module names are PieHelper script names and any PieHelper functions relevant to the Operating system being used"
@@ -92,8 +98,8 @@ done
 OPTIND=$PH_OLDOPTIND
 OPTARG="$PH_OLDOPTARG"
 
-[[ -n "$PH_MODULES" && "$PH_ACTION" != "debug" ]] && (! confpieh_ph.sh -h) && exit 1
-[[ -z "$PH_MODULES" && "$PH_ACTION" == "debug" ]] && (! confpieh_ph.sh -h) && exit 1
+[[ -n "$PH_MODULES" && "$PH_ACTION" != @(debug|list) ]] && (! confpieh_ph.sh -h) && exit 1
+[[ -z "$PH_MODULES" && "$PH_ACTION" == @(debug|list) ]] && (! confpieh_ph.sh -h) && exit 1
 case $PH_ACTION in repair)
 		ph_repair_pieh
 		exit $? ;;
@@ -111,7 +117,7 @@ case $PH_ACTION in repair)
 		exit $? ;;
 		    debug) 	
                 case $PH_MODULES in all)
-                        PH_MODULES=`$PH_SCRIPTS_DIR/confpieh_ph.sh -p list | tail -n +2 | nawk '$1 !~ /SUCCESS/ { print $1 } { next }' | paste -d',' -s` ;;
+                        PH_MODULES=`$PH_SCRIPTS_DIR/confpieh_ph.sh -p list -m all | tail -n +2 | nawk '$1 !~ /SUCCESS/ { print $1 } { next }' | paste -d',' -s` ;;
 				 prompt)
 			PH_MODULES=""
 			printf "%s\n" "- Using interactive mode"
@@ -128,6 +134,7 @@ case $PH_ACTION in repair)
 			confpieh_ph.sh -p debug -m "$PH_MODULES"
 			exit $? ;;
 		esac
+		[[ "$PH_MODULES" == @(enabled|disabled) ]] && printf "%s\n" "- Changing debug mode for specified modules" && printf "%2s%s\n" "" "FAILED : Unsupported keyword used" && exit 1
                 for PH_i in `sed 's/,/ /g' <<<$PH_MODULES`
                 do
 			PH_RESULT="SUCCESS"
@@ -230,23 +237,63 @@ case $PH_ACTION in repair)
                 done
                 exit 0 ;;
 		    list)
-                printf "%s\n" "- Listing all modules"
-                for PH_j in `find $PH_MAIN_DIR/.. ! -name 10-retropie.sh -name "*.sh" 2>/dev/null | sort`
-                do
-                        if grep ^'set -x' $PH_j >/dev/null
-                        then
-                                PH_DEBUGSTATE="yes"
-                        else
-                                PH_DEBUGSTATE="no"
-                        fi
-                        printf "%2s%-40s%s\n" "" "${PH_j##*/}" "debug_enabled=$PH_DEBUGSTATE"
-                done
-                for PH_j in $(echo `nawk '$1 ~ /^function$/ { print $2 }' $PH_MAIN_DIR/functions ; nawk '$1 ~ /^function$/ { print $2 }' $PH_CONF_DIR/distros/$PH_DISTRO.conf ; \
-					nawk '$1 ~ /^function$/ { print $2 }' $PH_MAIN_DIR/functions.user` | sed 's/ /\n/g' | sort | paste -d" " -s)
-                do
-                        PH_DEBUGSTATE=`echo $PH_PIEH_DEBUG | nawk -v func=^"$PH_j"$ 'BEGIN { RS = "," ; flag = 0 } $1 ~ func { print "yes" ; flag = 1 ; exit } END { if (flag==0) { print "no" }}'`
-                        printf "%2s%-40s%s\n" "" "$PH_j" "debug_enabled=$PH_DEBUGSTATE"
-                done
+		[[ "$PH_MODULES" == "prompt" ]] && printf "%s\n" "Listing specified modules" && printf "%2s%s\n" "" "FAILED : Unsupported keyword used" && exit 1
+		case $PH_MODULES in all)
+			printf "%s\n" "- Listing all modules"
+			for PH_j in `find $PH_MAIN_DIR/.. ! -name 10-retropie.sh -name "*.sh" 2>/dev/null | sort`
+			do
+				if grep ^'set -x' $PH_j >/dev/null
+				then
+					PH_DEBUGSTATE="yes"
+				else
+					PH_DEBUGSTATE="no"
+				fi
+				printf "%2s%-40s%s\n" "" "${PH_j##*/}" "debug_enabled=$PH_DEBUGSTATE"
+			done
+			for PH_j in $(echo `nawk '$1 ~ /^function$/ { print $2 }' $PH_MAIN_DIR/functions ; nawk '$1 ~ /^function$/ { print $2 }' $PH_CONF_DIR/distros/$PH_DISTRO.conf ; \
+				nawk '$1 ~ /^function$/ { print $2 }' $PH_MAIN_DIR/functions.user` | sed 's/ /\n/g' | sort | paste -d" " -s)
+			do
+				PH_DEBUGSTATE=`echo $PH_PIEH_DEBUG | nawk -v func=^"$PH_j"$ 'BEGIN { RS = "," ; flag = 0 } $1 ~ func { print "yes" ; flag = 1 ; exit } END { if (flag==0) { print "no" }}'`
+				printf "%2s%-40s%s\n" "" "$PH_j" "debug_enabled=$PH_DEBUGSTATE"
+			done ;;
+				enabled)
+			printf "%s\n" "- Listing all modules with an enabled debug state"
+			if [[ -z "$PH_PIEH_DEBUG" ]]
+			then
+				printf "%2s%-40s\n" "" "\"none\""
+			else
+				for PH_j in `echo -n "$PH_PIEH_DEBUG" | sed 's/,/ /g'`
+				do
+					printf "%2s%-40s%s\n" "" "$PH_j" "debug_enabled=yes"
+				done
+			fi ;;
+			       disabled)
+                        PH_MODULES=`$PH_SCRIPTS_DIR/confpieh_ph.sh -p list -m all | tail -n +2 | nawk '$1 !~ /SUCCESS/ { print $1 } { next }' | paste -d',' -s`
+			printf "%s\n" "- Listing all modules with a disabled debug state"
+			if "$PH_SCRIPTS_DIR/confpieh_ph.sh" -p list -m all | grep 'debug_enabled=no' >/dev/null
+			then
+				for PH_j in `echo -n "$PH_MODULES" | sed 's/,/ /g'`
+				do
+					if ! echo "$PH_PIEH_DEBUG" | egrep -e "^$PH_j$|^$PH_j,|,$PH_j,|,$PH_j$" >/dev/null
+					then
+						printf "%2s%-40s%s\n" "" "$PH_j" "debug_enabled=no"
+					fi
+				done
+			else
+				printf "%2s%-40s\n" "" "\"none\""
+			fi ;;
+				      *)
+			printf "%s\n" "- Listing all specified modules"
+			for PH_j in `echo -n "$PH_MODULES" | sed 's/,/ /g'`
+			do
+				if ! echo "$PH_PIEH_DEBUG" | egrep -e "^$PH_j$|^$PH_j,|,$PH_j,|,$PH_j$" >/dev/null
+				then
+					printf "%2s%-40s%s\n" "" "$PH_j" "debug_enabled=no"
+				else
+					printf "%2s%-40s%s\n" "" "$PH_j" "debug_enabled=yes"
+				fi
+			done ;;
+		esac
 		printf "%2s%s\n\n" "" "$PH_RESULT"
                 exit 0 ;;
 esac
