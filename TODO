@@ -1,22 +1,22 @@
-* test on pseudo and TTY : remove active TTY's with no running app before chvt 
-* option for confpieh_ph.sh -p debug : switch all enabled or disabled modules
-* incremental backup for Kodi autobackup OR switch to only use CIFS option for kodi on remove and install Kodi + change related conf file information
 * test piehelper always persistence required when menu used to start apps even when set to no
-* support in ph_repair_pieh for protection against multiple instances of 1 app + verification whether all known info matches
+* test on pseudo and TTY : remove active TTY's with no running app before chvt 
 * controller detection for XBOX360 usb receiver
+* solve bluetooth pairing dualshock3 controllers
+* change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
+* write confoper_ph.sh and check for /proc, systemd and ksh93 prereqs + include OS.lst with duplicates of most functionality
+* option for confpieh_ph.sh -p debug : switch all enabled or disabled modules + change Advanced menu to interactive prompt for listing modules
+* incremental backup for Kodi autobackup OR switch to only use CIFS option for kodi on remove and install Kodi + change related conf file information
+* support in ph_repair_pieh for protection against multiple instances of 1 app + verification whether all known info matches
 * 'consolidated' branch
 * use _CMD_OPTS for all apps as well as in supported_apps configuration file for all but basic start command + general impact on way graphical applications are handled
 * using kodi + cmd_opts -> kodi num_ctrl can no longer be read-only
 * keyword "all" support for confopts_ph.sh interactive and non-interactive set
 * check nameref behaviour
-* solve bluetooth pairing dualshock3 controllers
 * treat remaining remarks in codebase
 * re-examine possibility of using ph_show_menu instead of startpieh.sh in installed_apps for PieHelper
 * create button configuration files for the different controller types for emulationstation with configure script
 * change confpieh_ph.sh -p debug for partial results and for fasttrack bypass to set all modules to debug/no debug 
-* change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
 * occasional cifs mount problem for Emulationstation + test extended use session
-* write confoper_ph.sh and check for /proc, systemd and ksh93 prereqs + include OS.lst with duplicates of most functionality
 * additional option for application restarts to not auto-switch to TTY restarted app + check compatibility with Kodi, Emulationstation and Moonlight
 * check for /etc/apt/apt.conf on debian and turn off option don't install recommended packages
 * test for controllers actually online

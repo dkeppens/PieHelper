@@ -75,6 +75,10 @@ do
         fi
         PH_ANSWER=""
 done
+printf "%8s%s" "" "--> Removing Moonlight cache directory for $PH_RUN_USER"
+$PH_SUDO rm -r "$HOME/.cache/moonlight" 2>/dev/null
+printf "%10s%s\n" "" "OK"
+$PH_SUDO chmod 4755 `which moonlight` >/dev/null 2>&1
 printf "%s\n" "- Pairing with $PH_MOON_SRV"
 moonlight pair "$PH_MOON_SRV"
 unset PH_OPTAR
@@ -1490,7 +1494,7 @@ nawk -v app=^"$PH_APP"$ '$1 ~ app { next } { print }' $PH_CONF_DIR/installed_app
 [[ $? -eq 0 ]] && mv /tmp/installed_apps_tmp $PH_CONF_DIR/installed_apps
 printf "%10s%s\n" "" "OK"
 printf "%8s%s\n" "" "--> Removing default mountpoint for CIFS mounts ($PH_CONF_DIR/../mnt/$PH_APP)"
-rmdir $PH_CONF_DIR/../mnt/$PH_APP >/dev/null 2>&1
+rm -r $PH_CONF_DIR/../mnt/$PH_APP >/dev/null 2>&1
 printf "%10s%s\n" "" "OK"
 if nawk -v user=^"$PH_APP_USER"$ '$2 ~ user { exit 1 } { next }' $PH_CONF_DIR/installed_apps >/dev/null 2>&1
 then
