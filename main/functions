@@ -575,8 +575,11 @@ return 0
 
 function ph_show_menu {
 
+typeset PH_MENU="$1"
+
 [[ "$1" == @(Advanced|Main|Apps|Controllers) ]] && typeset PH_TYPE="menu" || typeset PH_TYPE="submenu"
-typeset PH_HEADER="Welcome to PieHelper $PH_VERSION $1 $PH_TYPE"
+[[ "$PH_MENU" == "Settings" ]] && typeset PH_HEADER="Welcome to PieHelper $PH_VERSION Controller $PH_MENU $PH_TYPE" || \
+	typeset PH_HEADER="Welcome to PieHelper $PH_VERSION $PH_MENU $PH_TYPE"
 typeset PH_j=""
 typeset -i PH_ANSWER=0
 typeset -i PH_i=0
@@ -587,7 +590,7 @@ while true
 do
 	PH_ANSWER=0
 	PH_COUNT=0
-	if [[ "$1" == "Apps" ]]
+	if [[ "$PH_MENU" == "Apps" ]]
 	then
 		>$PH_FILES_DIR/menus/Apps.lst
 		for PH_j in `nawk '{ print $1 }' $PH_CONF_DIR/supported_apps`
@@ -601,14 +604,14 @@ do
 		echo "Return to previous screen:return" >>$PH_FILES_DIR/menus/Apps.lst
 	fi
 	set -A PH_MENU_ITEM ""
-	for PH_i in {1..`cat $PH_FILES_DIR/menus/$1.lst | wc -l`}
+	for PH_i in {1..`cat "$PH_FILES_DIR/menus/$PH_MENU.lst" | wc -l`}
 	do
-		PH_MENU_ITEM+=("`nawk -F':' -v line=$PH_i 'NR == line { print $1 }' $PH_FILES_DIR/menus/$1.lst`")
+		PH_MENU_ITEM+=("`nawk -F':' -v line=$PH_i 'NR == line { print $1 }' $PH_FILES_DIR/menus/$PH_MENU.lst`")
 	done
 	set -A PH_MENU_CMD ""
-	for PH_i in {1..`cat $PH_FILES_DIR/menus/$1.lst | wc -l`}
+	for PH_i in {1..`cat "$PH_FILES_DIR/menus/$PH_MENU.lst" | wc -l`}
 	do
-		PH_MENU_CMD+=("`nawk -F':' -v line=$PH_i 'NR == line { print $2 }' $PH_FILES_DIR/menus/$1.lst`")
+		PH_MENU_CMD+=("`nawk -F':' -v line=$PH_i 'NR == line { print $2 }' $PH_FILES_DIR/menus/$PH_MENU.lst`")
 	done
 	clear
 	ph_print_bannerline
