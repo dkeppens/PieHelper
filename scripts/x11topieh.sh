@@ -1,6 +1,6 @@
 #!/bin/ksh
 # Move from X11 to PieHelper (by Davy Keppens on 04/10/2018)
-# Enable/Disable debug by running confpieh_ph.sh -d x11topieh.sh
+# Enable/Disable debug by running confpieh_ph.sh -p debug -m x11topieh.sh
 
 . $(dirname $0)/../main/main.sh || exit $? && set +x
 

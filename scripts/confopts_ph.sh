@@ -1,6 +1,6 @@
 #!/bin/ksh
 # Manage application options and controller settings (by Davy Keppens on 06/11/2018)
-# Enable/Disable debug by running confpieh_ph.sh -d confopts_ph.sh
+# Enable/Disable debug by running confpieh_ph.sh -p debug -m confopts_ph.sh
 
 . $(dirname $0)/../main/main.sh || exit $? && set +x
 

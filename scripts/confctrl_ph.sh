@@ -1,7 +1,7 @@
 #!/bin/ksh
 # Display configuration steps for different combinations of controller types and connection methods
 # or interactively configure bluetooth controllers (by Davy Keppens on 25/11/2018)
-# Enable/Disable debug by running confpieh_ph.sh -d confctrl_ph.sh
+# Enable/Disable debug by running confpieh_ph.sh -p debug -m confctrl_ph.sh
 
 . $(dirname $0)/../main/main.sh || exit $? && set +x
 

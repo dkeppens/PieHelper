@@ -1,6 +1,6 @@
 #!/bin/ksh
 # Manage supplementary out-of-scope apps (by Davy Keppens on 11/11/2018)
-# Enable/Disable debug by running confpieh_ph.sh -d confsupp_ph.sh
+# Enable/Disable debug by running confpieh_ph.sh -p debug -m confsupp_ph.sh
 
 . $(dirname $0)/../main/main.sh || exit $? && set +x
 

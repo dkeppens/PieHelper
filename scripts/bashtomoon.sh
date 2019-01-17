@@ -1,6 +1,6 @@
 #!/bin/ksh
 # Move from Bash to Moonlight (by Davy Keppens on 04/10/2018)
-# Enable/Disable debug by running confpieh_ph.sh -d bashtomoon.sh
+# Enable/Disable debug by running confpieh_ph.sh -p debug -m bashtomoon.sh
 
 . $(dirname $0)/../main/main.sh || exit $? && set +x
 

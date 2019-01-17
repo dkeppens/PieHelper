@@ -1,6 +1,6 @@
 #!/bin/ksh
 # Start #PH_APP# (by Davy Keppens on 04/10/2018)
-# Enable/Disable debug by running confpieh_ph.sh -d start#PH_APPL#.sh
+# Enable/Disable debug by running confpieh_ph.sh -p debug -m start#PH_APPL#.sh
 
 . $(dirname $0)/../main/main.sh || exit $? && set +x
 

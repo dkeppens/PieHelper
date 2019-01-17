@@ -1,6 +1,6 @@
 #!/bin/ksh
 # Move from Emulationstation to PieHelper (by Davy Keppens on 04/10/2018)
-# Enable/Disable debug by running confpieh_ph.sh -d emultopieh.sh
+# Enable/Disable debug by running confpieh_ph.sh -p debug -m emultopieh.sh
 
 . $(dirname $0)/../main/main.sh || exit $? && set +x
 

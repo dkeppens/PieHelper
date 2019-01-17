@@ -1,6 +1,6 @@
 #!/bin/ksh
 # Generate a new tar archive of PieHelper (by Davy Keppens on 04/10/2018)
-# Enable/Disable debug by running confpieh_ph.sh -d confgenb_ph.sh
+# Enable/Disable debug by running confpieh_ph.sh -p debug -m confgenb_ph.sh
 
 . $(dirname $0)/../main/main.sh || exit $? && set +x
 

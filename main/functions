@@ -1,5 +1,5 @@
 # PieHelper function declarations (By Davy Keppens on 06/10/18)
-# Toggle debugstate of a specific function between Enable/Disable by running confpieh_ph.sh -d 'function_name'
+# Toggle debugstate of a specific function between Enable/Disable by running confpieh_ph.sh -p debug -m 'function_name'
 
 function ph_check_conf_files {
 

@@ -1,6 +1,6 @@
 #!/bin/ksh
 # Manage installed and supported applications (by Davy Keppens on 03/11/2018)
-# Enable/Disable debug by running confpieh_ph.sh -d confapps_ph.sh
+# Enable/Disable debug by running confpieh_ph.sh -p debug -m confapps_ph.sh
 
 . $(dirname $0)/../main/main.sh || exit $? && set +x
 

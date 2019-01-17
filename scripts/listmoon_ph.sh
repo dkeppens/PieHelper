@@ -1,6 +1,6 @@
 #!/bin/ksh
 # List Moonlight shared games (by Davy Keppens on 23/11/2018)
-# Enable/Disable debug by running confpieh_ph.sh -d listmoon_ph.sh
+# Enable/Disable debug by running confpieh_ph.sh -p debug -m listmoon_ph.sh
 
 . $(dirname $0)/../main/main.sh || exit $? && set +x
 

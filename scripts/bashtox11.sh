@@ -1,6 +1,6 @@
 #!/bin/ksh
 # Move from Bash to X11 (by Davy Keppens on 04/10/2018)
-# Enable/Disable debug by running confpieh_ph.sh -d bashtox11.sh
+# Enable/Disable debug by running confpieh_ph.sh -p debug -m bashtox11.sh
 
 . $(dirname $0)/../main/main.sh || exit $? && set +x
 

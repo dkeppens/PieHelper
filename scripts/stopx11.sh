@@ -1,6 +1,6 @@
 #!/bin/ksh
 # Stop X11 (by Davy Keppens on 04/10/2018)
-# Enable/Disable debug by running confpieh_ph.sh -d stopx11.sh
+# Enable/Disable debug by running confpieh_ph.sh -p debug -m stopx11.sh
 
 . $(dirname $0)/../main/main.sh || exit $? && set +x
 

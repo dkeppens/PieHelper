@@ -1,6 +1,6 @@
 #!/bin/ksh
 # Move from Emulationstation to Moonlight (by Davy Keppens on 04/10/2018)
-# Enable/Disable debug by running confpieh_ph.sh -d emultomoon.sh
+# Enable/Disable debug by running confpieh_ph.sh -p debug -m emultomoon.sh
 
 . $(dirname $0)/../main/main.sh || exit $? && set +x
 

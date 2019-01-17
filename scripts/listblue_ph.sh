@@ -1,6 +1,6 @@
 #!/bin/ksh
 # List bluetooth adapter(s) (by Davy Keppens on 26/12/2018)
-# Enable/Disable debug by running confpieh_ph.sh -d listblue_ph.sh
+# Enable/Disable debug by running confpieh_ph.sh -p debug -m listblue_ph.sh
 
 . $(dirname $0)/../main/main.sh || exit $? && set +x
 

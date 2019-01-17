@@ -1,6 +1,6 @@
 #!/bin/ksh
 # Move from Moonlight to X11 (by Davy Keppens on 04/10/2018)
-# Enable/Disable debug by running confpieh_ph.sh -d moontox11.sh
+# Enable/Disable debug by running confpieh_ph.sh -p debug -m moontox11.sh
 
 . $(dirname $0)/../main/main.sh || exit $? && set +x
 
