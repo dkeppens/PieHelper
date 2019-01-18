@@ -105,8 +105,8 @@ then
 	echo "$PH_NEW_VERSION" >$PH_CONF_DIR/VERSION
 	printf "%10s%s\n" "" "OK"
 	printf "%8s%s\n" "" "--> Emptying OS configuration tool's configuration file"
-	$PH_SUDO cp -p $PH_FILES_DIR/OS.defaults /tmp/OS.defaults_tmp 2>/dev/null
-	$PH_SUDO cat >$PH_FILES_DIR/OS.defaults
+	$PH_SUDO mv "$PH_FILES_DIR/OS.defaults" /tmp/OS.defaults_tmp 2>/dev/null
+	$PH_SUDO touch "$PH_FILES_DIR/OS.defaults"
 	printf "%10s%s\n" "" "OK"
 	printf "%8s%s\n" "" "--> Emptying controller ids' configuration file"
 	cp -p $PH_CONF_DIR/controller_cli_ids /tmp/controller_cli_ids_tmp 2>/dev/null
@@ -213,7 +213,7 @@ EOF
 	mv /tmp/controller_cli_ids_tmp $PH_CONF_DIR/controller_cli_ids
 	printf "%10s%s\n" "" "OK"
 	printf "%8s%s\n" "" "--> Restoring OS configuration tool's configuration file"
-	$PH_SUDO mv /tmp/OS.defaults_tmp $PH_FILES_DIR/OS.defaults
+	$PH_SUDO mv /tmp/OS.defaults_tmp "$PH_FILES_DIR/OS.defaults"
 	printf "%10s%s\n" "" "OK"
 	printf "%8s%s\n" "" "--> Removing first_run file in $PH_FILES_DIR"
 	rm $PH_FILES_DIR/first_run 2>/dev/null
