@@ -13,6 +13,7 @@ typeset PH_CUR_DIR="$( cd "$( dirname "$0" )" && pwd )"
 typeset PH_OLDOPTARG="$OPTARG"
 typeset -i PH_RET_CODE=0
 typeset -i PH_COUNT=0
+typeset -i PH_COUNT2=0
 typeset -i PH_FLAG=0
 typeset -i PH_OLDOPTIND=$OPTIND
 PH_USER=""
@@ -480,6 +481,9 @@ case $PH_ACTION in all)
 	ph_set_result $?
 	printf "\n"
 	printf "%2s%s\n" "" "Total : $PH_RESULT"
+	printf "\n"
+	printf "%s" "Press Enter to reboot"
+	read 2>/dev/null
 	init 6 ;;
 	     all-usedef)
 	"$PH_CUR_DIR/confoper_ph.sh" -p user -a "def"
@@ -512,6 +516,9 @@ case $PH_ACTION in all)
 	ph_set_result $?
 	printf "\n"
 	printf "%2s%s\n" "" "Total : $PH_RESULT"
+	printf "\n"
+	printf "%s" "Press Enter to reboot"
+	read 2>/dev/null
 	init 6 ;;
 		savedef)
 	printf "%s\n" "- Executing function $PH_ACTION"
@@ -661,9 +668,10 @@ case $PH_ACTION in all)
 		do
 			if [[ `eval echo -n "\\$\$PH_i"` == "def" ]]
 			then
+				PH_COUNT2=$((PH_COUNT2+1))
 				if ! ph_getdef "$PH_i"
 				then
-					PH_RET_CODE=1
+					PH_RET_CODE=$((PH_RET_CODE+1))
 					continue
 				fi
 			fi
@@ -681,41 +689,48 @@ case $PH_ACTION in all)
 				printf "%8s%s\n" "" "--> Checking currently configured value for $PH_STRING"
 				if [[ `nawk -F'=' -v str=^"$PH_STRING"$ '$1 ~ str { print $2 ; exit 0 } { next }' /boot/config.txt` == `eval echo -n "\\$\$PH_i"` ]]
 				then
+					PH_COUNT2=$((PH_COUNT2+1))
 					printf "%10s%s\n" "" "OK (Nothing to do)"
 				else
 					printf "%10s%s\n" "" "OK"
+					PH_COUNT2=$((PH_COUNT2+1))
 					printf "%8s%s\n" "" "--> Configuring value `eval echo -n \"\\$\$PH_i\"` for $PH_STRING"
 					nawk -F'=' -v str=^"$PH_STRING"$ -v val=`eval echo -n "\\$\$PH_i"` '$1 ~ str { print $1 "=" val ; next } { print }' /boot/config.txt >/tmp/boot_config.txt_tmp 2>/dev/null
 					if [[ $? -eq 0 ]]
 					then
-						PH_FLAG=1
 						printf "%10s%s\n" "" "OK"
 						mv /tmp/boot_config.txt_tmp /boot/config.txt
+						if [[ `cat /proc/$PPID/comm` != "confoper_ph.sh" ]]
+						then
+							while [[ "$PH_ANSWER" != @(y|n) ]]
+							do
+								[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+								printf "%8s%s" "" "--> Reboot to activate the new values (y/n) ? "
+								read PH_ANSWER 2>/dev/null
+								PH_COUNT=$((PH_COUNT+1))
+							done
+							printf "%10s%s\n" "" "OK"
+						fi
 					else
 						printf "%10s%s\n" "" "ERROR : Could not configure $PH_STRING"
-						PH_RETCODE=1
+						PH_RETCODE=$((PH_RET_CODE+1))
 						continue
 					fi
 				fi
 			else
 				printf "%8s%s\n" "" "--> Configuring value for $PH_STRING"
 				printf "%10s%s\n" "" "Warning : No new value entered for $PH_i -> Skipping" 
+				PH_COUNT2=$((PH_COUNT2+1))
 			fi
 		done
-		if [[ $PH_FLAG -eq 1 && `cat /proc/$PPID/comm` != "confoper_ph.sh" ]]
+		if [[ $PH_RET_CODE -eq $PH_COUNT2 ]]
 		then
-			while [[ "$PH_ANSWER" != @(y|n) ]]
-			do
-				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
-				printf "%8s%s" "" "--> Reboot to activate the new values (y/n) ? "
-				read PH_ANSWER 2>/dev/null
-				PH_COUNT=$((PH_COUNT+1))
-			done
-			printf "%10s%s\n" "" "OK"
+			printf "%2s%s\n" "" "FAILED"
+		else
+			[[ $PH_RET_CODE -eq 0 ]] && printf "%2s%s\n" "" "SUCCESS" || printf "%2s%s\n" "" "PARTIALLY FAILED"
 		fi
-		[[ $PH_RET_CODE -ne 0 ]] && printf "%2s%s\n" "" "AT LEAST PARTIALLY FAILED" || printf "%2s%s\n" "" "SUCCESS"
 		[[ "$PH_ANSWER" == "y" ]] && init 6
-		exit $PH_RET_CODE ;;
+		[[ $PH_RET_CODE -eq 0 ]] && exit 0 || exit 1 ;;
 		       memsplit)
 		if [[ "$PH_VID_MEM" == "def" ]]
 		then
@@ -855,6 +870,9 @@ case $PH_ACTION in all)
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			   boot)
 		printf "%2s%s\n" "" "$PH_RESULT"
+		printf "\n"
+		printf "%s" "Press Enter to reboot"
+		read 2>/dev/null
 		init 6 ;;
 	esac
 	[[ $PH_RET_CODE -ne 0 ]] && PH_RESULT="FAILED"
