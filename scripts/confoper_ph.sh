@@ -420,7 +420,7 @@ then
 		printf "%2s%s\n" "" "FAILED"
 		exit 1
 	fi
-	for PH_i in sudo ksh
+	for PH_i in sudo ksh keyboard-configuration
 	do
 		printf "%8s%s\n" "" "--> Checking for package $PH_i"
 		if ph_get_pkg_inststate "$PH_i"
@@ -594,8 +594,37 @@ case $PH_ACTION in all)
 		then
 			ph_getdef PH_KEYB || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
 		fi
-		printf "%2s%s\n" "" "Currently uninplemented"
-		PH_RET_CODE=$? ;;
+		printf "%8s%s\n" "" "--> Checking currently configured keyboard layout"
+		PH_VALUE=`nawk -F'"' '$1 ~ /^XKBLAYOUT=$/ { print $2 ; exit 0 } { next }' /etc/default/keyboard`
+		if [[ "$PH_VALUE" != "$PH_KEYB" ]]
+		then
+			printf "%10s%s\n" "" "OK ($PH_VALUE)"
+			printf "%8s%s\n" "" "--> Configuring keyboard layout"
+			cp -p /etc/default/keyboard /tmp/default_keyboard_bck
+			nawk -F'"' -v val="$PH_KEYB" '$1 ~ /^XKBLAYOUT=$/ { print $1 "\"" val "\"" ; next } { print }' /etc/default/keyboard >/tmp/default_keyboard_tmp 2>/dev/null
+			if [[ $? -eq 0 ]]
+			then
+				mv /tmp/default_keyboard_tmp /etc/default/keyboard 2>/dev/null
+				if dpkg-reconfigure -f noninteractive keyboard-configuration >/dev/null 2>&1
+				then
+					printf "%10s%s\n" "" "OK"
+					invoke-rc.d keyboard-setup start >/dev/null 2>&1
+					setsid sh -c 'exec setupcon -k --force <> /dev/tty1 >&0 2>&1' >/dev/null 2>&1
+					udevadm trigger --subsystem-match=input --action=change >/dev/null 2>&1
+				else
+					printf "%10s%s\n" "" "ERROR : Could not configure keyboard"
+					mv /tmp/default_keyboard_bck /etc/default/keyboard 2>/dev/null
+					PH_RESULT="FAILED"
+				fi
+			else
+				printf "%10s%s\n" "" "ERROR : Could not configure keyboard"
+				PH_RESULT="FAILED"
+			fi
+		else
+			printf "%10s%s\n" "" "OK (Nothing to do)"
+		fi
+		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			  tzone)
 		if [[ "$PH_TZONE" == "def" ]]
 		then
