@@ -1,0 +1,7 @@
+Enable the SSH server:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p ssh -s allowed
+Disable the SSH server:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p ssh -s disallowed
+Go to Main menu:ph_show_menu Main
+Go to Apps menu:ph_show_menu Apps
+Go to Controllers menu:ph_show_menu Controllers
+Go to Advanced menu:ph_show_menu Advanced
+Return to previous screen:return

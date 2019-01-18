@@ -8,6 +8,7 @@ View the current value of Bash option(s) (Variable expansion disabled):confopts_
 View the current value of Bash option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Bash -g -r
 Change the value of read-write Bash option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Bash -s
 Change the value of read-write Bash option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Bash -s -r
+Set all Bash options back to default:ph_set_all_options_to_default Bash
 Display help for Bash option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Bash -d
 Display help for Bash option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Bash -d -r
 Display TTY currently allocated to Bash:confapps_ph.sh -p tty -a Bash | more

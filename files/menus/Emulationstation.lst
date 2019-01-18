@@ -10,6 +10,7 @@ View the current value of Emulationstation option(s) (Variable expansion disable
 View the current value of Emulationstation option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Emulationstation -g -r
 Change the value of read-write Emulationstation option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Emulationstation -s
 Change the value of read-write Emulationstation option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Emulationstation -s -r
+Set all Emulationstation options back to default:ph_set_all_options_to_default Emulationstation
 Display help for Emulationstation option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Emulationstation -d
 Display help for Emulationstation option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Emulationstation -d -r
 Display TTY currently allocated to Emulationstation:confapps_ph.sh -p tty -a Emulationstation | more

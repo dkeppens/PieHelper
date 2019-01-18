@@ -10,6 +10,7 @@ View the current value of X11 option(s) (Variable expansion disabled):confopts_p
 View the current value of X11 option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a X11 -g -r
 Change the value of read-write X11 option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a X11 -s
 Change the value of read-write X11 option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a X11 -s -r
+Set all X11 options back to default:ph_set_all_options_to_default X11
 Display help for X11 option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a X11 -d
 Display help for X11 option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a X11 -d -r
 Display TTY currently allocated to X11:confapps_ph.sh -p tty -a X11 | more

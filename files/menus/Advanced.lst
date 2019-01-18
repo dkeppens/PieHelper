@@ -4,5 +4,6 @@ Switch the debug state for one or more relevant PieHelper modules:confpieh_ph.sh
 Discover supported applications and integrate them into PieHelper:confapps_ph.sh -p state
 Go to Main menu:ph_show_menu Main
 Go to Apps menu:ph_show_menu Apps
+Go to OS menu:ph_show_menu OS
 Go to Controllers menu:ph_show_menu Controllers
 Return to previous screen:return

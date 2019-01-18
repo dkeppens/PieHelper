@@ -4,6 +4,7 @@ View the current value of controller setting(s) (Variable expansion disabled):co
 View the current value of controller setting(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Ctrls -g -r
 Change the value of read-write controller setting(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Ctrls -s
 Change the value of read-write controller setting(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Ctrls -s -r
+Set all Controller settings back to default:ph_set_all_options_to_default Ctrls
 Set the controller type to PS3:confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='PS3' -o PH_CTRL_MAP='no' | more
 Set the controller type to PS3 with XBOX360 controller emulation:confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='PS3' -o PH_CTRL_MAP='yes' | more
 Set the controller type to PS4:confopts_ph.sh -p set -a Ctrls -o PH_CTRL_TYPE='PS4' -o PH_CTRL_MAP='no' | more

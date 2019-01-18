@@ -4,4 +4,5 @@ Quit to shell at CLI tools location (Stop PieHelper):break
 Go to Apps menu:ph_show_menu Apps
 Go to Controllers menu:ph_show_menu Controllers
 Go to Advanced menu:ph_show_menu Advanced
+Go to OS menu:ph_show_menu OS
 Return to previous screen:return

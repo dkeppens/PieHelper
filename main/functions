@@ -564,9 +564,12 @@ return 0
 
 function ph_set_all_options_to_default {
 
-typeset PH_i
+typeset PH_i=""
+typeset PH_APP="$1"
+typeset -u PH_APPU=`echo $PH_APP | cut -c1-4`
 
-for PH_i in `nawk -F'=' 'BEGIN { ORS = " " } { print $1 }' $PH_FILES_DIR/options.defaults`
+[[ -z "$PH_APP" ]] && PH_APPU="PH_" || PH_APPU=PH_"$PH_APPU"_
+for PH_i in `nawk -F'=' -v comp=^"$PH_APPU" 'BEGIN { ORS = " " } $1 ~ comp { print $1 }' $PH_FILES_DIR/options.defaults`
 do
         ph_set_option_to_default "$PH_i" || (ph_restore_options ; return 1) || return $?
 done

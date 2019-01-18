@@ -12,6 +12,7 @@ View the current value of Moonlight option(s) (Variable expansion disabled):conf
 View the current value of Moonlight option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Moonlight -g -r
 Change the value of read-write Moonlight option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Moonlight -s
 Change the value of read-write Moonlight option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Moonlight -s -r
+Set all Moonlight options back to default:ph_set_all_options_to_default Moonlight
 Display help for Moonlight option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Moonlight -d
 Display help for Moonlight option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Moonlight -d -r
 Display TTY currently allocated to Moonlight:confapps_ph.sh -p tty -a Moonlight | more

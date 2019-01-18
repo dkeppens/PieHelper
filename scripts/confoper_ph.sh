@@ -8,7 +8,10 @@ typeset PH_i=""
 typeset PH_OPTION=""
 typeset PH_STRING=""
 typeset PH_ANSWER=""
+typeset PH_HOME=""
 typeset PH_ACTION=""
+typeset PH_LOCALE_ENCODING=""
+typeset PH_LOCALE_NAME=""
 typeset PH_CUR_DIR="$( cd "$( dirname "$0" )" && pwd )"
 typeset PH_OLDOPTARG="$OPTARG"
 typeset -i PH_RET_CODE=0
@@ -44,7 +47,7 @@ typeset PH_VALUE=""
 printf "%8s%s\n" "" "--> Getting default value for parameter $PH_PARAM"
 if grep ^"$PH_PARAM=" "$PH_CUR_DIR/../files/OS.defaults" >/dev/null
 then
-	PH_VALUE="`nawk -F'=' -v param=^\"$PH_PARAM\"$ '$1 ~ param { print $2 ; exit 0 } { next }' $PH_CUR_DIR/../files/OS.defaults`"
+	PH_VALUE="`nawk -F\' -v param=^\"$PH_PARAM=\"$ '$1 ~ param { print $2 ; exit 0 } { next }' $PH_CUR_DIR/../files/OS.defaults`"
 	printf "%10s%s\n" "" "OK ($PH_VALUE)"
 else
 	printf "%10s%s\n" "" "ERROR : Could not retrieve $PH_PARAM default"
@@ -74,7 +77,7 @@ else
 	printf "%10s%s\n" "" "OK (Not Found)"
 fi
 printf "%8s%s\n" "" "--> Storing \"$PH_VALUE\" as default value of parameter $PH_PARAM"
-echo "$PH_PARAM=$PH_VALUE" >>"$PH_CUR_DIR/../files/OS.defaults"
+echo "$PH_PARAM='$PH_VALUE'" >>"$PH_CUR_DIR/../files/OS.defaults"
 printf "%10s%s\n" "" "OK"
 return 0
 }
@@ -117,8 +120,10 @@ return 0
 if [[ -f /usr/bin/pacman ]]
 then
 	. $PH_CUR_DIR/../conf/distros/Archlinux.conf
+	typeset PH_KEYB_PKG="systemd"
 else
 	. $PH_CUR_DIR/../conf/distros/Debian.conf
+	typeset PH_KEYB_PKG="keyboard-configuration systemd"
 fi
 
 while getopts p:hs:a:n:e:t:c:f:z:u:l:b:r:k:m:d PH_OPTION 2>/dev/null
@@ -162,7 +167,7 @@ do
 			   c)
 		[[ -n "$PH_AUDIO" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$OPTARG" != @(hdmi|jack|def) ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$OPTARG" != @(hdmi|jack|auto|def) ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_AUDIO="$OPTARG" ;;
 			   e)
 		[[ -n "$PH_BOOTENV" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
@@ -262,6 +267,7 @@ do
 		>&2 printf "%18s%s\n" "" "  it's home directory, mail spool directory and sudo configuration"
 		>&2 printf "%21s%s\n" "" "- Specifying -d is optional"
 		>&2 printf "%21s%s\n" "" "- Specifying -d when using the keyword \"def\" for [newuser] is not allowed"
+		>&2 printf "%21s%s\n" "" "- If user 'pi' is currently logged on, removal will be delayed until the next system reboot which will be proposed"
                 >&2 printf "%12s%s\n" "" "\"host\" allows changing the hostname for this machine to [hostname]"
 		>&2 printf "%15s%s\n" "" "-n allows setting a value for [hostname]"
 		>&2 printf "%18s%s\n" "" "- The keyword \"def\" can be used to specify using the value stored as the default for this parameter"
@@ -275,6 +281,7 @@ do
 		>&2 printf "%18s%s\n" "" "- The keyword \"def\" can be used to specify using the value stored as the default for this parameter"
 		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
 		>&2 printf "%18s%s\n" "" "- The value specified for [keyb] should be a valid keyboard layout name"
+		>&2 printf "%18s%s\n" "" "- If the new value specified for is different from the one currently configured on Archlinux machines, a reboot is required which will be proposed"
                 >&2 printf "%12s%s\n" "" "\"memsplit\" allows setting the amount of memory to reserve exclusively for the GPU"
 		>&2 printf "%15s%s\n" "" "-m allows selecting either \"16\", \"32\", \"64\", \"128\", \"256\" or \"def\""
 		>&2 printf "%18s%s\n" "" "- Selecting \"def\" will use the value stored as the default for this parameter"
@@ -287,6 +294,7 @@ do
 		>&2 printf "%18s%s\n" "" "- The value specified for [tzone] should be a valid timezone identifier"
                 >&2 printf "%12s%s\n" "" "\"locale\" allows generating locale [newloc] and setting it as the system's default locale"
 		>&2 printf "%15s%s\n" "" "-f allows setting a value for [newloc]"
+		>&2 printf "%18s%s\n" "" "- [newloc] should be specified in the format 'locale.encoding'"
 		>&2 printf "%18s%s\n" "" "- The keyword \"def\" can be used to specify using the value stored as the default for this parameter"
 		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
 		>&2 printf "%18s%s\n" "" "- The value specified for [newloc] should be a system supported locale"
@@ -349,7 +357,7 @@ OPTARG="$PH_OLDOPTARG"
 (([[ -n "$PH_BOTTOMSCAN" || -n "$PH_UPPERSCAN" ]]) && ([[ "$PH_ACTION" != @(all|savedef|overscan) ]])) && (! confoper_ph.sh -h) && exit 1
 if [[ "$PH_ACTION" == "locale" ]]
 then
-	if ((! cat /usr/share/i18n/SUPPORTED | grep ^"$PH_LOCALE"$ >/dev/null) && ([[ "$PH_LOCALE" != "def" ]]))
+	if ((! cat /usr/share/i18n/SUPPORTED | grep ^"$PH_LOCALE " >/dev/null) && ([[ "$PH_LOCALE" != "def" ]]))
 	then
 		printf "%s\n" "- Executing function $PH_ACTION"
 		printf "%2s%s\n" "" "FAILED : Unsupported system locale specified"
@@ -409,7 +417,7 @@ then
 		printf "%2s%s\n" "" "FAILED"
 		exit 1
 	fi
-	for PH_i in sudo ksh keyboard-configuration
+	for PH_i in sudo ksh "$PH_KEYB_PKG" alsa-utils tzdata
 	do
 		printf "%8s%s\n" "" "--> Checking for package $PH_i"
 		if ph_get_pkg_inststate "$PH_i"
@@ -584,12 +592,20 @@ case $PH_ACTION in all)
 		if id $PH_USER >/dev/null 2>&1
 		then
 			printf "%10s%s\n" "" "Warning : Found -> Modifying"
-			printf "%8s%s\n" "" "--> Modifying user $PH_USER"
-			if usermod -d "${HOME%/*}/$PH_USER" -m -c "$PH_USER account" -s /bin/bash -G tty,input,video,audio -g "$PH_USER" "$PH_USER" >/dev/null 2>&1
+			if ! who -us | nawk '{ print $1 }' | grep ^"$PH_USER"$ >/dev/null
 			then
-				printf "%10s%s\n" "" "OK"
+				printf "%8s%s\n" "" "--> Modifying user $PH_USER"
+				if usermod -d "${HOME%/*}/$PH_USER" -m -c "$PH_USER account" -s /bin/bash -G tty,input,video,audio -g "$PH_USER" "$PH_USER" >/dev/null 2>&1
+				then
+					printf "%10s%s\n" "" "OK"
+				else
+					printf "%10s%s\n" "" "ERROR : Could not modify user"
+					printf "%2s%s\n" "" "FAILED"
+					exit 1
+				fi
 			else
-				printf "%10s%s\n" "" "ERROR : Could not modify user"
+				printf "%8s%s\n" "" "--> Modifying user $PH_USER"
+				printf "%10s%s\n" "" "ERROR : Could not modify user (Logged in)"
 				printf "%2s%s\n" "" "FAILED"
 				exit 1
 			fi
@@ -621,15 +637,27 @@ case $PH_ACTION in all)
 		fi
 		if (([[ "$PH_DEL_PIUSER" == "yes" ]]) && (id pi >/dev/null 2>&1))
 		then
-			printf "%8s%s\n" "" "--> Setting up delayed removal of user 'pi'"
-			echo "#!/bin/sh" >/tmp/remove_pi_user_tmp
-			echo "`which sudo` userdel -r pi" >>/tmp/remove_pi_user_tmp
-			echo "`which sudo` unlink /etc/rc3.d/S99remove_pi_user" >>/tmp/remove_pi_user_tmp
-			echo "`which sudo` rm /etc/init.d/remove_pi_user" >>/tmp/remove_pi_user_tmp
-			mv /tmp/remove_pi_user_tmp /etc/init.d/remove_pi_user 2>/dev/null
-			ln -s /etc/init.d/remove_pi_user /etc/rc3.d/S99remove_pi_user 2>/dev/null
-			chmod 755 /etc/init.d/remove_pi_user
-			printf "%10s%s\n" "" "OK"
+			if who -us | nawk '{ print $1 }' | grep ^"pi"$ >/dev/null
+			then
+				printf "%8s%s\n" "" "--> Setting up delayed removal of user 'pi'"
+				echo "#!/bin/sh" >/tmp/remove_pi_user_tmp
+				echo "`which sudo` userdel -r pi" >>/tmp/remove_pi_user_tmp
+				echo "`which sudo` unlink /etc/rc3.d/S99remove_pi_user" >>/tmp/remove_pi_user_tmp
+				echo "`which sudo` rm /etc/init.d/remove_pi_user" >>/tmp/remove_pi_user_tmp
+				mv /tmp/remove_pi_user_tmp /etc/init.d/remove_pi_user 2>/dev/null
+				ln -s /etc/init.d/remove_pi_user /etc/rc3.d/S99remove_pi_user 2>/dev/null
+				chmod 755 /etc/init.d/remove_pi_user
+				printf "%10s%s\n" "" "OK"
+			else
+				printf "%8s%s\n" "" "--> Removing user 'pi'"
+				if userdel -r pi >/dev/null 2>&1
+				then
+					printf "%10s%s\n" "" "OK"
+				else
+					printf "%10s%s\n" "" "ERROR : Could not delete user 'pi'"
+					PH_RESULT="PARTIALLY FAILED"
+				fi
+			fi
 			printf "%8s%s\n" "" "--> Deleting sudo rules for default user 'pi'"
 			if rm /etc/sudoers.d/010_pi-nopasswd >/dev/null 2>&1
 			then
@@ -639,51 +667,44 @@ case $PH_ACTION in all)
 				PH_RESULT="PARTIALLY FAILED"
 			fi
 		fi
+		if (([[ `cat /proc/$PPID/comm` != "confoper_ph.sh" ]]) && (who -us | nawk '{ print $1 }' | grep ^"pi"$ >/dev/null))
+		then
+			while [[ "$PH_ANSWER" != @(y|n) ]]
+			do
+				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+				printf "%8s%s" "" "--> Reboot to process removal of default user (y/n) ? "
+				read PH_ANSWER 2>/dev/null
+				PH_COUNT=$((PH_COUNT+1))
+			done
+			printf "%10s%s\n" "" "OK"
+		fi
 		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_ANSWER" == "y" ]] && init 6
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			 sshkey)
 		if [[ "$PH_USER" == "def" ]]
 		then
 			ph_getdef PH_USER || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
 		fi
-		printf "%2s%s\n" "" "Currently uninplemented"
-		PH_RET_CODE=$? ;;
-			 locale)
-		if [[ "$PH_LOCALE" == "def" ]]
+		PH_HOME="/home/$PH_USER"
+		printf "%8s%s\n" "" "--> Checking for existing keys for user $PH_USER"
+		if [[ ! -f "$PH_HOME/.ssh/id_rsa.pub" ]]
 		then
-			ph_getdef PH_LOCALE || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
-		fi
-		printf "%2s%s\n" "" "Currently uninplemented"
-		PH_RET_CODE=$? ;;
-			   keyb)
-		if [[ "$PH_KEYB" == "def" ]]
-		then
-			ph_getdef PH_KEYB || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
-		fi
-		printf "%8s%s\n" "" "--> Checking currently configured keyboard layout"
-		PH_VALUE=`nawk -F'"' '$1 ~ /^XKBLAYOUT=$/ { print $2 ; exit 0 } { next }' /etc/default/keyboard`
-		if [[ "$PH_VALUE" != "$PH_KEYB" ]]
-		then
-			printf "%10s%s\n" "" "OK ($PH_VALUE)"
-			printf "%8s%s\n" "" "--> Configuring keyboard layout"
-			cp -p /etc/default/keyboard /tmp/default_keyboard_bck
-			nawk -F'"' -v val="$PH_KEYB" '$1 ~ /^XKBLAYOUT=$/ { print $1 "\"" val "\"" ; next } { print }' /etc/default/keyboard >/tmp/default_keyboard_tmp 2>/dev/null
-			if [[ $? -eq 0 ]]
+			printf "%10s%s\n" "" "OK (None)"
+			printf "%8s%s\n" "" "--> Creating public/private keypair and trusting public key"
+			mkdir $PH_HOME/.ssh 2>/dev/null
+			chmod 700 "$PH_HOME/.ssh" 2>/dev/null
+			chown -R "$PH_USER":"$PH_USER" "$PH_HOME/.ssh" 2>/dev/null
+			if ssh-keygen -t rsa -b 2048 -N "" -f "$PH_HOME/.ssh/id_rsa" >/dev/null 2>&1
 			then
-				mv /tmp/default_keyboard_tmp /etc/default/keyboard 2>/dev/null
-				if dpkg-reconfigure -f noninteractive keyboard-configuration >/dev/null 2>&1
-				then
-					printf "%10s%s\n" "" "OK"
-					invoke-rc.d keyboard-setup start >/dev/null 2>&1
-					setsid sh -c 'exec setupcon -k --force <> /dev/tty1 >&0 2>&1' >/dev/null 2>&1
-					udevadm trigger --subsystem-match=input --action=change >/dev/null 2>&1
-				else
-					printf "%10s%s\n" "" "ERROR : Could not configure keyboard"
-					mv /tmp/default_keyboard_bck /etc/default/keyboard 2>/dev/null
-					PH_RESULT="FAILED"
-				fi
+				chmod 600 "$PH_HOME/.ssh/id_rsa" 2>/dev/null
+				chmod 644 "$PH_HOME/.ssh/id_rsa.pub" 2>/dev/null
+				chmod 755 "$PH_HOME" 2>/dev/null
+				cp -p "$PH_HOME/.ssh/id_rsa" "$PH_HOME/.ssh/authorized_keys"
+				chown -R "$PH_USER":"$PH_USER" "$PH_HOME" 2>/dev/null
+				printf "%10s%s\n" "" "OK"
 			else
-				printf "%10s%s\n" "" "ERROR : Could not configure keyboard"
+				printf "%10s%s\n" "" "ERROR : Could not create a keypair"
 				PH_RESULT="FAILED"
 			fi
 		else
@@ -691,30 +712,246 @@ case $PH_ACTION in all)
 		fi
 		printf "%2s%s\n" "" "$PH_RESULT"
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
+			 locale)
+		if [[ "$PH_LOCALE" == "def" ]]
+		then
+			ph_getdef PH_LOCALE || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+		fi
+		printf "%8s%s\n" "" "--> Checking currently configured system locale"
+		PH_VALUE="`localectl status | nawk -F'=' '$0 ~ /System Locale/ { print $2 }'`"
+		if [[ "$PH_VALUE" != "$PH_LOCALE" ]]
+		then
+			printf "%10s%s\n" "" "OK ($PH_VALUE)"
+			printf "%8s%s\n" "" "--> Generating locales"
+			PH_VALUE="$PH_LOCALE `localectl list-locales | paste -s -d\" \"`"
+			for PH_i in $PH_VALUE
+			do
+				PH_LOCALE_NAME=`grep -i ^"$PH_i " /usr/share/i18n/SUPPORTED | nawk '{ print $1 }'`
+				PH_LOCALE_ENCODING=`grep -i ^"$PH_i " /usr/share/i18n/SUPPORTED | nawk '{ print $2 }'`
+				if ! grep -i "$PH_LOCALE_NAME $PH_LOCALE_ENCODING" /etc/locale.gen >/dev/null 2>&1
+				then
+					echo "$PH_LOCALE_NAME $PH_LOCALE_ENCODING" >>/etc/locale.gen
+				else
+					if grep -i "# $PH_LOCALE_NAME $PH_LOCALE_ENCODING" /etc/locale.gen >/dev/null 2>&1
+					then
+						if nawk -v loc=^"$PH_LOCALE_NAME"$ '$1 ~ /^#$/ && $2 ~ loc { for(i=2;i<=NF;i++) { print $i ; next } { print }}' /etc/locale.gen >/tmp/locale.gen_tmp 2>/dev/null
+						then
+							mv /tmp/locale.gen_tmp /etc/locale.gen 2>/dev/null
+						else
+							rm /tmp/locale.gen_tmp 2>/dev/null
+							printf "%10s%s\n" "" "ERROR : Could not generate locale"
+							PH_RESULT="FAILED"
+						fi
+					fi
+				fi
+			done
+			locale 2>/dev/null | sed 's/\(.*\)=\(.*\)/\1='$PH_LOCALE'/g' >/etc/default/locale
+			cp -p /etc/default/locale /etc/locale.conf
+			unset LANG
+			if [[ "$PH_RESULT" != "FAILED" ]]
+			then
+				if locale-gen >/dev/null 2>&1
+				then
+					printf "%10s%s\n" "" "OK"
+					printf "%8s%s\n" "" "--> Configuring locale $PH_LOCALE"
+					if localectl set-locale LANG="$PH_LOCALE" >/dev/null 2>&1
+					then
+						printf "%10s%s\n" "" "OK"
+						. /etc/default/locale
+					else
+						printf "%10s%s\n" "" "ERROR : Could not configure locale"
+						PH_RESULT="PARTIALLY FAILED"
+					fi
+				else
+					printf "%10s%s\n" "" "ERROR : Could not generate locale"
+					PH_RESULT="FAILED"
+				fi
+			fi
+		else
+			printf "%10s%s\n" "" "OK (Nothing to do)"
+		fi
+		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
+			   keyb)
+		if [[ "$PH_KEYB" == "def" ]]
+		then
+			ph_getdef PH_KEYB || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+		fi
+		printf "%8s%s\n" "" "--> Checking currently configured keyboard layout"
+		if [[ -f /usr/bin/pacman ]]
+		then
+			PH_VALUE="`localectl status | nawk -F': ' '$0 ~ /X11 Layout/ { print $2 ; exit 0 } { next }'`"
+			if [[ "$PH_VALUE" != "$PH_KEYB" ]]
+			then
+				printf "%10s%s\n" "" "OK ($PH_VALUE)"
+				printf "%8s%s\n" "" "--> Configuring keyboard layout"
+				if localectl set-x11-keymap be >/dev/null 2>&1
+				then
+					if ! nawk -F'=' -v val="$PH_KEYB" '$1 ~ /KEYMAP/ { print $1 "=" val ; next } { print }' /etc/vconsole.conf >/tmp/vconsole.conf_tmp 2>/dev/null
+					then
+						printf "%10s%s\n" "" "ERROR : Could not configure keyboard"
+						rm /tmp/vconsole.conf_tmp 2>/dev/null
+						localectl set-x11-keymap "$PH_VALUE" >/dev/null 2>&1
+					else
+						printf "%10s%s\n" "" "OK"
+						mv /tmp/vconsole.conf_tmp /etc/vconsole.conf 2>/dev/null
+						! grep "KEYMAP=$PH_KEYB" /etc/vconsole.conf >/dev/null && echo "KEYMAP=$PH_KEYB" >>/etc/vconsole.conf
+						if [[ `cat /proc/$PPID/comm` != "confoper_ph.sh" ]]
+						then
+							while [[ "$PH_ANSWER" != @(y|n) ]]
+							do
+								[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+								printf "%8s%s" "" "--> Reboot to activate keyboard settings (y/n) ? "
+								read PH_ANSWER 2>/dev/null
+								PH_COUNT=$((PH_COUNT+1))
+							done
+							printf "%10s%s\n" "" "OK"
+						fi
+					fi
+				else
+					printf "%10s%s\n" "" "ERROR : Could not configure keyboard"
+					PH_RESULT="FAILED"
+				fi
+			else
+				printf "%10s%s\n" "" "OK (Nothing to do)"
+			fi
+		else
+			PH_VALUE="`nawk -F'\"' '$1 ~ /^XKBLAYOUT=$/ { print $2 ; exit 0 } { next }' /etc/default/keyboard`"
+			if [[ "$PH_VALUE" != "$PH_KEYB" ]]
+			then
+				printf "%10s%s\n" "" "OK ($PH_VALUE)"
+				printf "%8s%s\n" "" "--> Configuring keyboard layout"
+				cp -p /etc/default/keyboard /tmp/default_keyboard_bck 2>/dev/null
+				nawk -F'"' -v val="$PH_KEYB" '$1 ~ /^XKBLAYOUT=$/ { print $1 "\"" val "\"" ; next } { print }' /etc/default/keyboard >/tmp/default_keyboard_tmp 2>/dev/null
+				if [[ $? -eq 0 ]]
+				then
+					mv /tmp/default_keyboard_tmp /etc/default/keyboard 2>/dev/null
+					if dpkg-reconfigure -f noninteractive keyboard-configuration >/dev/null 2>&1
+					then
+						printf "%10s%s\n" "" "OK"
+						rm /tmp/default_keyboard_bck 2>/dev/null
+						invoke-rc.d keyboard-setup start >/dev/null 2>&1
+						setsid sh -c 'exec setupcon -k --force <> /dev/tty1 >&0 2>&1' >/dev/null 2>&1
+						udevadm trigger --subsystem-match=input --action=change >/dev/null 2>&1
+					else
+						printf "%10s%s\n" "" "ERROR : Could not configure keyboard"
+						mv /tmp/default_keyboard_bck /etc/default/keyboard 2>/dev/null
+						PH_RESULT="FAILED"
+					fi
+				else
+					printf "%10s%s\n" "" "ERROR : Could not configure keyboard"
+					PH_RESULT="FAILED"
+				fi
+			else
+				printf "%10s%s\n" "" "OK (Nothing to do)"
+			fi
+		fi
+		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_ANSWER" == "y" ]] && init 6
+		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			  tzone)
 		if [[ "$PH_TZONE" == "def" ]]
 		then
 			ph_getdef PH_TZONE || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
 		fi
-		printf "%2s%s\n" "" "Currently uninplemented"
-		PH_RET_CODE=$? ;;
+		printf "%8s%s\n" "" "--> Checking current timezone"
+		PH_VALUE="`cat /etc/timezone`"
+		if [[ "$PH_VALUE" != "$PH_TZONE" ]]
+		then
+			printf "%10s%s\n" "" "OK ($PH_VALUE)"
+			cp -p /etc/localtime /tmp/localtime_bck 2>/dev/null
+			cp -p /etc/timezone /tmp/timezone_bck 2>/dev/null
+			printf "%8s%s\n" "" "--> Configuring timezone"
+			rm /etc/localtime 2>/dev/null
+			if timedatectl set-timezone "$PH_TZONE" >/dev/null 2>&1
+			then
+				rm /tmp/localtime_bck /tmp/timezone_bck 2>/dev/null
+				printf "%10s%s\n" "" "OK"
+			else
+				mv /tmp/timezone_bck /etc/timezone 2>/dev/null
+				mv /tmp/localtime_bck /etc/localtime 2>/dev/null
+				printf "%10s%s\n" "" "ERROR : Could not configure timezone"
+				PH_RESULT="FAILED"
+			fi
+		else
+			printf "%10s%s\n" "" "OK (Nothing to do)"
+		fi
+		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			   host)
 		if [[ "$PH_HOST" == "def" ]]
 		then
 			ph_getdef PH_HOST || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
 		fi
-		printf "%2s%s\n" "" "Currently uninplemented"
-		PH_RET_CODE=$? ;;
+		printf "%8s%s\n" "" "--> Checking current hostname"
+		if [[ "$PH_HOST" != "$HOSTNAME" ]]
+		then
+			printf "%10s%s\n" "" "OK ($HOSTNAME)"
+			printf "%8s%s\n" "" "--> Configuring hostname"
+			echo "$PH_HOST" >/etc/hostname
+			cp -p /etc/hosts /tmp/hosts_bck 2>/dev/null
+			if nawk -v oldhost=^"$HOSTNAME"$ -v newhost="$PH_HOST" '$2 ~ oldhost { print $1 "\t" newhost ; next } { print }' /etc/hosts >/tmp/hosts_tmp 2>/dev/null
+			then
+				mv /tmp/hosts_tmp /etc/hosts 2>/dev/null
+				if ! hostname "$PH_HOST" >/dev/null 2>&1
+				then
+					mv /tmp/hosts_bck /etc/hosts 2>/dev/null
+					printf "%10s%s\n" "" "ERROR : Could not set hostname"
+					PH_RESULT="FAILED"
+				else
+					printf "%10s%s\n" "" "OK"
+					rm /tmp/hosts_bck 2>/dev/null
+				fi
+			else
+				printf "%10s%s\n" "" "ERROR : Could not set hostname"
+				PH_RESULT="FAILED"
+			fi
+		else
+			printf "%10s%s\n" "" "OK (Nothing to do)"
+		fi
+		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			filesys)
-		printf "%2s%s\n" "" "Currently uninplemented"
-		PH_RET_CODE=$? ;;
+		PH_RESULT="FAILED : Currently unimplemented"
+		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			  audio)
 		if [[ "$PH_AUDIO" == "def" ]]
 		then
 			ph_getdef PH_AUDIO || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
 		fi
-		printf "%2s%s\n" "" "Currently uninplemented"
-		PH_RET_CODE=$? ;;
+		printf "%8s%s\n" "" "--> Checking currently configured audio output"
+		PH_VALUE="`amixer cget numid=3 | tail -1 | nawk -F'=' '{ print $2 }'`"
+		case $PH_VALUE in 1)
+				PH_VALUE="auto" ;;
+				  2)
+				PH_VALUE="hdmi" ;;
+				  3)
+				PH_VALUE="jack" ;;
+		esac
+		if [[ "$PH_VALUE" != "$PH_AUDIO" ]]
+		then
+			printf "%10s%s\n" "" "OK ($PH_VALUE)"
+			printf "%8s%s\n" "" "--> Configuring audio output"
+			case $PH_VALUE in auto)
+				PH_AUDIO="1" ;;
+				  	  hdmi)
+				PH_AUDIO="2" ;;
+				  	  jack)
+				PH_AUDIO="3" ;;
+			esac
+			if amixer cset numid=3 "$PH_AUDIO" >/dev/null 2>&1
+			then
+				printf "%10s%s\n" "" "OK"
+			else
+				printf "%10s%s\n" "" "ERROR : Could not configure audio output"
+				PH_RESULT="FAILED"
+			fi
+		else
+			printf "%10s%s\n" "" "OK (Nothing to do)"
+		fi
+		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 		       overscan)
 		for PH_i in PH_BOTTOMSCAN PH_UPPERSCAN PH_LEFTSCAN PH_RIGHTSCAN
 		do
@@ -789,7 +1026,7 @@ case $PH_ACTION in all)
 			ph_getdef PH_VID_MEM || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
 		fi
 		printf "%8s%s\n" "" "--> Checking currently configured GPU memory"
-		PH_VALUE=`nawk -F'=' -v str=^"gpu_mem"$ '$1 ~ str { print $2 ; exit 0 } { next }' /boot/config.txt`
+		PH_VALUE="`nawk -F'=' -v str=^\"gpu_mem\"$ '$1 ~ str { print $2 ; exit 0 } { next }' /boot/config.txt`"
 		if [[ "$PH_VID_MEM" != "$PH_VALUE" ]]
 		then
 			printf "%10s%s\n" "" "OK ($PH_VALUE)"
