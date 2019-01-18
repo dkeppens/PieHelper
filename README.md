@@ -53,7 +53,6 @@ Planned :
 
 	- OSMC support
 	- Consolidation of all non 'conf*' scripts
-	- New CLI tool confoper_ph.sh offering a selection of raspi-config's most-used capabilities to allow most users to just use PieHelper for a complete system reinstallation
 	- Enhancements in 'TODO'
 
 PieHelper written by Davy Keppens on 04/10/18
