@@ -25,7 +25,6 @@ PH_LOCALE=""
 PH_TZONE=""
 PH_KEYB=""
 PH_SSH_STATE=""
-PH_SPLASH_STATE=""
 PH_VID_MEM=""
 PH_RIGHTSCAN=""
 PH_LEFTSCAN=""
@@ -35,7 +34,7 @@ PH_RESULT="SUCCESS"
 PATH=$PH_CUR_DIR:$PATH
 OPTIND=1
 
-export PATH PH_USER PH_DEL_PIUSER PH_HOST PH_AUDIO PH_BOOTENV PH_LOCALE PH_TZONE PH_KEYB PH_SSH_STATE PH_SPLASH_STATE PH_VID_MEM PH_RIGHTSCAN PH_LEFTSCAN PH_BOTTOMSCAN PH_UPPERSCAN PH_RESULT PH_COUNT
+export PATH PH_USER PH_DEL_PIUSER PH_HOST PH_AUDIO PH_BOOTENV PH_LOCALE PH_TZONE PH_KEYB PH_SSH_STATE PH_VID_MEM PH_RIGHTSCAN PH_LEFTSCAN PH_BOTTOMSCAN PH_UPPERSCAN PH_RESULT PH_COUNT
 
 function ph_getdef {
 
@@ -174,11 +173,6 @@ do
 		[[ -n "$PH_HOST" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_HOST="$OPTARG" ;;
-			   t)
-		[[ -n "$PH_SPLASH_STATE" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$OPTARG" != @(enabled|disabled|def) ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		PH_SPLASH_STATE="$OPTARG" ;;
 			   s)
 		[[ -n "$PH_SSH_STATE" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
@@ -190,14 +184,13 @@ do
 		PH_USER="$OPTARG" ;;
 			   *)
 		>&2 printf "%s\n" "Usage : confoper_ph.sh -h |"
-		>&2 printf "%23s%s\n" "" "-p \"all\" [[-a [alluser] '-d']|-a \"def\"] -s [\"allowed\"|\"disallowed\"|\"def\"] -n [hostname|\"def\"] -e [\"cli\"|\"gui\"|\"def\"] -t [\"enabled\"|\"disabled\"|\"def\"] \\"
+		>&2 printf "%23s%s\n" "" "-p \"all\" [[-a [alluser] '-d']|-a \"def\"] -s [\"allowed\"|\"disallowed\"|\"def\"] -n [hostname|\"def\"] -e [\"cli\"|\"gui\"|\"def\"] \\"
 		>&2 printf "%23s%s\n" "" "           -c [\"hdmi\"|\"jack\"|\"def\"] -f [newloc|\"def\"] -z [tzone|\"def\"] '-l [lowerscan|\"def\"]' '-r [rightscan|\"def\"]' '-b [bottomscan|\"def\"]' \\"
 		>&2 printf "%23s%s\n" "" "           '-u [upperscan|\"def\"]' -k [keyb|\"def\"] -m [16|32|64|128|256|512|\"def\"] |"
 		>&2 printf "%23s%s\n" "" "-p \"all-usedef\" |"
-		>&2 printf "%23s%s\n" "" "-p \"savedef\" [-a [alluser] '-d'] -s [\"allowed\"|\"disallowed\"] -n [hostname] -e [\"cli\"|\"gui\"] -t [\"enabled\"|\"disabled\"] -c [\"hdmi\"|\"jack\"] \\"
+		>&2 printf "%23s%s\n" "" "-p \"savedef\" [-a [alluser] '-d'] -s [\"allowed\"|\"disallowed\"] -n [hostname] -e [\"cli\"|\"gui\"] -c [\"hdmi\"|\"jack\"] \\"
 		>&2 printf "%23s%s\n" "" "           -f [newloc] -z [tzone] '-l [lowerscan]' '-r [rightscan]' '-b [bottomscan]' '-u [upperscan]' -k [keyb] -m [16|32|64|128|256|512] |"
                 >&2 printf "%23s%s\n" "" "-p \"ssh\" -s [\"allowed\"|\"disallowed\"|\"def\"] |"
-                >&2 printf "%23s%s\n" "" "-p \"splash\" -t [\"enabled\"|\"disabled\"|\"def\"] |"
                 >&2 printf "%23s%s\n" "" "-p \"sshkey\" -a [[sshuser]|\"def\"] |"
                 >&2 printf "%23s%s\n" "" "-p \"user\" [[-a [newuser] '-d']|-a \"def\"] |"
                 >&2 printf "%23s%s\n" "" "-p \"host\" -n [hostname|\"def\"] |"
@@ -222,6 +215,7 @@ do
 		>&2 printf "%18s%s\n" "" "- Any functions requiring a user account parameter will use [alluser] as the value for that parameter"
 		>&2 printf "%21s%s\n" "" "- The value specified for [alluser] can be an already existing user account or a new account"
 		>&2 printf "%21s%s\n" "" "  If [alluser] is an already existing user account :"
+		>&2 printf "%24s%s\n" "" "- [alluser] cannot be currently logged in or this function will fail"
 		>&2 printf "%24s%s\n" "" "- The primary group for account [alluser] will be set to it's according private group named [alluser]"
 		>&2 printf "%27s%s\n" "" "- The group [alluser] will automatically be created if it does not exist"
 		>&2 printf "%24s%s\n" "" "- The secondary groups for account [alluser] will be set to \"tty\",\"input\",\"audio\" and \"video\""
@@ -274,10 +268,6 @@ do
 		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
                 >&2 printf "%12s%s\n" "" "\"bootenv\" allows selecting a preferred default environment to boot into on system restarts"
 		>&2 printf "%15s%s\n" "" "-e allows selecting either \"cli\", \"gui\" or \"def\""
-		>&2 printf "%18s%s\n" "" "- Selecting \"def\" will use the value stored as the default for this parameter"
-		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
-                >&2 printf "%12s%s\n" "" "\"splash\" allows choosing whether or not to display the default Raspberry Pi splash screen on system startup"
-		>&2 printf "%15s%s\n" "" "-t allows selecting either \"enabled\", \"disabled\" or \"def\""
 		>&2 printf "%18s%s\n" "" "- Selecting \"def\" will use the value stored as the default for this parameter"
 		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
                 >&2 printf "%12s%s\n" "" "\"keyb\" allows setting the default keyboard layout to [keyb]"
@@ -347,7 +337,6 @@ OPTARG="$PH_OLDOPTARG"
 [[ "$PH_ACTION" == @(all|ssh) && -z "$PH_SSH_STATE" ]] && (! confoper_ph.sh -h) && exit 1
 [[ "$PH_ACTION" == @(all|bootenv) && -z "$PH_BOOTENV" ]] && (! confoper_ph.sh -h) && exit 1
 [[ "$PH_ACTION" == @(all|audio) && -z "$PH_AUDIO" ]] && (! confoper_ph.sh -h) && exit 1
-[[ "$PH_ACTION" == @(all|splash) && -z "$PH_SPLASH_STATE" ]] && (! confoper_ph.sh -h) && exit 1
 [[ "$PH_ACTION" == @(all|tzone) && -z "$PH_TZONE" ]] && (! confoper_ph.sh -h) && exit 1
 [[ -n "$PH_TZONE" && "$PH_ACTION" != @(all|savedef|tzone) ]] && (! confoper_ph.sh -h) && exit 1
 [[ -n "$PH_BOOTENV" && "$PH_ACTION" != @(all|savedef|bootenv) ]] && (! confoper_ph.sh -h) && exit 1
@@ -355,7 +344,6 @@ OPTARG="$PH_OLDOPTARG"
 [[ -n "$PH_HOST" && "$PH_ACTION" != @(all|savedef|host) ]] && (! confoper_ph.sh -h) && exit 1
 [[ -n "$PH_AUDIO" && "$PH_ACTION" != @(all|savedef|audio) ]] && (! confoper_ph.sh -h) && exit 1
 [[ -n "$PH_SSH_STATE" && "$PH_ACTION" != @(all|savedef|ssh) ]] && (! confoper_ph.sh -h) && exit 1
-[[ -n "$PH_SPLASH_STATE" && "$PH_ACTION" != @(all|savedef|splash) ]] && (! confoper_ph.sh -h) && exit 1
 [[ -n "$PH_VID_MEM" && "$PH_ACTION" != @(all|savedef|memsplit) ]] && (! confoper_ph.sh -h) && exit 1
 (([[ -n "$PH_RIGHTSCAN" || -n "$PH_LEFTSCAN" ]]) && ([[ "$PH_ACTION" != @(all|savedef|overscan) ]])) && (! confoper_ph.sh -h) && exit 1
 (([[ -n "$PH_BOTTOMSCAN" || -n "$PH_UPPERSCAN" ]]) && ([[ "$PH_ACTION" != @(all|savedef|overscan) ]])) && (! confoper_ph.sh -h) && exit 1
@@ -467,8 +455,6 @@ case $PH_ACTION in all)
 	ph_set_result $?
 	"$PH_CUR_DIR/confoper_ph.sh" -p audio -c "$PH_AUDIO"
 	ph_set_result $?
-	"$PH_CUR_DIR/confoper_ph.sh" -p splash -t "$PH_SPLASH_STATE"
-	ph_set_result $?
 	"$PH_CUR_DIR/confoper_ph.sh" -p overscan -u "$PH_UPPERSCAN" -b "$PH_BOTTOMSCAN" -l "$PH_LEFTSCAN" -r "$PH_RIGHTSCAN"
 	ph_set_result $?
 	"$PH_CUR_DIR/confoper_ph.sh" -p memsplit -m "$PH_VID_MEM"
@@ -501,8 +487,6 @@ case $PH_ACTION in all)
 	"$PH_CUR_DIR/confoper_ph.sh" -p filesys
 	ph_set_result $?
 	"$PH_CUR_DIR/confoper_ph.sh" -p audio -c "def"
-	ph_set_result $?
-	"$PH_CUR_DIR/confoper_ph.sh" -p splash -t "def"
 	ph_set_result $?
 	"$PH_CUR_DIR/confoper_ph.sh" -p overscan -u "def" -b "def" -l "def" -r "def"
 	ph_set_result $?
@@ -542,11 +526,11 @@ case $PH_ACTION in all)
 			fi
 		done
 	else
-		for PH_i in PH_SSH_STATE PH_USER PH_HOST PH_VID_MEM PH_AUDIO PH_SPLASH_STATE PH_TZONE PH_KEYB PH_BOOTENV PH_DEL_PIUSER PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN PH_LOCALE
+		for PH_i in PH_SSH_STATE PH_USER PH_HOST PH_VID_MEM PH_AUDIO PH_TZONE PH_KEYB PH_BOOTENV PH_DEL_PIUSER PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN PH_LOCALE
 		do
 			[[ `eval echo -n "\\$\$PH_i"` == "def" ]] && (printf "%2s%s\n" "" "FAILED : Unsupported value \"def\" detected for parameter $PH_i" ; exit 0) && exit 1
 		done
-		for PH_i in PH_SSH_STATE PH_USER PH_HOST PH_VID_MEM PH_AUDIO PH_SPLASH_STATE PH_TZONE PH_KEYB PH_BOOTENV PH_DEL_PIUSER PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN PH_LOCALE
+		for PH_i in PH_SSH_STATE PH_USER PH_HOST PH_VID_MEM PH_AUDIO PH_TZONE PH_KEYB PH_BOOTENV PH_DEL_PIUSER PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN PH_LOCALE
 		do
 			if [[ -n `eval echo -n "\\$\$PH_i"` ]]
 			then
@@ -580,8 +564,83 @@ case $PH_ACTION in all)
 			ph_getdef PH_USER || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
 			ph_getdef PH_DEL_PIUSER || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
 		fi
-		printf "%2s%s\n" "" "Currently uninplemented"
-		PH_RET_CODE=$? ;;
+		printf "%8s%s\n" "" "--> Checking for group $PH_USER"
+		if ! grep ^"$PH_USER:" /etc/group >/dev/null 2>&1
+		then
+			printf "%10s%s\n" "" "Warning : (Not found) -> Creating"
+			printf "%8s%s\n" "" "--> Creating group $PH_USER"
+			if groupadd "$PH_USER" >/dev/null 2>&1
+			then
+				printf "%10s%s\n" "" "OK"
+			else
+				printf "%10s%s\n" "" "ERROR : Could not create group"
+				printf "%2s%s\n" "" "FAILED"
+				exit 1
+			fi
+		else
+			printf "%10s%s\n" "" "OK (Nothing to do)"
+		fi
+		printf "%8s%s\n" "" "--> Checking for user $PH_USER"
+		if id $PH_USER >/dev/null 2>&1
+		then
+			printf "%10s%s\n" "" "Warning : Found -> Modifying"
+			printf "%8s%s\n" "" "--> Modifying user $PH_USER"
+			if usermod -d "${HOME%/*}/$PH_USER" -m -c "$PH_USER account" -s /bin/bash -G tty,input,video,audio -g "$PH_USER" "$PH_USER" >/dev/null 2>&1
+			then
+				printf "%10s%s\n" "" "OK"
+			else
+				printf "%10s%s\n" "" "ERROR : Could not modify user"
+				printf "%2s%s\n" "" "FAILED"
+				exit 1
+			fi
+		else
+			printf "%10s%s\n" "" "OK (Not found) -> Creating"
+			printf "%8s%s\n" "" "--> Creating user $PH_USER"
+			if useradd -d "${HOME%/*}/$PH_USER" -c "$PH_USER account" -m -s /bin/bash -G tty,input,video,audio -g "$PH_USER" "$PH_USER" >/dev/null 2>&1
+			then
+				printf "%10s%s\n" "" "OK"
+			else
+				printf "%10s%s\n" "" "ERROR : Could not create user"
+				printf "%2s%s\n" "" "FAILED"
+				exit 1
+			fi
+		fi
+		printf "\n"
+		passwd "$PH_USER" || PH_RESULT="PARTIALLY FAILED"
+		printf "\n"
+		printf "%8s%s\n" "" "--> Creating sudo rules for user $PH_USER"
+		echo "$PH_USER ALL=(ALL) NOPASSWD: ALL" >/tmp/010_"$PH_USER"-nopasswd_tmp
+		if ! mv /tmp/010_"$PH_USER"-nopasswd_tmp /etc/sudoers.d/010_"$PH_USER"-nopasswd 2>&1
+		then
+			printf "%10s%s\n" "" "ERROR : Could not create sudo rules"
+			PH_RESULT="PARTIALLY FAILED"
+		else
+			chown root:root /etc/sudoers.d/010_"$PH_USER"-nopasswd 2>/dev/null
+			chmod 440 /etc/sudoers.d/010_"$PH_USER"-nopasswd 2>/dev/null
+			printf "%10s%s\n" "" "OK"
+		fi
+		if (([[ "$PH_DEL_PIUSER" == "yes" ]]) && (id pi >/dev/null 2>&1))
+		then
+			printf "%8s%s\n" "" "--> Setting up delayed removal of user 'pi'"
+			echo "#!/bin/sh" >/tmp/remove_pi_user_tmp
+			echo "`which sudo` userdel -r pi" >>/tmp/remove_pi_user_tmp
+			echo "`which sudo` unlink /etc/rc3.d/S99remove_pi_user" >>/tmp/remove_pi_user_tmp
+			echo "`which sudo` rm /etc/init.d/remove_pi_user" >>/tmp/remove_pi_user_tmp
+			mv /tmp/remove_pi_user_tmp /etc/init.d/remove_pi_user 2>/dev/null
+			ln -s /etc/init.d/remove_pi_user /etc/rc3.d/S99remove_pi_user 2>/dev/null
+			chmod 755 /etc/init.d/remove_pi_user
+			printf "%10s%s\n" "" "OK"
+			printf "%8s%s\n" "" "--> Deleting sudo rules for default user 'pi'"
+			if rm /etc/sudoers.d/010_pi-nopasswd >/dev/null 2>&1
+			then
+				printf "%10s%s\n" "" "OK"
+			else
+				printf "%10s%s\n" "" "ERROR : Could not delete sudo rules for default user"
+				PH_RESULT="PARTIALLY FAILED"
+			fi
+		fi
+		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			 sshkey)
 		if [[ "$PH_USER" == "def" ]]
 		then
@@ -653,13 +712,6 @@ case $PH_ACTION in all)
 		if [[ "$PH_AUDIO" == "def" ]]
 		then
 			ph_getdef PH_AUDIO || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
-		fi
-		printf "%2s%s\n" "" "Currently uninplemented"
-		PH_RET_CODE=$? ;;
-			 splash)
-		if [[ "$PH_SPLASH_STATE" == "def" ]]
-		then
-			ph_getdef PH_SPLASH_STATE || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
 		fi
 		printf "%2s%s\n" "" "Currently uninplemented"
 		PH_RET_CODE=$? ;;
@@ -849,8 +901,14 @@ case $PH_ACTION in all)
 		then
 			ph_getdef PH_BOOTENV || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
 		fi
+		if ((grep "PH_RUNAPP_CMD='/home/dkeppens/PieHelper/scripts/startpieh.sh'" /etc/profile.d/PieHelper_tty* >/dev/null) && ([[ "$PH_BOOTENV" == "gui" ]]))
+		then
+			printf "%2s%s\n" "" "FAILED : PieHelper is configured and is not compatible with a graphical default boot environment"
+			exit 1
+		fi
 		printf "%8s%s\n" "" "--> Checking current default boot environment"
-		[[ "$PH_BOOTENV" == "cli" ]] && PH_BOOTENV="multi-user.target" || PH_BOOTENV="graphical.target"
+		[[ "$PH_BOOTENV" == "cli" ]] && PH_BOOTENV="multi-user.target" || \
+			PH_BOOTENV="graphical.target"
 		if [[ `systemctl get-default` != "$PH_BOOTENV" ]]
 		then
 			[[ "$PH_BOOTENV" == "graphical.target" ]] && printf "%10s%s\n" "" "OK (multi-user.target)" || \
