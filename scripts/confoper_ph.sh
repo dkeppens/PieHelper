@@ -406,11 +406,11 @@ fi
 
 if [[ "$PH_ACTION" != "savedef" && `cat /proc/$PPID/comm` != "confoper_ph.sh" ]]
 then
-	printf "%s\n" "Checking prerequisites for system configuration"
+	printf "%s\n" "- Checking prerequisites for system configuration"
 	printf "%8s%s\n" "" "--> Checking run account"
 	[[ `whoami` == "root" ]] && printf "%10s%s\n" "" "OK (root)" || (printf "%10s%s\n" "" "ERROR : confoper_ph.sh must be run as root" ; printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
 	printf "%2s%s\n" "" "SUCCESS"
-	printf "%s\n" "Checking prerequisites for PieHelper"
+	printf "%s\n" "- Checking prerequisites for PieHelper"
 	printf "%8s%s\n" "" "--> Checking for presence of /proc filesystem"
 	if mount | grep ^"proc on /proc type proc" >/dev/null
 	then
@@ -731,40 +731,68 @@ case $PH_ACTION in all)
 		fi
 		if [[ "$PH_SSH_STATE" == "allowed" ]]
 		then
-			printf "%8s%s\n" "" "--> Enabling SSH"
-			if ! systemctl enable ssh >/dev/null 2>&1
+			printf "%8s%s\n" "" "--> Checking for current SSH state"
+			if systemctl is-enabled ssh >/dev/null 2>&1
 			then
-				printf "%10s%s\n" "" "ERROR : Could not enable SSH"
-				PH_RESULT="PARTIALLY FAILED"
+				printf "%10s%s\n" "" "OK (Nothing to do)"
 			else
-				printf "%10s%s\n" "" "OK"
+				printf "%10s%s\n" "" "OK (Disabled)"
+				printf "%8s%s\n" "" "--> Enabling SSH"
+				if ! systemctl enable ssh >/dev/null 2>&1
+				then
+					printf "%10s%s\n" "" "ERROR : Could not enable SSH"
+					PH_RESULT="PARTIALLY FAILED"
+				else
+					printf "%10s%s\n" "" "OK"
+				fi
 			fi
-			printf "%8s%s\n" "" "--> Starting sshd"
-			if ! systemctl start ssh >/dev/null 2>&1
+			printf "%8s%s\n" "" "--> Checking for current sshd status"
+			if systemctl is-active ssh >/dev/null 2>&1
 			then
-				printf "%10s%s\n" "" "ERROR : Could not start sshd"
-				[[ "$PH_RESULT" == "PARTIALLY FAILED" ]] && PH_RESULT="FAILED"
-				[[ "$PH_RESULT" == "SUCCESS" ]] && PH_RESULT="PARTIALLY FAILED"
+				printf "%10s%s\n" "" "OK (Nothing to do)"
 			else
-				printf "%10s%s\n" "" "OK"
+				printf "%10s%s\n" "" "OK (Inactive)"
+				printf "%8s%s\n" "" "--> Starting sshd"
+				if ! systemctl start ssh >/dev/null 2>&1
+				then
+					printf "%10s%s\n" "" "ERROR : Could not start sshd"
+					[[ "$PH_RESULT" == "PARTIALLY FAILED" ]] && PH_RESULT="FAILED"
+					[[ "$PH_RESULT" == "SUCCESS" ]] && PH_RESULT="PARTIALLY FAILED"
+				else
+					printf "%10s%s\n" "" "OK"
+				fi
 			fi
 		else
-			printf "%8s%s\n" "" "--> Disabling SSH"
-			if ! systemctl disable ssh >/dev/null 2>&1
+			printf "%8s%s\n" "" "--> Checking for current SSH state"
+			if ! systemctl is-enabled ssh >/dev/null 2>&1
 			then
-				printf "%10s%s\n" "" "ERROR : Could not disable SSH"
-				PH_RESULT="PARTIALLY FAILED"
+				printf "%10s%s\n" "" "OK (Nothing to do)"
 			else
-				printf "%10s%s\n" "" "OK"
+				printf "%10s%s\n" "" "OK (Enabled)"
+				printf "%8s%s\n" "" "--> Disabling SSH"
+				if ! systemctl disable ssh >/dev/null 2>&1
+				then
+					printf "%10s%s\n" "" "ERROR : Could not disable SSH"
+					PH_RESULT="PARTIALLY FAILED"
+				else
+					printf "%10s%s\n" "" "OK"
+				fi
 			fi
-			printf "%8s%s\n" "" "--> Stopping sshd"
-			if ! systemctl stop ssh >/dev/null 2>&1
+			printf "%8s%s\n" "" "--> Checking for current sshd status"
+			if ! systemctl is-active ssh >/dev/null 2>&1
 			then
-				printf "%10s%s\n" "" "ERROR : Could not stop sshd"
-				[[ "$PH_RESULT" == "PARTIALLY FAILED" ]] && PH_RESULT="FAILED"
-				[[ "$PH_RESULT" == "SUCCESS" ]] && PH_RESULT="PARTIALLY FAILED"
+				printf "%10s%s\n" "" "OK (Nothing to do)"
 			else
-				printf "%10s%s\n" "" "OK"
+				printf "%10s%s\n" "" "OK (Active)"
+				printf "%8s%s\n" "" "--> Stopping sshd"
+				if ! systemctl stop ssh >/dev/null 2>&1
+				then
+					printf "%10s%s\n" "" "ERROR : Could not stop sshd"
+					[[ "$PH_RESULT" == "PARTIALLY FAILED" ]] && PH_RESULT="FAILED"
+					[[ "$PH_RESULT" == "SUCCESS" ]] && PH_RESULT="PARTIALLY FAILED"
+				else
+					printf "%10s%s\n" "" "OK"
+				fi
 			fi
 		fi
 		printf "%2s%s\n" "" "$PH_RESULT"
@@ -777,14 +805,22 @@ case $PH_ACTION in all)
 		then
 			ph_getdef PH_BOOTENV || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
 		fi
-		printf "%8s%s\n" "" "--> Setting default boot environment to $PH_BOOTENV"
+		printf "%8s%s\n" "" "--> Checking current default boot environment"
 		[[ "$PH_BOOTENV" == "cli" ]] && PH_BOOTENV="multi-user.target" || PH_BOOTENV="graphical.target"
-		if systemctl set-default "$PH_BOOTENV" >/dev/null 2>&1
+		if [[ `systemctl get-default` != "$PH_BOOTENV" ]]
 		then
-			printf "%10s%s\n" "" "OK"
+			[[ "$PH_BOOTENV" == "graphical.target" ]] && printf "%10s%s\n" "" "OK (multi-user.target)" || \
+						printf "%10s%s\n" "" "OK (graphical.target)"
+			printf "%8s%s\n" "" "--> Setting default boot environment to $PH_BOOTENV"
+			if systemctl set-default "$PH_BOOTENV" >/dev/null 2>&1
+			then
+				printf "%10s%s\n" "" "OK"
+			else
+				printf "%10s%s\n" "" "ERROR : Could not configure default boot environment"
+				PH_RESULT="FAILED"
+			fi
 		else
-			printf "%10s%s\n" "" "ERROR : Could not configure default boot environment"
-			PH_RESULT="FAILED"
+			printf "%10s%s\n" "" "OK (Nothing to do)"
 		fi
 		printf "%2s%s\n" "" "$PH_RESULT"
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
