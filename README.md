@@ -54,7 +54,6 @@ Current state : Pre-release but functional
 Planned :
 
 	- OSMC support
-	- Consolidation of all non 'conf*' scripts
 	- Enhancements in 'TODO'
 
 PieHelper written by Davy Keppens on 04/10/18
