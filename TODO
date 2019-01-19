@@ -1,3 +1,4 @@
+* check for pairing in listmoon and before Moonlight startup
 * add check for package manager in confoper
 * add options for X11, Moonlight and PieHelper + in confsupp
 * finish migration to POST/PRE commands
