@@ -1,3 +1,4 @@
+* add options for X11, Moonlight and PieHelper + in confsupp
 * finish migration to POST/PRE commands
 * disallow changing CIFS_SHARE values if CIFS mount active
 * test piehelper always persistence required when menu used to start apps even when set to no
