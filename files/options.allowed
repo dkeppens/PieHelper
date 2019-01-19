@@ -1,4 +1,11 @@
 PH_BASH_PERSISTENT:yes or no:"$PH_OPTARG_VAL" == @(yes|no)
+PH_BASH_CIFS_SHARE:yes or no:"$PH_OPTARG_VAL" == @(yes|no)
+PH_BASH_CIFS_SRV:a valid ipv4 address or an empty string:`$(ph_check_ip_validity "$PH_OPTARG_VAL") echo $?` -eq 0
+PH_BASH_CIFS_DIR:an empty string or starting with / or $:"$PH_OPTARG_VAL" == @(/*|\$*|)
+PH_BASH_CIFS_SUBDIR:an empty string or starting with / or $:"$PH_OPTARG_VAL" == @(/*|\$*|)
+PH_BASH_CIFS_MPT:an empty string or starting with / or $:"$PH_OPTARG_VAL" == @(/*|\$*|)
+PH_BASH_PRE_CMD:an empty string or starting with / or $:"$PH_OPTARG_VAL" == @(/*|\$*|)
+PH_BASH_POST_CMD:an empty string or starting with / or $:"$PH_OPTARG_VAL" == @(/*|\$*|)
 PH_EMUL_DIR:an empty string or starting with / or $:"$PH_OPTARG_VAL" == @(/*|\$*|)
 PH_EMUL_SETUP_DIR:an empty string or starting with / or $:"$PH_OPTARG_VAL" == @(/*|\$*|)
 PH_EMUL_USE_CTRL:yes or no:"$PH_OPTARG_VAL" == @(yes|no)
@@ -7,6 +14,8 @@ PH_EMUL_CIFS_SHARE:yes or no:"$PH_OPTARG_VAL" == @(yes|no)
 PH_EMUL_CIFS_SRV:a valid ipv4 address or an empty string:`$(ph_check_ip_validity "$PH_OPTARG_VAL") echo $?` -eq 0
 PH_EMUL_CIFS_DIR:an empty string or starting with / or $:"$PH_OPTARG_VAL" == @(/*|\$*|)
 PH_EMUL_CIFS_SUBDIR:an empty string or starting with / or $:"$PH_OPTARG_VAL" == @(/*|\$*|)
+PH_EMUL_PRE_CMD:an empty string or starting with / or $:"$PH_OPTARG_VAL" == @(/*|\$*|)
+PH_EMUL_POST_CMD:an empty string or starting with / or $:"$PH_OPTARG_VAL" == @(/*|\$*|)
 PH_KODI_USE_CTRL:yes or no:"$PH_OPTARG_VAL" == @(yes|no)
 PH_KODI_CIFS_SHARE:yes or no:"$PH_OPTARG_VAL" == @(yes|no)
 PH_KODI_CIFS_SRV:a valid ipv4 address or an empty string:`$(ph_check_ip_validity "$PH_OPTARG_VAL") echo $?` -eq 0
