@@ -1,3 +1,5 @@
+* finish migration to POST/PRE commands
+* disallow changing CIFS_SHARE values if CIFS mount active
 * test piehelper always persistence required when menu used to start apps even when set to no
 * test on pseudo and TTY : remove active TTY's with no running app before chvt 
 * test Moonlight when GFE back OK

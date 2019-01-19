@@ -2365,8 +2365,6 @@ return 0
 function ph_run_app_action {
 
 typeset PH_RUNAPP="$2"
-typeset PH_RUNAPP_CMD=""
-typeset PH_RUNAPP_CMD_OPTS=""
 typeset PH_i=""
 typeset PH_BASH_TTY=""
 typeset PH_KODI_HOME=""
@@ -2376,7 +2374,6 @@ typeset -u PH_RUNAPPU=""
 typeset -i PH_RUNAPP_TTY=0
 typeset -i PH_PIEH_TTY=0
 typeset -i PH_CTRL_COUNT=0
-typeset -i PH_RET_CODE=0
 
 ph_check_conf_files supp || (printf "%8s%s\n" "" "--> Checking for supported applications configuration file" ; \
 			printf "%10s%s\n" "" "ERROR : Not found" ; \
@@ -2386,80 +2383,62 @@ ph_check_conf_files cont || (printf "%8s%s\n" "" "--> Checking for controller CL
 			printf "%2s%s\n" "" "FAILED" ; return 1) || return $?
 PH_RUNAPPU=`echo "$PH_RUNAPP" | cut -c1-4`
 PH_RUNAPPL=`echo "$PH_RUNAPP" | cut -c1-4`
-typeset -n PH_RUNAPPU_POST_CMD=PH_"$PH_RUNAPPU"_POST_CMD
-typeset -n PH_RUNAPPU_PRE_CMD=PH_"$PH_RUNAPPU"_PRE_CMD
-typeset -n PH_RUNAPPU_CMD_OPTS=PH_"$PH_RUNAPPU"_CMD_OPTS
-typeset -n PH_RUNAPPU_NUM_CTRL=PH_"$PH_RUNAPPU"_NUM_CTRL
-typeset -n PH_RUNAPPU_USE_CTRL=PH_"$PH_RUNAPPU"_USE_CTRL
-typeset -n PH_RUNAPPU_CIFS_SRV=PH_"$PH_RUNAPPU"_CIFS_SRV
-typeset -n PH_RUNAPPU_CIFS_SHARE=PH_"$PH_RUNAPPU"_CIFS_SHARE
-typeset -n PH_RUNAPPU_CIFS_DIR=PH_"$PH_RUNAPPU"_CIFS_DIR
-typeset -n PH_RUNAPPU_CIFS_SUBDIR=PH_"$PH_RUNAPPU"_CIFS_SUBDIR
-typeset -n PH_RUNAPPU_PERSISTENT=PH_"$PH_RUNAPPU"_PERSISTENT
 
 PH_PIEH_TTY=`ph_get_tty_for_app PieHelper`
 case $1 in start)
 	PH_RUNAPP_TTY=`ph_get_tty_for_app $PH_RUNAPP`
 	printf "%8s%s\n" "" "--> Attempting to determine required remote mounts for $PH_RUNAPP"
-	if [[ "$PH_RUNAPPU_CIFS_SHARE" == "no" || "$PH_RUNAPP" == "PieHelper" ]]
+	if ([[ `eval echo "\\$PH_$PH_RUNAPPU"_CIFS_SHARE` == @(no|) ]] || [[ "$PH_RUNAPP" == "PieHelper" ]])
 	then
 		printf "%10s%s\n" "" "OK (None)"
 	else
 		printf "%10s%s\n" "" "OK"
 		printf "%8s%s\n" "" "--> Checking for mount"
-		mount | nawk -v rempath=^"//$PH_RUNAPPU_CIFS_SRV$PH_RUNAPPU_CIFS_DIR$PH_RUNAPPU_CIFS_SUBDIR"$ -F' on ' '$1 ~ rempath { exit 1 }'
+		mount | nawk -v rempath=^"//`eval echo \\$PH_\"$PH_RUNAPPU\"_CIFS_SRV``eval echo \\$PH_\"$PH_RUNAPPU\"_CIFS_DIR``eval echo \\$PH_\"$PH_RUNAPPU\"_CIFS_SUBDIR`"$ -F' on ' '$1 ~ rempath { exit 1 }'
 		if [[ $? -eq 0 ]]
 		then
 			printf "%10s%s\n" "" "OK (Not found)"
-			if ! ph_mount_cifs_share "$PH_RUNAPP"
-			then
-				unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
-				unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT
-				return 1
-			fi
+			ph_mount_cifs_share "$PH_RUNAPP" || return 1
 		else
 			printf "%10s%s\n" "" "OK (found)"
 		fi
-	fi
-	if [[ `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY && -n "$PH_RUNAPPU_PRE_CMD" ]]
-	then
-		printf "%8s%s\n" "" "--> Starting run of PRE-command for $PH_RUNAPP"
-		printf "%10s%s\n" "" "OK"
-		file -b `eval echo -n "$PH_RUNAPPU_PRE_CMD" | nawk '{ print $1 }'` 2>/dev/null | nawk 'BEGIN { rc = 0 } $0 ~ /ASCII text executable/ { exit 1 } \
-									$0 ~ /ASCII text/ { exit 2 } \
-									$0 ~ /32-bit*executable/ { exit 3 } \
-									$0 ~ /64-bit*executable/ { exit 4 } \
-									$0 ~ /directory/ { exit 5 } \
-									{ exit 6 }'
-		case $? in 1|3|4)
-			eval "$PH_RUNAPPU_PRE_CMD" 2>/dev/null ;;
-			       2)
-			eval . "$PH_RUNAPPU_PRE_CMD" 2>/dev/null ;;
-			     5|6)
-			false ;;
-		esac
-		if [[ $? -eq 0 ]]
+		if [[ "$PH_RUNAPP" == "Kodi" && `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY ]]
 		then
-			printf "%8s%s\n" "" "--> Evaluating run of $PH_RUNAPP PRE-command"
-			printf "%10s%s\n" "" "OK"
-		else
-			printf "%8s%s\n" "" "--> Evaluating run of $PH_RUNAPP PRE-command"
-			printf "%10s%s\n" "" "Warning : Issues encountered running PRE-command"
+			PH_KODI_USER="`nawk -v app=^"Kodi"$ '$1 ~ app { print $2 }' $PH_CONF_DIR/installed_apps`"
+			PH_KODI_HOME="`echo -n $(getent passwd $PH_KODI_USER | cut -d':' -f6)`"
+			printf "%8s%s\n" "" "--> Restoring last backup of Kodi preferences directory for run account $PH_KODI_USER (This may take a while)"
+			cd "$PH_KODI_HOME" >/dev/null 2>&1
+			if [[ -f `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar ]]
+			then
+				$PH_SUDO mv `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" >/dev/null 2>&1
+				[[ -d "$PH_KODI_HOME/.kodi" ]] && $PH_SUDO rm -r "$PH_KODI_HOME/.kodi" 2>/dev/null
+				$PH_SUDO tar -xf "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" 2>/dev/null
+				if [[ $? -ne 0 ]]
+				then
+					printf "%10s%s\n" "" "Warning : Could not succesfully restore last preferences backup -> Removing"
+					$PH_SUDO rm -r "$PH_KODI_HOME/.kodi" 2>/dev/null
+					PH_i=NOK
+				else
+					[[ `ls -ld "$PH_KODI_HOME/.kodi" | nawk '{ print $3 }'` != "$PH_KODI_USER" ]] && $PH_SUDO chown -R "$PH_KODI_USER":`$PH_SUDO id -gn $PH_KODI_USER` ./.kodi >/dev/null 2>&1
+					printf "%10s%s\n" "" "OK"
+				fi
+				$PH_SUDO mv "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar >/dev/null 2>&1
+			else
+				printf "%10s%s\n" "" "Warning : Not found"
+			fi
+			cd - >/dev/null 2>&1
 		fi
 	fi
+	typeset -n PH_RUNAPPU_CMD_OPTS=PH_"$PH_RUNAPPU"_CMD_OPTS
 	printf "%8s%s\n" "" "--> Checking for controller usage"
-	if [[ "$PH_RUNAPPU_USE_CTRL" == "no" ]]
+	if [[ `eval echo "\\$PH_$PH_RUNAPPU"_USE_CTRL` == @(no|) ]]
 	then
 		printf "%10s%s\n" "" "OK (No)"
 	else
 		printf "%10s%s\n" "" "OK (Yes)"
-		if ! ph_setup_controllers "$PH_RUNAPPU_NUM_CTRL"
-		then
-			unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
-			unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT
-			return 1
-		fi
-		PH_CTRL_COUNT=`cat "$PH_CONF_DIR"/controller_cli_ids | wc -l`
+		typeset -n PH_RUNAPPU_NUM_CTRL=PH_"$PH_RUNAPPU"_NUM_CTRL
+		ph_setup_controllers $PH_RUNAPPU_NUM_CTRL || return $?
+		PH_CTRL_COUNT=`cat $PH_CONF_DIR/controller_cli_ids | wc -l`
 		for PH_i in {1..$PH_RUNAPPU_NUM_CTRL}
 		do
 			printf "%8s%s\n" "" "--> Retrieving event id for $PH_CTRL_TYPE controller with CLI id $PH_i"
@@ -2467,7 +2446,7 @@ case $1 in start)
 			then
 				eval typeset -i "PH_EVENT"$PH_i=`ph_get_controller_cli_id $PH_i`
 			else
-				eval typeset -i "PH_EVENT"$PH_i=`ph_get_controller_cli_id $((PH_i+$(echo $((PH_CTRL_COUNT-`echo "$PH_RUNAPPU_NUM_CTRL"`)))))`
+				eval typeset -i "PH_EVENT"$PH_i=`ph_get_controller_cli_id $((PH_i+$(echo $((PH_CTRL_COUNT-`echo $PH_RUNAPPU_NUM_CTRL`)))))`
 			fi
 			typeset -n PH_EVENT="PH_EVENT"$PH_i
 			printf "%10s%s\n" "" "OK"
@@ -2476,7 +2455,7 @@ case $1 in start)
 			then
 				printf "%10s%s\n" "" "OK (Found)"
 				printf "%8s%s\n" "" "--> Assigning event id $PH_EVENT to input device with CLI id $PH_i in command-line options"
-				PH_RUNAPP_CMD_OPTS="$(eval echo `sed 's/PH_CTRL'$PH_i'/'$PH_EVENT'/g;s/"/\\\"/g' <<<$PH_RUNAPPU_CMD_OPTS`)"
+				PH_RUNAPPU_CMD_OPTS="$(eval echo `sed 's/PH_CTRL'$PH_i'/'$PH_EVENT'/g;s/"/\\\"/g' <<<$PH_RUNAPPU_CMD_OPTS`)"
 				printf "%10s%s\n" "" "OK"
 			else
 				printf "%10s%s\n" "" "OK (Not found)"
@@ -2492,36 +2471,26 @@ case $1 in start)
 		then
 			if ! pgrep -t tty$PH_RUNAPP_TTY -f "$PH_RUNAPP_CMD" >/dev/null 2>&1
 			then
-				"$PH_SUDO" systemctl stop "getty@tty$PH_RUNAPP_TTY" >/dev/null 2>&1
+				$PH_SUDO systemctl stop "getty@tty$PH_RUNAPP_TTY" >/dev/null 2>&1
 			fi
 		fi
 	fi
 	[[ "$PH_RUNAPP" == "PieHelper" ]] && PH_RUNAPP_CMD="ph_show_menu"
 	printf "%8s%s\n" "" "--> Starting $PH_RUNAPP"
-	"$PH_SUDO" systemctl start getty@tty$PH_RUNAPP_TTY >/dev/null 2>&1
+	$PH_SUDO systemctl start getty@tty$PH_RUNAPP_TTY >/dev/null 2>&1
 	if [[ `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY && "$PH_RUNAPP" != "PieHelper" ]]
 	then
-		"$PH_SUDO" systemctl stop getty@tty$PH_PIEH_TTY >/dev/null 2>&1
+		$PH_SUDO systemctl stop getty@tty$PH_PIEH_TTY >/dev/null 2>&1
 	fi
 	if [[ `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY && "$PH_RUNAPP_CMD" != "/bin/bash" ]]
 	then
-		eval "$PH_RUNAPP_CMD" "$PH_RUNAPP_CMD_OPTS"
+		eval "$PH_RUNAPP_CMD $PH_RUNAPPU_CMD_OPTS"
 	else
-		"$PH_SUDO" `which chvt` $PH_RUNAPP_TTY
+		$PH_SUDO `which chvt` $PH_RUNAPP_TTY
 	fi
-	if [[ $? -ne 0 ]]
-	then
-		printf "%10s%s\n" "" "ERROR : Could not start $PH_RUNAPP"
-		unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
-		unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT
-		return 1
-	fi
-	if (([[ "$PH_RUNAPP" == "PieHelper" ]]) && ([[ `tty` == /dev/tty* ]]))
-	then
-		unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
-		unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT
-		exit 0
-	fi
+	[[ $? -ne 0 ]] && unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_NUM_CTRL && printf "%10s%s\n" "" "ERROR : Could not start $PH_RUNAPP" && return 1
+	unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_NUM_CTRL
+	(([[ "$PH_RUNAPP" == "PieHelper" ]]) && ([[ `tty` == /dev/tty* ]])) && exit 0
 	printf "%10s%s\n" "" "OK"
 	if [[ "$PH_RUNAPP" == "Bash" ]]
 	then
@@ -2531,12 +2500,9 @@ case $1 in start)
 	fi ;;
 	       *)
 	printf "%8s%s\n" "" "--> Stopping $PH_RUNAPP"
-	if [[ "$PH_RUNAPPU_PERSISTENT" == "yes" && -z "$3" ]]
+	if [[ `eval echo "\\$PH_\$PH_RUNAPPU"_PERSISTENT` == "yes" && -z "$3" ]]
 	then
-		printf "%10s%s\n" "" "Warning : $PH_RUNAPP is marked persistent -> Staying online"
-		unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
-		unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT
-		return 0
+		printf "%10s%s\n" "" "Warning : $PH_RUNAPP is marked persistent -> Staying online" && return 0
 	fi
 	PH_RUNAPP_TTY=`ph_get_tty_for_app $PH_RUNAPP`
 	if [[ `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY && "$PH_RUNAPP" != "PieHelper" ]]
@@ -2548,49 +2514,34 @@ case $1 in start)
 	fi
 	printf "%10s%s\n" "" "OK"
 	$PH_SUDO systemctl stop getty@tty$PH_RUNAPP_TTY >/dev/null 2>&1
-	if [[ $? -ne 0 ]]
-	then
-		printf "%10s%s\n" "" "ERROR : Could not stop $PH_RUNAPP"
-		unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
-		unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT
-		return 1
-	fi
-	if [[ -n "$PH_RUNAPPU_POST_CMD" ]]
-	then
-		printf "%8s%s\n" "" "--> Starting run of $PH_RUNAPP POST-command"
-		printf "%10s%s\n" "" "OK"
-		PH_RUNAPPU_POST_CMD="`eval echo -n \"$PH_RUNAPPU_POST_CMD\"`"
-		file -b `echo -n "$PH_RUNAPPU_POST_CMD" | nawk '{ print $1 }'` 2>/dev/null | nawk 'BEGIN { rc = 0 } $0 ~ /ASCII text executable/ { exit 1 } \
-									$0 ~ /ASCII text/ { exit 2 } \
-									$0 ~ /32-bit*executable/ { exit 3 } \
-									$0 ~ /64-bit*executable/ { exit 4 } \
-									$0 ~ /directory/ { exit 5 } \
-									{ exit 6 }'
-		case $? in 1|3|4)
-			"$PH_RUNAPPU_POST_CMD" 2>/dev/null ;;
-			       2)
-			. "$PH_RUNAPPU_POST_CMD" 2>/dev/null ;;
-			     5|6)
-			false ;;
-		esac
-		if [[ $? -eq 0 ]]
-		then
-			printf "%8s%s\n" "" "--> Evaluating run of $PH_RUNAPP POST-command"
-			printf "%10s%s\n" "" "OK"
-		else
-			printf "%8s%s\n" "" "--> Evaluating run of $PH_RUNAPP POST-command"
-			printf "%10s%s\n" "" "Warning : Issues encountered running POST-command"
-		fi
-	fi
+	[[ $? -ne 0 ]] && printf "%10s%s\n" "" "ERROR : Could not stop $PH_RUNAPP" && return 1
 	printf "%8s%s\n" "" "--> Attempting to determine mounted shares for $PH_RUNAPP"
-	if [[ "$PH_RUNAPPU_CIFS_SHARE" == "no" || "$PH_RUNAPP" == "PieHelper" ]]
+	if ([[ `eval echo "\\$PH_$PH_RUNAPPU"_CIFS_SHARE` == @(no|) ]] || [[ "$PH_RUNAPP" == "PieHelper" ]])
 	then
 		printf "%10s%s\n" "" "OK (Not found)"
 	else
 		printf "%10s%s\n" "" "OK (Found)"
+		if [[ "$PH_RUNAPP" == "Kodi" ]]
+		then
+			PH_KODI_USER="`nawk -v app=^"Kodi"$ '$1 ~ app { print $2 }' $PH_CONF_DIR/installed_apps`"
+			PH_KODI_HOME="`echo -n $(getent passwd $PH_KODI_USER | cut -d':' -f6)`"
+			printf "%8s%s\n" "" "--> Backing up latest Kodi preferences directory for run account $PH_KODI_USER (This may take a while)"
+			cd "$PH_KODI_HOME" >/dev/null 2>&1
+			[[ -f `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar && -d "$PH_KODI_HOME/.kodi" ]] && $PH_SUDO rm `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar 
+			$PH_SUDO tar -X "$PH_FILES_DIR/exclude.Kodi" -cf "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" ./.kodi 2>/dev/null || PH_i="NOK"
+			if [[ "$PH_i" != "NOK" ]]
+			then
+				printf "%10s%s\n" "" "OK"
+				$PH_SUDO mv "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar >/dev/null 2>&1
+			else
+				printf "%10s%s\n" "" "Warning : Could not create valid up-to-date preferences backup -> Removing"
+				$PH_SUDO rm "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" 2>/dev/null
+			fi
+			cd - >/dev/null 2>&1
+		fi
 		ph_umount_cifs_share "$PH_RUNAPP"
 	fi
-	if [[ "$PH_RUNAPPU_USE_CTRL" == "yes" ]]
+	if [[ `eval echo "\\$PH_$PH_RUNAPPU"_USE_CTRL` == "yes" ]]
 	then
 		printf "%8s%s\n" "" "--> Displaying reminder"
 		printf "%10s%s\n" "" "OK"
@@ -2602,10 +2553,8 @@ case $1 in start)
 		ph_print_bannerline
 		printf "\n"
 		sleep 5
-		ph_cleanup_controllers full || (printf "%2s%s\n" "" "PARTIALLY FAILED" ; return 3) || PH_RET_CODE=3
+		ph_cleanup_controllers full || (printf "%2s%s\n" "" "PARTIALLY FAILED" ; return 3) || return $?
 	fi
 esac
-unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
-unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT
-return $PH_RET_CODE
+return 0
 }
