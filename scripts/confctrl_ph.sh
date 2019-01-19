@@ -22,6 +22,7 @@ typeset PH_TRUSTED=""
 typeset PH_RESULT="SUCCESS"
 typeset PH_OLDOPTARG="$OPTARG"
 typeset -i PH_COUNT=0
+typeset -i PH_CONF_CTRL=0
 typeset -i PH_OLDOPTIND=$OPTIND
 OPTIND=1
 
@@ -314,7 +315,8 @@ case $PH_ACTION in help)
 	[[ $PH_COUNT -lt $PH_NUM_CTRL ]] && (printf "%10s%s\n" "" "ERROR : Insufficient number of unconfigured $PH_TYPE controllers found" ; \
 				printf "%2s%s\n\n" "" "FAILED" ; return 0) && exit 1
 	printf "%10s%s\n" "" "OK"
-	while [[ $PH_COUNT -gt 0 ]]
+	PH_CONF_CTRL=$((PH_COUNT-`echo $PH_NUM_CTRL`))
+	while [[ $PH_COUNT -gt $PH_CONF_CTRL ]]
 	do
 		for PH_i in $PH_NEW_CTRL
 		do
@@ -343,7 +345,7 @@ case $PH_ACTION in help)
 			fi
 			unset -n PH_CTRL_PIN
 			((PH_COUNT--))
-			[[ $PH_COUNT -eq 0 ]] && break 2
+			[[ $PH_COUNT -eq $PH_CONF_CTRL ]] && break 2
 		done
 		PH_NEW_CTRL="$PH_PAIRED_CTRL"
 		PH_PAIRED="yes"

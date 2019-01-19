@@ -1,7 +1,7 @@
 PieHelper is an extensible, user-friendly, scripted software suite for Raspberry Pi,
 mostly intended for novice linux users that :
 
-* allows for easy CLI and text menu-based management of the RaspBerry's most-used media and gaming-related applications :
+* allows for easy CLI and text menu-based management of the RaspBerry's most-used applications :
 	- installation
 	- uninstallation
 	- basic configuration
@@ -13,7 +13,8 @@ mostly intended for novice linux users that :
 * offers some additional features :
 	- can integrate additional out-of-scope (not integrated by default) applications of the user's choice
 	- running each application under a separate account
-	- mounting/unmounting CIFS shares at application startup/halt
+	- offers a tool for basic OS and system setup tasks as an alternative to raspi-config
+	- mounting/unmounting CIFS shares at application startup/halt (for configuration backups/restores, providing roms to Emulationstation, ...)
 	- configuring bluetooth controllers (official PS3/PS4 controllers supported)
 	- checking for configurable required controller presence for each application (official PS3/PS4/XBOX360 controllers and Sony Wireless Adapter/XBOX360 USB Receiver/usb/bluetooth connection methods supported)
 	- optionally setting up automatic xboxdrv mapping for your controller(s) (official PS3/PS4 controllers supported)
