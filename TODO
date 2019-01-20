@@ -1,14 +1,12 @@
+* consolidate view/change options for menu
 * check for pairing in listmoon and before Moonlight startup
 * add check for package manager in confoper
-* finish migration to POST/PRE commands
 * disallow changing CIFS_SHARE values if CIFS mount active
-* test piehelper always persistence required when menu used to start apps even when set to no
-* test on pseudo and TTY : remove active TTY's with no running app before chvt 
 * test Moonlight when GFE back OK
 * controller detection for XBOX360 usb receiver
 * solve bluetooth pairing dualshock3 controllers
 * change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
-* write confoper_ph.sh filesystem resize + add changes for more stuff in OS menu
+* write confoper_ph.sh filesystem resize + add interactive -i option for all + incorporate more stuff in OS menu
 * option for confpieh_ph.sh -p debug : switch all enabled or disabled modules + change Advanced menu to interactive prompt for listing modules
 * incremental backup for Kodi autobackup OR switch to only use CIFS option for kodi on remove and install Kodi + change related conf file information
 * support in ph_repair_pieh for protection against multiple instances of 1 app + verification whether all known info matches
