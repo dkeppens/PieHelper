@@ -259,38 +259,50 @@ PH_`echo $PH_APPU`_NUM_CTRL='1'								# - This is the number of controllers you
 											#   the option holding that application's command line options if event-based input devices are present as command-line parameters
 											# - Default is '1'
 											# - Accepted values are '1', '2', '3' and '4'
-PH_`echo $PH_APPU`_CIFS_SHARE='no'							# - This indicates whether you want to mount a CIFS share from local network server PH_`echo $PH_APPU`_CIFS_SRV where $PH_APP can access files
-                                     							# - Default is 'no'
+PH_`echo $PH_APPU`_CIFS_SHARE='no'							# - This indicates whether you want to mount a CIFS share from a local network server PH_`echo $PH_APPU`_CIFS_SRV before $PH_APP starts and
+											#   umount it after $PH_APP shuts down
+											# - Default is 'no'
 											# - Accepted values are 'yes' and 'no'
 											# - Important : * Keep in mind that setting this to 'yes' requires you to enable CIFS sharing on PH_`echo $PH_APPU`_CIFS_SRV
 											#               * You should also make sure your PI has adequate permissions to access that share
 											#               * Lastly, a user account PH_`echo $PH_APPU`_CIFS_USER with a password PH_`echo $PH_APPU`_CIFS_PASS should be created on PH_`echo $PH_APPU`_CIFS_SRV
-PH_`echo $PH_APPU`_CIFS_USER='$PH_APP_USER'						# - This is the user account that should be present on local network server PH_`echo $PH_APPU`_CIFS_SRV with password PH_`echo $PH_APPU`_CIFS_PASS
+PH_`echo $PH_APPU`_CIFS_USER=''								# - This is the user account on local network server PH_`echo $PH_APPU`_CIFS_SRV with password PH_`echo $PH_APPU`_CIFS_PASS
 											#   if PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes'
-                                     							# - Default is '$PH_APP_USER'
+											# - Default is ''
 PH_`echo $PH_APPU`_CIFS_PASS=''								# - This is the password for user PH_`echo $PH_APPU`_CIFS_USER on local network server PH_`echo $PH_APPU`_CIFS_SRV if PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes'
 											# - The password should not contain any single quote (') characters
 											# - Default is ''
-PH_`echo $PH_APPU`_CIFS_SRV=''								# - This is the ip address of your local network server which has CIFS sharing enabled if PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes'
+PH_`echo $PH_APPU`_CIFS_SRV=''								# - This is the ip address of your local network server where CIFS sharing is enabled if PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes'
 											# - Default is ''
 											# - Accepted values are valid ipv4 addresses and an empty string
-PH_`echo $PH_APPU`_CIFS_DIR=''								# - This is the pathname of the shared CIFS directory on local network server PH_`echo $PH_APPU`_CIFS_SRV if PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes'
+PH_`echo $PH_APPU`_CIFS_DIR=''								# - This is the pathname of the CIFS share on local network server PH_`echo $PH_APPU`_CIFS_SRV if PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes'
 											# - Default is ''
-											# - Accepted values are pathnames (Values starting with '/' or '\$') and an empty string
-PH_`echo $PH_APPU`_CIFS_SUBDIR=''							# - This is the relative path to PH_`echo $PH_APPU`_CIFS_DIR on local network server PH_`echo $PH_APPU`_CIFS_SRV if PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes'
-											#   as well as the directory that holds your files
+											# - Accepted values are pathnames (Values starting with '/' or '$') and an empty string
+PH_`echo $PH_APPU`_CIFS_SUBDIR=''							#  - This is the pathname relative to PH_`echo $PH_APPU`_CIFS_DIR on local network server PH_`echo $PH_APPU`_CIFS_SRV that will be mounted on PH_`echo $PH_APPU`_CIFS_MPT
+											#   if PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes'
 											# - Default is ''
-											# - Accepted values are pathnames (Values starting with '/' or '\$') and an empty string
+											# - Accepted values are pathnames (Values starting with '/' or '$') and an empty string
 PH_`echo $PH_APPU`_CIFS_MPT='\$PH_CONF_DIR/../mnt/$PH_APP'				# - This is the full pathname of a directory on your PI where you want to mount PH_`echo $PH_APPU`_CIFS_SUBDIR if PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes'
 											# - A default directory named 'mnt' with a subfolder for each integrated application is automatically created under the root of the PieHelper
 											#   install location but other values can be set if preferred
 											#   If a different value is set, make sure the directory specified is empty
 											# - Default is '\$PH_CONF_DIR/../mnt/$PH_APP'
-											# - Accepted values are pathnames (Values starting with '/' or '\$') and an empty string
+											# - Accepted values are pathnames (Values starting with '/' or '$') and an empty string
+PH_`echo $PH_APPU`_PRE_CMD=''								# - This is the full command to run before starting $PH_APP. If PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes', it will be run when the CIFS share is mounted
+											#   Make sure the run account used for $PH_APP has adequate permission when customising this
+											# - Default is ''
+											# - Allowed values are full pathnames (Values starting with '/' or '$') of scripts, sourceable scripts and executables or an empty string
+											#   Sourceable scripts can use variable names known to PieHelper
+PH_`echo $PH_APPU`_POST_CMD=''								# - This is the full command to run after stopping $PH_APP. If PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes', it will be run when the CIFS share is mounted
+											#   Make sure the run account used for $PH_APP has adequate permissions when customising this
+											# - Default is ''
+											# - Allowed values are full pathnames (Values starting with '/' or '$') of scripts, sourceable scripts and executables or an empty string
+											#   Sourceable scripts can use variable names known to PieHelper
 
 # Exports
 
 export PH_`echo $PH_APPU`_PERSISTENT PH_`echo $PH_APPU`_PKG_NAME PH_`echo $PH_APPU`_CMD_OPTS PH_`echo $PH_APPU`_USE_CTRL PH_`echo $PH_APPU`_NUM_CTRL PH_`echo $PH_APPU`_CIFS_SHARE PH_`echo $PH_APPU`_CIFS_USER PH_`echo $PH_APPU`_CIFS_PASS PH_`echo $PH_APPU`_CIFS_SRV PH_`echo $PH_APPU`_CIFS_DIR PH_`echo $PH_APPU`_CIFS_SUBDIR PH_`echo $PH_APPU`_CIFS_MPT
+export PH_`echo $PH_APPU`_POST_CMD PH_`echo $PH_APPU`_PRE_CMD
 EOF
 		printf "%10s%s\n" "" "OK"
 		printf "%8s%s\n" "" "--> Adding options to options.defaults"
@@ -306,6 +318,8 @@ EOF
 		echo "PH_`echo $PH_APPU`_CIFS_DIR=''" >>$PH_FILES_DIR/options.defaults
 		echo "PH_`echo $PH_APPU`_CIFS_SUBDIR=''" >>$PH_FILES_DIR/options.defaults
 		echo "PH_`echo $PH_APPU`_CIFS_MPT='\$PH_CONF_DIR/../mnt/$PH_APP'" >>$PH_FILES_DIR/options.defaults
+		echo "PH_`echo $PH_APPU`_PRE_CMD=''" >>$PH_FILES_DIR/options.defaults
+		echo "PH_`echo $PH_APPU`_POST_CMD=''" >>$PH_FILES_DIR/options.defaults
 		printf "%10s%s\n" "" "OK"
 		printf "%8s%s\n" "" "--> Adding options to options.allowed"
 		echo "PH_`echo $PH_APPU`_PERSISTENT:yes or no:\"\$PH_OPTARG_VAL\" == @(yes|no)" >>$PH_FILES_DIR/options.allowed
@@ -316,6 +330,8 @@ EOF
 		echo "PH_`echo $PH_APPU`_CIFS_MPT:an empty string or starting with / or \$:\"\$PH_OPTARG_VAL\" == @(/*|\\\$*|)" >>$PH_FILES_DIR/options.allowed
 		echo "PH_`echo $PH_APPU`_USE_CTRL:yes or no:\"\$PH_OPTARG_VAL\" == @(yes|no)" >>$PH_FILES_DIR/options.allowed
 		echo "PH_`echo $PH_APPU`_NUM_CTRL:1, 2, 3 or 4:\"\$PH_OPTARG_VAL\" == @(1|2|3|4)" >>$PH_FILES_DIR/options.allowed
+		echo "PH_`echo $PH_APPU`_PRE_CMD:an empty string or starting with / or \$:\"\$PH_OPTARG_VAL\" == @(/*|\\\$*|)" >>$PH_FILES_DIR/options.allowed
+		echo "PH_`echo $PH_APPU`_POST_CMD:an empty string or starting with / or \$:\"\$PH_OPTARG_VAL\" == @(/*|\\\$*|)" >>$PH_FILES_DIR/options.allowed
 		printf "%10s%s\n" "" "OK"
 		printf "%8s%s\n" "" "--> Creating default mountpoint for CIFS mounts"
 		mkdir -p "$PH_CONF_DIR"/../mnt/"$PH_APP" >/dev/null 2>&1
