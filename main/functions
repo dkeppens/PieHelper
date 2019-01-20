@@ -2401,7 +2401,7 @@ PH_PIEH_TTY=`ph_get_tty_for_app PieHelper`
 case $1 in start)
 	PH_RUNAPP_TTY=`ph_get_tty_for_app $PH_RUNAPP`
 	printf "%8s%s\n" "" "--> Attempting to determine required remote mounts for $PH_RUNAPP"
-	if [[ "$PH_RUNAPPU_CIFS_SHARE" == "no" || "$PH_RUNAPP" == "PieHelper" ]]
+	if [[ "$PH_RUNAPPU_CIFS_SHARE" == "no" ]]
 	then
 		printf "%10s%s\n" "" "OK (None)"
 	else
@@ -2583,7 +2583,7 @@ case $1 in start)
 		fi
 	fi
 	printf "%8s%s\n" "" "--> Attempting to determine mounted shares for $PH_RUNAPP"
-	if [[ "$PH_RUNAPPU_CIFS_SHARE" == "no" || "$PH_RUNAPP" == "PieHelper" ]]
+	if [[ "$PH_RUNAPPU_CIFS_SHARE" == "no" ]]
 	then
 		printf "%10s%s\n" "" "OK (Not found)"
 	else
