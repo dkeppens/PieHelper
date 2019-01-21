@@ -233,7 +233,7 @@ PH_`echo $PH_APPU`_PERSISTENT='no'							# - This indicates whether $PH_APP, whe
 											#   whenever any application other than $PH_APP starts
 											#   Persistent applications will only stop when a direct stop or restart is issued
 											# - Default is 'no'
-											# - Accepted values are 'yes' and 'no'
+											# - Allowed values are 'yes' and 'no'
 											# - Important : * If an application does not render to the default frame buffer it can stay visible in foreground when switching to
 											#                 a TTY that is allocated to a persistent-marked application
 											#               * That behaviour can be avoided by setting persistence to 'no' for both applications
@@ -253,16 +253,16 @@ PH_`echo $PH_APPU`_USE_CTRL='no'							# - This indicates whether you want to us
 											# - If this is set to 'yes' and the specified amount of controllers of the type configured can not be detected on $PH_APP startup,
 											#   startup will fail
 											# - Default is 'no'
-											# - Accepted values are 'yes' and 'no'
+											# - Allowed values are 'yes' and 'no'
 PH_`echo $PH_APPU`_NUM_CTRL='1'								# - This is the number of controllers you want to use with $PH_APP
 											# - Changes to an option that sets the controller amount for an application will automatically be reflected to
 											#   the option holding that application's command line options if event-based input devices are present as command-line parameters
 											# - Default is '1'
-											# - Accepted values are '1', '2', '3' and '4'
+											# - Allowed values are '1', '2', '3' and '4'
 PH_`echo $PH_APPU`_CIFS_SHARE='no'							# - This indicates whether you want to mount a CIFS share from a local network server PH_`echo $PH_APPU`_CIFS_SRV before $PH_APP starts and
 											#   umount it after $PH_APP shuts down
 											# - Default is 'no'
-											# - Accepted values are 'yes' and 'no'
+											# - Allowed values are 'yes' and 'no'
 											# - Important : * Keep in mind that setting this to 'yes' requires you to enable CIFS sharing on PH_`echo $PH_APPU`_CIFS_SRV
 											#               * You should also make sure your PI has adequate permissions to access that share
 											#               * Lastly, a user account PH_`echo $PH_APPU`_CIFS_USER with a password PH_`echo $PH_APPU`_CIFS_PASS should be created on PH_`echo $PH_APPU`_CIFS_SRV
@@ -274,20 +274,20 @@ PH_`echo $PH_APPU`_CIFS_PASS=''								# - This is the password for user PH_`ech
 											# - Default is ''
 PH_`echo $PH_APPU`_CIFS_SRV=''								# - This is the ip address of your local network server where CIFS sharing is enabled if PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes'
 											# - Default is ''
-											# - Accepted values are valid ipv4 addresses and an empty string
+											# - Allowed values are valid ipv4 addresses and an empty string
 PH_`echo $PH_APPU`_CIFS_DIR=''								# - This is the pathname of the CIFS share on local network server PH_`echo $PH_APPU`_CIFS_SRV if PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes'
 											# - Default is ''
-											# - Accepted values are pathnames (Values starting with '/' or '$') and an empty string
+											# - Allowed values are pathnames (Values starting with '/' or '$') and an empty string
 PH_`echo $PH_APPU`_CIFS_SUBDIR=''							#  - This is the pathname relative to PH_`echo $PH_APPU`_CIFS_DIR on local network server PH_`echo $PH_APPU`_CIFS_SRV that will be mounted on PH_`echo $PH_APPU`_CIFS_MPT
 											#   if PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes'
 											# - Default is ''
-											# - Accepted values are pathnames (Values starting with '/' or '$') and an empty string
+											# - Allowed values are pathnames (Values starting with '/' or '$') and an empty string
 PH_`echo $PH_APPU`_CIFS_MPT='\$PH_CONF_DIR/../mnt/$PH_APP'				# - This is the full pathname of a directory on your PI where you want to mount PH_`echo $PH_APPU`_CIFS_SUBDIR if PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes'
 											# - A default directory named 'mnt' with a subfolder for each integrated application is automatically created under the root of the PieHelper
 											#   install location but other values can be set if preferred
 											#   If a different value is set, make sure the directory specified is empty
 											# - Default is '\$PH_CONF_DIR/../mnt/$PH_APP'
-											# - Accepted values are pathnames (Values starting with '/' or '$') and an empty string
+											# - Allowed values are pathnames (Values starting with '/' or '$') and an empty string
 PH_`echo $PH_APPU`_PRE_CMD=''								# - This is the full command to run before starting $PH_APP. If PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes', it will be run when the CIFS share is mounted
 											#   Make sure the run account used for $PH_APP has adequate permission when customising this
 											# - Default is ''
