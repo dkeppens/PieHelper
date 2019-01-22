@@ -6,10 +6,8 @@ Install Kodi and integrate with PieHelper:confapps_ph.sh -p int -a Kodi
 Remove Kodi from PieHelper and uninstall:confapps_ph.sh -p rem -a Kodi
 Update Kodi to the latest version (only if installed as a package):ph_update_pkg $PH_KODI_PKG_NAME | more
 List all available options for Kodi:confopts_ph.sh -p list -a Kodi | more
-View the current value of Kodi option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Kodi -g
-View the current value of Kodi option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Kodi -g -r
-Change the value of read-write Kodi option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Kodi -s
-Change the value of read-write Kodi option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Kodi -s -r
+View/Change the value of read-write Kodi option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Kodi -s
+View/Change the value of read-write Kodi option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Kodi -s -r
 Set all Kodi options back to default:ph_set_all_options_to_default Kodi
 Display help for Kodi option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Kodi -d
 Display help for Kodi option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Kodi -d -r

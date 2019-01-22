@@ -1,4 +1,3 @@
-* consolidate view/change options for menu
 * add check for package manager in confoper
 * disallow changing CIFS_SHARE values if CIFS mount active
 * test Moonlight when GFE back OK
