@@ -438,6 +438,15 @@ then
 	done
 	printf "%8s%s\n" "" "--> Checking for systemd service management"
 	[[ -f `which systemctl 2>/dev/null` ]] && printf "%10s%s\n" "" "OK (Found)" || (printf "%10s%s\n" "" "ERROR : Not found" ; printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+	printf "%8s%s\n" "" "--> Checking for package manager"
+	if [[ -f /usr/bin/pacman || -f /usr/bin/apt-get ]]
+	then
+		[[ -f /usr/bin/apt-get ]] && printf "%10s%s\n" "" "OK (apt-get)" || printf "%10s%s\n" "" "OK (pacman)"
+	else
+		printf "%10s%s\n" "" "ERROR : Not found"
+		printf "%2s%s\n" "" "FAILED"
+		exit 1
+	fi
 	printf "%2s%s\n" "" "SUCCESS"
 fi
 case $PH_ACTION in all)
