@@ -2371,6 +2371,7 @@ typeset PH_i=""
 typeset PH_BASH_TTY=""
 typeset PH_KODI_HOME=""
 typeset PH_KODI_USER=""
+typeset PH_MOON_PATH=""
 typeset -l PH_RUNAPPL=""
 typeset -u PH_RUNAPPU=""
 typeset -i PH_RUNAPP_TTY=0
@@ -2400,6 +2401,19 @@ typeset -n PH_RUNAPPU_PERSISTENT=PH_"$PH_RUNAPPU"_PERSISTENT
 PH_PIEH_TTY=`ph_get_tty_for_app PieHelper`
 case $1 in start)
 	PH_RUNAPP_TTY=`ph_get_tty_for_app $PH_RUNAPP`
+	if [[ "$PH_RUNAPP" == "Moonlight" && `$PH_SUDO fgconsole` -ne $PH_RUNAPP_TTY ]]
+	then
+		PH_MOON_PATH=`nawk '$1 ~ /^Moonlight$/ { printf $2 }' $PH_CONF_DIR/supported_apps`
+		"$PH_MOON_PATH" list "$PH_MOON_SRV" >/dev/null 2>&1
+		if [[ $? -ne 0 ]]
+		then
+			printf "%8s%s\n" "" "--> Starting $PH_RUNAPP"
+			printf "%10s%s\n" "" "ERROR : Moonlight is not fully configured"
+			unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
+			unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT
+			return 1
+		fi
+	fi
 	printf "%8s%s\n" "" "--> Attempting to determine required remote mounts for $PH_RUNAPP"
 	if [[ "$PH_RUNAPPU_CIFS_SHARE" == "no" ]]
 	then

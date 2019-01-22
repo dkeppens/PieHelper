@@ -1,5 +1,4 @@
 * consolidate view/change options for menu
-* check for pairing in listmoon and before Moonlight startup
 * add check for package manager in confoper
 * disallow changing CIFS_SHARE values if CIFS mount active
 * test Moonlight when GFE back OK
