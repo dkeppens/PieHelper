@@ -1,6 +1,8 @@
 * write confoper_ph.sh filesystem resize + add interactive -i option for all + incorporate more stuff in OS menu
 * test Moonlight
 * change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
+* retest different run accounts
+* test archlinux
 * controller detection for XBOX360 usb receiver
 * solve bluetooth pairing dualshock3 controllers
 * option for confpieh_ph.sh -p debug : switch all enabled or disabled modules + change Advanced menu to interactive prompt for listing modules

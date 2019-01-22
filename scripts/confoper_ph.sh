@@ -18,6 +18,7 @@ typeset -i PH_RET_CODE=0
 typeset -i PH_COUNT=0
 typeset -i PH_COUNT2=0
 typeset -i PH_FLAG=0
+typeset -i PH_INTERACTIVE=0
 typeset -i PH_OLDOPTIND=$OPTIND
 PH_USER=""
 PH_DEL_PIUSER="yes"
@@ -126,7 +127,7 @@ else
 	typeset PH_KEYB_PKG="keyboard-configuration systemd"
 fi
 
-while getopts p:hs:a:n:e:t:c:f:z:u:l:b:r:k:m:d PH_OPTION 2>/dev/null
+while getopts p:hs:a:n:e:t:c:f:z:u:l:b:r:k:m:di PH_OPTION 2>/dev/null
 do
 	case $PH_OPTION in p)
 		[[ -n "$PH_ACTION" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
@@ -161,6 +162,9 @@ do
 			   f)
 		[[ -n "$PH_LOCALE" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_LOCALE="$OPTARG" ;;
+			   i)
+		[[ $PH_INTERACTIVE -eq 1 ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		PH_INTERACTIVE=1 ;;
 			   k)
 		[[ -n "$PH_KEYB" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_KEYB="$OPTARG" ;;
@@ -189,23 +193,23 @@ do
 		PH_USER="$OPTARG" ;;
 			   *)
 		>&2 printf "%s\n" "Usage : confoper_ph.sh -h |"
-		>&2 printf "%23s%s\n" "" "-p \"all\" [[-a [alluser] '-d']|-a \"def\"] -s [\"allowed\"|\"disallowed\"|\"def\"] -n [hostname|\"def\"] -e [\"cli\"|\"gui\"|\"def\"] \\"
+		>&2 printf "%23s%s\n" "" "-p \"all\" [[[-a [alluser] '-d']|-a \"def\"] -s [\"allowed\"|\"disallowed\"|\"def\"] -n [hostname|\"def\"] -e [\"cli\"|\"gui\"|\"def\"] \\"
 		>&2 printf "%23s%s\n" "" "           -c [\"hdmi\"|\"jack\"|\"def\"] -f [newloc|\"def\"] -z [tzone|\"def\"] '-l [lowerscan|\"def\"]' '-r [rightscan|\"def\"]' '-b [bottomscan|\"def\"]' \\"
-		>&2 printf "%23s%s\n" "" "           '-u [upperscan|\"def\"]' -k [keyb|\"def\"] -m [16|32|64|128|256|512|\"def\"] |"
+		>&2 printf "%23s%s\n" "" "           '-u [upperscan|\"def\"]' -k [keyb|\"def\"] -m [16|32|64|128|256|512|\"def\"]|-i] |"
 		>&2 printf "%23s%s\n" "" "-p \"all-usedef\" |"
-		>&2 printf "%23s%s\n" "" "-p \"savedef\" [-a [alluser] '-d'] -s [\"allowed\"|\"disallowed\"] -n [hostname] -e [\"cli\"|\"gui\"] -c [\"hdmi\"|\"jack\"] \\"
-		>&2 printf "%23s%s\n" "" "           -f [newloc] -z [tzone] '-l [lowerscan]' '-r [rightscan]' '-b [bottomscan]' '-u [upperscan]' -k [keyb] -m [16|32|64|128|256|512] |"
-                >&2 printf "%23s%s\n" "" "-p \"ssh\" -s [\"allowed\"|\"disallowed\"|\"def\"] |"
-                >&2 printf "%23s%s\n" "" "-p \"sshkey\" -a [[sshuser]|\"def\"] |"
-                >&2 printf "%23s%s\n" "" "-p \"user\" [[-a [newuser] '-d']|-a \"def\"] |"
-                >&2 printf "%23s%s\n" "" "-p \"host\" -n [hostname|\"def\"] |"
-                >&2 printf "%23s%s\n" "" "-p \"bootenv\" -e [\"cli\"|\"gui\"|\"def\"] |"
-                >&2 printf "%23s%s\n" "" "-p \"locale\" -f [newloc|\"def\"] |"
-                >&2 printf "%23s%s\n" "" "-p \"tzone\" -z [tzone|\"def\"] |"
-                >&2 printf "%23s%s\n" "" "-p \"memsplit\" -m [16|32|64|128|256|512|\"def\"] |"
-                >&2 printf "%23s%s\n" "" "-p \"keyb\" -k [keyb|\"def\"] |"
-                >&2 printf "%23s%s\n" "" "-p \"audio\" -c [\"hdmi\"|\"jack\"|\"def\"] |"
-                >&2 printf "%23s%s\n" "" "-p \"overscan\" '-l [lowerscan|\"def\"]' '-r [rightscan|\"def\"]' '-b [bottomscan|\"def\"]' '-u [upperscan|\"def\"]' |"
+		>&2 printf "%23s%s\n" "" "-p \"savedef\" [[-a [alluser] '-d'] -s [\"allowed\"|\"disallowed\"] -n [hostname] -e [\"cli\"|\"gui\"] -c [\"hdmi\"|\"jack\"] \\"
+		>&2 printf "%23s%s\n" "" "           -f [newloc] -z [tzone] '-l [lowerscan]' '-r [rightscan]' '-b [bottomscan]' '-u [upperscan]' -k [keyb] -m [16|32|64|128|256|512]|-i] |"
+                >&2 printf "%23s%s\n" "" "-p \"ssh\" [-s [\"allowed\"|\"disallowed\"|\"def\"]|-i] |"
+                >&2 printf "%23s%s\n" "" "-p \"sshkey\" [-a [[sshuser]|\"def\"]|-i] |"
+                >&2 printf "%23s%s\n" "" "-p \"user\" [[[-a [newuser] '-d']|-a \"def\"]|-i] |"
+                >&2 printf "%23s%s\n" "" "-p \"host\" [-n [hostname|\"def\"]-i] |"
+                >&2 printf "%23s%s\n" "" "-p \"bootenv\" [-e [\"cli\"|\"gui\"|\"def\"]|-i] |"
+                >&2 printf "%23s%s\n" "" "-p \"locale\" [-f [newloc|\"def\"]|-i] |"
+                >&2 printf "%23s%s\n" "" "-p \"tzone\" [-z [tzone|\"def\"]|-i] |"
+                >&2 printf "%23s%s\n" "" "-p \"memsplit\" [-m [16|32|64|128|256|512|\"def\"]|-i] |"
+                >&2 printf "%23s%s\n" "" "-p \"keyb\" [-k [keyb|\"def\"]|-i] |"
+                >&2 printf "%23s%s\n" "" "-p \"audio\" [-c [\"hdmi\"|\"jack\"|\"def\"]|-i] |"
+                >&2 printf "%23s%s\n" "" "-p \"overscan\" ['-l [lowerscan|\"def\"]' '-r [rightscan|\"def\"]' '-b [bottomscan|\"def\"]' '-u [upperscan|\"def\"]'|-i] |"
                 >&2 printf "%23s%s\n" "" "-p \"filesys\" |"
                 >&2 printf "%23s%s\n" "" "-p \"update\" |"
                 >&2 printf "%23s%s\n" "" "-p \"boot\""

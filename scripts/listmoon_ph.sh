@@ -33,7 +33,8 @@ printf "%s\n" "- Listing Moonlight shared games"
 [[ -z "$PH_MOON_SRV" ]] && printf "%2s%s\n" "" "FAILED : Option PH_MOON_SRV is not configured" && exit 1
 "$PH_MOON_PATH" list "$PH_MOON_SRV" >/dev/null 2>&1
 [[ $? -ne 0 ]] && printf "%2s%s\n" "" "FAILED : Moonlight is not fully configured" && exit 1
-[[ -z `"$PH_MOON_PATH" list "$PH_MOON_SRV" | tail -n +3` ]] && printf "%2s%s\n" "" "\"none\"" && exit 0
-"$PH_MOON_PATH" list "$PH_MOON_SRV" | tail -n +3
+[[ -z `"$PH_MOON_PATH" list "$PH_MOON_SRV" | tail -n +2` ]] && printf "%2s%s\n" "" "\"none\"" && exit 0
+"$PH_MOON_PATH" list "$PH_MOON_SRV" | tail -n +2 | nawk '{ printf "%2s%s\n", "", $0 }'
+printf "\n"
 printf "%2s%s\n" "" "SUCCESS"
 exit 0
