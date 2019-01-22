@@ -58,6 +58,8 @@ do
 		>&2 printf "%3s%s\n" "" "Where -h displays this usage"
 		>&2 printf "%9s%s\n" "" "-p specifies the action to take"
 		>&2 printf "%12s%s\n" "" "\"conf\" allows interactively configuring an amount of [numctrl] bluetooth controllers of the specified type"
+		>&2 printf "%15s%s\n" "" "- This will only configure controllers on the OS level"
+		>&2 printf "%15s%s\n" "" "  Most applications will still require some additional in-app configuration such as button mapping"
 		>&2 printf "%15s%s\n" "" "-t allows selecting one of a list of supported controller types"
 		>&2 printf "%18s%s\n" "" "- The currently supported controller types are \"PS3\" and \"PS4\""
 		>&2 printf "%18s%s\n" "" "- Different controller types need to be configured separately"
