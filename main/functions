@@ -2455,6 +2455,10 @@ case $1 in start)
 		printf "%10s%s\n" "" "OK (Yes)"
 		if ! ph_setup_controllers "$PH_RUNAPPU_NUM_CTRL"
 		then
+			if [[ "$PH_RUNAPPU_CIFS_SHARE" == "yes" ]]
+			then
+				ph_umount_cifs_share "$PH_RUNAPP"
+			fi
 			unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
 			unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT
 			return 1
