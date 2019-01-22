@@ -13,6 +13,7 @@ typeset PH_APP=""
 typeset PH_VALUE=""
 typeset PH_OPT=""
 typeset PH_i=""
+typeset PH_j=""
 typeset PH_OPTION=""
 typeset PH_RESOLVE=""
 typeset PH_RESULT="SUCCESS"
@@ -324,6 +325,21 @@ case $PH_ACTION in get)
 		printf "%s%s%s\n" "- Changing value for $PH_USE_WORD" "s" " $(for PH_COUNT in {0..`echo $((${#PH_OPTAR[@]}-1))`};do;echo -n "${PH_OPTAR[$PH_COUNT]} ";done)"
 		for PH_COUNT in {0..`echo $((${#PH_OPTAR[@]}-1))`}
 		do
+			if [[ "${PH_OPTAR[$PH_COUNT]}" == *_CIFS_SHARE ]]
+			then
+				for PH_i in `nawk 'BEGIN { ORS = " " } { print $1 }' $PH_CONF_DIR/installed_apps`
+				do
+					[[ `echo "$PH_i" | cut -c1-4 | tr '[:lower:]' '[:upper:]'` == `echo "${PH_OPTAR[$PH_COUNT]}" | cut -d'_' -f2` ]] && PH_j="$PH_i"
+				done
+				if [[ -n "$PH_j" ]]
+				then
+					if mount | nawk '{ for (i=0;i<NF;i++) { if ($i == "type") { print $(i-1) }}}' | grep ^"${PH_SCRIPTS_DIR%/*}/mnt/$PH_j"$ >/dev/null 2>&1
+					then
+						printf "%2s%s\n" "" "FAILED : Cannot change value for ${PH_OPTAR[$PH_COUNT]} while CIFS mount is active on default mountpoint"
+						exit 1
+					fi
+				fi
+			fi
 			[[ "${PH_OPTAR[$PH_COUNT]}" == "PH_PIEH_DEBUG" ]] && printf "%2s%s\n\n" "" "FAILED : Module debug should be handled by confpieh_ph.sh" && unset PH_OPTAR PH_VALAR && exit 1 
 			[[ "${PH_OPTAR[$PH_COUNT]}" == "PH_PIEH_STARTAPP" ]] && printf "%2s%s\n\n" "" "FAILED : The application to start by default on system boot should be handled by confapps_ph.sh -p start" && \
 											unset PH_OPTAR PH_VALAR && exit 1 

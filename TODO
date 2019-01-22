@@ -1,4 +1,3 @@
-* disallow changing CIFS_SHARE values if CIFS mount active
 * test Moonlight when GFE back OK
 * controller detection for XBOX360 usb receiver
 * solve bluetooth pairing dualshock3 controllers
