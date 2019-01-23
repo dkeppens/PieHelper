@@ -244,7 +244,7 @@ case $PH_ACTION in help)
 	if ! pgrep bt-adapter >/dev/null 2>&1
 	then
         	printf "%8s%s\n" "" "--> Enabling bluetooth discovery mode"
-		($PH_SUDO bt-adapter -d &) >/dev/null 2>&1
+		("$PH_SUDO" bt-adapter -d &) >/dev/null 2>&1
 		if ! pgrep bt-adapter >/dev/null 2>&1
 		then
 			printf "%10s%s\n" "" "ERROR : Could not start bluetooth discovery mode"
@@ -339,14 +339,14 @@ case $PH_ACTION in help)
 			if [[ $? -eq 0 ]]
 			then
 				printf "%10s%s\n" "" "OK"
+				((PH_COUNT--))
 				[[ "$PH_RESULT" != "SUCCESS" ]] && PH_RESULT="PARTIALLY FAILED"
 				PH_NEW_CTRL=`sed 's/ '$PH_i' //;s/ '$PH_i'//;s/'$PH_i' //;s/'$PH_i'//g' <<<$PH_NEW_CTRL`
 			else
 				printf "%10s%s\n" "" "ERROR : Could not connect to controller $PH_i"
-				[[ $PH_COUNT -eq 1 && PH_RESULT="SUCCESS" ]] && PH_RESULT="FAILED" || PH_RESULT="PARTIALLY FAILED"
+				[[ $PH_NUM_CTRL -eq 1 && PH_RESULT="SUCCESS" ]] && PH_RESULT="FAILED" || PH_RESULT="PARTIALLY FAILED"
 			fi
 			unset -n PH_CTRL_PIN
-			((PH_COUNT--))
 			[[ $PH_COUNT -eq $PH_CONF_CTRL ]] && break 2
 		done
 		PH_NEW_CTRL="$PH_PAIRED_CTRL"
