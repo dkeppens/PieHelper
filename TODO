@@ -1,7 +1,6 @@
 * capture CTRL-C and ph_umount for PieHelper pseudo
-* fix CIFS mount on boot problem
 * write confoper_ph.sh filesystem resize
-* test Moonlight
+* Moonlight border thing
 * change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
 * retest different run accounts
 * test archlinux

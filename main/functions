@@ -1138,7 +1138,7 @@ done
 if [[ $PH_RET_CODE -eq 0 ]]
 then
 	$PH_SUDO `which mount` -t cifs -o username="$TMP_CIFS_USER" -o password="$TMP_CIFS_PASS" -o rw,uid="$TMP_CIFS_USER" \
-					"//$TMP_CIFS_SRV$TMP_CIFS_DIR$TMP_CIFS_SUBDIR" `eval echo -n "$TMP_CIFS_MPT"` 2>/dev/null
+					"//$TMP_CIFS_SRV$TMP_CIFS_DIR$TMP_CIFS_SUBDIR" `eval echo -n "$TMP_CIFS_MPT"`
 	[[ $? -ne 0 ]] && printf "%10s%s\n" "" "ERROR : Could not mount \"$TMP_CIFS_DIR$TMP_CIFS_SUBDIR\" from server $TMP_CIFS_SRV to `eval echo -n \"$TMP_CIFS_MPT\"`" && PH_RET_CODE=1 || \
 			printf "%10s%s\n" "" "OK"
 fi
