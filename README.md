@@ -5,7 +5,7 @@ mostly intended for novice linux users that :
 	- installation
 	- uninstallation
 	- basic configuration
-* provides easy control over these applications from either a CLI pseudo-terminal or the PieHelper menu :
+* provides easy control over these applications from either a CLI pseudo-terminal or a TTY :
 	- stop
 	- start
 	- restart
