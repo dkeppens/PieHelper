@@ -34,7 +34,7 @@ do
 			OPTARG="$PH_OLDOPTARG"
 			exit 1
 		fi
-		if [[ "$OPTARG" != @(Main|Controllers|Apps|Advanced|Settings|PS3|PS4|XBOX360|AppManagement|`nawk 'BEGIN { ORS = "|" } { print $1 }' $PH_CONF_DIR/supported_apps`) ]]
+		if [[ "$OPTARG" != @(Main|Controllers|Apps|Advanced|Settings|PS3|PS4|XBOX360|AppManagement|OS|OSdefaults|`nawk 'BEGIN { ORS = "|" } { print $1 }' $PH_CONF_DIR/supported_apps`) ]]
 		then
 			if ! startpieh.sh -h
 			then
