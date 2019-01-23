@@ -353,7 +353,7 @@ case $PH_ACTION in help)
 		PH_PAIRED="yes"
 	done
 	printf "%8s%s\n" "" "--> Cleaning up"
-	pkill -9 bt-adapter 2>/dev/null
+	$PH_SUDO pkill -9 bt-adapter 2>/dev/null
 	printf "%10s%s\n" "" "OK"
 	printf "%8s%s\n" "" "--> Displaying reminder"
 	printf "%10s%s\n" "" "OK"
