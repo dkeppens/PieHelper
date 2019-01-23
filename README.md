@@ -15,7 +15,7 @@ mostly intended for novice linux users that :
 	- running each application under a separate account
 	- CLI and menu-based basic OS configuration options as an alternative to raspi-config
 	- optionally mounting/unmounting CIFS shares at application startup/halt (for configuration backups/restores, providing roms to Emulationstation, ...)
-	- optionally running a PRE/POST command before/after application startup/halt
+	- optionally running a PRE/POST command/script before/after application startup/halt
 	- configuring bluetooth controllers (official PS3/PS4 controllers supported)
 	- checking for configurable required controller presence for each application (official PS3/PS4/XBOX360 controllers and Sony Wireless Adapter/XBOX360 USB Receiver/usb/bluetooth connection methods supported)
 	- optionally setting up automatic xboxdrv mapping for your controller(s) (official PS3/PS4 controllers supported)
