@@ -236,7 +236,7 @@ case $PH_ACTION in help)
         for PH_i in Powered Pairable
         do
                 printf "%8s%s\n" "" "--> Enabling bluetooth adapter \"$PH_i\" mode"
-                bt-adapter -a "$PH_CTRL_BLUE_ADAPT" -s "$PH_i" 1 >/dev/null 2>&1 && printf "%10s%s\n" "" "OK" || \
+                $PH_SUDO bt-adapter -a "$PH_CTRL_BLUE_ADAPT" -s "$PH_i" 1 >/dev/null 2>&1 && printf "%10s%s\n" "" "OK" || \
 						(printf "%10s%s\n" "" "ERROR : Could not enable $PH_i mode" ; \
 						 printf "%2s%s\n\n" "" "FAILED" ; return 1) || \
 						 exit $?
@@ -244,7 +244,7 @@ case $PH_ACTION in help)
 	if ! pgrep bt-adapter >/dev/null 2>&1
 	then
         	printf "%8s%s\n" "" "--> Enabling bluetooth discovery mode"
-		(bt-adapter -d &) >/dev/null 2>&1
+		($PH_SUDO bt-adapter -d &) >/dev/null 2>&1
 		if ! pgrep bt-adapter >/dev/null 2>&1
 		then
 			printf "%10s%s\n" "" "ERROR : Could not start bluetooth discovery mode"
@@ -278,16 +278,16 @@ case $PH_ACTION in help)
 	printf "%10s%s\n" "" "OK"
         printf "%8s%s\n" "" "--> Checking for bluetooth devices"
 	sleep 3
-        PH_ALL_CTRL=`bt-device -a "$PH_CTRL_BLUE_ADAPT" -l 2>/dev/null | nawk -F'\(' 'BEGIN { ORS = " " } $0 ~ /No devices found/ { print "none" ; exit 0 } \
+        PH_ALL_CTRL=`$PH_SUDO bt-device -a "$PH_CTRL_BLUE_ADAPT" -l 2>/dev/null | nawk -F'\(' 'BEGIN { ORS = " " } $0 ~ /No devices found/ { print "none" ; exit 0 } \
                                                         $0 ~ /PLAYSTATION\(R\)3 Controller/ { print "PS3:" substr($NF,1,length($NF)-1) }
                                                         $0 ~ /Wireless Controller/ { print "PS4:" substr($NF,1,length($NF)-1) } { next }'`
 	[[ "$PH_ALL_CTRL" == "none" ]] && (printf "%10s%s\n" "" "ERROR : Not found" ; printf "%2s%s\n\n" "" "FAILED" ; return 0) && exit 1 
         for PH_i in $PH_ALL_CTRL
         do
-		bt-device -a "$PH_CTRL_BLUE_ADAPT" -i "${PH_i#*:}" 2>/dev/null | nawk '$0 ~ /Paired:/ { exit $2 } { next }'
+		$PH_SUDO bt-device -a "$PH_CTRL_BLUE_ADAPT" -i "${PH_i#*:}" 2>/dev/null | nawk '$0 ~ /Paired:/ { exit $2 } { next }'
 		if [[ $? -ne 0 ]]
 		then
-			bt-device -a "$PH_CTRL_BLUE_ADAPT" -i "${PH_i#*:}" 2>/dev/null | nawk '$0 ~ /Connected:/ { exit $2 } { next }'
+			$PH_SUDO bt-device -a "$PH_CTRL_BLUE_ADAPT" -i "${PH_i#*:}" 2>/dev/null | nawk '$0 ~ /Connected:/ { exit $2 } { next }'
 			if [[ $? -ne 0 ]]
 			then
 				printf "%10s%s\n" "" "(Found connected ${PH_i%%:*} controller : ${PH_i#*:})"
@@ -323,7 +323,7 @@ case $PH_ACTION in help)
 		for PH_i in $PH_NEW_CTRL
 		do
 			printf "%8s%s\n" "" "--> Checking for existing trust for controller ($PH_i)"
-			bt-device -a "$PH_CTRL_BLUE_ADAPT" -i "$PH_i" 2>/dev/null | nawk '$0 ~ /Trusted:/ { exit $2 } { next }'
+			$PH_SUDO bt-device -a "$PH_CTRL_BLUE_ADAPT" -i "$PH_i" 2>/dev/null | nawk '$0 ~ /Trusted:/ { exit $2 } { next }'
 			if [[ $? -ne 0 ]]
 			then
 				printf "%10s%s\n" "" "OK (Trusted)"
