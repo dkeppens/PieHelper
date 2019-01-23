@@ -1,3 +1,4 @@
+* fix CIFS mount on boot problem
 * write confoper_ph.sh filesystem resize
 * test Moonlight
 * change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
