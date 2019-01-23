@@ -5,6 +5,7 @@
 #set -x
 
 typeset PH_i=""
+typeset PH_DEF_USER=""
 typeset PH_OPTION=""
 typeset PH_STRING=""
 typeset PH_ANSWER=""
@@ -166,9 +167,11 @@ if [[ -f /usr/bin/pacman ]]
 then
 	. $PH_CUR_DIR/../conf/distros/Archlinux.conf
 	typeset PH_KEYB_PKG="systemd"
+	PH_DEF_USER="alarm"
 else
 	. $PH_CUR_DIR/../conf/distros/Debian.conf
 	typeset PH_KEYB_PKG="keyboard-configuration systemd"
+	PH_DEF_USER="pi"
 fi
 
 while getopts p:s:a:n:e:t:c:f:z:u:l:b:r:k:m:w:hdi PH_OPTION 2>/dev/null
@@ -247,7 +250,7 @@ do
 		>&2 printf "%23s%s\n" "" "-p \"all-usedef\" |"
 		>&2 printf "%23s%s\n" "" "-p \"savedef\" [[-a [alluser] '-d'] -s [\"allowed\"|\"disallowed\"] -n [hostname] -e [\"cli\"|\"gui\"] -c [\"hdmi\"|\"jack\"] -w [\"enabled\"|\"disabled\"] \\"
 		>&2 printf "%23s%s\n" "" "           -f [newloc] -z [tzone] '-l [lowerscan]' '-r [rightscan]' '-b [bottomscan]' '-u [upperscan]' -k [keyb] -m [16|32|64|128|256|512]| \\"
-		>&2 printf "%23s%s\n" "" "           -i '[\"user\"|\"del_piuser\"|\"ssh\"|\"host\"|\"bootenv\"|\"audio\"|\"locale\"|\"tzone\"|\"overscan\"|\"keyb\"|\"memsplit\"|\"netwait\"]'] |"
+		>&2 printf "%23s%s\n" "" "           -i '[\"user\"|\"del_stduser\"|\"ssh\"|\"host\"|\"bootenv\"|\"audio\"|\"locale\"|\"tzone\"|\"overscan\"|\"keyb\"|\"memsplit\"|\"netwait\"]'] |"
 		>&2 printf "%23s%s\n" "" "-p \"dispdef\" |"
                 >&2 printf "%23s%s\n" "" "-p \"ssh\" [-s [\"allowed\"|\"disallowed\"|\"def\"]|-i] |"
                 >&2 printf "%23s%s\n" "" "-p \"sshkey\" [-a [[sshuser]|\"def\"]|-i] |"
@@ -276,7 +279,7 @@ do
 		>&2 printf "%18s%s\n" "" "- A reboot will only be performed once after all functions have concluded instead of at the end of every function requiring a reboot"
 		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
 		>&2 printf "%18s%s\n" "" "- The following info will be prompted for during interactive mode :"
-		>&2 printf "%21s%s\n" "" "- The value to use for \"create new user\", \"delete standard user 'pi'\", \"create ssh key for user\", \"system locale\", \"keyboard layout\", \"system timezone\""
+		>&2 printf "%21s%s\n" "" "- The value to use for \"create new user\", \"delete standard user '$PH_DEF_USER'\", \"create ssh key for user\", \"system locale\", \"keyboard layout\", \"system timezone\""
 		>&2 printf "%21s%s\n" "" "  \"system hostname\", \"audio channel\", \"top, bottom, left and right overscan\", \"memory reserved for the GPU\", \"SSH state\", \"wait for network on boot\" and \"default boot environment\""
                 >&2 printf "%12s%s\n" "" "\"all-usedef\" functions like \"all\" but will use the default value stored for each required parameter"
                 >&2 printf "%15s%s\n" "" "- If no stored default can be found for one or more of the required parameters, the related function will fail but processing of the remaining function(s) will not be interrupted"
@@ -294,7 +297,7 @@ do
 		>&2 printf "%18s%s\n" "" "-i can be followed by one of a list of allowed parameters"
 		>&2 printf "%18s%s\n" "" "- If one of a list of allowed parameters is given, the related info will be prompted for"
 		>&2 printf "%18s%s\n" "" "- The following info will be prompted for during interactive mode if none of a list of allowed parameters is given :"
-		>&2 printf "%21s%s\n" "" "- The default value to store for \"create new user\", \"delete standard user 'pi'\", \"create ssh key for user\", \"system locale\", \"keyboard layout\", \"system timezone\""
+		>&2 printf "%21s%s\n" "" "- The default value to store for \"create new user\", \"delete standard user '$PH_DEF_USER'\", \"create ssh key for user\", \"system locale\", \"keyboard layout\", \"system timezone\""
 		>&2 printf "%21s%s\n" "" "  \"system hostname\", \"audio channel\", \"top, bottom, left and right overscan\", \"memory reserved for the GPU\", \"SSH state\", \"wait for network on boot\" and \"default boot environment\""
                 >&2 printf "%12s%s\n" "" "\"dispdef\" allows displaying all currently stored default values"
                 >&2 printf "%12s%s\n" "" "\"ssh\" allows choosing whether to allow or disallow SSH logins to this system for all users besides \"root\""
@@ -331,14 +334,14 @@ do
 		>&2 printf "%18s%s\n" "" "- The keyword \"def\" can be used to specify using the stored default value for this parameter"
 		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
 		>&2 printf "%21s%s\n" "" "- The stored default for the '-d' parameter will automatically be used as well"
-		>&2 printf "%18s%s\n" "" "-d allows specifying the system default user account \"pi\" should not be removed (the default action) along with"
+		>&2 printf "%18s%s\n" "" "-d allows specifying the system default user account \"$PH_DEF_USER\" should not be removed (the default action) along with"
 		>&2 printf "%18s%s\n" "" "  it's home directory, mail spool directory and sudo configuration"
 		>&2 printf "%21s%s\n" "" "- Specifying -d is optional"
 		>&2 printf "%21s%s\n" "" "- Specifying -d when using the keyword \"def\" for [newuser] is not allowed"
-		>&2 printf "%21s%s\n" "" "- If -d is not used and user 'pi' is currently logged on, removal will be delayed until the next system reboot which will be proposed"
+		>&2 printf "%21s%s\n" "" "- If -d is not used and user '$PH_DEF_USER' is currently logged on, removal will be delayed until the next system reboot which will be proposed"
 		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
 		>&2 printf "%18s%s\n" "" "- The following info will be prompted for during interactive mode :"
-		>&2 printf "%21s%s\n" "" "- The value to use for operation \"create new user\" and operation \"delete standard user 'pi'\""
+		>&2 printf "%21s%s\n" "" "- The value to use for operation \"create new user\" and operation \"delete standard user '$PH_DEF_USER'\""
                 >&2 printf "%12s%s\n" "" "\"netwait\" allows specifying whether the system should wait for networking to become available before continuing the application part of the boot process"
 		>&2 printf "%15s%s\n" "" "-w allows selecting either \"enabled\" or \"disabled\""
 		>&2 printf "%18s%s\n" "" "- The keyword \"def\" can be used to specify using the value stored as the default for this parameter"
@@ -423,7 +426,7 @@ OPTARG="$PH_OLDOPTARG"
 
 [[ -z "$PH_ACTION" ]] && (! confoper_ph.sh -h) && exit 1
 (([[ "$PH_ACTION" == "savedef" && $# -gt 4 ]]) && ([[ $PH_INTERACTIVE -eq 1 ]])) && (! confoper_ph.sh -h) && exit 1
-(([[ "$PH_ACTION" == "savedef" && $PH_INTERACTIVE -eq 1 ]]) && ([[ -n "$4" && "$4" != @(ssh|bootenv|user|del_piuser|host|locale|tzone|overscan|audio|keyb|memsplit|netwait) ]])) && (! confoper_ph.sh -h) && exit 1
+(([[ "$PH_ACTION" == "savedef" && $PH_INTERACTIVE -eq 1 ]]) && ([[ -n "$4" && "$4" != @(ssh|bootenv|user|del_stduser|host|locale|tzone|overscan|audio|keyb|memsplit|netwait) ]])) && (! confoper_ph.sh -h) && exit 1
 (([[ "$PH_ACTION" == "user" && "$PH_USER" == "def" ]]) && ([[ "$PH_DEL_PIUSER" == "no" ]])) && (! confoper_ph.sh -h) && exit 1
 [[ "$PH_ACTION" == "all-usedef" && $# -gt 2 ]] && (! confoper_ph.sh -h) && exit 1
 [[ "$PH_ACTION" != @(all|savedef|user) && "$PH_DEL_PIUSER" == "no" ]] && (! confoper_ph.sh -h) && exit 1
@@ -674,7 +677,7 @@ case $PH_ACTION in all)
 		case $PH_i in PH_USER)
 				printf "%8s%s\n" "" "--> Displaying stored default value for 'create new user'/'create SSH key for user' operation" ;;
 			    PH_DEL_PIUSER)
-				printf "%8s%s\n" "" "--> Displaying stored default value for delete standard user 'pi' operation" ;;
+				printf "%8s%s\n" "" "--> Displaying stored default value for delete standard user '$PH_DEF_USER' operation" ;;
 				PH_LOCALE)
 				printf "%8s%s\n" "" "--> Displaying stored default value for system locale" ;;
 				  PH_KEYB)
@@ -740,7 +743,7 @@ case $PH_ACTION in all)
 			else
 				case $4 in user)
 					PH_FUNCTIONS="PH_USER" ;;
-				     del_piuser)
+				     del_stduser)
 					PH_FUNCTIONS="PH_DEL_PIUSER" ;;
 					 locale)
 					PH_FUNCTIONS="PH_LOCALE" ;;
@@ -774,7 +777,7 @@ case $PH_ACTION in all)
 					case $PH_i in PH_USER)
 						printf "%8s%s" "" "--> Please enter the value for 'create new user'/'create SSH key for user' operation : " ;;
 						PH_DEL_PIUSER)
-						printf "%8s%s" "" "--> Please enter the value for delete standard user 'pi' operation (yes/no) : " ;;
+						printf "%8s%s" "" "--> Please enter the value for delete standard user '$PH_DEF_USER' operation (yes/no) : " ;;
 						    PH_LOCALE)
 						printf "%8s%s" "" "--> Please enter the value for system locale (must be a system supported locale) : " ;;
 		 				      PH_KEYB)
@@ -898,7 +901,7 @@ case $PH_ACTION in all)
 					[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
 					PH_MESSAGE="Invalid response"
 					[[ "$PH_i" == "PH_USER" ]] && printf "%8s%s" "" "--> Please enter the value for 'create new user' operation (cannot be a logged-in user) : " || \
-							printf "%8s%s" "" "--> Please enter the value for delete standard user 'pi' operation (yes/no) : "
+							printf "%8s%s" "" "--> Please enter the value for delete standard user '$PH_DEF_USER' operation (yes/no) : "
 					read PH_ANSWER 2>/dev/null
 					[[ "$PH_ANSWER" == "def" ]] && PH_COUNT=$((PH_COUNT+1)) && PH_ANSWER="" && PH_MESSAGE="Unsupported value entered" && continue
 					if ph_screen_input "$PH_ANSWER"
@@ -998,31 +1001,31 @@ case $PH_ACTION in all)
 				printf "%10s%s\n" "" "OK"
 			fi
 		fi
-		if (([[ "$PH_DEL_PIUSER" == "yes" ]]) && (id pi >/dev/null 2>&1))
+		if (([[ "$PH_DEL_PIUSER" == "yes" ]]) && (id "$PH_DEF_USER" >/dev/null 2>&1))
 		then
-			if who -us | nawk '{ print $1 }' | grep ^"pi"$ >/dev/null
+			if who -us | nawk '{ print $1 }' | grep ^"$PH_DEF_USER"$ >/dev/null
 			then
-				printf "%8s%s\n" "" "--> Setting up delayed removal of user 'pi'"
-				echo "#!/bin/sh" >/tmp/remove_pi_user_tmp
-				echo "`which sudo` userdel -r pi" >>/tmp/remove_pi_user_tmp
-				echo "`which sudo` unlink /etc/rc3.d/S99remove_pi_user" >>/tmp/remove_pi_user_tmp
-				echo "`which sudo` rm /etc/init.d/remove_pi_user" >>/tmp/remove_pi_user_tmp
-				mv /tmp/remove_pi_user_tmp /etc/init.d/remove_pi_user 2>/dev/null
-				ln -s /etc/init.d/remove_pi_user /etc/rc3.d/S99remove_pi_user 2>/dev/null
-				chmod 755 /etc/init.d/remove_pi_user
+				printf "%8s%s\n" "" "--> Setting up delayed removal of user '$PH_DEF_USER'"
+				echo "#!/bin/sh" >/tmp/remove_std_user_tmp
+				echo "`which sudo` userdel -r $PH_DEF_USER" >>/tmp/remove_std_user_tmp
+				echo "`which sudo` unlink /etc/rc3.d/S99remove_std_user" >>/tmp/remove_std_user_tmp
+				echo "`which sudo` rm /etc/init.d/remove_std_user" >>/tmp/remove_std_user_tmp
+				mv /tmp/remove_std_user_tmp /etc/init.d/remove_std_user 2>/dev/null
+				ln -s /etc/init.d/remove_std_user /etc/rc3.d/S99remove_std_user 2>/dev/null
+				chmod 755 /etc/init.d/remove_std_user
 				printf "%10s%s\n" "" "OK"
 			else
-				printf "%8s%s\n" "" "--> Removing user 'pi'"
-				if userdel -r pi >/dev/null 2>&1
+				printf "%8s%s\n" "" "--> Removing user '$PH_DEF_USER'"
+				if userdel -r "$PH_DEF_USER" >/dev/null 2>&1
 				then
 					printf "%10s%s\n" "" "OK"
 				else
-					printf "%10s%s\n" "" "ERROR : Could not delete user 'pi'"
+					printf "%10s%s\n" "" "ERROR : Could not delete user '$PH_DEF_USER'"
 					PH_RESULT="PARTIALLY FAILED"
 				fi
 			fi
-			printf "%8s%s\n" "" "--> Deleting sudo rules for default user 'pi'"
-			if rm /etc/sudoers.d/010_pi-nopasswd >/dev/null 2>&1
+			printf "%8s%s\n" "" "--> Deleting sudo rules for default user '$PH_DEF_USER'"
+			if rm /etc/sudoers.d/010_"$PH_DEF_USER"-nopasswd >/dev/null 2>&1
 			then
 				printf "%10s%s\n" "" "OK"
 			else
@@ -1030,7 +1033,7 @@ case $PH_ACTION in all)
 				PH_RESULT="PARTIALLY FAILED"
 			fi
 		fi
-		if (([[ `cat /proc/$PPID/comm` != "confoper_ph.sh" ]]) && (who -us | nawk '{ print $1 }' | grep ^"pi"$ >/dev/null))
+		if (([[ `cat /proc/$PPID/comm` != "confoper_ph.sh" ]]) && (who -us | nawk '{ print $1 }' | grep ^"$PH_DEF_USER"$ >/dev/null))
 		then
 			while [[ "$PH_ANSWER" != @(y|n) ]]
 			do
