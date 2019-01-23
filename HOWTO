@@ -97,7 +97,8 @@
 	     For convenience however, the PieHelper menu will normally always be allocated to TTY 2 while TTY 1 is reserved for system console messages
 	   - Some applications will intercept the TTY switch keystroke combination when running and need to be exited manually before switching to a new TTY
 	     Moonlight and Kodi are examples of such applications
-	     Moonlight streaming can be quit by typing 'Ctrl+Alt+Shift+Q' or exiting your game manually
+	     When connected with keyboard and mouse, Moonlight streaming can be quit by typing 'Ctrl+Alt+Shift+Q'
+	     When connected with a controller, Moonlight streaming can be quit with 'Play+Back+LeftShoulder+RightShoulder'
 	     Kodi can be exited from the Kodi GUI
 	* Using PieHelper, there is the option to mark an application as persistent
 	  This implies that the application will not be stopped when another starts (default behaviour) or when using a movescript to switch from that application to another
