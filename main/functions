@@ -78,9 +78,9 @@ done
 printf "%8s%s" "" "--> Removing Moonlight cache directory for $PH_RUN_USER"
 $PH_SUDO rm -r "$HOME/.cache/moonlight" 2>/dev/null
 printf "%10s%s\n" "" "OK"
-$PH_SUDO chmod 4755 `which moonlight` >/dev/null 2>&1
+#$PH_SUDO chmod 4755 `which moonlight` >/dev/null 2>&1
 printf "%s\n" "- Pairing with $PH_MOON_SRV"
-moonlight pair "$PH_MOON_SRV"
+$PH_SUDO -u `nawk '$1 ~ /^Moonlight$/ { print $2 ; exit 0 } { next }' $PH_CONF_DIR/installed_apps` -E moonlight pair "$PH_MOON_SRV"
 unset PH_OPTAR
 printf "\n"
 return 0
@@ -2399,11 +2399,12 @@ typeset -n PH_RUNAPPU_CIFS_SUBDIR=PH_"$PH_RUNAPPU"_CIFS_SUBDIR
 typeset -n PH_RUNAPPU_PERSISTENT=PH_"$PH_RUNAPPU"_PERSISTENT
 
 PH_PIEH_TTY=`ph_get_tty_for_app PieHelper`
+PH_MOON_PATH=`nawk '$1 ~ /^Moonlight$/ { printf $2 }' $PH_CONF_DIR/supported_apps`
 case $1 in start)
 	PH_RUNAPP_TTY=`ph_get_tty_for_app $PH_RUNAPP`
+	[[ -f "$PH_MOON_PATH" && $PH_RUNAPP_TTY -eq `$PH_SUDO fgconsole` ]] && "$PH_MOON_PATH" quit >/dev/null 2>&1
 	if [[ "$PH_RUNAPP" == "Moonlight" && `$PH_SUDO fgconsole` -ne $PH_RUNAPP_TTY ]]
 	then
-		PH_MOON_PATH=`nawk '$1 ~ /^Moonlight$/ { printf $2 }' $PH_CONF_DIR/supported_apps`
 		"$PH_MOON_PATH" list "$PH_MOON_SRV" >/dev/null 2>&1
 		if [[ $? -ne 0 ]]
 		then
@@ -2585,6 +2586,14 @@ case $1 in start)
 		return 0
 	fi
 	PH_RUNAPP_TTY=`ph_get_tty_for_app $PH_RUNAPP`
+	if [[ "$PH_RUNAPP" == "Moonlight" ]]
+	then
+		while pgrep moonlight >/dev/null
+		do
+			"$PH_MOON_PATH" quit >/dev/null 2>&1
+			sleep 3
+		done
+	fi
 	if [[ `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY && "$PH_RUNAPP" != "PieHelper" ]]
 	then
 		pgrep -t tty$PH_PIEH_TTY -f "startpieh.sh" >/dev/null && $PH_SUDO `which chvt` $PH_PIEH_TTY || \
