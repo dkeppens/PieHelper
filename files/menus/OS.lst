@@ -16,6 +16,8 @@ Run the 'set keyboard layout' function interactively:$PH_SUDO $PH_SCRIPTS_DIR/co
 Run the 'set keyboard layout' function using the stored default value:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p keyb -k def
 Run the 'set default boot environment' function interactively:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p bootenv -i
 Run the 'set default boot environment' function using the stored default value:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p bootenv -e def
+Run the 'wait for network on boot' function interactively:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p netwait -i
+Run the 'wait for network on boot' function using the stored default value:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p netwait -w def
 Run the 'set system locale' function interactively:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p locale -i
 Run the 'set system locale' function using the stored default value:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p locale -f def
 Run the 'configure overscan' function interactively:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p overscan -i

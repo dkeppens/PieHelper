@@ -24,7 +24,7 @@ OPTIND=1
 while getopts phm: PH_OPTION 2>/dev/null
 do
         case $PH_OPTION in p)
-                [[ `tty` != /dev/pts/* ]] && printf "%s\n" "- Enabling $PH_RUNAPP" && printf "%2s%s\n" "" "FAILED : Not currently on a pseudo-terminal" && \
+                [[ `tty` != /dev/pts/* ]] && printf "%s\n" "- Enabling $PH_RUNAPP" && printf "%2s%s\n\n" "" "FAILED : Not currently on a pseudo-terminal" && \
 						OPTIND=$PH_OLDOPTIND && OPTARG="$PH_OLDOPTARG" && exit 1
 		PH_FLAG="pseudo" ;;
 			   m)
@@ -140,16 +140,16 @@ then
 		if pgrep -t tty$PH_RUNAPP_TTY -f start"$PH_RUNAPPL".sh >/dev/null
 		then
 			printf "%10s%s\n" "" "Warning : $PH_RUNAPP already persistent on TTY$PH_RUNAPP_TTY"
-			printf "%2s%s\n" "" "SUCCESS"
+			printf "%2s%s\n\n" "" "SUCCESS"
 			$PH_SUDO chvt $PH_RUNAPP_TTY
 		else
         		printf "%10s%s\n" "" "OK (Found on pseudo-terminal) -> Stopping"
 			printf "%2s%s\n" "" "SUCCESS"
 			$PH_SCRIPTS_DIR/stop"$PH_RUNAPPL".sh -p || exit $?
 			printf "%s\n" "- Restarting $PH_RUNAPP on a TTY"
-			ph_set_option PieHelper -r PH_PIEH_PERSISTENT='yes' || (printf "%2s%s\n" "" "FAILED" ; return 1) || exit $?
+			ph_set_option PieHelper -r PH_PIEH_PERSISTENT='yes' || (printf "%2s%s\n\n" "" "FAILED" ; return 1) || exit $?
 			ph_run_app_action start "$PH_RUNAPP"
-			[[ $? -eq 0 ]] && printf "%2s%s\n" "" "SUCCESS" || (printf "%2s%s\n" "" "FAILED" ; return 1) || exit $?
+			[[ $? -eq 0 ]] && printf "%2s%s\n\n" "" "SUCCESS" || (printf "%2s%s\n\n" "" "FAILED" ; return 1) || exit $?
 		fi
 	else
 		if pgrep -t tty$PH_RUNAPP_TTY -f start"$PH_RUNAPPL".sh >/dev/null
@@ -160,17 +160,17 @@ then
 			printf "%s\n" "- Restarting $PH_RUNAPP on a pseudo-terminal"
 			printf "%8s%s\n" "" "--> Starting $PH_RUNAPP"
 			printf "%10s%s\n" "" "OK"
-			printf "%2s%s\n" "" "SUCCESS"
+			printf "%2s%s\n\n" "" "SUCCESS"
 			ph_show_menu "$PH_PIEH_CMD_OPTS"
 		else
 			if [[ `eval echo "\\$PH_\$PH_RUNAPPU"_PERSISTENT` == "no" ]]
 			then
 				printf "%10s%s\n" "" "ERROR : $PH_RUNAPP already running on a pseudo-terminal"
-				printf "%2s%s\n" "" "FAILED"
+				printf "%2s%s\n\n" "" "FAILED"
 				exit 1
 			else
 				printf "%10s%s\n" "" "Warning : $PH_RUNAPP already persistent on a pseudo-terminal"
-				printf "%2s%s\n" "" "SUCCESS"
+				printf "%2s%s\n\n" "" "SUCCESS"
 			fi
 		fi
 	fi
@@ -178,13 +178,13 @@ else
         printf "%10s%s\n" "" "OK (Not found)"
 	if [[ "$PH_FLAG" == "" ]]
 	then
-		ph_set_option PieHelper -r PH_PIEH_PERSISTENT='yes' || (printf "%2s%s\n" "" "FAILED" ; return 1) || exit $?
+		ph_set_option PieHelper -r PH_PIEH_PERSISTENT='yes' || (printf "%2s%s\n\n" "" "FAILED" ; return 1) || exit $?
 		ph_run_app_action start "$PH_RUNAPP"
-		[[ $? -eq 0 ]] && printf "%2s%s\n" "" "SUCCESS" || (printf "%2s%s\n" "" "FAILED" ; return 1) || exit $?
+		[[ $? -eq 0 ]] && printf "%2s%s\n\n" "" "SUCCESS" || (printf "%2s%s\n\n" "" "FAILED" ; return 1) || exit $?
 	else
 		printf "%8s%s\n" "" "--> Starting $PH_RUNAPP"
 		printf "%10s%s\n" "" "OK"
-		printf "%2s%s\n" "" "SUCCESS"
+		printf "%2s%s\n\n" "" "SUCCESS"
 		ph_show_menu "$PH_PIEH_CMD_OPTS"
 	fi
 fi

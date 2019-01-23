@@ -6,6 +6,7 @@ Prompt for and store default value for the 'set audio channel' function:$PH_SUDO
 Prompt for and store default value for the 'set system timezone' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i tzone
 Prompt for and store default value for the 'set keyboard layout' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i keyb
 Prompt for and store default value for the 'set default boot environment' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i bootenv
+Prompt for and store default value for the 'wait for network on boot' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i netwait
 Prompt for and store default value for the 'set system locale' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i locale
 Prompt for and store default value for the 'configure overscan' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i overscan
 Prompt for and store default value for the 'set SSH state' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i ssh

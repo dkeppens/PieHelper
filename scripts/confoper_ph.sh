@@ -29,6 +29,7 @@ PH_AUDIO=""
 PH_BOOTENV=""
 PH_LOCALE=""
 PH_TZONE=""
+PH_NETWAIT=""
 PH_KEYB=""
 PH_SSH_STATE=""
 PH_VID_MEM=""
@@ -40,7 +41,7 @@ PH_RESULT="SUCCESS"
 PATH=$PH_CUR_DIR:$PATH
 OPTIND=1
 
-export PATH PH_USER PH_DEL_PIUSER PH_HOST PH_AUDIO PH_BOOTENV PH_LOCALE PH_TZONE PH_KEYB PH_SSH_STATE PH_VID_MEM PH_RIGHTSCAN PH_LEFTSCAN PH_BOTTOMSCAN PH_UPPERSCAN PH_RESULT PH_COUNT
+export PATH PH_USER PH_DEL_PIUSER PH_HOST PH_AUDIO PH_BOOTENV PH_LOCALE PH_TZONE PH_KEYB PH_SSH_STATE PH_VID_MEM PH_RIGHTSCAN PH_LEFTSCAN PH_BOTTOMSCAN PH_UPPERSCAN PH_RESULT PH_COUNT PH_NETWAIT
 
 function ph_getdef {
 
@@ -119,7 +120,7 @@ return 0
 
 function ph_check_user_validity {
 
-if id "$1" >/dev/null 2>&1
+if ! id "$1" >/dev/null 2>&1
 then
 	return 1
 fi
@@ -170,11 +171,11 @@ else
 	typeset PH_KEYB_PKG="keyboard-configuration systemd"
 fi
 
-while getopts p:hs:a:n:e:t:c:f:z:u:l:b:r:k:m:di PH_OPTION 2>/dev/null
+while getopts p:s:a:n:e:t:c:f:z:u:l:b:r:k:m:w:hdi PH_OPTION 2>/dev/null
 do
 	case $PH_OPTION in p)
 		[[ -n "$PH_ACTION" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$OPTARG" != @(all|ssh|sshkey|user|locale|keyb|tzone|host|filesys|audio|overscan|memsplit|update|bootenv|boot|savedef|dispdef|all-usedef) ]] && \
+		[[ "$OPTARG" != @(all|ssh|sshkey|user|locale|keyb|tzone|host|netwait|filesys|audio|overscan|memsplit|update|bootenv|boot|savedef|dispdef|all-usedef) ]] && \
 			(! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_ACTION="$OPTARG" ;;
 			   d)
@@ -211,6 +212,10 @@ do
 			   k)
 		[[ -n "$PH_KEYB" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_KEYB="$OPTARG" ;;
+			   w)
+		[[ -n "$PH_NETWAIT" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$OPTARG" != @(enabled|disabled|def) ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		PH_NETWAIT="$OPTARG" ;;
 			   c)
 		[[ -n "$PH_AUDIO" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
@@ -236,13 +241,13 @@ do
 		PH_USER="$OPTARG" ;;
 			   *)
 		>&2 printf "%s\n" "Usage : confoper_ph.sh -h |"
-		>&2 printf "%23s%s\n" "" "-p \"all\" [[[-a [alluser] '-d']|-a \"def\"] -s [\"allowed\"|\"disallowed\"|\"def\"] -n [hostname|\"def\"] -e [\"cli\"|\"gui\"|\"def\"] \\"
+		>&2 printf "%23s%s\n" "" "-p \"all\" [[[-a [alluser] '-d']|-a \"def\"] -s [\"allowed\"|\"disallowed\"|\"def\"] -n [hostname|\"def\"] -e [\"cli\"|\"gui\"|\"def\"] -w [\"enabled\"|\"disabled\"|\"def\"] \\"
 		>&2 printf "%23s%s\n" "" "           -c [\"hdmi\"|\"jack\"|\"def\"] -f [newloc|\"def\"] -z [tzone|\"def\"] '-l [lowerscan|\"def\"]' '-r [rightscan|\"def\"]' '-b [bottomscan|\"def\"]' \\"
 		>&2 printf "%23s%s\n" "" "           '-u [upperscan|\"def\"]' -k [keyb|\"def\"] -m [16|32|64|128|256|512|\"def\"]|-i] |"
 		>&2 printf "%23s%s\n" "" "-p \"all-usedef\" |"
-		>&2 printf "%23s%s\n" "" "-p \"savedef\" [[-a [alluser] '-d'] -s [\"allowed\"|\"disallowed\"] -n [hostname] -e [\"cli\"|\"gui\"] -c [\"hdmi\"|\"jack\"] \\"
+		>&2 printf "%23s%s\n" "" "-p \"savedef\" [[-a [alluser] '-d'] -s [\"allowed\"|\"disallowed\"] -n [hostname] -e [\"cli\"|\"gui\"] -c [\"hdmi\"|\"jack\"] -w [\"enabled\"|\"disabled\"] \\"
 		>&2 printf "%23s%s\n" "" "           -f [newloc] -z [tzone] '-l [lowerscan]' '-r [rightscan]' '-b [bottomscan]' '-u [upperscan]' -k [keyb] -m [16|32|64|128|256|512]| \\"
-		>&2 printf "%23s%s\n" "" "           -i '[\"user\"|\"del_piuser\"|\"ssh\"|\"host\"|\"bootenv\"|\"audio\"|\"locale\"|\"tzone\"|\"overscan\"|\"keyb\"|\"memsplit\"]'] |"
+		>&2 printf "%23s%s\n" "" "           -i '[\"user\"|\"del_piuser\"|\"ssh\"|\"host\"|\"bootenv\"|\"audio\"|\"locale\"|\"tzone\"|\"overscan\"|\"keyb\"|\"memsplit\"|\"netwait\"]'] |"
 		>&2 printf "%23s%s\n" "" "-p \"dispdef\" |"
                 >&2 printf "%23s%s\n" "" "-p \"ssh\" [-s [\"allowed\"|\"disallowed\"|\"def\"]|-i] |"
                 >&2 printf "%23s%s\n" "" "-p \"sshkey\" [-a [[sshuser]|\"def\"]|-i] |"
@@ -250,6 +255,7 @@ do
                 >&2 printf "%23s%s\n" "" "-p \"host\" [-n [hostname|\"def\"]-i] |"
                 >&2 printf "%23s%s\n" "" "-p \"bootenv\" [-e [\"cli\"|\"gui\"|\"def\"]|-i] |"
                 >&2 printf "%23s%s\n" "" "-p \"locale\" [-f [newloc|\"def\"]|-i] |"
+                >&2 printf "%23s%s\n" "" "-p \"netwait\" [-w [\"enabled\"|\"disabled\"|\"def\"]|-i] |"
                 >&2 printf "%23s%s\n" "" "-p \"tzone\" [-z [tzone|\"def\"]|-i] |"
                 >&2 printf "%23s%s\n" "" "-p \"memsplit\" [-m [16|32|64|128|256|512|\"def\"]|-i] |"
                 >&2 printf "%23s%s\n" "" "-p \"keyb\" [-k [keyb|\"def\"]|-i] |"
@@ -263,7 +269,7 @@ do
                 >&2 printf "%9s%s\n" "" "-p specifies the action to take"
                 >&2 printf "%12s%s\n" "" "\"all\" allows executing all other functions besides \"all\" in a logical order, using all further parameters provided where needed"
 		>&2 printf "%15s%s\n" "" "- The order in which all functions will be executed is the following : \"user\", \"sshkey\", \"locale\", \"keyb\", \"tzone\""
-		>&2 printf "%15s%s\n" "" "  \"host\", \"filesys\", \"audio\", \"overscan\", \"memsplit\", \"ssh\", \"update\", \"bootenv\" and \"boot\""
+		>&2 printf "%15s%s\n" "" "  \"host\", \"filesys\", \"audio\", \"overscan\", \"memsplit\", \"ssh\", \"update\", \"netwait\", \"bootenv\" and \"boot\""
 		>&2 printf "%15s%s\n" "" "- Special remarks for function \"all\" :"
 		>&2 printf "%18s%s\n" "" "- Any function that fails will generate an error but further function execution will not be interrupted"
 		>&2 printf "%18s%s\n" "" "- Any functions requiring a user account parameter will use [alluser] as the value for that parameter"
@@ -271,7 +277,7 @@ do
 		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
 		>&2 printf "%18s%s\n" "" "- The following info will be prompted for during interactive mode :"
 		>&2 printf "%21s%s\n" "" "- The value to use for \"create new user\", \"delete standard user 'pi'\", \"create ssh key for user\", \"system locale\", \"keyboard layout\", \"system timezone\""
-		>&2 printf "%21s%s\n" "" "  \"system hostname\", \"audio channel\", \"top, bottom, left and right overscan\", \"memory reserved for the GPU\", \"SSH state\", and \"default boot environment\""
+		>&2 printf "%21s%s\n" "" "  \"system hostname\", \"audio channel\", \"top, bottom, left and right overscan\", \"memory reserved for the GPU\", \"SSH state\", \"wait for network on boot\" and \"default boot environment\""
                 >&2 printf "%12s%s\n" "" "\"all-usedef\" functions like \"all\" but will use the default value stored for each required parameter"
                 >&2 printf "%15s%s\n" "" "- If no stored default can be found for one or more of the required parameters, the related function will fail but processing of the remaining function(s) will not be interrupted"
                 >&2 printf "%12s%s\n" "" "\"savedef\" allows storing the value specified for each additional parameter given as the default value for that parameter"
@@ -289,7 +295,7 @@ do
 		>&2 printf "%18s%s\n" "" "- If one of a list of allowed parameters is given, the related info will be prompted for"
 		>&2 printf "%18s%s\n" "" "- The following info will be prompted for during interactive mode if none of a list of allowed parameters is given :"
 		>&2 printf "%21s%s\n" "" "- The default value to store for \"create new user\", \"delete standard user 'pi'\", \"create ssh key for user\", \"system locale\", \"keyboard layout\", \"system timezone\""
-		>&2 printf "%21s%s\n" "" "  \"system hostname\", \"audio channel\", \"top, bottom, left and right overscan\", \"memory reserved for the GPU\", \"SSH state\", and \"default boot environment\""
+		>&2 printf "%21s%s\n" "" "  \"system hostname\", \"audio channel\", \"top, bottom, left and right overscan\", \"memory reserved for the GPU\", \"SSH state\", \"wait for network on boot\" and \"default boot environment\""
                 >&2 printf "%12s%s\n" "" "\"dispdef\" allows displaying all currently stored default values"
                 >&2 printf "%12s%s\n" "" "\"ssh\" allows choosing whether to allow or disallow SSH logins to this system for all users besides \"root\""
 		>&2 printf "%15s%s\n" "" "-s allows selecting either \"allowed\", \"disallowed\" or \"def\""
@@ -333,6 +339,11 @@ do
 		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
 		>&2 printf "%18s%s\n" "" "- The following info will be prompted for during interactive mode :"
 		>&2 printf "%21s%s\n" "" "- The value to use for operation \"create new user\" and operation \"delete standard user 'pi'\""
+                >&2 printf "%12s%s\n" "" "\"netwait\" allows specifying whether the system should wait for networking to become available before continuing the application part of the boot process"
+		>&2 printf "%15s%s\n" "" "-w allows selecting either \"enabled\" or \"disabled\""
+		>&2 printf "%18s%s\n" "" "- The keyword \"def\" can be used to specify using the value stored as the default for this parameter"
+		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
+		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
                 >&2 printf "%12s%s\n" "" "\"host\" allows changing the hostname for this machine to [hostname]"
 		>&2 printf "%15s%s\n" "" "-n allows setting a value for [hostname]"
 		>&2 printf "%18s%s\n" "" "- The keyword \"def\" can be used to specify using the value stored as the default for this parameter"
@@ -412,11 +423,12 @@ OPTARG="$PH_OLDOPTARG"
 
 [[ -z "$PH_ACTION" ]] && (! confoper_ph.sh -h) && exit 1
 (([[ "$PH_ACTION" == "savedef" && $# -gt 4 ]]) && ([[ $PH_INTERACTIVE -eq 1 ]])) && (! confoper_ph.sh -h) && exit 1
-(([[ "$PH_ACTION" == "savedef" && $PH_INTERACTIVE -eq 1 ]]) && ([[ -n "$4" && "$4" != @(ssh|bootenv|user|del_piuser|host|locale|tzone|overscan|audio|keyb|memsplit) ]])) && (! confoper_ph.sh -h) && exit 1
+(([[ "$PH_ACTION" == "savedef" && $PH_INTERACTIVE -eq 1 ]]) && ([[ -n "$4" && "$4" != @(ssh|bootenv|user|del_piuser|host|locale|tzone|overscan|audio|keyb|memsplit|netwait) ]])) && (! confoper_ph.sh -h) && exit 1
 (([[ "$PH_ACTION" == "user" && "$PH_USER" == "def" ]]) && ([[ "$PH_DEL_PIUSER" == "no" ]])) && (! confoper_ph.sh -h) && exit 1
 [[ "$PH_ACTION" == "all-usedef" && $# -gt 2 ]] && (! confoper_ph.sh -h) && exit 1
 [[ "$PH_ACTION" != @(all|savedef|user) && "$PH_DEL_PIUSER" == "no" ]] && (! confoper_ph.sh -h) && exit 1
 (([[ "$PH_ACTION" == @(all|user|sshkey) && -z "$PH_USER" ]]) && ([[ $PH_INTERACTIVE -eq 0 ]])) && (! confoper_ph.sh -h) && exit 1
+(([[ "$PH_ACTION" == @(all|netwait) && -z "$PH_NETWAIT" ]]) && ([[ $PH_INTERACTIVE -eq 0 ]])) && (! confoper_ph.sh -h) && exit 1
 (([[ "$PH_ACTION" == @(all|host) && -z "$PH_HOST" ]]) && ([[ $PH_INTERACTIVE -eq 0 ]])) && (! confoper_ph.sh -h) && exit 1
 (([[ "$PH_ACTION" == @(all|memsplit) && -z "$PH_VID_MEM" ]]) && ([[ $PH_INTERACTIVE -eq 0 ]])) && (! confoper_ph.sh -h) && exit 1
 (([[ "$PH_ACTION" == @(all|ssh) && -z "$PH_SSH_STATE" ]]) && ([[ $PH_INTERACTIVE -eq 0 ]])) && (! confoper_ph.sh -h) && exit 1
@@ -427,6 +439,7 @@ OPTARG="$PH_OLDOPTARG"
 [[ -n "$PH_BOOTENV" && "$PH_ACTION" != @(all|savedef|bootenv) ]] && (! confoper_ph.sh -h) && exit 1
 [[ -n "$PH_USER" && "$PH_ACTION" != @(all|savedef|user|sshkey) ]] && (! confoper_ph.sh -h) && exit 1
 [[ -n "$PH_HOST" && "$PH_ACTION" != @(all|savedef|host) ]] && (! confoper_ph.sh -h) && exit 1
+[[ -n "$PH_NETWAIT" && "$PH_ACTION" != @(all|savedef|netwait) ]] && (! confoper_ph.sh -h) && exit 1
 [[ -n "$PH_LOCALE" && "$PH_ACTION" != @(all|savedef|locale) ]] && (! confoper_ph.sh -h) && exit 1
 [[ -n "$PH_KEYB" && "$PH_ACTION" != @(all|savedef|keyb) ]] && (! confoper_ph.sh -h) && exit 1
 [[ -n "$PH_AUDIO" && "$PH_ACTION" != @(all|savedef|audio) ]] && (! confoper_ph.sh -h) && exit 1
@@ -436,7 +449,7 @@ OPTARG="$PH_OLDOPTARG"
 (([[ -n "$PH_BOTTOMSCAN" || -n "$PH_UPPERSCAN" ]]) && ([[ "$PH_ACTION" != @(all|savedef|overscan) ]])) && (! confoper_ph.sh -h) && exit 1
 [[ $PH_INTERACTIVE -eq 1 && "$PH_ACTION" == @(filesys|update|boot|dispdef|all-usedef) ]] && (! confoper_ph.sh -h) && exit 1
 (([[ $PH_INTERACTIVE -eq 1 ]]) && ([[ -n "$PH_USER" || -n "$PH_TZONE" || -n "$PH_SSH_STATE" || -n "$PH_AUDIO" || -n "$PH_HOST" || -n "$PH_BOOTENV" || -n "$PH_LOCALE" || -n "$PH_KEYB" ]])) && (! confoper_ph.sh -h) && exit 1
-(([[ $PH_INTERACTIVE -eq 1 ]]) && ([[ -n "$PH_VID_MEM" || -n "$PH_LEFTSCAN" || -n "$PH_BOTTOMSCAN" || -n "$PH_UPPERSCAN" || "$PH_DEL_PIUSER" == "no" ]])) && (! confoper_ph.sh -h) && exit 1
+(([[ $PH_INTERACTIVE -eq 1 ]]) && ([[ -n "$PH_VID_MEM" || -n "$PH_LEFTSCAN" || -n "$PH_BOTTOMSCAN" || -n "$PH_UPPERSCAN" || "$PH_DEL_PIUSER" == "no" || -n "$PH_NETWAIT" ]])) && (! confoper_ph.sh -h) && exit 1
 
 if [[ "$PH_ACTION" != @(savedef|dispdef) && `cat /proc/$PPID/comm` != "confoper_ph.sh" ]]
 then
@@ -526,7 +539,7 @@ if [[ "$PH_ACTION" == "sshkey" && "$PH_USER" != "def" ]]
 then
 	if [[ $PH_INTERACTIVE -eq 0 ]]
 	then
-		if ph_check_user_validity "$PH_USER"
+		if ! ph_check_user_validity "$PH_USER"
 		then
 			printf "%s\n" "- Executing function $PH_ACTION for user $PH_USER"
 			printf "%2s%s\n" "" "FAILED : User does not exist"
@@ -575,6 +588,8 @@ case $PH_ACTION in all)
 		ph_set_result $?
 		"$PH_CUR_DIR/confoper_ph.sh" -p bootenv -i
 		ph_set_result $?
+		"$PH_CUR_DIR/confoper_ph.sh" -p netwait -i
+		ph_set_result $?
 	else
 		if [[ "$PH_DEL_PIUSER" == "yes" ]]
 		then
@@ -607,6 +622,8 @@ case $PH_ACTION in all)
 		"$PH_CUR_DIR/confoper_ph.sh" -p update
 		ph_set_result $?
 		"$PH_CUR_DIR/confoper_ph.sh" -p bootenv -e "$PH_BOOTENV"
+		ph_set_result $?
+		"$PH_CUR_DIR/confoper_ph.sh" -p netwait -w "$PH_NETWAIT"
 		ph_set_result $?
 	fi
 	printf "\n"
@@ -642,6 +659,8 @@ case $PH_ACTION in all)
 	ph_set_result $?
 	"$PH_CUR_DIR/confoper_ph.sh" -p bootenv -e "def"
 	ph_set_result $?
+	"$PH_CUR_DIR/confoper_ph.sh" -p netwait -w "def"
+	ph_set_result $?
 	printf "\n"
 	printf "%2s%s\n" "" "Total : $PH_RESULT"
 	printf "\n"
@@ -650,7 +669,7 @@ case $PH_ACTION in all)
 	init 6 ;;
 		dispdef)
 	printf "%s\n" "- Executing function $PH_ACTION"
-	for PH_i in PH_USER PH_DEL_PIUSER PH_LOCALE PH_KEYB PH_TZONE PH_HOST PH_AUDIO PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN PH_VID_MEM PH_SSH_STATE PH_BOOTENV
+	for PH_i in PH_USER PH_DEL_PIUSER PH_LOCALE PH_KEYB PH_TZONE PH_HOST PH_AUDIO PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN PH_VID_MEM PH_SSH_STATE PH_NETWAIT PH_BOOTENV
 	do
 		case $PH_i in PH_USER)
 				printf "%8s%s\n" "" "--> Displaying stored default value for 'create new user'/'create SSH key for user' operation" ;;
@@ -680,6 +699,8 @@ case $PH_ACTION in all)
 				printf "%8s%s\n" "" "--> Displaying stored default value for SSH state" ;;
 			       PH_BOOTENV)
 				printf "%8s%s\n" "" "--> Displaying stored default value for default boot environment" ;;
+			       PH_NETWAIT)
+				printf "%8s%s\n" "" "--> Displaying stored default value for 'wait for network on boot'" ;;
 		esac
 		if [[ -z `nawk -F\' -v opt=^"$PH_i="$ '$1 ~ opt { print $2 }' "$PH_CUR_DIR/../files/OS.defaults"` ]]
 		then
@@ -715,7 +736,7 @@ case $PH_ACTION in all)
 		then
 			if [[ -z "$4" ]]
 			then
-				PH_FUNCTIONS="PH_SSH_STATE PH_USER PH_HOST PH_VID_MEM PH_AUDIO PH_TZONE PH_KEYB PH_BOOTENV PH_DEL_PIUSER PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN PH_LOCALE"
+				PH_FUNCTIONS="PH_SSH_STATE PH_USER PH_HOST PH_VID_MEM PH_AUDIO PH_TZONE PH_KEYB PH_BOOTENV PH_DEL_PIUSER PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN PH_NETWAIT PH_LOCALE"
 			else
 				case $4 in user)
 					PH_FUNCTIONS="PH_USER" ;;
@@ -739,6 +760,8 @@ case $PH_ACTION in all)
 					PH_FUNCTIONS="PH_SSH_STATE" ;;
 					bootenv)
 					PH_FUNCTIONS="PH_BOOTENV" ;;
+					netwait)
+					PH_FUNCTIONS="PH_NETWAIT" ;;
 				esac
 			fi
 			for PH_i in $PH_FUNCTIONS
@@ -776,6 +799,8 @@ case $PH_ACTION in all)
 						printf "%8s%s" "" "--> Please enter the value for SSH state (allowed/disallowed) : " ;;
 						   PH_BOOTENV)
 						printf "%8s%s" "" "--> Please enter the value for default boot environment (cli/gui) : " ;;
+						   PH_NETWAIT)
+						printf "%8s%s" "" "--> Please enter the value for 'wait for network on boot' (enabled/disabled) : " ;;
 					esac
 					read PH_ANSWER 2>/dev/null
 					PH_COUNT=$((PH_COUNT+1))
@@ -821,16 +846,18 @@ case $PH_ACTION in all)
 						[[ "$PH_ANSWER" == @(allowed|disallowed) ]] && PH_SSH_STATE="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && break ;;
 						   PH_BOOTENV)
 						[[ "$PH_ANSWER" == @(cli|gui) ]] && PH_BOOTENV="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && break ;;
+						   PH_NETWAIT)
+						[[ "$PH_ANSWER" == @(enabled|disabled) ]] && PH_NETWAIT="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && break ;;
 					esac
 					PH_ANSWER=""
 				done
 			done
 		fi
-		for PH_i in PH_SSH_STATE PH_USER PH_HOST PH_VID_MEM PH_AUDIO PH_TZONE PH_KEYB PH_BOOTENV PH_DEL_PIUSER PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN PH_LOCALE
+		for PH_i in PH_SSH_STATE PH_USER PH_HOST PH_VID_MEM PH_AUDIO PH_TZONE PH_KEYB PH_BOOTENV PH_DEL_PIUSER PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN PH_NETWAIT PH_LOCALE
 		do
 			[[ `eval echo -n "\\$\$PH_i"` == "def" ]] && (printf "%2s%s\n" "" "FAILED : Unsupported value \"def\" detected for parameter $PH_i" ; exit 0) && exit 1
 		done
-		for PH_i in PH_SSH_STATE PH_USER PH_HOST PH_VID_MEM PH_AUDIO PH_TZONE PH_KEYB PH_BOOTENV PH_DEL_PIUSER PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN PH_LOCALE
+		for PH_i in PH_SSH_STATE PH_USER PH_HOST PH_VID_MEM PH_AUDIO PH_TZONE PH_KEYB PH_BOOTENV PH_DEL_PIUSER PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN PH_NETWAIT PH_LOCALE
 		do
 			if [[ -n `eval echo -n "\\$\$PH_i"` ]]
 			then
@@ -1028,7 +1055,7 @@ case $PH_ACTION in all)
 				[[ "$PH_ANSWER" == "def" ]] && PH_COUNT=$((PH_COUNT+1)) && PH_ANSWER="" && PH_MESSAGE="Unsupported value entered" && continue
 				if ph_screen_input "$PH_ANSWER"
 				then
-					if ! ph_check_user_validity "$PH_ANSWER"
+					if ph_check_user_validity "$PH_ANSWER"
 					then
 						PH_USER="$PH_ANSWER"
 						printf "%10s%s\n" "" "OK"
@@ -1048,7 +1075,7 @@ case $PH_ACTION in all)
 		if [[ "$PH_USER" == "def" ]]
 		then
 			ph_getdef PH_USER || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
-			if ph_check_user_validity
+			if ! ph_check_user_validity "$PH_USER"
 			then
 				printf "%10s%s\n" "" "ERROR : User does not exist"
 				printf "%2s%s\n" "" "FAILED"
@@ -1671,6 +1698,67 @@ case $PH_ACTION in all)
 			 update)
 		ph_update_system | sed 's/Starting system update/Executing function update/'
 		exit $? ;;
+			netwait)
+		if [[ $PH_INTERACTIVE -eq 1 ]]
+		then
+			while [[ -z "$PH_ANSWER" ]]
+			do
+				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
+				printf "%8s%s" "" "--> Please enter the value for 'wait for network on boot' (enabled/disabled) : "
+				PH_MESSAGE="Invalid response"
+				read PH_ANSWER 2>/dev/null
+				[[ "$PH_ANSWER" == "def" ]] && PH_COUNT=$((PH_COUNT+1)) && PH_ANSWER="" && PH_MESSAGE="Unsupported value entered" && continue
+				if [[ "$PH_ANSWER" == @(enabled|disabled) ]]
+				then
+					PH_NETWAIT="$PH_ANSWER"
+					printf "%10s%s\n" "" "OK"
+					break
+				fi
+				PH_COUNT=$((PH_COUNT+1))
+				PH_ANSWER=""
+			done
+		fi
+		if [[ "$PH_NETWAIT" == "def" ]]
+		then
+			ph_getdef PH_NETWAIT || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+		fi
+		printf "%8s%s\n" "" "--> Checking current value for 'wait for network on boot'"
+		[[ -f /etc/systemd/system/dhcpcd.service.d/wait.conf ]] && PH_VALUE="enabled" || PH_VALUE="disabled"
+		if [[ "$PH_NETWAIT" != "$PH_VALUE" ]]
+		then
+			printf "%10s%s\n" "" "OK ($PH_VALUE)"
+			if [[ "$PH_NETWAIT" == "enabled" ]]
+			then
+				printf "%8s%s\n" "" "--> Creating dhcpd configuration file"
+				mkdir -p /etc/systemd/system/dhcpcd.service.d/ 2>/dev/null
+				cat >/etc/systemd/system/dhcpcd.service.d/wait.conf << EOF 2>/dev/null
+[Service]
+ExecStart=
+ExecStart=/usr/lib/dhcpcd5/dhcpcd -q -w
+EOF
+				if [[ $? -ne 0 ]]
+				then
+					printf "%10s%s\n" "" "ERROR : Could not create configuration file"
+					PH_RESULT="FAILED" 
+				else
+					printf "%10s%s\n" "" "OK"
+				fi
+			else
+				printf "%8s%s\n" "" "--> Removing dhcpd configuration file"
+				rm -f /etc/systemd/system/dhcpcd.service.d/wait.conf 2>/dev/null
+				if [[ $? -ne 0 ]]
+				then
+					printf "%10s%s\n" "" "ERROR : Could not remove configuration file"
+					PH_RESULT="FAILED" 
+				else
+					printf "%10s%s\n" "" "OK"
+				fi
+			fi
+		else
+			printf "%10s%s\n" "" "OK (Nothing to do)"
+		fi
+		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			bootenv)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
