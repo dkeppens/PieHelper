@@ -12,7 +12,7 @@
   to install and integrate or to remove any additional out-of-scope applications (applications not integrated by default)
   List of available CLI tools :
 
-	* confoper_ph.sh : used to - Peform basic system and OS-related configuration tasks. Functions as a less extensive alternative to the raspi-config tool
+	* confoper_ph.sh : used to - Peform basic system and OS-related configuration tasks. Functions as an alternative to the raspi-config tool
 				   - For more information about all options available for confoper_ph.sh, run 'confoper_ph.sh -h'
 	* confpieh_ph.sh : used to - Configure PieHelper
 				   - Unconfigure PieHelper

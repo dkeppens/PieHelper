@@ -13,7 +13,7 @@ mostly intended for novice linux users that :
 * offers some additional features :
 	- can integrate additional out-of-scope (not integrated by default) applications of the user's choice
 	- running each application under a separate account
-	- offers a tool for basic OS and system setup tasks as an alternative to raspi-config
+	- CLI and menu-based basic OS configuration options as an alternative to raspi-config
 	- optionally mounting/unmounting CIFS shares at application startup/halt (for configuration backups/restores, providing roms to Emulationstation, ...)
 	- optionally running a PRE/POST command before/after application startup/halt
 	- configuring bluetooth controllers (official PS3/PS4 controllers supported)

@@ -130,7 +130,7 @@ EOF
 							echo "$PH_OLD_VERSION" >$PH_CONF_DIR/VERSION ; rm $PH_FILES_DIR/first_run ; ph_restore_options ; printf "%2s%s\n\n" "" "FAILED" ; return 1) || \
 							exit 1
 	printf "%8s%s\n" "" "--> Removing any old build archives"
-	rm "$PH_BUILD_DIR/PieHelper-*.tar" 2>/dev/null
+	rm $PH_BUILD_DIR/PieHelper-*.tar 2>/dev/null
 	printf "%10s%s\n" "" "OK"
 	if [[ "$PH_GIT_UPDATE" == "yes" ]]
 	then

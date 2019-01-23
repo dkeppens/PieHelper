@@ -1,5 +1,3 @@
-Update your system:ph_update_system | more
-Reboot your system:$PH_SUDO init 6
 Quit to shell at CLI tools location (Stop PieHelper):break
 Go to Apps menu:ph_show_menu Apps
 Go to Controllers menu:ph_show_menu Controllers

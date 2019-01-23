@@ -1,4 +1,4 @@
-# Kodi pre command script to run before Kodi shutdown
+# Kodi PRE-command script to run before Kodi startup
 # by Davy Keppens on 04/10/2018
 #
 
@@ -12,19 +12,19 @@ then
 	cd "$PH_KODI_HOME" >/dev/null 2>&1
 	if [[ -f `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar ]]
 	then
-		$PH_SUDO mv `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" >/dev/null 2>&1
-		[[ -d "$PH_KODI_HOME/.kodi" ]] && $PH_SUDO rm -r "$PH_KODI_HOME/.kodi" 2>/dev/null
-		$PH_SUDO tar -xf "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" 2>/dev/null
+		$PH_SUDO -E mv `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" >/dev/null 2>&1
+		[[ -d "$PH_KODI_HOME/.kodi" ]] && $PH_SUDO -E rm -r "$PH_KODI_HOME/.kodi" 2>/dev/null
+		$PH_SUDO -E tar -xf "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" 2>/dev/null
 		if [[ $? -ne 0 ]]
 		then
 			printf "%10s%s\n" "" "Warning : Could not succesfully restore last preferences backup -> Removing"
-			$PH_SUDO rm -r "$PH_KODI_HOME/.kodi" 2>/dev/null
+			$PH_SUDO -E rm -r "$PH_KODI_HOME/.kodi" 2>/dev/null
 			PH_i="NOK"
 		else
-			[[ `ls -ld "$PH_KODI_HOME/.kodi" | nawk '{ print $3 }'` != "$PH_KODI_USER" ]] && $PH_SUDO chown -R "$PH_KODI_USER":`$PH_SUDO id -gn $PH_KODI_USER` ./.kodi >/dev/null 2>&1
+			[[ `ls -ld "$PH_KODI_HOME/.kodi" | nawk '{ print $3 }'` != "$PH_KODI_USER" ]] && $PH_SUDO -E chown -R "$PH_KODI_USER":`$PH_SUDO -E id -gn $PH_KODI_USER` ./.kodi >/dev/null 2>&1
 			printf "%10s%s\n" "" "OK"
 		fi
-		$PH_SUDO mv "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar >/dev/null 2>&1
+		$PH_SUDO -E mv "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar >/dev/null 2>&1
 	else
 		printf "%10s%s\n" "" "Warning : Not found"
 	fi

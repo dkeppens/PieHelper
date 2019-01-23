@@ -38,7 +38,6 @@ do
 		[[ -n "$PH_ACTION" ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_ACTION="$OPTARG" ;;
 			   m)
-                ! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		[[ "$PH_ACTION" != @(debug|list|) ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		[[ -n "$PH_MODULES" ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_MODULES="$OPTARG" ;;
@@ -126,7 +125,6 @@ case $PH_ACTION in repair)
 				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
 				printf "%8s%s" "" "--> Please enter a comma-separated list of relevant PieHelper module names (The keyword \"all\" selects all modules) : "
 				read PH_MODULES >/dev/null 2>&1
-				ph_screen_input "$PH_MODULES" || exit $?
 				((PH_COUNT++))
 			done
 			printf "%10s%s\n" "" "OK"

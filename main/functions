@@ -205,9 +205,9 @@ ph_check_conf_files cont || (printf "%8s%s\n" "" "--> Checking for controller CL
 			printf "%2s%s\n" "" "FAILED" ; return 1) || return $?
 ph_cleanup_controllers reset
 [[ "$PH_CTRL_TYPE" == "XBOX360" ]] && PH_MAP="no"
-PH_EVDEVS=`ls -l /dev/input/event+([[:digit:]]) | wc -l`
+PH_EVDEVS=`ls -l /dev/input/event+([[:digit:]]) 2>/dev/null | wc -l`
 [[ $PH_EVDEVS -eq 0 ]] && printf "%8s%s\n" "" "--> Running type verification of input devices" && printf "%10s%s\n" "" "ERROR : (None found)" && return 1 
-for PH_i in `ls -l /dev/input/event+([[:digit:]]) | sort -n | nawk 'BEGIN { ORS = " " } { print $NF }'`
+for PH_i in `ls -l /dev/input/event+([[:digit:]]) 2>/dev/null | sort -n | nawk 'BEGIN { ORS = " " } { print $NF }'`
 do
 	printf "%8s%s\n" "" "--> Running type verification of input device ${PH_i##*event}"
 	PH_PARENT_DEV_PATH=`udevadm info $PH_i | nawk -F'=' '$0 ~ /.: DEVPATH=/ { print $2 }'`
@@ -580,7 +580,7 @@ function ph_show_menu {
 
 typeset PH_MENU="$1"
 
-[[ "$1" == @(Advanced|Main|Apps|Controllers) ]] && typeset PH_TYPE="menu" || typeset PH_TYPE="submenu"
+[[ "$1" == @(Advanced|Main|Apps|Controllers|OS) ]] && typeset PH_TYPE="menu" || typeset PH_TYPE="submenu"
 [[ "$PH_MENU" == "Settings" ]] && typeset PH_HEADER="Welcome to PieHelper $PH_VERSION Controller $PH_MENU $PH_TYPE" || \
 	typeset PH_HEADER="Welcome to PieHelper $PH_VERSION $PH_MENU $PH_TYPE"
 typeset PH_j=""
@@ -1616,7 +1616,7 @@ printf "%8s%s\n" "" "--> Installing ACLs for $PH_APP_USER"
 $PH_SUDO setfacl -R -m u:"$PH_APP_USER":rwx $PH_SCRIPTS_DIR/../../PieHelper >/dev/null 2>&1
 printf "%10s%s\n" "" "OK"
 printf "%8s%s\n" "" "--> Installing sudo rules for $PH_APP_USER"
-echo "$PH_APP_USER ALL=(ALL) NOPASSWD: ALL" >/tmp/020_pieh-"$PH_APP_USER"
+echo "$PH_APP_USER ALL=(ALL) NOPASSWD:SETENV: ALL" >/tmp/020_pieh-"$PH_APP_USER"
 $PH_SUDO chown root:root /tmp/020_pieh-"$PH_APP_USER"
 $PH_SUDO chmod 440 /tmp/020_pieh-"$PH_APP_USER"
 $PH_SUDO mv /tmp/020_pieh-"$PH_APP_USER" /etc/sudoers.d
@@ -2429,6 +2429,13 @@ case $1 in start)
 			then
 				unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
 				unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT
+				if [[ `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY && "$PH_RUNAPP" != "PieHelper" ]]
+				then
+					pgrep -t tty$PH_PIEH_TTY -f "startpieh.sh" >/dev/null && $PH_SUDO `which chvt` $PH_PIEH_TTY || \
+										$PH_SUDO `which chvt` 1
+				else
+					[[ "$PH_RUNAPP" == "PieHelper" && `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY ]] && $PH_SUDO `which chvt` 1
+				fi
 				return 1
 			fi
 		else
@@ -2439,7 +2446,7 @@ case $1 in start)
 	then
 		printf "%8s%s\n" "" "--> Starting run of PRE-command for $PH_RUNAPP"
 		printf "%10s%s\n" "" "OK"
-		file -b `eval echo -n "$PH_RUNAPPU_PRE_CMD" | nawk '{ print $1 }'` 2>/dev/null | nawk 'BEGIN { rc = 0 } $0 ~ /ASCII text executable/ { exit 1 } \
+		file -b `eval echo -n "$PH_RUNAPPU_PRE_CMD" | nawk '{ print $1 ; exit 0 }'` 2>/dev/null | nawk 'BEGIN { rc = 0 } $0 ~ /ASCII text executable/ { exit 1 } \
 									$0 ~ /ASCII text/ { exit 2 } \
 									$0 ~ /32-bit.*executable/ { exit 3 } \
 									$0 ~ /64-bit.*executable/ { exit 4 } \
@@ -2464,6 +2471,7 @@ case $1 in start)
 	printf "%8s%s\n" "" "--> Checking for controller usage"
 	if [[ "$PH_RUNAPPU_USE_CTRL" == "no" ]]
 	then
+		PH_RUNAPP_CMD_OPTS="$PH_RUNAPPU_CMD_OPTS"
 		printf "%10s%s\n" "" "OK (No)"
 	else
 		printf "%10s%s\n" "" "OK (Yes)"
@@ -2475,6 +2483,13 @@ case $1 in start)
 			fi
 			unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
 			unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT
+			if [[ `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY && "$PH_RUNAPP" != "PieHelper" ]]
+			then
+				pgrep -t tty$PH_PIEH_TTY -f "startpieh.sh" >/dev/null && $PH_SUDO `which chvt` $PH_PIEH_TTY || \
+									$PH_SUDO `which chvt` 1
+			else
+				[[ "$PH_RUNAPP" == "PieHelper" && `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY ]] && $PH_SUDO `which chvt` 1
+			fi
 			return 1
 		fi
 		PH_CTRL_COUNT=`cat "$PH_CONF_DIR"/controller_cli_ids | wc -l`
@@ -2523,15 +2538,28 @@ case $1 in start)
 	fi
 	if [[ `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY && "$PH_RUNAPP_CMD" != "/bin/bash" ]]
 	then
-		eval "$PH_RUNAPP_CMD" "$PH_RUNAPP_CMD_OPTS"
+		eval "$PH_RUNAPP_CMD $PH_RUNAPP_CMD_OPTS"
 	else
+		unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
+		unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT
 		"$PH_SUDO" `which chvt` $PH_RUNAPP_TTY
 	fi
 	if [[ $? -ne 0 ]]
 	then
 		printf "%10s%s\n" "" "ERROR : Could not start $PH_RUNAPP"
+		if [[ "`eval echo \"\\$PH_\$PH_RUNAPPU\"_CIFS_SHARE`" == "yes" ]]
+		then
+			ph_umount_cifs_share "$PH_RUNAPP"
+		fi
 		unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
 		unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT
+		if [[ `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY && "$PH_RUNAPP" != "PieHelper" ]]
+		then
+			pgrep -t tty$PH_PIEH_TTY -f "startpieh.sh" >/dev/null && $PH_SUDO `which chvt` $PH_PIEH_TTY || \
+								$PH_SUDO `which chvt` 1
+		else
+			[[ "$PH_RUNAPP" == "PieHelper" && `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY ]] && $PH_SUDO `which chvt` 1
+		fi
 		return 1
 	fi
 	if (([[ "$PH_RUNAPP" == "PieHelper" ]]) && ([[ `tty` == /dev/tty* ]]))
@@ -2578,7 +2606,7 @@ case $1 in start)
 		printf "%8s%s\n" "" "--> Starting run of $PH_RUNAPP POST-command"
 		printf "%10s%s\n" "" "OK"
 		PH_RUNAPPU_POST_CMD="`eval echo -n \"$PH_RUNAPPU_POST_CMD\"`"
-		file -b `echo -n "$PH_RUNAPPU_POST_CMD" | nawk '{ print $1 }'` 2>/dev/null | nawk 'BEGIN { rc = 0 } $0 ~ /ASCII text executable/ { exit 1 } \
+		file -b `echo -n "$PH_RUNAPPU_POST_CMD" | nawk '{ print $1 ; exit 0 }'` 2>/dev/null | nawk 'BEGIN { rc = 0 } $0 ~ /ASCII text executable/ { exit 1 } \
 									$0 ~ /ASCII text/ { exit 2 } \
 									$0 ~ /32-bit.*executable/ { exit 3 } \
 									$0 ~ /64-bit.*executable/ { exit 4 } \
@@ -2621,7 +2649,7 @@ case $1 in start)
 		printf "\n"
 		sleep 5
 		ph_cleanup_controllers full || (printf "%2s%s\n" "" "PARTIALLY FAILED" ; return 3) || PH_RET_CODE=3
-	fi
+	fi ;;
 esac
 unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
 unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT

@@ -1,4 +1,4 @@
-# Kodi post command script to run after Kodi shutdown
+# Kodi POST-command script to run after Kodi shutdown
 # by Davy Keppens on 04/10/2018
 #
 
@@ -10,17 +10,17 @@ printf "%8s%s\n" "" "--> Backing up latest Kodi preferences directory for run ac
 if [[ "$PH_KODI_CIFS_SHARE" == "yes" ]]
 then
 	cd "$PH_KODI_HOME" >/dev/null 2>&1
-	[[ -f `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar && -d "$PH_KODI_HOME/.kodi" ]] && $PH_SUDO rm `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar
-	$PH_SUDO tar -X "$PH_FILES_DIR/exclude.Kodi" -cf "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" ./.kodi 2>/dev/null
+	[[ -f `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar && -d "$PH_KODI_HOME/.kodi" ]] && $PH_SUDO -E rm `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar
+	$PH_SUDO -E tar -X "$PH_FILES_DIR/exclude.Kodi" -cf "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" ./.kodi 2>/dev/null
 	if [[ $? -eq 0 ]]
 	then
-		$PH_SUDO mv "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar >/dev/null 2>&1
+		$PH_SUDO -E mv "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar >/dev/null 2>&1
 		printf "%10s%s\n" "" "OK"
 	else
 		PH_i="NOK"
 		printf "%10s%s\n" "" "Warning : Could not create valid up-to-date preferences backup -> Removing"
 		printf "%8s%s\n" "" "--> Removing invalid backup"
-		$PH_SUDO rm "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" 2>/dev/null
+		$PH_SUDO -E rm "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" 2>/dev/null
 		printf "%10s%s\n" "" "OK"
 	fi
 	cd - >/dev/null 2>&1

@@ -1,4 +1,4 @@
-* write confoper_ph.sh filesystem resize + add interactive -i option for all + incorporate more stuff in OS menu
+* write confoper_ph.sh filesystem resize and wait-for-network-boot
 * test Moonlight
 * change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
 * retest different run accounts
