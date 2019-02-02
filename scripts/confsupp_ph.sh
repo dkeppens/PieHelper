@@ -427,14 +427,14 @@ EOF
 			ph_remove_pkg "$PH_APP_PKG" && printf "%10s%s\n" "" "OK" || printf "%10s%s\n" "" "ERROR : Could not remove package"
 		fi
 		printf "%8s%s\n" "" "--> Removing options from options.defaults"
-		for PH_j in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | paste -d" " -s`
+		for PH_j in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | nawk -F'=' '{ print $1 }' | paste -d" " -s`
 		do
-			sed "/^$PH_j/d" $PH_FILES_DIR/options.defaults >/tmp/options_defaults_tmp
+			sed "/^$PH_j=/d" $PH_FILES_DIR/options.defaults >/tmp/options_defaults_tmp
 			[[ $? -eq 0 ]] && mv /tmp/options_defaults_tmp $PH_FILES_DIR/options.defaults
 		done
 		printf "%10s%s\n" "" "OK"
 		printf "%8s%s\n" "" "--> Removing options from options.allowed"
-		for PH_j in PH_`echo $PH_APPU`_CIFS_SHARE PH_`echo $PH_APPU`_CIFS_SRV PH_`echo $PH_APPU`_PERSISTENT PH_`echo $PH_APPU`_CIFS_DIR PH_`echo $PH_APPU`_CIFS_SUBDIR PH_`echo $PH_APPU`_CIFS_MPT PH_`echo $PH_APPU`_USE_CTRL PH_`echo $PH_APPU`_NUM_CTRL
+		for PH_j in PH_`echo $PH_APPU`_CIFS_SHARE PH_`echo $PH_APPU`_CIFS_SRV PH_`echo $PH_APPU`_PERSISTENT PH_`echo $PH_APPU`_CIFS_DIR PH_`echo $PH_APPU`_CIFS_SUBDIR PH_`echo $PH_APPU`_CIFS_MPT PH_`echo $PH_APPU`_USE_CTRL PH_`echo $PH_APPU`_NUM_CTRL PH_`echo $PH_APPU`_PRE_CMD PH_`echo $PH_APPU`_POST_CMD
 		do
 			nawk -F':' -v app=^"$PH_j"$ '$1 ~ app { next } { print }' $PH_FILES_DIR/options.allowed >/tmp/options_allowed_tmp
 			[[ $? -eq 0 ]] && mv /tmp/options_allowed_tmp $PH_FILES_DIR/options.allowed

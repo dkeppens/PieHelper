@@ -2558,6 +2558,7 @@ case $1 in start)
 		then
 			pgrep -t tty$PH_PIEH_TTY -f "startpieh.sh" >/dev/null && $PH_SUDO `which chvt` $PH_PIEH_TTY || \
 								$PH_SUDO `which chvt` 1
+			$PH_SUDO systemctl stop getty@tty$PH_RUNAPP_TTY >/dev/null 2>&1
 		else
 			[[ "$PH_RUNAPP" == "PieHelper" && `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY ]] && $PH_SUDO `which chvt` 1
 		fi
