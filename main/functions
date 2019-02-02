@@ -1637,13 +1637,13 @@ PH_APP="$1"
 if [[ $# -eq 0 ]]
 then
 	set -A PH_APP_READ `nawk 'BEGIN { ORS = " " } { print $1 }' $PH_CONF_DIR/supported_apps`
-	set -A PH_PATH_READ `nawk -v startx=^"/usr/bin/startx"$ -v xinit=^"/usr/bin/xinit"$ '$2~xinit || ($2~startx && $1!~/^X11$/) { print $3 ; next } { print $2 }' $PH_CONF_DIR/supported_apps`
-	set -A PH_APP_GRAPH `nawk -v startx=^"/usr/bin/startx"$ -v xinit=^"/usr/bin/xinit"$ '$2~xinit || ($2~startx && $1!~/^X11$/) { print "yes" ; next } { print "no" }' $PH_CONF_DIR/supported_apps`
+	set -A PH_PATH_READ `nawk '$2~/xinit$/ || ($2~/startx$/ && $1!~/^X11$/) { print $3 ; next } { print $2 }' $PH_CONF_DIR/supported_apps`
+	set -A PH_APP_GRAPH `nawk '$2~/xinit$/ || ($2~/startx$/ && $1!~/^X11$/) { print "yes" ; next } { print "no" }' $PH_CONF_DIR/supported_apps`
 else
 	set -A PH_APP_READ "$PH_APP"
-	set -A PH_PATH_READ `nawk -v app=^"$PH_APP"$ -v startx=^"/usr/bin/startx"$ -v xinit=^"/usr/bin/xinit"$ '$1 ~ app { if ($2~xinit || ($2~startx && $1!~/^X11$/)) { print $3 ; next } { print $2 ; exit }} \
+	set -A PH_PATH_READ `nawk -v app=^"$PH_APP"$ '$1 ~ app { if ($2~/xinit$/ || ($2~/startx$/ && $1!~/^X11$/)) { print $3 ; next } { print $2 ; exit }} \
 							{ next }' $PH_CONF_DIR/supported_apps`
-	set -A PH_APP_GRAPH `nawk -v app=^"$PH_APP"$ -v startx=^"/usr/bin/startx"$ -v xinit=^"/usr/bin/xinit"$ '$1 ~ app { if ($2~xinit || ($2~startx && $1!~/^X11$/)) { print "yes" ; exit } { print "no" ; exit }} \
+	set -A PH_APP_GRAPH `nawk -v app=^"$PH_APP"$ '$1 ~ app { if ($2~/xinit$/ || ($2~/startx$/ && $1!~/^X11$/)) { print "yes" ; exit } { print "no" ; exit }} \
 							{ next }' $PH_CONF_DIR/supported_apps`
 fi
 
