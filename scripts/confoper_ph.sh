@@ -168,6 +168,8 @@ then
 	. $PH_CUR_DIR/../conf/distros/Archlinux.conf
 	typeset PH_KEYB_PKG="systemd"
 	PH_DEF_USER="alarm"
+	pacman-key --init >/dev/null 2>&1
+	pacman-key --populate archlinuxarm >/dev/null 2>&1
 else
 	. $PH_CUR_DIR/../conf/distros/Debian.conf
 	typeset PH_KEYB_PKG="keyboard-configuration systemd"
