@@ -75,7 +75,7 @@ do
         fi
         PH_ANSWER=""
 done
-printf "%8s%s" "" "--> Removing Moonlight cache directory for $PH_RUN_USER"
+printf "%8s%s\n" "" "--> Removing Moonlight cache directory for $PH_RUN_USER"
 $PH_SUDO rm -r "$HOME/.cache/moonlight" 2>/dev/null
 printf "%10s%s\n" "" "OK"
 #$PH_SUDO chmod 4755 `which moonlight` >/dev/null 2>&1
