@@ -23,7 +23,7 @@ typeset PH_ANSWER=""
 typeset PH_APP="Moonlight"
 typeset -i PH_COUNT=0
 typeset -i PH_OPT=0
-set -A PH_OPTAR PH_MOON_RES PH_MOON_FPS PH_MOON_BITRATE PH_MOON_PCKTSIZE PH_MOON_USE_CTRL PH_MOON_NUM_CTRL PH_MOON_CMD_OPTS PH_MOON_GAME PH_MOON_SRV
+set -A PH_OPTAR PH_MOON_RES PH_MOON_FPS PH_MOON_BITRATE PH_MOON_PCKTSIZE PH_MOON_WIDTH PH_MOON_HEIGHT PH_MOON_USE_CTRL PH_MOON_NUM_CTRL PH_MOON_CMD_OPTS PH_MOON_GAME PH_MOON_SRV
 
 for PH_OPT in {0..$((${#PH_OPTAR[@]}-1))}
 do
@@ -1782,12 +1782,12 @@ printf "%8s%s\n" "" "--> Removing login script PieHelper_tty$PH_RUNAPP_TTY.sh"
 $PH_SUDO rm /etc/profile.d/PieHelper_tty$PH_RUNAPP_TTY.sh 2>/dev/null
 printf "%10s%s\n" "" "OK"
 printf "%8s%s\n" "" "--> Removing TTY info from integrated applications configuration file"
-nawk -v runapp=^"$PH_RUNAPP"$ -v runapptty=$PH_RUNAPP_TTY '$1 ~ runapp { print $1 "\t" $2 "\t" $3 "\t" "-" ; next } \
+#nawk -v runapp=^"$PH_RUNAPP"$ -v runapptty=$PH_RUNAPP_TTY '$1 ~ runapp { print $1 "\t" $2 "\t" $3 "\t" "-" ; next } \
+#								{ print }' $PH_CONF_DIR/installed_apps >/tmp/installed_apps 2>/dev/null
+nawk -v runapp=^"$PH_RUNAPP"$ -v runapptty=$PH_RUNAPP_TTY '$1 ~ runapp { next } \
 								{ print }' $PH_CONF_DIR/installed_apps >/tmp/installed_apps 2>/dev/null
 [[ $? -eq 0 ]] && mv /tmp/installed_apps $PH_CONF_DIR/installed_apps
-## add error handling for this installed_apps nawk
 printf "%10s%s\n" "" "OK"
-PH_RUNAPP_USER=`nawk -v runapp=^"$PH_RUNAPP"$ '$1 ~ runapp { print $2 }' $PH_CONF_DIR/installed_apps`
 return 0
 }
 

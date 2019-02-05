@@ -12,3 +12,6 @@ VERSION 1.02 - 05/02/2019
 ________________________
 
 * Support for Moonlight -width and -height parameters
+* Fixes for multiple run accounts using OOS apps
+* Fixes for removing OOS apps
+* Fix for ph_undo_setup_tty

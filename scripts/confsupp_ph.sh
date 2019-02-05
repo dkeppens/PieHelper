@@ -376,6 +376,13 @@ EOF
 		printf "%8s%s\n" "" "--> Adding $PH_APP to supported applications configuration file"
 		echo -e "$PH_APP\t$PH_APP_CMD" >>$PH_CONF_DIR/supported_apps
 		printf "%10s%s\n" "" "OK"
+		if nawk -v user=^"$PH_APP_USER"$ '$2 ~ user { exit 1 } { next }' $PH_CONF_DIR/installed_apps >/dev/null 2>&1
+		then
+			if [[ "$PH_APP_USER" != "$PH_RUN_USER" ]]
+			then
+				ph_grant_pieh_access "$PH_APP_USER"
+			fi
+		fi
 		printf "%8s%s\n" "" "--> Adding $PH_APP to integrated applications configuration file"
 		echo -e "$PH_APP\t$PH_APP_USER\tyes\t-" >>$PH_CONF_DIR/installed_apps
 		printf "%10s%s\n" "" "OK"
@@ -394,20 +401,36 @@ EOF
 		    rem)
 		! stop"$PH_APPL".sh && printf "\n" && exit 1
 		printf "%s\n" "- Removing out-of-scope application $PH_APP"
+		printf "%8s%s\n" "" "--> Determining TTY allocated to $PH_APP"
+		PH_APP_TTY=`nawk -v app=^"$PH_APP"$ '$1 ~ app && $4 !~ /-/ { print $4 ; exit 0 } { next }' $PH_CONF_DIR/installed_apps 2>/dev/null`
+		[[ $PH_APP_TTY -eq 0 ]] && printf "%10s%s\n" "" "OK (None)" || printf "%10s%s\n" "" "OK (TTY$PH_APP_TTY)"
+		PH_APP_USER=`nawk -v app=^"$PH_APP"$ '$1 ~ app { print $2 ; exit 0 } { next }' $PH_CONF_DIR/installed_apps 2>/dev/null`
 		printf "%8s%s\n" "" "--> Removing $PH_APP from supported applications configuration file"
 		nawk -v app=^"$PH_APP"$ '$1 ~ app { next } { print }' $PH_CONF_DIR/supported_apps >/tmp/supported_apps_tmp
 		[[ $? -eq 0 ]] && (printf "%10s%s\n" "" "OK" ; mv /tmp/supported_apps_tmp $PH_CONF_DIR/supported_apps) || \
 					(printf "%10s%s\n" "" "ERROR : Could not remove $PH_APP from supported applications configuration file" ; \
 					 printf "%2s%s\n\n" "" "FAILED" ; return 1) || exit $?
-		printf "%8s%s\n" "" "--> Removing $PH_APP from integrated applications configuration file"
-		nawk -v app=^"$PH_APP"$ '$1 ~ app { next } { print }' $PH_CONF_DIR/installed_apps >/tmp/installed_apps_tmp
-		[[ $? -eq 0 ]] && (printf "%10s%s\n" "" "OK" ; mv /tmp/installed_apps_tmp $PH_CONF_DIR/installed_apps) || \
-					(printf "%10s%s\n" "" "ERROR : Could not remove $PH_APP from integrated applications configuration file" ; \
-					 printf "%2s%s\n\n" "" "FAILED" ; return 1) || exit $?
-		printf "%8s%s\n" "" "--> Removing menu item"
+		if [[ $PH_APP_TTY -ne 0 ]]
+		then
+			ph_undo_setup_tty $PH_APP_TTY "$PH_APP"
+		else
+			printf "%8s%s\n" "" "--> Removing $PH_APP from installed applications configuration file"
+			nawk -v app=^"$PH_APP"$ '$1 ~ app { next } { print }' $PH_CONF_DIR/installed_apps >/tmp/installed_apps_tmp
+			[[ $? -eq 0 ]] && (printf "%10s%s\n" "" "OK" ; mv /tmp/installed_apps_tmp $PH_CONF_DIR/installed_apps) || \
+				(printf "%10s%s\n" "" "ERROR : Could not remove $PH_APP from installed applications configuration file" ; \
+				 printf "%2s%s\n\n" "" "FAILED" ; return 1) || exit $?
+		fi
+		if nawk -v user=^"$PH_APP_USER"$ '$2 ~ user { exit 1 } { next }' $PH_CONF_DIR/installed_apps >/dev/null 2>&1
+		then
+			if [[ "$PH_RUN_USER" != "$PH_APP_USER" ]]
+			then
+				ph_revoke_pieh_access "$PH_APP_USER"
+			fi
+		fi
+		printf "%8s%s\n" "" "--> Removing $PH_APP menu item"
 		rm $PH_FILES_DIR/menus/$PH_APP.lst 2>/dev/null
 		printf "%10s%s\n" "" "OK"
-		printf "%8s%s\n" "" "--> Removing scripts"
+		printf "%8s%s\n" "" "--> Removing $PH_APP scripts"
 		rm $PH_SCRIPTS_DIR/start"$PH_APPL".sh 2>/dev/null
 		rm $PH_SCRIPTS_DIR/stop"$PH_APPL".sh 2>/dev/null
 		rm $PH_SCRIPTS_DIR/restart"$PH_APPL".sh 2>/dev/null
@@ -418,7 +441,7 @@ EOF
 			rm $PH_SCRIPTS_DIR/"$PH_APPL2"to"$PH_APPL".sh 2>/dev/null
 		done
 		printf "%10s%s\n" "" "OK"
-		printf "%8s%s\n" "" "--> Removing default mountpoint for CIFS mounts"
+		printf "%8s%s\n" "" "--> Removing default mountpoint for $PH_APP CIFS mounts"
 		rm -r "$PH_CONF_DIR"/../mnt/"$PH_APP" >/dev/null 2>&1
 		printf "%10s%s\n" "" "OK"
 		if [[ -n "$PH_APP_PKG" ]]
@@ -426,24 +449,24 @@ EOF
 			printf "%8s%s\n" "" "--> Removing package \"$PH_APP_PKG\""
 			ph_remove_pkg "$PH_APP_PKG" && printf "%10s%s\n" "" "OK" || printf "%10s%s\n" "" "ERROR : Could not remove package"
 		fi
-		printf "%8s%s\n" "" "--> Removing options from options.defaults"
+		printf "%8s%s\n" "" "--> Removing $PH_APP options from options.defaults"
 		for PH_j in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | nawk -F'=' '{ print $1 }' | paste -d" " -s`
 		do
 			sed "/^$PH_j=/d" $PH_FILES_DIR/options.defaults >/tmp/options_defaults_tmp
 			[[ $? -eq 0 ]] && mv /tmp/options_defaults_tmp $PH_FILES_DIR/options.defaults
 		done
 		printf "%10s%s\n" "" "OK"
-		printf "%8s%s\n" "" "--> Removing options from options.allowed"
+		printf "%8s%s\n" "" "--> Removing $PH_APP options from options.allowed"
 		for PH_j in PH_`echo $PH_APPU`_CIFS_SHARE PH_`echo $PH_APPU`_CIFS_SRV PH_`echo $PH_APPU`_PERSISTENT PH_`echo $PH_APPU`_CIFS_DIR PH_`echo $PH_APPU`_CIFS_SUBDIR PH_`echo $PH_APPU`_CIFS_MPT PH_`echo $PH_APPU`_USE_CTRL PH_`echo $PH_APPU`_NUM_CTRL PH_`echo $PH_APPU`_PRE_CMD PH_`echo $PH_APPU`_POST_CMD
 		do
 			nawk -F':' -v app=^"$PH_j"$ '$1 ~ app { next } { print }' $PH_FILES_DIR/options.allowed >/tmp/options_allowed_tmp
 			[[ $? -eq 0 ]] && mv /tmp/options_allowed_tmp $PH_FILES_DIR/options.allowed
 		done
 		printf "%10s%s\n" "" "OK"
-		printf "%8s%s\n" "" "--> Removing config file"
+		printf "%8s%s\n" "" "--> Removing $PH_APP config file"
 		rm $PH_CONF_DIR/$PH_APP.conf 2>/dev/null
 		printf "%10s%s\n" "" "OK"
-		printf "%8s%s\n" "" "--> Removing user functions"
+		printf "%8s%s\n" "" "--> Removing $PH_APP user functions"
 		nawk -v app="_$PH_APPL"$ 'BEGIN { FLAG=0 } $1 ~ /^function$/ && $2 ~ app { FLAG=1 ; while ($1!~/^}$/) { getline } ; getline ; FLAG=0 ; next } \
 										{ if (FLAG==0) { print $0 }}' $PH_MAIN_DIR/functions.user >/tmp/functions.user_tmp 2>&1
 		[[ $? -eq 0 ]] && mv /tmp/functions.user_tmp $PH_MAIN_DIR/functions.user 2>&1
