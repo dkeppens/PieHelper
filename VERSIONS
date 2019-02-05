@@ -7,3 +7,8 @@ VERSION 1.01 - 02/02/2019
 ________________________
 
 * Fixes for confsupp_ph.sh
+
+VERSION 1.02 - 05/02/2019
+________________________
+
+* Support for Moonlight -width and -height parameters

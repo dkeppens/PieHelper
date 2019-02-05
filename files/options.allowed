@@ -27,6 +27,8 @@ PH_KODI_POST_CMD:an empty string or starting with / or $:"$PH_OPTARG_VAL" == @(/
 PH_MOON_USE_CTRL:yes or no:"$PH_OPTARG_VAL" == @(yes|no)
 PH_MOON_NUM_CTRL:1, 2, 3 or 4:"$PH_OPTARG_VAL" == @(1|2|3|4)
 PH_MOON_RES:720, 1080 or 4k:"$PH_OPTARG_VAL" == @(720|1080|4k)
+PH_MOON_WIDTH:a whole number:"$PH_OPTARG_VAL" == +(0|1|2|3|4|5|6|7|8|9)
+PH_MOON_HEIGHT:a whole number:"$PH_OPTARG_VAL" == +(0|1|2|3|4|5|6|7|8|9)
 PH_MOON_FPS:a whole number or -1:"$PH_OPTARG_VAL" == @(+(0|1|2|3|4|5|6|7|8|9)|-1)
 PH_MOON_BITRATE:a multiple of 1024:`expr "$PH_OPTARG_VAL" % 1024` -eq 0
 PH_MOON_PCKTSIZE:a multiple of 16:`expr "$PH_OPTARG_VAL" % 16` -eq 0
