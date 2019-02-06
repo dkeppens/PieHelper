@@ -4,6 +4,8 @@
 
 #set -x
 
+typeset PH_z=""
+
 printf "%8s%s\n" "" "--> Creating backup of stored defaults for OS configuration functions"
 if [[ "$PH_PIEH_CIFS_SHARE" == "yes" ]]
 then
@@ -13,7 +15,7 @@ then
 		if [[ $? -ne 0 ]]
 		then
 			printf "%10s%s\n" "" "Warning : Could not succesfully create stored defaults backup"
-			PH_i="NOK"
+			PH_z="NOK"
 		else
 			printf "%10s%s\n" "" "OK"
 		fi
@@ -23,4 +25,4 @@ then
 else
 	printf "%10s%s\n" "" "Warning : Dependent on CIFS -> Skipping"
 fi
-[[ "$PH_i" == "NOK" ]] && return 1 || return 0
+[[ "$PH_z" == "NOK" ]] && return 1 || return 0

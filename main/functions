@@ -1431,9 +1431,11 @@ then
 	printf "\n"
 	ph_print_bannerline
 	printf "\n"
-	printf "%10s%s\n" "" "* Emulationstation has been installed with run account $PH_APP_USER"
-	printf "%12s%s\n" "" "Make sure to always use '$PH_SUDO' under the same account when running"
-	printf "%12s%s\n" "" "Emulationstation tools to avoid breaking your configuration"
+	printf "%10s%s\n\n" "" "- $PH_APP has been installed with a different run account than the default '$PH_RUN_USER'"
+	[[ "$PH_APP" == "Emulationstation" ]] && printf "%14s%s\n" "" "* Always use '$PH_SUDO' as the run account used for $PH_APP when running"
+	[[ "$PH_APP" == "Emulationstation" ]] && printf "%14s%s\n" "" "  Emulationstation tools to avoid breaking configurations"
+	printf "%14s%s\n" "" "* When using CIFS for $PH_APP, the run account for $PH_APP should have read-write permission on the share or"
+	printf "%14s%s\n" "" "  be used as the value for PH_`echo -n $PH_APPU`_CIFS_USER"
 	printf "\n"
 	ph_print_bannerline
 	printf "\n"

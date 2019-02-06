@@ -4,20 +4,24 @@
 
 #set -x
 
+typeset PH_KODI_USER=""
+typeset PH_KODI_HOME=""
+typeset PH_z=""
+
 PH_KODI_USER="`nawk -v app=^"Kodi"$ '$1 ~ app { print $2 }' $PH_CONF_DIR/installed_apps`"
 PH_KODI_HOME="`echo -n $(getent passwd $PH_KODI_USER | cut -d':' -f6)`"
 printf "%8s%s\n" "" "--> Backing up latest Kodi preferences directory for run account $PH_KODI_USER (This may take a while)"
 if [[ "$PH_KODI_CIFS_SHARE" == "yes" ]]
 then
 	cd "$PH_KODI_HOME" >/dev/null 2>&1
-	[[ -f `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar && -d "$PH_KODI_HOME/.kodi" ]] && $PH_SUDO -E rm `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar
+	[[ -f `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar && -d "$PH_KODI_HOME/.kodi" ]] && $PH_SUDO -E rm `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar 2>/dev/null
 	$PH_SUDO -E tar -X "$PH_FILES_DIR/exclude.Kodi" -cf "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" ./.kodi 2>/dev/null
 	if [[ $? -eq 0 ]]
 	then
-		$PH_SUDO -E mv "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar >/dev/null 2>&1
+		$PH_SUDO -E mv "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" `eval echo -n "$PH_KODI_CIFS_MPT"`/Kodi-Prefs.tar 2>/dev/null
 		printf "%10s%s\n" "" "OK"
 	else
-		PH_i="NOK"
+		PH_z="NOK"
 		printf "%10s%s\n" "" "Warning : Could not create valid up-to-date preferences backup -> Removing"
 		printf "%8s%s\n" "" "--> Removing invalid backup"
 		$PH_SUDO -E rm "$PH_SCRIPTS_DIR/../tmp/Kodi-Prefs.tar" 2>/dev/null
@@ -27,4 +31,4 @@ then
 else
 	printf "%10s%s\n" "" "Warning : dependent on CIFS -> Skipping"
 fi
-[[ "$PH_i" == "NOK" ]] && return 1 || return 0
+[[ "$PH_z" == "NOK" ]] && return 1 || return 0

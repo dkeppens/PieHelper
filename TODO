@@ -1,3 +1,4 @@
+* test if Emulationstation mount requires $PH_RUNAPP_USER for CIFS authentication
 * capture CTRL-C and ph_umount for PieHelper pseudo
 * write confoper_ph.sh filesystem resize and splash screen
 * support for bluetooth devices distributed over multiple adapters in confctrl_ph.sh

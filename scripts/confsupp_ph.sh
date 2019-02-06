@@ -261,6 +261,8 @@ PH_`echo $PH_APPU`_NUM_CTRL='1'								# - This is the number of controllers you
 											# - Allowed values are '1', '2', '3' and '4'
 PH_`echo $PH_APPU`_CIFS_SHARE='no'							# - This indicates whether you want to mount a CIFS share from a local network server PH_`echo $PH_APPU`_CIFS_SRV before $PH_APP starts and
 											#   umount it after $PH_APP shuts down
+											# - If the run account for $PH_APP is different from PieHelper's run account, then $PH_APP's run account should always be granted
+											#   read-write permission on the configured CIFS share or be used as the value for PH_`echo $PH_APPU`_CIFS_USER
 											# - Default is 'no'
 											# - Allowed values are 'yes' and 'no'
 											# - Important : * Keep in mind that setting this to 'yes' requires you to enable CIFS sharing on PH_`echo $PH_APPU`_CIFS_SRV
