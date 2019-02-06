@@ -50,7 +50,9 @@ Currently however, only the official Raspbian distro has been tested
 Feedback, bug reports and feature requests can be reported on the official github repository
 or emailed to the address listed below
 
-Current state : Released
+Current state :
+
+	- Released
 
 Currently unimplemented :
 
