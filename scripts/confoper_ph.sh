@@ -289,8 +289,10 @@ do
 		>&2 printf "%15s%s\n" "" "- For the default of any of the 4 optional overscan parameters :"
 		>&2 printf "%18s%s\n" "" "- If a new value is given and differs from the pre-existing value or there is no pre-existing value, the new value will be stored"
 		>&2 printf "%18s%s\n" "" "- If a new value is given and is equal to a pre-existing value, no operation is performed"
-		>&2 printf "%18s%s\n" "" "- If a new value is not given and there is no pre-existing value or a pre-existing value not equal to '16', a new value of '16' will be stored"
-		>&2 printf "%18s%s\n" "" "- If a new value is not given and there is a pre-existing value equal to '16', no operation is performed"
+		>&2 printf "%18s%s\n" "" "- If a new value is not given and there is no pre-existing value or a pre-existing value not equal to '16', a new value of '16' will be stored for left and right overscan"
+		>&2 printf "%18s%s\n" "" "- If a new value is not given and there is no pre-existing value or a pre-existing value not equal to '30', a new value of '30' will be stored for top and bottom overscan"
+		>&2 printf "%18s%s\n" "" "- If a new value is not given and there is a pre-existing value equal to '16', no operation is performed for left and right overscan"
+		>&2 printf "%18s%s\n" "" "- If a new value is not given and there is a pre-existing value equal to '30', no operation is performed for top and bottom overscan"
 		>&2 printf "%15s%s\n" "" "- For the default of the optional '-d' parameter, the value will always be stored if there is no currently stored value for it or"
 		>&2 printf "%15s%s\n" "" "  if the currently stored default value for it differs from 'yes'"
 		>&2 printf "%15s%s\n" "" "- For any other parameters, a pre-existing default value that differs from the new value specified will be replaced with the new value and"
@@ -729,10 +731,19 @@ case $PH_ACTION in all)
 					ph_set_result $?
 				fi
 			else
-				if ! grep ^"$PH_i=16"$ "$PH_CUR_DIR/../files/OS.defaults" >/dev/null
+				if [[ "$PH_i" == @(PH_RIGHTSCAN|PH_LEFTSCAN) ]]
 				then
-					ph_savedef "$PH_i" "16" 
-					ph_set_result $?
+					if ! grep ^"$PH_i=16"$ "$PH_CUR_DIR/../files/OS.defaults" >/dev/null
+					then
+						ph_savedef "$PH_i" "16" 
+						ph_set_result $?
+					fi
+				else
+					if ! grep ^"$PH_i=30"$ "$PH_CUR_DIR/../files/OS.defaults" >/dev/null
+					then
+						ph_savedef "$PH_i" "30" 
+						ph_set_result $?
+					fi
 				fi
 			fi
 		done
@@ -791,9 +802,9 @@ case $PH_ACTION in all)
 						     PH_AUDIO)
 						printf "%8s%s" "" "--> Please enter the value for audio channel (hdmi/jack/auto) : " ;;
 						PH_BOTTOMSCAN)
-						printf "%8s%s" "" "--> Please enter the value for overscan bottom (must be numeric or empty (empty defaults to '16')) : " ;;
+						printf "%8s%s" "" "--> Please enter the value for overscan bottom (must be numeric or empty (empty defaults to '30')) : " ;;
 						 PH_UPPERSCAN)
-						printf "%8s%s" "" "--> Please enter the value for overscan top (must be numeric or empty (empty defaults to '16')) : " ;;
+						printf "%8s%s" "" "--> Please enter the value for overscan top (must be numeric or empty (empty defaults to '30')) : " ;;
 						 PH_RIGHTSCAN)
 						printf "%8s%s" "" "--> Please enter the value for overscan right (must be numeric or empty (empty defaults to '16')) : " ;;
 						  PH_LEFTSCAN)
@@ -872,11 +883,19 @@ case $PH_ACTION in all)
 					ph_set_result $?
 				fi
 			else
-				if [[ "$PH_i" == @(PH_BOTTOMSCAN|PH_UPPERSCAN|PH_RIGHTSCAN|PH_LEFTSCAN) ]]
+				if [[ "$PH_i" == @(PH_RIGHTSCAN|PH_LEFTSCAN) ]]
 				then
 					if ! grep ^"$PH_i=16"$ "$PH_CUR_DIR/../files/OS.defaults" >/dev/null
 					then
 						ph_savedef "$PH_i" "16"
+						ph_set_result $?
+					fi
+				fi
+				if [[ "$PH_i" == @(PH_BOTTOMSCAN|PH_UPPERSCAN) ]]
+				then
+					if ! grep ^"$PH_i=30"$ "$PH_CUR_DIR/../files/OS.defaults" >/dev/null
+					then
+						ph_savedef "$PH_i" "30"
 						ph_set_result $?
 					fi
 				fi

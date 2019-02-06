@@ -161,7 +161,7 @@ printf "%s\n" "- Configuring Emulationstation"
 printf "%8s%s\n" "" "--> Configuring ALSA audio"
 PH_ALSA_CARD=`aplay -l | nawk 'BEGIN { ORS = "" } $0 ~ /HDMI/ { for (i=1;i<=NF;i++) { if ($i~/^card$/) { sub(/:/,"",$(i+1)) ; print $(i+1) }}}'`
 PH_ALSA_DEVICE=`aplay -l | nawk 'BEGIN { ORS = "" } $0 ~ /HDMI/ { for (i=1;i<=NF;i++) { if ($i~/^device$/) { sub(/:/,"",$(i+1)) ; print $(i+1) }}}'`
-nawk -v card=$PH_ALSA_CARD -v dev=$PH_ALSA_DEVICE '$1 ~ /^audio_enable$/ { print "audio_enable = true" ; next }
+$PH_SUDO -E nawk -v card=$PH_ALSA_CARD -v dev=$PH_ALSA_DEVICE '$1 ~ /^audio_enable$/ { print "audio_enable = true" ; next }
 	$1 ~ /^audio_out_rate$/ { print "audio_out_rate = 44100" ; next }
 	$1 ~ /^audio_driver$/ { print "audio_driver = alsa" ; next }
 	$1 ~ /^audio_sync$/ { print "audio_sync = true" ; next }
@@ -1220,6 +1220,8 @@ typeset PH_APP="$1"
 typeset PH_APP_USER=""
 typeset PH_EMUL_SETUP_DIR_INIT=""
 typeset PH_EMUL_DIR_INIT=""
+typeset -i PH_COUNT=0
+typeset -i PH_COUNT2=0
 typeset -u PH_APPU=`echo $PH_APP | cut -c1-4`
 typeset -l PH_APPL=`echo $PH_APP | cut -c1-4`
 
@@ -1323,13 +1325,55 @@ case $PH_APP in Moonlight)
 		printf "%10s%s\n" "" "OK" ;;
 	 Emulationstation)
 		printf "%10s%s\n" "" "OK ($PH_APP)"
-		cd >/dev/null
+		while true
+		do
+			[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid input characters detected"
+			printf "%8s%s\n\n" "" "--> Please specify a run account for $PH_APP"
+			printf "%12s%s\n" "" "- Press Enter for the default ($PH_RUN_USER)"
+			printf "%12s%s" "" "- Specifying an unexisting account will force user creation : "
+			read PH_APP_USER 2>/dev/null
+			((PH_COUNT++))
+			ph_screen_input "$PH_APP_USER" >/dev/null || continue
+			[[ -z "$PH_APP_USER" ]] && PH_APP_USER="$PH_RUN_USER"
+			id $PH_APP_USER >/dev/null 2>&1
+			if [[ $? -ne 0 ]]
+			then
+				printf "\n%10s%s\n" "" "Warning : User $PH_APP_USER does not exist -> Creating"
+				printf "%8s%s\n" "" "--> Creating group $PH_APP_USER"
+				$PH_SUDO groupadd -f "$PH_APP_USER" >/dev/null
+				printf "%10s%s\n" "" "OK"
+				printf "%8s%s\n" "" "--> Creating user $PH_APP_USER"
+				$PH_SUDO useradd -d /home/"$PH_APP_USER" -m -c "$PH_APP application" -g "$PH_APP_USER" \
+								-G tty,audio,video,input -s /bin/bash "$PH_APP_USER" >/dev/null 2>&1
+				printf "%10s%s\n" "" "OK"
+				while true
+				do
+					[[ $PH_COUNT2 -ne 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Could not set password"
+					printf "%8s%s\n\n" "" "--> Setting password for $PH_APP_USER"
+					$PH_SUDO passwd "$PH_APP_USER"
+					[[ $? -eq 0 ]] && break
+					((PH_COUNT2++))
+				done
+				printf "\n%10s%s\n" "" "OK"
+			else
+				printf "\n%10s%s\n" "" "OK ($PH_APP_USER)"
+			fi
+			break
+		done
+		if nawk -v user=^"$PH_APP_USER"$ '$2 ~ user { exit 1 } { next }' $PH_CONF_DIR/installed_apps >/dev/null 2>&1
+		then
+			if [[ "$PH_APP_USER" != "$PH_RUN_USER" ]]
+			then
+				ph_grant_pieh_access "$PH_APP_USER"
+			fi
+		fi
+		cd `getent passwd "$PH_APP_USER" | cut -d':' -f6` >/dev/null
 		$PH_SUDO rm -r RetroPie-Setup 2>/dev/null
 		printf "%8s%s\n" "" "--> Downloading $PH_APP setup script"
-		git clone --depth=1 https://github.com/RetroPie/RetroPie-Setup.git >/dev/null 2>&1
+		$PH_SUDO -E su "$PH_APP_USER" -c "git clone --depth=1 https://github.com/RetroPie/RetroPie-Setup.git" >/dev/null 2>&1
 		[[ $? -eq 0 ]] && printf "%10s%s\n" "" "OK" || (printf "%10s%s\n" "" "ERROR : Could not download $PH_APP setup script" ; \
 				printf "%2s%s\n\n" "" "FAILED" ; return 1) || return $?
-		cd RetroPie-Setup
+		cd `getent passwd "$PH_APP_USER" | cut -d':' -f6`/RetroPie-Setup
 		$PH_SUDO chmod +x retropie_setup.sh
 		printf "%8s%s\n\n" "" "--> Executing $PH_APP setup script"
 		printf "%12s%s\n" "" "- Use this setup script to do a basic install of $PH_APP"
@@ -1341,7 +1385,7 @@ case $PH_APP in Moonlight)
 		printf "%10s%s\n" "" "OK"
 		printf "%2s%s\n" "" "SUCCESS"
 		clear
-		$PH_SUDO ./retropie_setup.sh
+		$PH_SUDO -E -u "$PH_APP_USER" sh -c "`which sudo` ./retropie_setup.sh"
 		printf "%s\n"  "- Resuming PieHelper integration for $PH_APP"
 		printf "%8s%s\n" "" "--> Attempting to determine $PH_APP base directory"
 		if [[ -f /etc/profile.d/10-retropie.sh ]]
@@ -1350,16 +1394,26 @@ case $PH_APP in Moonlight)
 			if [[ -n "$PH_EMUL_DIR_INIT" ]]
 			then
 				PH_EMUL_DIR_INIT=${PH_EMUL_DIR_INIT%%/configs*}
-				printf "%10s%s\n" "" "OK"
+				printf "%10s%s\n" "" "OK ($PH_EMUL_DIR_INIT)"
 			fi
 		else
-			[[ -d /opt/retropie ]] && PH_EMUL_DIR_INIT="/opt/retropie" && printf "%10s%s\n" "" "OK"
+			if [[ -d /opt/retropie ]]
+			then
+				PH_EMUL_DIR_INIT="/opt/retropie"
+				printf "%10s%s\n" "" "OK ($PH_EMUL_DIR_INIT)"
+			else
+				printf "%10s%s\n" "" "OK (None)"
+			fi
 		fi
-		PH_EMUL_SETUP_DIR_INIT="$HOME/RetroPie"
-		! ph_set_option $PH_APP -r PH_EMUL_DIR="$PH_EMUL_DIR_INIT" && printf "%2s%s\n\n" "" "FAILED" && return 1
-		[[ -z "$PH_EMUL_DIR" ]] && (printf "%10s%s\n" "" "Warning : Could not determine $PH_APP base directory" ; \
+		PH_EMUL_SETUP_DIR_INIT="`getent passwd \"$PH_APP_USER\" | cut -d':' -f6`/RetroPie"
+		if [[ -n "$PH_EMUL_DIR_INIT" ]]
+		then
+			! ph_set_option $PH_APP -r PH_EMUL_DIR="$PH_EMUL_DIR_INIT" && printf "%2s%s\n\n" "" "FAILED" && return 1
+		else
+			(printf "%10s%s\n" "" "Warning : Could not determine $PH_APP base directory" ; \
 					printf "%20s%s\n" "" "Try manually setting PH_EMUL_DIR to the correct value using 'confopts_ph.sh' or the PieHelper menu" ; \
 					printf "%2s%s\n\n" "" "FAILED" ; return 0) && return 1
+		fi
 		! ph_set_option $PH_APP -r PH_EMUL_SETUP_DIR="$PH_EMUL_SETUP_DIR_INIT" && printf "%2s%s\n\n" "" "FAILED" && return 1
 		ph_show_emul_info
 		[[ -f /etc/profile.d/10-retropie.sh ]] && ph_move_emul_conf ;;
@@ -1370,13 +1424,20 @@ case $PH_APP in Moonlight)
 		return 1 ;;
 esac
 ph_generate_installed_apps "$PH_APP"
-PH_APP_USER=`nawk -v app=^"$PH_APP"$ '$1 ~ app { print $2 ; exit 0 } { next }' $PH_CONF_DIR/installed_apps 2>/dev/null`
-if [[ "$PH_APP" == "Emulationstation" && "$PH_RUN_USER" != "$PH_APP_USER" ]]
+if [[ "$PH_APP_USER" != "$PH_RUN_USER" ]]
 then
-	$PH_SUDO chown -R "$PH_APP_USER":`id -gn "$PH_APP_USER"` "$HOME"/RetroPie 2>/dev/null
-	$PH_SUDO chown -R "$PH_APP_USER":`id -gn "$PH_APP_USER"` "$PH_EMUL_DIR" 2>/dev/null
+	printf "%s\n" "- Displaying run account reminder"
+	printf "%2s%s\n" "" "SUCCESS"
+	printf "\n"
+	ph_print_bannerline
+	printf "\n"
+	printf "%10s%s\n" "" "* Emulationstation has been installed with run account $PH_APP_USER"
+	printf "%12s%s\n" "" "Make sure to always use '$PH_SUDO' under the same account when running"
+	printf "%12s%s\n" "" "Emulationstation tools to avoid breaking your configuration"
+	printf "\n"
+	ph_print_bannerline
+	printf "\n"
 fi
-printf "%2s%s\n" "" "SUCCESS"
 eval ph_configure_"$PH_APPL"
 return 0
 }
@@ -1564,6 +1625,7 @@ else
 	printf "%10s%s\n" "" "OK (Not found)"
 	PH_PACKAGED="no"
 fi
+[[ "${PH_APP_READ[$PH_i]}" == "Emulationstation" ]] && PH_APP_USER=`ls -lad $PH_EMUL_SETUP_DIR | nawk '{ print $3 }'`
 if [[ -z "$PH_APP_USER" ]]
 then
 	while true
@@ -1604,7 +1666,7 @@ then
 fi
 if nawk -v user=^"$PH_APP_USER"$ '$2 ~ user { exit 1 } { next }' $PH_CONF_DIR/installed_apps >/dev/null 2>&1
 then
-	if [[ "$PH_APP_USER" != "$PH_RUN_USER" ]]
+	if [[ "$PH_APP_USER" != "$PH_RUN_USER" && "${PH_APP_READ[$PH_i]}" != "Emulationstation" ]]
 	then
 		ph_grant_pieh_access "$PH_APP_USER"
 	fi
@@ -2577,7 +2639,7 @@ case $1 in start)
 	fi
 	if [[ `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY && "$PH_RUNAPP_CMD" != "/bin/bash" ]]
 	then
-		if [[ "$PH_RUNAPP" == "Moonlight" ]]
+		if [[ "$PH_RUNAPP" == "Moonlight" && "$PH_RUNAPP_USER" != "$PH_RUN_USER" ]]
 		then
 			$PH_SUDO -E su "$PH_RUNAPP_USER" -c "LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib eval $PH_RUNAPP_CMD $PH_RUNAPP_CMD_OPTS"
 		else
