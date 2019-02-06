@@ -222,7 +222,7 @@ case $PH_ACTION in help)
 			 return $?
 	fi
         printf "%8s%s\n" "" "--> Detecting $PH_CONN adapter(s)"
-        if [[ -z "$PH_CTRL_BLUE_ADAPT" ]]
+        if [[ "$PH_CTRL_BLUE_ADAPT" == "none" ]]
         then
                 PH_ADAPTER=`$PH_SCRIPTS_DIR/listblue_ph.sh | tail -n +5 | nawk '$0 !~ /SUCCESS/ { print $1 ; exit 0 }'`
                 [[ -z "$PH_ADAPTER" ]] && (printf "%10s%s\n" "" "ERROR : Not found" ; \

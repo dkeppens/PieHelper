@@ -2436,7 +2436,7 @@ case $1 in start)
 	PH_RUNAPP_TTY=`ph_get_tty_for_app $PH_RUNAPP`
 	if [[ "$PH_RUNAPP" == "Moonlight" && `$PH_SUDO fgconsole` -ne $PH_RUNAPP_TTY ]]
 	then
-		"$PH_MOON_PATH" list "$PH_MOON_SRV" >/dev/null 2>&1
+		$PH_SUDO -E su "$PH_RUNAPP_USER" -c "$PH_MOON_PATH list $PH_MOON_SRV" >/dev/null 2>&1
 		if [[ $? -ne 0 ]]
 		then
 			printf "%8s%s\n" "" "--> Starting $PH_RUNAPP"

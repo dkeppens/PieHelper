@@ -27,3 +27,5 @@ ________________________
 * Changed default of PH_CTRL_PS3_PIN to '0000'
 * Added menu options to view value of read-only options for all apps and integrated changes with confsupp_ph.sh
 * Changed CIFS options for Moonlight to read-only
+* Fixes for listblue_ph.sh
+* Fix for ph_run_app_action moonlight configured precheck
