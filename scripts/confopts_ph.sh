@@ -434,17 +434,27 @@ case $PH_ACTION in get)
 				printf "%10s%s\n" "" "OK"
 				[[ $PH_ANSWER -eq $((PH_COUNT+1)) ]] && printf "%2s%s\n" "" "SUCCESS" && unset PH_OPTAR PH_VALAR && exit 0
 				PH_OPT=`grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | egrep -v ^"PH_PIEH_DEBUG=|PH_PIEH_STARTAPP=" | nawk -F"=" -v choice=$PH_ANSWER 'NR == choice { print $1 }'`
-				[[ "$PH_OPT" == *_NUM_CTRL ]] && (printf "%8s%s\n\n" "" "--> Displaying additional info for read-write $PH_USE_WORD $PH_OPT : " ; \
+				[[ "$PH_OPT" == *_NUM_CTRL ]] && (printf "%8s%s\n" "" "--> Displaying additional info for read-write $PH_USE_WORD $PH_OPT : " ; \
+							  printf "%10s%s\n\n" "" "OK" ; \
+							  ph_print_bannerline ; \
+							  printf "\n" ; \
 							  printf "%12s%s\n" "" "- Changes to an option that sets the controller amount for an application will automatically be reflected to" ; \
 							  printf "%12s%s\n\n" "" "  the option holding that application's command line options if event-based input devices are present as command-line parameters" ; \
-							  printf "%10s%s\n" "" "OK")
-				[[ "$PH_OPT" == *_CMD_OPTS ]] && (printf "%8s%s\n\n" "" "--> Displaying additional info for read-write $PH_USE_WORD $PH_OPT : " ; \
+							  printf "\n" ; \
+							  ph_print_bannerline ; \
+							  printf "\n")
+				[[ "$PH_OPT" == *_CMD_OPTS ]] && (printf "%8s%s\n" "" "--> Displaying additional info for read-write $PH_USE_WORD $PH_OPT : " ; \
+							  printf "%10s%s\n\n" "" "OK" ; \
+							  ph_print_bannerline ; \
+							  printf "\n" ; \
 							  printf "%12s%s\n" "" "- Changes to an option holding an application's command line options where event-based input devices are present will automatically be reflected to" ; \
 							  printf "%12s%s\n" "" "  the application's option determining the controller amount unless all event device parameters are being removed")
 				[[ "$PH_OPT" == "PH_MOON_CMD_OPTS" ]] && printf "%12s%s\n" "" "  For Moonlight, the number of event-based input devices cannot be zero"
 				[[ "$PH_OPT" == *_CMD_OPTS ]] && (printf "%12s%s\n" "" "- Any event-based input device id references in the new value entered for an option holding an application's command line options should have" ; \
 							  printf "%12s%s\n\n" "" "  the numeric id replaced by the string 'PH_CTRL%' where '%' is '1' for controller 1, '2' for controller 2, etc" ; \
-							  printf "%10s%s\n" "" "OK")
+							  printf "\n" ; \
+							  ph_print_bannerline ; \
+							  printf "\n")
 				printf "%8s%s" "" "--> Please enter the new value for read-write $PH_USE_WORD $PH_OPT : "
 				read PH_VALUE 2>/dev/null
 				printf "%10s%s\n" "" "OK"
