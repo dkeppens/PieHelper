@@ -33,6 +33,7 @@ mostly intended for novice linux users that :
 	- Controller detection for XBOX360 controllers using an XBOX360 USB Receiver
 
 No more hassle manually installing and configuring all applications when (re)installing the system
+
 PieHelper automates all these processes for its supported applications through an intuitive menu or well-documented CLI tools if preferred
 
 PieHelper functions by binding each application to a specific TTY and uses autologin functionality at TTY selection  
