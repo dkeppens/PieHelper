@@ -2635,6 +2635,7 @@ case $1 in start)
 	"$PH_SUDO" systemctl start getty@tty$PH_RUNAPP_TTY >/dev/null 2>&1
 	if [[ `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY && "$PH_RUNAPP" != "PieHelper" ]]
 	then
+		ph_umount_cifs_share PieHelper
 		"$PH_SUDO" systemctl stop getty@tty$PH_PIEH_TTY >/dev/null 2>&1
 	fi
 	if [[ `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY && "$PH_RUNAPP_CMD" != "/bin/bash" ]]
