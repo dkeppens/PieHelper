@@ -2,7 +2,7 @@ PieHelper is an extensible, user-friendly, scripted software suite for Raspberry
 mostly intended for novice linux users that :
 
 * allows for easy CLI and text menu-based management of the RaspBerry's most-used applications :
-	- installation
+	- installation (package-based/script-based for Emulationstation/compilation or package-based for Moonlight)
 	- uninstallation
 	- basic configuration
 * provides easy control over these applications from either a CLI pseudo-terminal or a TTY :
@@ -32,8 +32,10 @@ mostly intended for novice linux users that :
 * Currently uninplemented :
 	- Controller detection for XBOX360 controllers using an XBOX360 USB Receiver
 
-PieHelper binds each application to a specific TTY and uses autologin functionality at TTY selection 
+No more hassle manually installing and configuring all applications when (re)installing the system
+PieHelper automates all these processes for its supported applications through an intuitive menu or well-documented CLI tools if preferred
 
+PieHelper functions by binding each application to a specific TTY and uses autologin functionality at TTY selection  
 Since PieHelper creates custom TTY configurations, any pre-existing TTY customizations should be removed before configuring PieHelper
 
 Developed exclusively with ksh93, no other prerequisites exist except for the following assumptions :
@@ -53,6 +55,7 @@ Current state : Released
 
 Planned :
 
+	- Archlinux confoper_ph.sh support
 	- OSMC support
 	- Enhancements in 'TODO'
 
