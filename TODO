@@ -1,8 +1,6 @@
 * capture CTRL-C and ph_umount for PieHelper pseudo
 * write confoper_ph.sh filesystem resize
-* Moonlight border thing
 * change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
-* retest different run accounts
 * test archlinux
 * controller detection for XBOX360 usb receiver
 * solve bluetooth pairing dualshock3 controllers
