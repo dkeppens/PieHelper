@@ -1217,6 +1217,7 @@ return 0
 function ph_install_app {
 
 typeset PH_APP="$1"
+typeset PH_APP_USER=""
 typeset PH_EMUL_SETUP_DIR_INIT=""
 typeset PH_EMUL_DIR_INIT=""
 typeset -u PH_APPU=`echo $PH_APP | cut -c1-4`
@@ -1368,8 +1369,14 @@ case $PH_APP in Moonlight)
 		printf "%2s%s\n\n" "" "FAILED"
 		return 1 ;;
 esac
-printf "%2s%s\n" "" "SUCCESS"
 ph_generate_installed_apps "$PH_APP"
+PH_APP_USER=`nawk -v app=^"$PH_APP"$ '$1 ~ app { print $2 ; exit 0 } { next }' $PH_CONF_DIR/installed_apps 2>/dev/null`
+if [[ "$PH_APP" == "Emulationstation" && "$PH_RUN_USER" != "$PH_APP_USER" ]]
+then
+	$PH_SUDO chown -R "$PH_APP_USER":`id -gn "$PH_APP_USER"` "$HOME"/RetroPie 2>/dev/null
+	$PH_SUDO chown -R "$PH_APP_USER":`id -gn "$PH_APP_USER"` "$PH_EMUL_DIR" 2>/dev/null
+fi
+printf "%2s%s\n" "" "SUCCESS"
 eval ph_configure_"$PH_APPL"
 return 0
 }
