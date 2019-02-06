@@ -6,6 +6,8 @@ Install Emulationstation and integrate with PieHelper:confapps_ph.sh -p int -a E
 Remove Emulationstation from PieHelper and uninstall:confapps_ph.sh -p rem -a Emulationstation
 Configure Emulationstation (configures ALSA audio):confapps_ph.sh -p conf -a Emulationstation | more
 List all available options for Emulationstation:confopts_ph.sh -p list -a Emulationstation | more
+View the value of any Emulationstation option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Emulationstation -g
+View the value of any Emulationstation option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Emulationstation -g -r
 View/Change the value of read-write Emulationstation option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Emulationstation -s
 View/Change the value of read-write Emulationstation option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Emulationstation -s -r
 Set all Emulationstation options back to default:ph_set_all_options_to_default Emulationstation

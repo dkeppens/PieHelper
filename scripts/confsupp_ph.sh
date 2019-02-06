@@ -210,10 +210,10 @@ Remove $PH_APP from PieHelper and uninstall:confapps_ph.sh -p rem -a $PH_APP
 Configure $PH_APP (requires development from user):confapps_ph.sh -p conf -a $PH_APP
 Update $PH_APP to the latest version (only if installed as a package):ph_update_pkg \$PH_`echo $PH_APPU`_PKG_NAME | more
 List all available options for $PH_APP:confopts_ph.sh -p list -a $PH_APP | more
-View the current value of $PH_APP option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a $PH_APP -g
-View the current value of $PH_APP option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a $PH_APP -g -r
-Change the value of read-write $PH_APP option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a $PH_APP -s
-Change the value of read-write $PH_APP option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a $PH_APP -s -r
+View the value of any $PH_APP option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a $PH_APP -g
+View the value of any $PH_APP option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a $PH_APP -g -r
+View/Change the value of read-write $PH_APP option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a $PH_APP -s
+View/Change the value of read-write $PH_APP option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a $PH_APP -s -r
 Display help for $PH_APP option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a $PH_APP -d
 Display help for $PH_APP option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a $PH_APP -d -r
 Display TTY currently allocated to $PH_APP:confapps_ph.sh -p tty -a $PH_APP | more

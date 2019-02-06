@@ -4,9 +4,11 @@ Unconfigure PieHelper:confpieh_ph.sh -u
 Unconfigure and uninstall PieHelper:confpieh_ph.sh -s
 List PieHelper configuration state and version:confpieh_ph.sh -g | more
 List all available options for PieHelper:confopts_ph.sh -p list -a PieHelper | more
+View the value of any PieHelper option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a PieHelper -g
+View the value of any PieHelper option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a PieHelper -g -r
 View/Change the value of read-write PieHelper option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a PieHelper -s
 View/Change the value of read-write PieHelper option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a PieHelper -s -r
-Set PieHelper options back to default:for i in PH_PIEH_PERSISTENT PH_PIEH_CMD_OPTS PH_PIEH_CIFS_SHARE PH_PIEH_CIFS_USER PH_PIEH_CIFS_PASS PH_PIEH_CIFS_SRV PH_PIEH_CIFS_DIR PH_PIEH_CIFS_SUBDIR PH_PIEH_CIFS_MPT;do; ph_set_option_to_default $i;done
+Set PieHelper options back to default:for i in PH_PIEH_PERSISTENT PH_PIEH_CMD_OPTS PH_PIEH_CIFS_SHARE PH_PIEH_CIFS_USER PH_PIEH_CIFS_PASS PH_PIEH_CIFS_SRV PH_PIEH_CIFS_DIR PH_PIEH_CIFS_SUBDIR PH_PIEH_CIFS_MPT PH_PIEH_PRE_CMD PH_PIEH_POST_CMD PH_PIEH_USE_CTRL PH_PIEH_NUM_CTRL;do; ph_set_option_to_default $i;done
 Display help for PieHelper option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a PieHelper -d
 Display help for PieHelper option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a PieHelper -d -r
 Display TTY currently allocated to PieHelper:confapps_ph.sh -p tty -a PieHelper | more

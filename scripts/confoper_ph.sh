@@ -982,9 +982,15 @@ case $PH_ACTION in all)
 				exit 1
 			fi
 		fi
-		printf "\n"
-		passwd "$PH_USER" || PH_RESULT="PARTIALLY FAILED"
-		printf "\n"
+		while true
+		do
+			[[ $PH_COUNT2 -ne 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Could not set password"
+			printf "%8s%s\n\n" "" "--> Please provide a password for $PH_USER"
+			passwd "$PH_USER"
+			[[ $? -eq 0 ]] && printf "\n%10s%s\n" "" "OK" && break
+			PH_COUNT2=$((PH_COUNT2+1))
+		done
+		PH_COUNT2=0
 		printf "%8s%s\n" "" "--> Checking for sudo rules for user $PH_USER"
 		if [[ -f /etc/sudoers.d/010_"$PH_USER"-nopasswd ]]
 		then
@@ -1788,7 +1794,7 @@ EOF
 		then
 			ph_getdef PH_BOOTENV || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
 		fi
-		if ((grep "PH_RUNAPP_CMD='/home/dkeppens/PieHelper/scripts/startpieh.sh'" /etc/profile.d/PieHelper_tty* >/dev/null) && ([[ "$PH_BOOTENV" == "gui" ]]))
+		if ((grep "PH_RUNAPP_CMD='/home/dkeppens/PieHelper/scripts/startpieh.sh'" /etc/profile.d/PieHelper_tty* >/dev/null 2>&1) && ([[ "$PH_BOOTENV" == "gui" ]]))
 		then
 			printf "%8s%s\n" "" "--> Setting default boot environment to $PH_BOOTENV"
 			printf "%10s%s\n" "" "ERROR : PieHelper is configured and is not compatible with a graphical default boot environment"

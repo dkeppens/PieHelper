@@ -11,8 +11,19 @@ ________________________
 VERSION 1.02 - 05/02/2019
 ________________________
 
-* Support for Moonlight -width and -height parameters
+* Added support for Moonlight's -width and -height parameters
 * Fixes for multiple run accounts using OOS apps
 * Fixes for removing OOS apps
 * Fix for ph_undo_setup_tty
-* Fixed format output error for ph_configure_moon
+* Fixed output format for ph_configure_moon
+* Fixed error output for confoper_ph.sh bootenv function
+* Fixed output format for ph_check_pkg_run_user user creation
+* Added clarification in usage info display for ph_configure_pieh
+* Added library path definition to PieHelper path extension
+* Fix for moonlight quitting in ph_run_app_action
+* Fixes for ph_configure_moon and listmoon_ph.sh for running moonlight under a different run account
+* Fix for password prompting in ph_run_app_action and confoper_ph.sh
+* Added new read-only option PH_PIEH_NUM_CTRL
+* Changed default of PH_CTRL_PS3_PIN to '0000'
+* Added menu options to view value of read-only options for all apps and integrated changes with confsupp_ph.sh
+* Changed CIFS options for Moonlight to read-only

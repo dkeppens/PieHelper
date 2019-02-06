@@ -21,6 +21,7 @@ function ph_configure_moon {
 
 typeset PH_ANSWER=""
 typeset PH_APP="Moonlight"
+typeset PH_MOON_USER=""
 typeset -i PH_COUNT=0
 typeset -i PH_OPT=0
 set -A PH_OPTAR PH_MOON_RES PH_MOON_FPS PH_MOON_BITRATE PH_MOON_PCKTSIZE PH_MOON_WIDTH PH_MOON_HEIGHT PH_MOON_USE_CTRL PH_MOON_NUM_CTRL PH_MOON_CMD_OPTS PH_MOON_GAME PH_MOON_SRV
@@ -65,7 +66,6 @@ do
                         ph_set_option Moonlight -r "${PH_OPTAR[$PH_OPT]}"="$PH_ANSWER" && printf "%2s%s\n" "" "SUCCESS" || printf "%2s%s\n" "" "FAILED"
                 done
         else
-                printf "%2s%s\n" "" "SUCCESS"
                 if [[ "${PH_OPTAR[$PH_OPT]}" == "PH_MOON_SRV" && -z "$PH_MOON_SRV" ]]
                 then
                         unset PH_OPTAR
@@ -75,13 +75,19 @@ do
         fi
         PH_ANSWER=""
 done
-printf "%8s%s\n" "" "--> Removing Moonlight cache directory for $PH_RUN_USER"
-$PH_SUDO rm -r "$HOME/.cache/moonlight" 2>/dev/null
-printf "%10s%s\n" "" "OK"
-#$PH_SUDO chmod 4755 `which moonlight` >/dev/null 2>&1
+PH_MOON_USER=`nawk '$1 ~ /^Moonlight$/ { print $2 ; exit 0 } { next }' $PH_CONF_DIR/installed_apps 2>/dev/null`
+printf "%s\n" "- Cleaning up Moonlight cache"
+$PH_SUDO rm -r "`getent passwd \"$PH_MOON_USER\" | cut -d':' -f6`/.cache" 2>/dev/null
+printf "%2s%s\n" "" "SUCCESS"
 printf "%s\n" "- Pairing with $PH_MOON_SRV"
-$PH_SUDO -u `nawk '$1 ~ /^Moonlight$/ { print $2 ; exit 0 } { next }' $PH_CONF_DIR/installed_apps` -E moonlight pair "$PH_MOON_SRV"
+$PH_SUDO -E LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib moonlight pair $PH_MOON_SRV
+if [[ "$PH_MOON_USER" != "$PH_RUN_USER" ]]
+then
+	$PH_SUDO mv $HOME/.cache `getent passwd "$PH_MOON_USER" | cut -d':' -f6` 2>/dev/null
+	$PH_SUDO chown -R "$PH_MOON_USER":`id -ng "$PH_MOON_USER"` `getent passwd "$PH_MOON_USER" | cut -d':' -f6` 2>/dev/null
+fi
 unset PH_OPTAR
+printf "%2s%s\n" "" "SUCCESS"
 printf "\n"
 return 0
 }
@@ -1507,7 +1513,19 @@ then
 	if [[ "$PH_RUN_USER" != "$PH_APP_USER" ]]
 	then
 		ph_revoke_pieh_access "$PH_APP_USER"
+		printf "%8s%s\n\n" "" "--> Displaying reminder"
+		ph_print_bannerline
+		printf "%10s%s\n" "" "* No more PieHelper applications use run account $PH_APP_USER"
+		printf "%12s%s\n" "" "If no other applications use this account, it can be deleted manually by running '$PH_SUDO userdel -r $PH_APP_USER'"
+		ph_print_bannerline
+		printf "\n%10s%s\n" "" "OK"
 	fi
+fi
+if [[ "$PH_APP" == "Moonlight" ]]
+then
+	printf "%8s%s\n" "" "--> Removing Moonlight cache directory"
+	$PH_SUDO rm -r `getent passwd "$PH_APP_USER" | cut -d':' -f6`/.cache 2>/dev/null
+	printf "%10s%s\n" "" "OK"
 fi
 printf "%2s%s\n\n" "" "$PH_RESULT"
 return 0
@@ -1519,6 +1537,7 @@ typeset PH_APP_USER=""
 typeset PH_PACKAGED="yes"
 typeset -u PH_APPU=`echo "${PH_APP_READ[$PH_i]}" | cut -c1-4`
 typeset -i PH_COUNT=0
+typeset -i PH_COUNT2=0
 
 printf "%8s%s\n" "" "--> Checking if ${PH_APP_READ[$PH_i]} is installed as a package"
 eval ph_get_pkg_inststate \$PH_"$PH_APPU"_PKG_NAME
@@ -1550,12 +1569,10 @@ then
 		((PH_COUNT++))
 		ph_screen_input "$PH_APP_USER" >/dev/null || continue
 		[[ -z "$PH_APP_USER" ]] && PH_APP_USER="$PH_RUN_USER"
-		printf "\n%10s%s\n" "" "OK ($PH_APP_USER)"
 		id $PH_APP_USER >/dev/null 2>&1
 		if [[ $? -ne 0 ]]
 		then
-			printf "%8s%s\n" "" "Warning : User $PH_APP_USER does not exist -> Creating"
-			printf "%10s%s\n" "" "OK"
+			printf "\n%10s%s\n" "" "Warning : User $PH_APP_USER does not exist -> Creating"
 			printf "%8s%s\n" "" "--> Creating group $PH_APP_USER"
 			$PH_SUDO groupadd -f $PH_APP_USER >/dev/null
 			printf "%10s%s\n" "" "OK"
@@ -1563,6 +1580,17 @@ then
 			$PH_SUDO useradd -d /home/$PH_APP_USER -m -c "${PH_APP_READ[$PH_i]} application" -g $PH_APP_USER \
 							-G tty,audio,video,input -s /bin/bash $PH_APP_USER >/dev/null 2>&1
 			printf "%10s%s\n" "" "OK"
+			while true
+			do
+				[[ $PH_COUNT2 -ne 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Could not set password"
+				printf "%8s%s\n\n" "" "--> Setting password for $PH_APP_USER"
+				$PH_SUDO passwd $PH_APP_USER
+				[[ $? -eq 0 ]] && break
+				((PH_COUNT2++))
+			done
+			printf "\n%10s%s\n" "" "OK"
+		else
+			printf "\n%10s%s\n" "" "OK ($PH_APP_USER)"
 		fi
 		break
 	done
@@ -2306,6 +2334,7 @@ if [[ ! -f /etc/profile.d/PieHelper-path.sh ]]
 then
 	printf "%s\n" "- Installing PieHelper PATH extension"
 	echo "export PATH=/usr/local/bin:$PH_SCRIPTS_DIR:\$PATH" >/tmp/PieHelper-path.sh && \
+	echo "export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH" >>/tmp/PieHelper-path.sh && \
 	($PH_SUDO mv /tmp/PieHelper-path.sh /etc/profile.d/PieHelper-path.sh ; \
 	 printf "%2s%s\n" "" "SUCCESS") || \
 	printf "%2s%s\n" "" "Warning : Could not install PieHelper PATH extension"
@@ -2348,7 +2377,8 @@ printf "%8s%s\n" "" "- If you're connected directly you can use the linux built-
 printf "%10s%s\n\n" "" "For direct control with a mouse and keyboard, the following notes apply : "
 printf "%12s%s\n" "" "- Any applications that do not render to the default frame buffer need to be quit first before switching TTYs if"
 printf "%14s%s\n" "" "the application that is being switched to is marked as persistent"
-printf "%14s%s\n" "" "Neither should these types of applications be marked as persistent themselves"
+printf "%14s%s\n" "" "Such applications should never be marked persistent themself either"
+printf "%14s%s\n" "" "This behavior can be avoided completely by setting persistence to 'no' for both the application in question and the application being switched to"
 printf "%14s%s\n" "" "Examples are Moonlight, Kodi and Emulationstation"
 printf "%12s%s\n" "" "- Any application that intercepts and interprets the keycombo for TTY switching itself always have to be quit before switching TTYs"
 printf "%14s%s\n" "" "Examples are Moonlight and Kodi"
@@ -2365,6 +2395,7 @@ return 0
 function ph_run_app_action {
 
 typeset PH_RUNAPP="$2"
+typeset PH_RUNAPP_USER=""
 typeset PH_RUNAPP_CMD=""
 typeset PH_RUNAPP_CMD_OPTS=""
 typeset PH_i=""
@@ -2399,10 +2430,10 @@ typeset -n PH_RUNAPPU_CIFS_SUBDIR=PH_"$PH_RUNAPPU"_CIFS_SUBDIR
 typeset -n PH_RUNAPPU_PERSISTENT=PH_"$PH_RUNAPPU"_PERSISTENT
 
 PH_PIEH_TTY=`ph_get_tty_for_app PieHelper`
-PH_MOON_PATH=`nawk '$1 ~ /^Moonlight$/ { printf $2 }' $PH_CONF_DIR/supported_apps`
+PH_MOON_PATH=`nawk '$1 ~ /^Moonlight$/ { printf $2 }' $PH_CONF_DIR/supported_apps 2>/dev/null`
+PH_RUNAPP_USER=`nawk -v app=^"$PH_RUNAPP"$ '$1 ~ app { print $2 ; exit 0 } { next }' $PH_CONF_DIR/installed_apps 2>/dev/null`
 case $1 in start)
 	PH_RUNAPP_TTY=`ph_get_tty_for_app $PH_RUNAPP`
-	[[ -f "$PH_MOON_PATH" && $PH_RUNAPP_TTY -eq `$PH_SUDO fgconsole` ]] && "$PH_MOON_PATH" quit >/dev/null 2>&1
 	if [[ "$PH_RUNAPP" == "Moonlight" && `$PH_SUDO fgconsole` -ne $PH_RUNAPP_TTY ]]
 	then
 		"$PH_MOON_PATH" list "$PH_MOON_SRV" >/dev/null 2>&1
@@ -2591,7 +2622,7 @@ case $1 in start)
 	then
 		while pgrep moonlight >/dev/null
 		do
-			"$PH_MOON_PATH" quit >/dev/null 2>&1
+			$PH_SUDO -E su "$PH_RUNAPP_USER" -c "LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib $PH_MOON_PATH quit" >/dev/null 2>&1
 			sleep 3
 		done
 	fi

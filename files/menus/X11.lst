@@ -6,10 +6,10 @@ Install X11 and integrate with PieHelper:confapps_ps.sh -p int -a X11
 Remove X11 from PieHelper and uninstall:confapps_ph.sh -p rem -a X11
 Update X11 to the latest version (only if installed as a package):ph_update_pkg $PH_X11_PKG_NAME | more
 List all available options for X11:confopts_ph.sh -p list -a X11 | more
-View the current value of X11 option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a X11 -g
-View the current value of X11 option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a X11 -g -r
-Change the value of read-write X11 option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a X11 -s
-Change the value of read-write X11 option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a X11 -s -r
+View the value of any X11 option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a X11 -g
+View the value of any X11 option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a X11 -g -r
+View/Change the value of read-write X11 option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a X11 -s
+View/Change the value of read-write X11 option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a X11 -s -r
 Set all X11 options back to default:ph_set_all_options_to_default X11
 Display help for X11 option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a X11 -d
 Display help for X11 option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a X11 -d -r
