@@ -1,5 +1,6 @@
 * capture CTRL-C and ph_umount for PieHelper pseudo
-* write confoper_ph.sh filesystem resize
+* write confoper_ph.sh filesystem resize and splash screen
+* support for bluetooth devices distributed over multiple adapters in confctrl_ph.sh
 * change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
 * test archlinux
 * controller detection for XBOX360 usb receiver
@@ -20,12 +21,9 @@
 * additional option for application restarts to not auto-switch to TTY restarted app + check compatibility with Kodi, Emulationstation and Moonlight
 * check for /etc/apt/apt.conf on debian and turn off option don't install recommended packages
 * test for controllers actually online
-* test listblue_ph.sh with more than one bluetooth adapter
 * support for using a mix of different controller types
-* test integrated new bluetooth method for newest modelPI -> change ph_setup_controllers if needed
 * rename installed_apps to integrated_apps
 * test from menus to see if increase in PH_PIEH_MAX_TTYS viable or not and if so : remove limit check in confsupp_ph.sh + mentions of it everywhere
-* test persistence apps stop from menu
 * test all confxxxx_ph.sh scripts now have all checks needed
 * remove all code for move scripts and all move scripts and move template
 * check for nowhere empty reads where not permitted
@@ -35,18 +33,11 @@
 * empty line remains in functions.user in confsupp on remove app
 * test controller mappings
 * test second controller input
-* check all conf files for ALL TABS
 * test ph_remove_pieh from menus and through confpieh_ph.sh
 * hashing of passwords functionality
 * signal catching where possible
-* mention supported controllers in README and mixing controller types not supported
-* mention no support for multiple physical displays in README
-* test remaining from menus
 * test confsupp_ph.sh for graphical stuff
 * test and support all other linux-based distros
 * REST interface for calling scripts and android app : use vtutil && android app
-* change README
-* change VERSIONS
-* verify HOWTO
 * package version with or without dependencies ? (with could possibly change scripts f.e. required packages no longer needed ?)
 * try compiling steam on arm and add it for self-use only if possible

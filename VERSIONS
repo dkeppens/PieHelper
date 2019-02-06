@@ -32,3 +32,8 @@ ________________________
 * Fixes for non-default run account for Emulationstation
 * Changed top and bottom overscan defaults to 30 (up from 16)
 * Added several reminder displays for non-default run accounts
+
+VERSION 1.03 - 06/02/2019
+________________________
+
+* listmoon_ph.sh now allows interactively selecting a game for streaming

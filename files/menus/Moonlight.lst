@@ -6,7 +6,7 @@ Install Moonlight and integrate with PieHelper:confapps_ph.sh -p int -a Moonligh
 Remove Moonlight from PieHelper and uninstall:confapps_ph.sh -p rem -a Moonlight
 Configure Moonlight (set all required options and pair):confapps_ph.sh -p conf -a Moonlight
 Update Moonlight to the latest version (only if installed as a package):ph_update_pkg $PH_MOON_PKG_NAME
-List all games currently shared by Moonlight:listmoon_ph.sh
+List/Select shared game(s) for Moonlight streaming:listmoon_ph.sh
 List all available options for Moonlight:confopts_ph.sh -p list -a Moonlight | more
 View the value of any Moonlight option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Moonlight -g
 View the value of any Moonlight option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Moonlight -g -r

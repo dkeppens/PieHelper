@@ -56,5 +56,10 @@ Planned :
 	- OSMC support
 	- Enhancements in 'TODO'
 
+Unsupported : 
+
+	- Multiple physical displays
+	- Mixing different controller types
+
 PieHelper written by Davy Keppens on 04/10/18
 PieHelper.official@gmail.com
