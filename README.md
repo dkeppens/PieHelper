@@ -45,7 +45,7 @@ Developed exclusively with ksh93, no other prerequisites exist except for the fo
 	- presence of a /proc filesystem
 	- either apt or pacman as a package management utility
 
-and compatibility should therefore be out-of-the-box for Pi-based Raspbian, Noobs, Ubuntu and ArchLinux distros
+Compatibility should therefore be out-of-the-box for Pi-based Raspbian, Noobs, Ubuntu and ArchLinux distros
 
 Currently however, only the official Raspbian distro has been tested
 
