@@ -4,7 +4,7 @@
 
 . $(dirname $0)/../main/main.sh || exit $? && set +x
 
-set -x
+#set -x
 
 typeset PH_i=""
 typeset PH_OLD_VERSION=""
