@@ -29,8 +29,6 @@ mostly intended for novice linux users that :
 	- X11 (Graphical Desktop)
 	- Bash (CLI login)
 	- PieHelper (Menu and CLI based management of all listed)
-* Currently uninplemented :
-	- Controller detection for XBOX360 controllers using an XBOX360 USB Receiver
 
 No more hassle manually installing and configuring all applications when (re)installing the system
 
@@ -53,6 +51,10 @@ Feedback, bug reports and feature requests can be reported on the official githu
 or emailed to the address listed below
 
 Current state : Released
+
+Currently unimplemented :
+
+	- Controller detection for XBOX360 controllers using an XBOX360 USB Receiver
 
 Planned :
 
