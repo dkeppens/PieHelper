@@ -151,8 +151,7 @@ EOF
 			then
 				printf "%10s%s\n" "" "OK"
 			else
-				printf "%10s%s\n" "" "ERROR : Issues encountered locally committing $PH_NEW_VERSION changes to git"
-				PH_RESULT="PARTIALLY FAILED"
+				printf "%10s%s\n" "" "Warning : Issues encountered locally committing $PH_NEW_VERSION changes to git"
 			fi
 			printf "%8s%s\n" "" "--> Tagging local git build as $PH_NEW_VERSION"
 			if git tag -a $PH_NEW_VERSION -m "$PH_GIT_COMMSG" >/dev/null 2>&1
