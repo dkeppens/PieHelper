@@ -1,7 +1,7 @@
 Run all OS configuration functions using stored default values:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p all-usedef
 Run all OS configuration functions interactively:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p all -i
-Run the 'create a new user' function interactively:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p user -i
-Run the 'create a new user' function using the stored default values:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p user -a def
+Run the 'create a new user/modify existing user' function interactively:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p user -i
+Run the 'create a new user/modify existing user' function using the stored default values:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p user -a def
 Run the 'create an SSH key for user' function interactively:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p sshkey -i
 Run the 'create an SSH key for user' function using the stored default values:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p sshkey -a def
 Run the 'set system hostname' function interactively:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p host -i

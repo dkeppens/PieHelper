@@ -281,7 +281,7 @@ do
 		>&2 printf "%18s%s\n" "" "- A reboot will only be performed once after all functions have concluded instead of at the end of every function requiring a reboot"
 		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
 		>&2 printf "%18s%s\n" "" "- The following info will be prompted for during interactive mode :"
-		>&2 printf "%21s%s\n" "" "- The value to use for \"create new user\", \"delete standard user '$PH_DEF_USER'\", \"create ssh key for user\", \"system locale\", \"keyboard layout\", \"system timezone\""
+		>&2 printf "%21s%s\n" "" "- The value to use for \"create new user/modify existing user\", \"delete standard user '$PH_DEF_USER'\", \"create ssh key for user\", \"system locale\", \"keyboard layout\", \"system timezone\""
 		>&2 printf "%21s%s\n" "" "  \"system hostname\", \"audio channel\", \"top, bottom, left and right overscan\", \"memory reserved for the GPU\", \"SSH state\", \"wait for network on boot\" and \"default boot environment\""
                 >&2 printf "%12s%s\n" "" "\"all-usedef\" functions like \"all\" but will use the default value stored for each required parameter"
                 >&2 printf "%15s%s\n" "" "- If no stored default can be found for one or more of the required parameters, the related function will fail but processing of the remaining function(s) will not be interrupted"
@@ -301,7 +301,7 @@ do
 		>&2 printf "%18s%s\n" "" "-i can be followed by one of a list of allowed parameters"
 		>&2 printf "%18s%s\n" "" "- If one of a list of allowed parameters is given, the related info will be prompted for"
 		>&2 printf "%18s%s\n" "" "- The following info will be prompted for during interactive mode if none of a list of allowed parameters is given :"
-		>&2 printf "%21s%s\n" "" "- The default value to store for \"create new user\", \"delete standard user '$PH_DEF_USER'\", \"create ssh key for user\", \"system locale\", \"keyboard layout\", \"system timezone\""
+		>&2 printf "%21s%s\n" "" "- The default value to store for \"create new user/modify existing\", \"delete standard user '$PH_DEF_USER'\", \"create ssh key for user\", \"system locale\", \"keyboard layout\", \"system timezone\""
 		>&2 printf "%21s%s\n" "" "  \"system hostname\", \"audio channel\", \"top, bottom, left and right overscan\", \"memory reserved for the GPU\", \"SSH state\", \"wait for network on boot\" and \"default boot environment\""
                 >&2 printf "%12s%s\n" "" "\"dispdef\" allows displaying all currently stored default values"
                 >&2 printf "%12s%s\n" "" "\"ssh\" allows choosing whether to allow or disallow SSH logins to this system for all users besides \"root\""
@@ -345,7 +345,7 @@ do
 		>&2 printf "%21s%s\n" "" "- If -d is not used and user '$PH_DEF_USER' is currently logged on, removal will be delayed until the next system reboot which will be proposed"
 		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
 		>&2 printf "%18s%s\n" "" "- The following info will be prompted for during interactive mode :"
-		>&2 printf "%21s%s\n" "" "- The value to use for operation \"create new user\" and operation \"delete standard user '$PH_DEF_USER'\""
+		>&2 printf "%21s%s\n" "" "- The value to use for operation \"create new user/modify existing user\" and operation \"delete standard user '$PH_DEF_USER'\""
                 >&2 printf "%12s%s\n" "" "\"netwait\" allows specifying whether the system should wait for networking to become available before continuing the application part of the boot process"
 		>&2 printf "%15s%s\n" "" "-w allows selecting either \"enabled\" or \"disabled\""
 		>&2 printf "%18s%s\n" "" "- The keyword \"def\" can be used to specify using the value stored as the default for this parameter"
@@ -679,7 +679,7 @@ case $PH_ACTION in all)
 	for PH_i in PH_USER PH_DEL_PIUSER PH_LOCALE PH_KEYB PH_TZONE PH_HOST PH_AUDIO PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN PH_VID_MEM PH_SSH_STATE PH_NETWAIT PH_BOOTENV
 	do
 		case $PH_i in PH_USER)
-				printf "%8s%s\n" "" "--> Displaying stored default value for 'create new user'/'create SSH key for user' operation" ;;
+				printf "%8s%s\n" "" "--> Displaying stored default value for 'create new user/modify existing user'/'create SSH key for user' operation" ;;
 			    PH_DEL_PIUSER)
 				printf "%8s%s\n" "" "--> Displaying stored default value for delete standard user '$PH_DEF_USER' operation" ;;
 				PH_LOCALE)
@@ -788,7 +788,7 @@ case $PH_ACTION in all)
 				do
 					[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
 					case $PH_i in PH_USER)
-						printf "%8s%s" "" "--> Please enter the value for 'create new user'/'create SSH key for user' operation : " ;;
+						printf "%8s%s" "" "--> Please enter the value for 'create new user/modify existing user'/'create SSH key for user' operation : " ;;
 						PH_DEL_PIUSER)
 						printf "%8s%s" "" "--> Please enter the value for delete standard user '$PH_DEF_USER' operation (yes/no) : " ;;
 						    PH_LOCALE)
@@ -921,7 +921,7 @@ case $PH_ACTION in all)
 				do
 					[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
 					PH_MESSAGE="Invalid response"
-					[[ "$PH_i" == "PH_USER" ]] && printf "%8s%s" "" "--> Please enter the value for 'create new user' operation (cannot be a logged-in user) : " || \
+					[[ "$PH_i" == "PH_USER" ]] && printf "%8s%s" "" "--> Please enter the value for 'create new user/modify existing user' operation (cannot be a logged-in user) : " || \
 							printf "%8s%s" "" "--> Please enter the value for delete standard user '$PH_DEF_USER' operation (yes/no) : "
 					read PH_ANSWER 2>/dev/null
 					[[ "$PH_ANSWER" == "def" ]] && PH_COUNT=$((PH_COUNT+1)) && PH_ANSWER="" && PH_MESSAGE="Unsupported value entered" && continue
@@ -981,7 +981,7 @@ case $PH_ACTION in all)
 		then
 			printf "%10s%s\n" "" "Warning : Found -> Modifying"
 			printf "%8s%s\n" "" "--> Modifying user $PH_USER"
-			if usermod -d "${HOME%/*}/$PH_USER" -m -c "$PH_USER account" -s /bin/bash -G tty,input,video,audio -g "$PH_USER" "$PH_USER" >/dev/null 2>&1
+			if usermod -d /home/"$PH_USER" -m -c "$PH_USER account" -s /bin/bash -G tty,input,video,audio -g "$PH_USER" "$PH_USER" >/dev/null 2>&1
 			then
 				printf "%10s%s\n" "" "OK"
 			else
@@ -992,7 +992,7 @@ case $PH_ACTION in all)
 		else
 			printf "%10s%s\n" "" "OK (Not found) -> Creating"
 			printf "%8s%s\n" "" "--> Creating user $PH_USER"
-			if useradd -d "${HOME%/*}/$PH_USER" -c "$PH_USER account" -m -s /bin/bash -G tty,input,video,audio -g "$PH_USER" "$PH_USER" >/dev/null 2>&1
+			if useradd -d /home/"$PH_USER" -c "$PH_USER account" -m -s /bin/bash -G tty,input,video,audio -g "$PH_USER" "$PH_USER" >/dev/null 2>&1
 			then
 				printf "%10s%s\n" "" "OK"
 			else
@@ -1119,10 +1119,9 @@ case $PH_ACTION in all)
 			printf "%10s%s\n" "" "OK (None)"
 			printf "%8s%s\n" "" "--> Creating public/private keypair and trusting public key"
 			mkdir $PH_HOME/.ssh 2>/dev/null
-			chmod 700 "$PH_HOME/.ssh" 2>/dev/null
-			chown -R "$PH_USER":"$PH_USER" "$PH_HOME/.ssh" 2>/dev/null
 			if ssh-keygen -t rsa -b 2048 -N "" -f "$PH_HOME/.ssh/id_rsa" >/dev/null 2>&1
 			then
+				chmod 700 "$PH_HOME/.ssh" 2>/dev/null
 				chmod 600 "$PH_HOME/.ssh/id_rsa" 2>/dev/null
 				chmod 644 "$PH_HOME/.ssh/id_rsa.pub" 2>/dev/null
 				chmod 755 "$PH_HOME" 2>/dev/null
@@ -1603,29 +1602,36 @@ case $PH_ACTION in all)
 		fi
 		printf "%8s%s\n" "" "--> Checking currently configured GPU memory"
 		PH_VALUE="`nawk -F'=' -v str=^\"gpu_mem\"$ '$1 ~ str { print $2 ; exit 0 } { next }' /boot/config.txt`"
+		[[ -z "$PH_VALUE" ]] && PH_VALUE="None"
 		if [[ "$PH_VID_MEM" != "$PH_VALUE" ]]
 		then
 			printf "%10s%s\n" "" "OK ($PH_VALUE)"
 			printf "%8s%s\n" "" "--> Configuring memory reservation for the GPU"
-			nawk -F'=' -v str=^"gpu_mem" -v val="$PH_VID_MEM" '$1 ~ str { print $1 "=" val ; next } { print }' /boot/config.txt >/tmp/boot_config.txt_tmp 2>/dev/null
-			if [[ $? -eq 0 ]]
+			if [[ -z "$PH_VALUE" ]]
 			then
-				printf "%10s%s\n" "" "OK"
-				mv /tmp/boot_config.txt_tmp /boot/config.txt
-				if [[ `cat /proc/$PPID/comm` != "confoper_ph.sh" ]]
+				nawk -F'=' -v str=^"gpu_mem" -v val="$PH_VID_MEM" '$1 ~ str { print $1 "=" val ; next } { print }' /boot/config.txt >/tmp/boot_config.txt_tmp 2>/dev/null
+				if [[ $? -eq 0 ]]
 				then
-					while [[ "$PH_ANSWER" != @(y|n) ]]
-					do
-						[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
-						printf "%8s%s" "" "--> Reboot to activate the new values (y/n) ? "
-						read PH_ANSWER 2>/dev/null
-						PH_COUNT=$((PH_COUNT+1))
-					done
 					printf "%10s%s\n" "" "OK"
+					mv /tmp/boot_config.txt_tmp /boot/config.txt
+				else
+					printf "%10s%s\n" "" "ERROR : Could not configure GPU memory reservation"
+					PH_RESULT="FAILED"
 				fi
 			else
-				printf "%10s%s\n" "" "ERROR : Could not configure GPU memory reservation"
-				PH_RESULT="FAILED"
+				echo "gpu_mem=$PH_VID_MEM" >>/boot/config.txt
+				printf "%10s%s\n" "" "OK"
+			fi
+			if [[ `cat /proc/$PPID/comm` != "confoper_ph.sh" && "$PH_RESULT" != "FAILED" ]]
+			then
+				while [[ "$PH_ANSWER" != @(y|n) ]]
+				do
+					[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+					printf "%8s%s" "" "--> Reboot to activate the new values (y/n) ? "
+					read PH_ANSWER 2>/dev/null
+					PH_COUNT=$((PH_COUNT+1))
+				done
+				printf "%10s%s\n" "" "OK"
 			fi
 		else
 			printf "%10s%s\n" "" "OK (Nothing to do)"

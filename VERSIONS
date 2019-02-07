@@ -37,3 +37,5 @@ VERSION 1.03 - 06/02/2019
 ________________________
 
 * listmoon_ph.sh now allows interactively selecting a game for streaming
+* Bug fixes for user creation module in confoper_ph.sh
+* Bug fixe for gpu_mem reservation module in confoper_ph.sh for no pre-existing config

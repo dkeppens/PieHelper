@@ -57,12 +57,12 @@ Current state :
 Currently unimplemented :
 
 	- Controller detection for XBOX360 controllers using an XBOX360 USB Receiver
+	- confoper_ph.sh (OS configuration module) support for Archlinux
+	- expand root filesystem module for confoper_ph.sh
 
 Planned :
-
-	- Archlinux confoper_ph.sh support
-	- OSMC support
 	- Enhancements in 'TODO'
+	- OSMC support
 
 Unsupported : 
 

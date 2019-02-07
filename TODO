@@ -1,6 +1,8 @@
+* add OS module to move PieHelper to a different location
+* solve issue for reset of PH_PIEH_CMD_OPTS to Main by running confgenb_ph.sh with debug disabled
 * test if Emulationstation mount requires $PH_RUNAPP_USER for CIFS authentication
 * capture CTRL-C and ph_umount for PieHelper pseudo
-* write confoper_ph.sh filesystem resize and splash screen
+* add confoper_ph.sh splash screen management module
 * support for bluetooth devices distributed over multiple adapters in confctrl_ph.sh
 * change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
 * test archlinux
