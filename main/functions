@@ -2640,18 +2640,22 @@ case $1 in start)
 		ph_umount_cifs_share PieHelper
 		"$PH_SUDO" systemctl stop getty@tty$PH_PIEH_TTY >/dev/null 2>&1
 	fi
-	if [[ `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY && "$PH_RUNAPP_CMD" != "/bin/bash" ]]
+	if [[ `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY ]]
 	then
-		if [[ "$PH_RUNAPP" == "Moonlight" && "$PH_RUNAPP_USER" != "$PH_RUN_USER" ]]
+		if [[ "$PH_RUNAPP_CMD" != "/bin/bash" ]]
 		then
-			$PH_SUDO -E su "$PH_RUNAPP_USER" -c "LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib eval $PH_RUNAPP_CMD $PH_RUNAPP_CMD_OPTS"
+			if [[ "$PH_RUNAPP" == "Moonlight" && "$PH_RUNAPP_USER" != "$PH_RUN_USER" ]]
+			then
+				$PH_SUDO -E su "$PH_RUNAPP_USER" -c "LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib eval $PH_RUNAPP_CMD $PH_RUNAPP_CMD_OPTS"
+			else
+				eval "$PH_RUNAPP_CMD $PH_RUNAPP_CMD_OPTS"
+			fi
 		else
-			eval "$PH_RUNAPP_CMD $PH_RUNAPP_CMD_OPTS"
+			unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
+			unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT
+			"$PH_SUDO" `which chvt` $PH_RUNAPP_TTY
+			true
 		fi
-	else
-		unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
-		unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT
-		"$PH_SUDO" `which chvt` $PH_RUNAPP_TTY
 	fi
 	if [[ $? -ne 0 ]]
 	then

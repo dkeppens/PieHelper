@@ -38,5 +38,10 @@ ________________________
 
 * listmoon_ph.sh now allows interactively selecting a game for streaming
 * Bug fixes for user creation module in confoper_ph.sh
-* Bug fixe for gpu_mem reservation module in confoper_ph.sh for no pre-existing config
+* Bug fix for gpu_mem reservation module in confoper_ph.sh for no pre-existing config
 * Changed ERROR level to warning for local git tagging
+
+VERSION 1.04 - 20/02/2019
+________________________
+
+* Bug fix for ph_run_app_action
