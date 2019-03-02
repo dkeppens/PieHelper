@@ -147,7 +147,7 @@ EOF
 			cd $PH_SCRIPTS_DIR/.. >/dev/null 2>&1
 			git add . >/dev/null 2>&1
 			printf "%8s%s\n" "" "--> Locally committing $PH_NEW_VERSION changes to git"
-			if git commit -a --message="$PH_GIT_COMMSG" >/dev/null 2>&1
+			if git commit -a --message="$PH_GIT_COMMSG"
 			then
 				printf "%10s%s\n" "" "OK"
 			else
