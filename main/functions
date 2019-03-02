@@ -296,7 +296,7 @@ then
 ## correct button mappings for the three cases below
 				       PS4_@(usb|sonywadapt))
 			($PH_SUDO nice --adjustment="-9" `which xboxdrv` \
-				--evdev /dev/`udevadm info -q symlink /dev/input/event$PH_CLI_ID | nawk 'BEGIN { ORS = "" } $1 ~/^input\/by-path/ { print $1 ; exit } { print $2 ; exit }'` \
+				--evdev /dev/input/event$PH_CLI_ID \
 				--evdev-absmap ABS_X=x1,ABS_Y=y1 \
 				--evdev-absmap ABS_Z=x2,ABS_RZ=y2 \
 				--evdev-absmap ABS_RX=lt,ABS_RY=rt \
@@ -311,7 +311,7 @@ then
 			echo $((PH_EVDEVS+`echo $((PH_CTRL_CLI_ID-1))`)) >>$PH_CONF_DIR/controller_cli_ids ;; 
 		   			   	 PS3_bluetooth)
 			($PH_SUDO nice --adjustment="-9" `which xboxdrv` \
-				--evdev /dev/`udevadm info -q symlink /dev/input/event$PH_CLI_ID | nawk 'BEGIN { ORS = "" } $1 ~/^input\/by-path/ { print $1 ; exit } { print $2 ; exit }'` \
+				--evdev /dev/input/event$PH_CLI_ID \
 				--evdev-absmap ABS_X=x1,ABS_Y=y1 \
 				--evdev-absmap ABS_Z=x2,ABS_RZ=y2 \
 				--evdev-absmap ABS_RX=lt,ABS_RY=rt \
@@ -326,7 +326,7 @@ then
 			echo $((PH_EVDEVS+`echo $((PH_CTRL_CLI_ID-1))`)) >>$PH_CONF_DIR/controller_cli_ids ;;
 			   			       PS3_usb)
 			($PH_SUDO nice --adjustment="-9" `which xboxdrv` \
-				--evdev /dev/`udevadm info -q symlink /dev/input/event$PH_CLI_ID | nawk 'BEGIN { ORS = "" } $1 ~/^input\/by-path/ { print $1 ; exit } { print $2 ; exit }'` \
+				--evdev /dev/input/event$PH_CLI_ID \
 				--evdev-absmap ABS_X=x1,ABS_Y=y1 \
 				--evdev-absmap ABS_Z=x2,ABS_RZ=y2 \
 				--evdev-absmap ABS_RX=lt,ABS_RY=rt \
