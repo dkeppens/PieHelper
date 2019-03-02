@@ -51,3 +51,4 @@ ________________________
 
 * Bug fix for TTY switching in ph_run_app_action
 * Bug fix for remaining processes when stopping a TTY
+* Corrected help information for all *_CIFS_SHARE options
