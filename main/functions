@@ -2628,6 +2628,7 @@ case $1 in start)
 		then
 			if ! pgrep -t tty$PH_RUNAPP_TTY -f "$PH_RUNAPP_CMD" >/dev/null 2>&1
 			then
+				"$PH_SUDO" pkill -9 -t tty$PH_RUNAPP_TTY >/dev/null 2>&1
 				"$PH_SUDO" systemctl stop "getty@tty$PH_RUNAPP_TTY" >/dev/null 2>&1
 			fi
 		fi
@@ -2637,11 +2638,14 @@ case $1 in start)
 	if [[ `$PH_SUDO fgconsole` -ne $PH_RUNAPP_TTY ]]
 	then
 		"$PH_SUDO" chvt $PH_RUNAPP_TTY >/dev/null 2>&1
+		unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
+		unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT
 		return 0
 	fi
 	if [[ "$PH_RUNAPP" != "PieHelper" ]]
 	then
 		ph_umount_cifs_share PieHelper
+		"$PH_SUDO" pkill -9 -t tty$PH_PIEH_TTY >/dev/null 2>&1
 		"$PH_SUDO" systemctl stop getty@tty$PH_PIEH_TTY >/dev/null 2>&1
 	fi
 	if [[ "$PH_RUNAPP_CMD" != "/bin/bash" ]]
@@ -2670,6 +2674,7 @@ case $1 in start)
 		then
 			pgrep -t tty$PH_PIEH_TTY -f "startpieh.sh" >/dev/null && $PH_SUDO `which chvt` $PH_PIEH_TTY || \
 								$PH_SUDO `which chvt` 1
+			"$PH_SUDO" pkill -9 -t tty$PH_RUNAPP_TTY >/dev/null 2>&1
 			$PH_SUDO systemctl stop getty@tty$PH_RUNAPP_TTY >/dev/null 2>&1
 		else
 			[[ "$PH_RUNAPP" == "PieHelper" && `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY ]] && $PH_SUDO `which chvt` 1
@@ -2715,6 +2720,7 @@ case $1 in start)
 		[[ "$PH_RUNAPP" == "PieHelper" && `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY ]] && $PH_SUDO `which chvt` 1
 	fi
 	printf "%10s%s\n" "" "OK"
+	"$PH_SUDO" pkill -9 -t tty$PH_RUNAPP_TTY >/dev/null 2>&1
 	$PH_SUDO systemctl stop getty@tty$PH_RUNAPP_TTY >/dev/null 2>&1
 	if [[ $? -ne 0 ]]
 	then
