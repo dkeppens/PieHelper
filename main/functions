@@ -231,9 +231,9 @@ do
 				$1 ~ "^.: ID_BUS$" { if (type~/^PS4A/) { conn = "sonywadapt" } else { conn = $2 } ; next }
 				{ next }
 				END { if (flag==1) { print conn }}'`
-		PH_CTRL_CLI_ID=${PH_i##*event}
 		if [[ -n "$PH_CTRL_CONN" ]]
 		then
+			PH_CTRL_CLI_ID=${PH_i##*event}
 			typeset -n PH_CONN="PH_CTRL_CONN"$PH_CTRL_CLI_ID
 			typeset -n PH_CLI_ID="PH_CTRL_CLI_ID"$PH_CTRL_CLI_ID
 			[[ "$PH_j" == "PS4" ]] && PH_FLAG=1
@@ -280,7 +280,7 @@ then
 		typeset -n PH_CONN="PH_CTRL_CONN`sed -n ''$PH_CTRL_CLI_ID'p' $PH_CONF_DIR/controller_cli_ids`"
 		case $PH_CTRL_TYPE"_"$PH_CONN in PS4_bluetooth)
 			($PH_SUDO nice --adjustment="-9" `which xboxdrv` \
-				--evdev /dev/`udevadm info -q symlink /dev/input/event$PH_CLI_ID | nawk 'BEGIN { ORS = "" } $1 ~/^input\/by-path/ { print $1 ; exit } { print $2 ; exit }'` \
+				--evdev /dev/input/event$PH_CLI_ID \
 				--evdev-absmap ABS_X=x1,ABS_Y=y1 \
 				--evdev-absmap ABS_Z=x2,ABS_RZ=y2 \
 				--evdev-absmap ABS_RX=lt,ABS_RY=rt \
@@ -291,7 +291,7 @@ then
 				--evdev-keymap BTN_TL2=back,BTN_MODE=guide,BTN_TR2=start \
 				--axismap -y1=y1,-y2=y2 \
 				--pid-file "/tmp/xboxdrv"$PH_CTRL_CLI_ID".pid" --silent --detach-kernel-driver --mimic-xpad &) >/dev/null 2>&1
-			! ls /proc/`cat "/tmp/xboxdrv"$PH_CTRL_CLI_ID".pid" >/dev/null 2>&1` >/dev/null 2>&1 && printf "%10s%s\n" "" "ERROR : Could not start xboxdrv instance" && >$PH_CONF_DIR/controller_cli_ids && return 1
+			cat "/tmp/xboxdrv"$PH_CTRL_CLI_ID".pid" >/dev/null 2>&1 && printf "%10s%s\n" "" "ERROR : Could not start xboxdrv instance" && >$PH_CONF_DIR/controller_cli_ids && return 1
 			echo $((PH_EVDEVS+`echo $((PH_CTRL_CLI_ID-1))`)) >>$PH_CONF_DIR/controller_cli_ids ;;
 ## correct button mappings for the three cases below
 				       PS4_@(usb|sonywadapt))
@@ -307,7 +307,7 @@ then
 				--evdev-keymap BTN_TL2=back,BTN_MODE=guide,BTN_TR2=start \
 				--axismap -y1=y1,-y2=y2 \
 				--pid-file "/tmp/xboxdrv"$PH_CTRL_CLI_ID".pid" --silent --detach-kernel-driver --mimic-xpad &) >/dev/null 2>&1
-			! ls /proc/`cat "/tmp/xboxdrv"$PH_CTRL_CLI_ID".pid" >/dev/null 2>&1` >/dev/null 2>&1 && printf "%10s%s\n" "" "ERROR : Could not start xboxdrv instance" && >$PH_CONF_DIR/controller_cli_ids && return 1
+			cat "/tmp/xboxdrv"$PH_CTRL_CLI_ID".pid" >/dev/null 2>&1 && printf "%10s%s\n" "" "ERROR : Could not start xboxdrv instance" && >$PH_CONF_DIR/controller_cli_ids && return 1
 			echo $((PH_EVDEVS+`echo $((PH_CTRL_CLI_ID-1))`)) >>$PH_CONF_DIR/controller_cli_ids ;; 
 		   			   	 PS3_bluetooth)
 			($PH_SUDO nice --adjustment="-9" `which xboxdrv` \
@@ -322,7 +322,7 @@ then
 				--evdev-keymap BTN_TL2=back,BTN_MODE=guide,BTN_TR2=start \
 				--axismap -y1=y1,-y2=y2 \
 				--pid-file "/tmp/xboxdrv"$PH_CTRL_CLI_ID".pid" --silent --detach-kernel-driver --mimic-xpad &) >/dev/null 2>&1
-			! ls /proc/`cat "/tmp/xboxdrv"$PH_CTRL_CLI_ID".pid" >/dev/null 2>&1` >/dev/null 2>&1 && printf "%10s%s\n" "" "ERROR : Could not start xboxdrv instance" && >$PH_CONF_DIR/controller_cli_ids && return 1
+			cat "/tmp/xboxdrv"$PH_CTRL_CLI_ID".pid" >/dev/null 2>&1 && printf "%10s%s\n" "" "ERROR : Could not start xboxdrv instance" && >$PH_CONF_DIR/controller_cli_ids && return 1
 			echo $((PH_EVDEVS+`echo $((PH_CTRL_CLI_ID-1))`)) >>$PH_CONF_DIR/controller_cli_ids ;;
 			   			       PS3_usb)
 			($PH_SUDO nice --adjustment="-9" `which xboxdrv` \
@@ -337,7 +337,7 @@ then
 				--evdev-keymap BTN_TL2=back,BTN_MODE=guide,BTN_TR2=start \
 				--axismap -y1=y1,-y2=y2 \
 				--pid-file "/tmp/xboxdrv"$PH_CTRL_CLI_ID".pid" --silent --detach-kernel-driver --mimic-xpad &) >/dev/null 2>&1
-			! ls /proc/`cat "/tmp/xboxdrv"$PH_CTRL_CLI_ID".pid" >/dev/null 2>&1` >/dev/null 2>&1 && printf "%10s%s\n" "" "ERROR : Could not start xboxdrv instance" && >$PH_CONF_DIR/controller_cli_ids && return 1
+			cat "/tmp/xboxdrv"$PH_CTRL_CLI_ID".pid" >/dev/null 2>&1 && printf "%10s%s\n" "" "ERROR : Could not start xboxdrv instance" && >$PH_CONF_DIR/controller_cli_ids && return 1
 			echo $((PH_EVDEVS+`echo $((PH_CTRL_CLI_ID-1))`)) >>$PH_CONF_DIR/controller_cli_ids ;;
 		esac
 		unset -n PH_CLI_ID PH_CONN
@@ -2571,54 +2571,57 @@ case $1 in start)
 			printf "%10s%s\n" "" "Warning : Issues encountered running PRE-command"
 		fi
 	fi
-	printf "%8s%s\n" "" "--> Checking for controller usage"
-	if [[ "$PH_RUNAPPU_USE_CTRL" == "no" ]]
+	if [[ `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY ]]
 	then
-		PH_RUNAPP_CMD_OPTS="$PH_RUNAPPU_CMD_OPTS"
-		printf "%10s%s\n" "" "OK (No)"
-	else
-		printf "%10s%s\n" "" "OK (Yes)"
-		if ! ph_setup_controllers "$PH_RUNAPPU_NUM_CTRL"
+		printf "%8s%s\n" "" "--> Checking for controller usage"
+		if [[ "$PH_RUNAPPU_USE_CTRL" == "no" ]]
 		then
-			if [[ "$PH_RUNAPPU_CIFS_SHARE" == "yes" ]]
+			PH_RUNAPP_CMD_OPTS="$PH_RUNAPPU_CMD_OPTS"
+			printf "%10s%s\n" "" "OK (No)"
+		else
+			printf "%10s%s\n" "" "OK (Yes)"
+			if ! ph_setup_controllers "$PH_RUNAPPU_NUM_CTRL"
 			then
-				ph_umount_cifs_share "$PH_RUNAPP"
+				if [[ "$PH_RUNAPPU_CIFS_SHARE" == "yes" ]]
+				then
+					ph_umount_cifs_share "$PH_RUNAPP"
+				fi
+				unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
+				unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT
+				if [[ "$PH_RUNAPP" != "PieHelper" ]]
+				then
+					pgrep -t tty$PH_PIEH_TTY -f "startpieh.sh" >/dev/null && $PH_SUDO `which chvt` $PH_PIEH_TTY || \
+										$PH_SUDO `which chvt` 1
+				else
+					$PH_SUDO `which chvt` 1
+				fi
+				return 1
 			fi
-			unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
-			unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT
-			if [[ `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY && "$PH_RUNAPP" != "PieHelper" ]]
-			then
-				pgrep -t tty$PH_PIEH_TTY -f "startpieh.sh" >/dev/null && $PH_SUDO `which chvt` $PH_PIEH_TTY || \
-									$PH_SUDO `which chvt` 1
-			else
-				[[ "$PH_RUNAPP" == "PieHelper" && `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY ]] && $PH_SUDO `which chvt` 1
-			fi
-			return 1
-		fi
-		PH_CTRL_COUNT=`cat "$PH_CONF_DIR"/controller_cli_ids | wc -l`
-		for PH_i in {1..$PH_RUNAPPU_NUM_CTRL}
-		do
-			printf "%8s%s\n" "" "--> Retrieving event id for $PH_CTRL_TYPE controller with CLI id $PH_i"
-			if [[ "$PH_CTRL_MAP" == "no" ]]
-			then
-				eval typeset -i "PH_EVENT"$PH_i=`ph_get_controller_cli_id $PH_i`
-			else
-				eval typeset -i "PH_EVENT"$PH_i=`ph_get_controller_cli_id $((PH_i+$(echo $((PH_CTRL_COUNT-`echo "$PH_RUNAPPU_NUM_CTRL"`)))))`
-			fi
-			typeset -n PH_EVENT="PH_EVENT"$PH_i
-			printf "%10s%s\n" "" "OK"
-			printf "%8s%s\n" "" "--> Checking for event-based input device $PH_i in command-line options"
-			if echo "$PH_RUNAPPU_CMD_OPTS" | egrep -e "PH_CTRL$PH_i$|PH_CTRL$PH_i " >/dev/null
-			then
-				printf "%10s%s\n" "" "OK (Found)"
-				printf "%8s%s\n" "" "--> Assigning event id $PH_EVENT to input device with CLI id $PH_i in command-line options"
-				PH_RUNAPP_CMD_OPTS="$(eval echo `sed 's/PH_CTRL'$PH_i'/'$PH_EVENT'/g;s/"/\\\"/g' <<<$PH_RUNAPPU_CMD_OPTS`)"
+			PH_CTRL_COUNT=`cat "$PH_CONF_DIR"/controller_cli_ids | wc -l`
+			for PH_i in {1..$PH_RUNAPPU_NUM_CTRL}
+			do
+				printf "%8s%s\n" "" "--> Retrieving event id for $PH_CTRL_TYPE controller with CLI id $PH_i"
+				if [[ "$PH_CTRL_MAP" == "no" ]]
+				then
+					eval typeset -i "PH_EVENT"$PH_i=`ph_get_controller_cli_id $PH_i`
+				else
+					eval typeset -i "PH_EVENT"$PH_i=`ph_get_controller_cli_id $((PH_i+$(echo $((PH_CTRL_COUNT-\`echo "$PH_RUNAPPU_NUM_CTRL"\`)))))`
+				fi
+				typeset -n PH_EVENT="PH_EVENT"$PH_i
 				printf "%10s%s\n" "" "OK"
-			else
-				printf "%10s%s\n" "" "OK (Not found)"
-			fi
-			unset -n PH_EVENT
-		done
+				printf "%8s%s\n" "" "--> Checking for event-based input device $PH_i in command-line options"
+				if echo "$PH_RUNAPPU_CMD_OPTS" | egrep -e "PH_CTRL$PH_i$|PH_CTRL$PH_i " >/dev/null
+				then
+					printf "%10s%s\n" "" "OK (Found)"
+					printf "%8s%s\n" "" "--> Assigning event id $PH_EVENT to input device with CLI id $PH_i in command-line options"
+					PH_RUNAPP_CMD_OPTS="$(eval echo `sed 's/PH_CTRL'$PH_i'/'$PH_EVENT'/g;s/"/\\\"/g' <<<$PH_RUNAPPU_CMD_OPTS`)"
+					printf "%10s%s\n" "" "OK"
+				else
+					printf "%10s%s\n" "" "OK (Not found)"
+				fi
+				unset -n PH_EVENT
+			done
+		fi
 	fi
 	PH_RUNAPP_CMD=`nawk -v runapp=^"$PH_RUNAPP"$ 'BEGIN { ORS=" " } $1 ~ runapp { for (i=2;i<=NF;i++) { if (i==NF) { ORS="" ; print $i } else { print $i }}}' $PH_CONF_DIR/supported_apps`
 	PH_RUNAPP_CMD=`sed "s/PH_TTY/$PH_RUNAPP_TTY/" <<<$PH_RUNAPP_CMD`
@@ -2644,7 +2647,7 @@ case $1 in start)
 	fi
 	if [[ "$PH_RUNAPP" != "PieHelper" ]]
 	then
-		ph_umount_cifs_share PieHelper
+		ph_umount_cifs_share PieHelper >/dev/null 2>&1
 		"$PH_SUDO" pkill -9 -t tty$PH_PIEH_TTY >/dev/null 2>&1
 		"$PH_SUDO" systemctl stop getty@tty$PH_PIEH_TTY >/dev/null 2>&1
 	fi
