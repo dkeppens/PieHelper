@@ -45,3 +45,8 @@ VERSION 1.04 - 20/02/2019
 ________________________
 
 * Bug fix for ph_run_app_action
+
+VERSION 1.05 - 02/03/2019
+________________________
+
+* Bug fix for TTY switching in ph_run_app_action

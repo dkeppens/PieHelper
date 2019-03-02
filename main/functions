@@ -2634,28 +2634,28 @@ case $1 in start)
 	fi
 	[[ "$PH_RUNAPP" == "PieHelper" ]] && PH_RUNAPP_CMD="ph_show_menu"
 	printf "%8s%s\n" "" "--> Starting $PH_RUNAPP"
-	"$PH_SUDO" systemctl start getty@tty$PH_RUNAPP_TTY >/dev/null 2>&1
-	if [[ `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY && "$PH_RUNAPP" != "PieHelper" ]]
+	if [[ `$PH_SUDO fgconsole` -ne $PH_RUNAPP_TTY ]]
+	then
+		"$PH_SUDO" chvt $PH_RUNAPP_TTY >/dev/null 2>&1
+		return 0
+	fi
+	if [[ "$PH_RUNAPP" != "PieHelper" ]]
 	then
 		ph_umount_cifs_share PieHelper
 		"$PH_SUDO" systemctl stop getty@tty$PH_PIEH_TTY >/dev/null 2>&1
 	fi
-	if [[ `$PH_SUDO fgconsole` -eq $PH_RUNAPP_TTY ]]
+	if [[ "$PH_RUNAPP_CMD" != "/bin/bash" ]]
 	then
-		if [[ "$PH_RUNAPP_CMD" != "/bin/bash" ]]
+		if [[ "$PH_RUNAPP" == "Moonlight" && "$PH_RUNAPP_USER" != "$PH_RUN_USER" ]]
 		then
-			if [[ "$PH_RUNAPP" == "Moonlight" && "$PH_RUNAPP_USER" != "$PH_RUN_USER" ]]
-			then
-				$PH_SUDO -E su "$PH_RUNAPP_USER" -c "LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib eval $PH_RUNAPP_CMD $PH_RUNAPP_CMD_OPTS"
-			else
-				eval "$PH_RUNAPP_CMD $PH_RUNAPP_CMD_OPTS"
-			fi
+			$PH_SUDO -E su "$PH_RUNAPP_USER" -c "LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib eval $PH_RUNAPP_CMD $PH_RUNAPP_CMD_OPTS"
 		else
-			unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
-			unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT
-			"$PH_SUDO" `which chvt` $PH_RUNAPP_TTY
-			true
+			eval "$PH_RUNAPP_CMD $PH_RUNAPP_CMD_OPTS"
 		fi
+	else
+		unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
+		unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT
+		true
 	fi
 	if [[ $? -ne 0 ]]
 	then
@@ -2680,7 +2680,7 @@ case $1 in start)
 	then
 		unset -n PH_RUNAPPU_CMD_OPTS PH_RUNAPPU_USE_CTRL PH_RUNAPPU_NUM_CTRL PH_RUNAPPU_PRE_CMD PH_RUNAPPU_POST_CMD
 		unset -n PH_RUNAPPU_CIFS_SHARE PH_RUNAPPU_CIFS_DIR PH_RUNAPPU_CIFS_SUBDIR PH_RUNAPPU_CIFS_SRV PH_RUNAPPU_PERSISTENT
-		exit 0
+		return 0
 	fi
 	printf "%10s%s\n" "" "OK"
 	if [[ "$PH_RUNAPP" == "Bash" ]]
