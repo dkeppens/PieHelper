@@ -1,6 +1,5 @@
 * change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
 * add OS module to move PieHelper to a different location
-* solve issue for reset of PH_PIEH_CMD_OPTS to Main by running confgenb_ph.sh with debug disabled
 * test if Emulationstation mount requires $PH_RUNAPP_USER for CIFS authentication
 * capture CTRL-C and ph_umount for PieHelper pseudo
 * add confoper_ph.sh splash screen management module
@@ -8,6 +7,7 @@
 * test archlinux
 * controller detection for XBOX360 usb receiver
 * solve bluetooth pairing dualshock3 controllers
+* change workings confoper_ph.sh to reflect already trusted controllers
 * option for confpieh_ph.sh -p debug : switch all enabled or disabled modules + change Advanced menu to interactive prompt for listing modules
 * incremental backup for Kodi autobackup OR switch to only use CIFS option for kodi on remove and install Kodi + change related conf file information
 * support in ph_repair_pieh for protection against multiple instances of 1 app + verification whether all known info matches
