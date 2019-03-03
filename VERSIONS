@@ -55,3 +55,4 @@ ________________________
 * Fix correct determination of CLI id for xboxdrv mapping
 * Added correction for help of option PH_PIEH_CIFS_SHARE
 * Fix for restoring certain option values when any old option value was empty for treated options
+* Removed hardcoded path check in confoper_ph.sh

@@ -1819,7 +1819,7 @@ EOF
 		then
 			ph_getdef PH_BOOTENV || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
 		fi
-		if ((grep "PH_RUNAPP_CMD='/home/dkeppens/PieHelper/scripts/startpieh.sh'" /etc/profile.d/PieHelper_tty* >/dev/null 2>&1) && ([[ "$PH_BOOTENV" == "gui" ]]))
+		if ((grep "PH_RUNAPP_CMD='.*/PieHelper/scripts/startpieh.sh'" /etc/profile.d/PieHelper_tty* >/dev/null 2>&1) && ([[ "$PH_BOOTENV" == "gui" ]]))
 		then
 			printf "%8s%s\n" "" "--> Setting default boot environment to $PH_BOOTENV"
 			printf "%10s%s\n" "" "ERROR : PieHelper is configured and is not compatible with a graphical default boot environment"
