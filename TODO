@@ -1,7 +1,6 @@
 * change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
 * add OS module to move PieHelper to a different location
 * test if Emulationstation saves require mount as $PH_RUNAPP_USER for CIFS authentication
-* capture CTRL-C and ph_umount for PieHelper pseudo
 * add confoper_ph.sh splash screen management module
 * support for bluetooth devices distributed over multiple adapters in confctrl_ph.sh
 * test archlinux
@@ -33,7 +32,6 @@
 * move script logic to ph_run_action -> rebuild templates & all scripts
 * recursive going back to original settings when error occured ala confgenb also in confsupp
 * empty line remains in functions.user in confsupp on remove app
-* test controller mappings
 * test second controller input
 * test ph_remove_pieh from menus and through confpieh_ph.sh
 * hashing of passwords functionality
