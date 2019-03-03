@@ -17,7 +17,6 @@ typeset PH_OLDOPTARG="$OPTARG"
 typeset -i PH_OLDOPTIND=$OPTIND
 PH_BUILD_DIR=$PH_SCRIPTS_DIR/../build
 PH_REVERSE=""
-OLD_PH_PIEH_CMD_OPTS="$PH_PIEH_CMD_OPTS"
 OPTIND=1
 
 while getopts v:hgm: PH_OPTION 2>/dev/null

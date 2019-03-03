@@ -54,3 +54,4 @@ ________________________
 * Corrected help information for all *_CIFS_SHARE options
 * Fix correct determination of CLI id for xboxdrv mapping
 * Added correction for help of option PH_PIEH_CIFS_SHARE
+* Fix for restoring certain option values when any old option value was empty for treated options

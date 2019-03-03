@@ -967,7 +967,6 @@ do
 		[[ "$PH_SUFFIX" == @(_CMD_OPTS|_NUM_CTRL|_USE_CTRL) ]] && PH_SUFFIX=""
 		for PH_i in _CMD_OPTS _NUM_CTRL _USE_CTRL $PH_SUFFIX
 		do
-#			if [[ -z "`eval echo -n \\$OLD_\"\$PH_j\$PH_i\"`" ]]
 			if [[ `typeset -p OLD_"$PH_j"$PH_i` != "typeset -x "* ]]
 			then
 				export OLD_$PH_j"$PH_i"="`eval echo -n \"\\$\$PH_j\$PH_i\"`"
