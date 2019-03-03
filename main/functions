@@ -555,7 +555,7 @@ function ph_set_option_to_default {
 typeset PH_OPTION="$1"
 typeset PH_APP=`ph_get_app_from_option "$PH_OPTION"`
 typeset -n PH_VALUE="$1"
-export OLD_"$PH_OPTION"="$PH_VALUE"
+export OLD_"$PH_OPTION"="`echo -n $PH_VALUE`"
 typeset PH_DEF_VALUE=`nawk -F'=' -v opt=^"$PH_OPTION"$ '$1 ~ opt { gsub("\047", "", $2) ; print $2 }' $PH_FILES_DIR/options.defaults`
 
 if ph_set_option "$PH_APP" -r "$PH_OPTION"="$PH_DEF_VALUE"
