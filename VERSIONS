@@ -53,3 +53,4 @@ ________________________
 * Bug fix for remaining processes when stopping a TTY
 * Corrected help information for all *_CIFS_SHARE options
 * Fix correct determination of CLI id for xboxdrv mapping
+* Added correction for help of option PH_PIEH_CIFS_SHARE
