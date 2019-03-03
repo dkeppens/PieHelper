@@ -56,3 +56,5 @@ ________________________
 * Added correction for help of option PH_PIEH_CIFS_SHARE
 * Fix for restoring certain option values when any old option value was empty for treated options
 * Removed hardcoded path check in confoper_ph.sh
+* Added support for interactive module selection for listing module debug state via the PieHelper menu
+* Added support for use of disabled/enabled keywords for module selection with 'confpieh_ph.sh -p debug'

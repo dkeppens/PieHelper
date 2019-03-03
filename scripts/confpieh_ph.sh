@@ -20,6 +20,7 @@ typeset PH_ACTION=""
 typeset PH_VALUE=""
 typeset PH_i=""
 typeset PH_j=""
+typeset PH_FOUND="no"
 typeset PH_SSTRING=""
 typeset PH_STRING=""
 typeset PH_DEBUGSTATE=""
@@ -59,7 +60,7 @@ do
 			   *)
 		>&2 printf "%s\n" "Usage : confpieh_ph.sh -h | -c | -s | -r | -u | -g |"
 		>&2 printf "%23s%s\n" "" "-p \"list\" -m [module1,module2,...|\"all\"|\"enabled\"|\"disabled\"] |"
-		>&2 printf "%23s%s\n" "" "-p \"debug\" -m [module1,module2,...|\"all\"|\"prompt\"]"
+		>&2 printf "%23s%s\n" "" "-p \"debug\" -m [module1,module2,...|\"all\"|\"prompt\"|\"enabled\"|\"disabled\"]"
 		>&2 printf "\n"
 		>&2 printf "%3s%s\n" "" "Where -h displays this usage"
 		>&2 printf "%9s%s\n" "" "-c sets PieHelper configuration state to \"configured\""
@@ -99,6 +100,24 @@ OPTARG="$PH_OLDOPTARG"
 
 [[ -n "$PH_MODULES" && "$PH_ACTION" != @(debug|list) ]] && (! confpieh_ph.sh -h) && exit 1
 [[ -z "$PH_MODULES" && "$PH_ACTION" == @(debug|list) ]] && (! confpieh_ph.sh -h) && exit 1
+if [[ "$PH_ACTION" == @(debug|list) ]]
+then
+	PH_COUNT=`echo -n "$PH_MODULES" | nawk 'BEGIN { RS = "," } { print $0 }' | wc -l`
+	for PH_i in `echo $PH_MODULES | sed 's/,/ /g'`
+	do
+		[[ "$PH_i" == @(enabled|disabled|prompt) ]] && PH_FOUND="$PH_i"	
+	done
+	if [[ "$PH_FOUND" != "no" && $PH_COUNT -gt 1 ]]
+	then
+		if [[ "$PH_ACTION" == "debug" ]]
+		then
+			printf "%s\n" "- Changing debug mode for specified modules" && printf "%2s%s\n" "" "FAILED : Using keyword $PH_FOUND together with other module names is unsupported" && exit 1
+		else
+			printf "%s\n" "- Listing specified modules" && printf "%2s%s\n" "" "FAILED : Using keyword $PH_FOUND together with other module names is unsupported" && exit 1
+		fi
+	fi
+fi
+PH_COUNT=0
 case $PH_ACTION in repair)
 		ph_repair_pieh
 		exit $? ;;
@@ -123,7 +142,7 @@ case $PH_ACTION in repair)
 			while [[ -z "$PH_MODULES" ]]
 			do
 				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
-				printf "%8s%s" "" "--> Please enter a comma-separated list of relevant PieHelper module names (The keyword \"all\" selects all modules) : "
+				printf "%8s%s" "" "--> Please enter a comma-separated list of relevant PieHelper module names (The keywords \"all\",\"disabled\",\"enabled\" can be used to respectively select all/all disabled/all enabled modules) : "
 				read PH_MODULES >/dev/null 2>&1
 				((PH_COUNT++))
 			done
@@ -132,7 +151,14 @@ case $PH_ACTION in repair)
 			confpieh_ph.sh -p debug -m "$PH_MODULES"
 			exit $? ;;
 		esac
-		[[ "$PH_MODULES" == @(enabled|disabled) ]] && printf "%s\n" "- Changing debug mode for specified modules" && printf "%2s%s\n" "" "FAILED : Unsupported keyword used" && exit 1
+		if [[ "$PH_MODULES" == @(enabled|disabled) ]]
+		then
+			PH_MODULES=`confpieh_ph.sh -p list -m "$PH_MODULES" | nawk 'BEGIN { ORS = "," } $2 ~ /^debug_enabled=/ { print $1 }' | sed 's/.$//'`
+			if [[ -z "$PH_MODULES" ]]
+			then
+				printf "%s\n" "- Changing debug mode for specified modules" && printf "%2s%s\n" "" "SUCCESS : No modules selected by keyword" && exit 0
+			fi
+		fi
                 for PH_i in `sed 's/,/ /g' <<<$PH_MODULES`
                 do
 			PH_RESULT="SUCCESS"
@@ -235,7 +261,22 @@ case $PH_ACTION in repair)
                 done
                 exit 0 ;;
 		    list)
-		[[ "$PH_MODULES" == "prompt" ]] && printf "%s\n" "Listing specified modules" && printf "%2s%s\n" "" "FAILED : Unsupported keyword used" && exit 1
+		if [[ "$PH_MODULES" == "prompt" ]]
+		then
+			PH_MODULES=""
+			printf "%s\n" "- Using interactive mode"
+			while [[ -z "$PH_MODULES" ]]
+			do
+				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+				printf "%8s%s" "" "--> Please enter a comma-separated list of relevant PieHelper module names (The keywords \"all\",\"disabled\",\"enabled\" can be used to respectively select all/all disabled/all enabled modules) : "
+				read PH_MODULES >/dev/null 2>&1
+				((PH_COUNT++))
+			done
+			printf "%10s%s\n" "" "OK"
+			printf "%2s%s\n" "" "SUCCESS"
+			confpieh_ph.sh -p list -m "$PH_MODULES"
+			exit $?
+		fi
 		case $PH_MODULES in all)
 			printf "%s\n" "- Listing all modules"
 			for PH_j in `find $PH_MAIN_DIR/.. ! -name 10-retropie.sh -name "*.sh" 2>/dev/null | sort`
