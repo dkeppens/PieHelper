@@ -290,14 +290,14 @@ PH_`echo $PH_APPU`_CIFS_MPT='\$PH_CONF_DIR/../mnt/$PH_APP'				# - This is the fu
 											#   If a different value is set, make sure the directory specified is empty
 											# - Default is '\$PH_CONF_DIR/../mnt/$PH_APP'
 											# - Allowed values are pathnames (Values starting with '/' or '$') and an empty string
-PH_`echo $PH_APPU`_PRE_CMD=''								# - This is the full command to run before starting $PH_APP. If PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes', it will be run when the CIFS share is mounted
-											#   Make sure the run account used for $PH_APP has adequate permission when customising this
+PH_`echo $PH_APPU`_PRE_CMD=''								# - This is the full command to run before starting $PH_APP
+											#   Make sure the run account used for $PH_APP has adequate permission to execute when customizing this
 											# - PRE-commands that fail will only generate a warning and not block further $PH_APP startup
 											# - Default is ''
 											# - Allowed values are full pathnames (Values starting with '/' or '$') of scripts, sourceable scripts and executables or an empty string
 											#   Sourceable scripts can use variable names known to PieHelper
 PH_`echo $PH_APPU`_POST_CMD=''								# - This is the full command to run after stopping $PH_APP. If PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes', it will be run when the CIFS share is mounted
-											#   Make sure the run account used for $PH_APP has adequate permissions when customising this
+											#   Make sure the run account used for $PH_APP has adequate permission to execute when customizing this
 											# - POST-commands that fail will only generate a warning
 											# - Default is ''
 											# - Allowed values are full pathnames (Values starting with '/' or '$') of scripts, sourceable scripts and executables or an empty string

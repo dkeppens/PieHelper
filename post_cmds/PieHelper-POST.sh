@@ -20,7 +20,7 @@ then
 			printf "%10s%s\n" "" "OK"
 		fi
 	else
-		printf "%10s%s\n" "" "Warning : No defaults currently stored"
+		printf "%10s%s\n" "" "Warning : No configured defaults found"
 	fi
 else
 	printf "%10s%s\n" "" "Warning : Dependent on CIFS -> Skipping"

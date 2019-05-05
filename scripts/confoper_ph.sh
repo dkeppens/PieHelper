@@ -417,6 +417,7 @@ do
 		>&2 printf "%15s%s\n" "" "- Running this function more than once will do nothing"
 		>&2 printf "%15s%s\n" "" "- If the filesystem size was changed, the new size will only be available after a system reboot and a reboot will be proposed"
                 >&2 printf "%12s%s\n" "" "\"update\" allows running a silent update of all packages currently installed on this system"
+		>&2 printf "%15s%s\n" "" "- A reboot is recommended (but only required if kernel and/or bootloader/firmware were included in the update) which will be proposed"
                 >&2 printf "%12s%s\n" "" "\"boot\" allows rebooting this system"
 		>&2 printf "\n"
 		OPTIND=$PH_OLDOPTIND
@@ -1732,8 +1733,25 @@ case $PH_ACTION in all)
 		printf "%2s%s\n" "" "$PH_RESULT"
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			 update)
+		set -o pipefail
 		ph_update_system | sed 's/Starting system update/Executing function update/'
-		exit $? ;;
+		[[ $? -eq 0 ]] && PH_RESULT="SUCCESS" || PH_RESULT="FAILED"
+		set +o pipefail
+                if [[ `cat /proc/$PPID/comm` != "confoper_ph.sh" ]]
+                then
+			printf "%s\n" "- Proposing recommended and possibly required reboot (in case of kernel and/or bootloader/firmware update)" 
+                        while [[ "$PH_ANSWER" != @(y|n) ]]
+                        do
+                                [[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+                                printf "%8s%s" "" "--> Reboot system (y/n) ? "
+                                read PH_ANSWER 2>/dev/null
+                                PH_COUNT=$((PH_COUNT+1))
+                        done
+                        printf "%10s%s\n" "" "OK"
+			[[ "$PH_ANSWER" == "y" ]] && printf "%2s%s\n" "" "$PH_RESULT" && init 6
+                fi
+		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			netwait)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then

@@ -33,7 +33,7 @@ do
 			   *)
 		>&2 printf "%s\n" "Usage : confgenb_ph.sh -h |"
 		>&2 printf "%23s%s\n" "" "-v [version] |"
-		>&2 printf "%23s%s\n" "" "'[-g '-m']'"
+		>&2 printf "%23s%s\n" "" "'[-g '-m [commitmsg]']'"
 		>&2 printf "\n"
 		>&2 printf "%3s%s\n" "" "Where -h displays this usage"
 		>&2 printf "%9s%s\n" "" "-v allows setting a new version number [version] and will make all the files and settings modifications required to"
@@ -57,10 +57,9 @@ do
 		>&2 printf "%12s%s\n" "" "- Specifying -g is optional"
 		>&2 printf "%12s%s\n" "" "- Any git-related failures will generate a recoverable error"
 		>&2 printf "%12s%s\n" "" "- Any commit attempts to the github master repository will fail if upstream access has not been previously granted"
-		>&2 printf "%12s%s\n" "" "-m allows setting a commit message for git"
-		>&2 printf "%15s%s\n" "" "- Specifying -m is optional"
-		>&2 printf "%15s%s\n" "" "- Commit messages should always be surrounded with single or double quotes"
-		>&2 printf "%15s%s\n" "" "- Empty or left-out commit messages will cancel the commit operation and generate a warning"
+		>&2 printf "%12s%s\n" "" "-m allows setting a commit message string [commitmsg] for git commit operations"
+		>&2 printf "%15s%s\n" "" "- Specifying -m is optional but will cancel the commit operation and generate a warning if left unspecified when comitting"
+		>&2 printf "%15s%s\n" "" "- [commitmsg] should always be surrounded with single or double quotes"
 		>&2 printf "\n"
 		OPTIND=$PH_OLDOPTIND
 		OPTARG="$PH_OLDOPTARG"
@@ -71,9 +70,11 @@ done
 OPTIND=$PH_OLDOPTIND
 OPTARG="$PH_OLDOPTARG"
 
-if [[ -n "$PH_NEW_VERSION" ]]
+if [[ $# -ne 0 ]]
 then
+	[[ -z "$PH_NEW_VERSION" ]] && printf "%s\n" "- Creating a new build archive for PieHelper" && printf "%2s%s\n" "" "ERROR : Version is required and unspecified" && exit 1
 	printf "%s\n" "- Creating a new build archive for PieHelper version $PH_NEW_VERSION"
+	[[ "$PH_GIT_UPDATE" == "no" && -n "$PH_GIT_COMMSG" ]] && printf "%2s%s\n" "" "ERROR : Commit message specified while not comitting" && exit 1
 	for PH_i in `nawk 'BEGIN { ORS = " " } { print $1 }' $PH_CONF_DIR/installed_apps`
 	do
 		if mount | nawk '{ for (i=0;i<NF;i++) { if ($i == "type") { print $(i-1) }}}' | grep ^"${PH_SCRIPTS_DIR%/*}/mnt/$PH_i"$ >/dev/null 2>&1
@@ -114,7 +115,7 @@ then
 	printf "%10s%s\n" "" "OK"
 	printf "%8s%s\n" "" "--> Setting supported applications configuration file back to default"
 	mv $PH_CONF_DIR/supported_apps /tmp/supported_apps_tmp 2>/dev/null
-cat >$PH_CONF_DIR/supported_apps <<EOF
+	cat >$PH_CONF_DIR/supported_apps <<EOF
 PieHelper	$PH_SCRIPTS_DIR/startpieh.sh
 Bash	/bin/bash
 Moonlight	/usr/local/bin/moonlight stream
@@ -232,5 +233,6 @@ EOF
 	printf "%2s%s\n\n" "" "$PH_RESULT"
 	unset PH_REVERSE
 	exit 0
+else
+	(! confgenb_ph.sh -h) && unset PH_REVERSE && exit 1
 fi
-(! confgenb_ph.sh -h) && unset PH_REVERSE && exit 1
