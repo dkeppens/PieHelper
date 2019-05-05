@@ -11,13 +11,13 @@
   Linux to get started, as well as be useful for speeding up the process of reinstalling systems mainly used for running those applications
   
   All operations required to set up and use the system and these applications are offered via intuitive text menus, with the sole exception of PieHelper's initial installation
-  
-  This is a short step-by-step process, available in the PieHelper wiki on https://github.com/dkeppens/PieHelper/wiki/Install-instructions
+  which is a short step-by-step process, available in the PieHelper wiki on https://github.com/dkeppens/PieHelper/wiki/Install-instructions
 
   PieHelper functions by binding each application to a specific TTY and uses autologin functionality at TTY selection  
   Since PieHelper creates custom TTY configurations, any pre-existing TTY customizations should be removed before configuring PieHelper
 
 * The default list of supported integrable applications is :
+
 	- Kodi (Media Center)
 	- Moonlight (Gamestreaming from devices running NVIDIA graphic cards with Geforce Experience software)
 	- RetroPie/Emulationstation (Emulator collection for retro-gaming)
@@ -45,6 +45,7 @@
 	- either apt or pacman as a package management utility
 
 * Compatibility should be out-of-the-box for Pi-based Raspbian, Noobs, and Ubuntu linux distributions
+  
   Currently however, only the official Raspbian distro has been tested
 
 * Feedback, bug reports and feature requests can be reported on the official github repository
