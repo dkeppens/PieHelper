@@ -1,3 +1,4 @@
+Read PieHelper Manual (Press 'q' to quit):echo "Displaying Manual";less $PH_SCRIPTS_DIR/../HOWTO
 Go to Apps menu:ph_show_menu Apps
 Go to Controllers menu:ph_show_menu Controllers
 Go to Advanced menu:ph_show_menu Advanced

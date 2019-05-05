@@ -4,7 +4,7 @@
 	- all possible subsequent setup tasks such as installation, configuration and uninstallation of the most popular RaspBerry Pi software
 	  by integrating them into the PieHelper framework
 	- the management of that integrated software (stopping, starting, restarting and switching from one software to another)
-	- the process of reinstalling the system by providing built-in methods which aim to save any manual steps (such as information entered etc) done during the initial
+	- the process of reinstalling the system by providing built-in methods which aim to save any manual steps (such as information entered, Kodi preferences, etc) done during the initial
 	  setup to be available for automatic reuse when reinstalling
 
   In short, PieHelper is intended for people who would like to use a RaspBerry Pi for well-known and popular applications but have little to no knowledge of

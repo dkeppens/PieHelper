@@ -1,4 +1,5 @@
 Show Bash current state:ph_check_app_name -s -a Bash | more
+Show Bash run account:ph_get_app_user Bash
 Start or switch to Bash:startbash.sh | more
 Stop Bash:stopbash.sh force | more
 Restart Bash:restartbash.sh | more

@@ -202,6 +202,7 @@ case $PH_ACTION in inst)
 		printf "%8s%s\n" "" "--> Adding a new menu item"
 		cat >$PH_FILES_DIR/menus/$PH_APP.lst <<EOF
 Show $PH_APP current state:ph_check_app_name -s -a $PH_APP | more
+Show $PH_APP run account:ph_get_app_user $PH_APP
 Start or switch to $PH_APP:start$PH_APPL.sh | more
 Stop $PH_APP:stop$PH_APPL.sh force | more
 Restart $PH_APP:restart$PH_APPL.sh | more

@@ -1,4 +1,5 @@
 Show X11 current state:ph_check_app_name -s -a X11 | more
+Show X11 run account:ph_get_app_user X11
 Start or switch to X11:startx11.sh | more
 Stop X11:stopx11.sh force | more
 Restart X11:restartx11.sh | more

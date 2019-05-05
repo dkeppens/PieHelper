@@ -1,4 +1,5 @@
 Show Kodi current state:ph_check_app_name -s -a Kodi | more
+Show Kodi run account:ph_get_app_user Kodi
 Start or switch to Kodi:startkodi.sh | more
 Stop Kodi:stopkodi.sh force | more
 Restart Kodi:restartkodi.sh | more

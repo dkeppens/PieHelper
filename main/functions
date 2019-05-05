@@ -17,6 +17,23 @@ done
 return 0
 }
 
+function ph_get_app_user {
+
+typeset PH_APP="$1"
+typeset PH_APP_USER=""
+
+printf "%s\n" "- Displaying run account for $PH_APP"
+PH_APP_USER=`nawk -v app=^"$PH_APP"$ '$1 ~ app { print $2 }' $PH_CONF_DIR/installed_apps`
+if [[ -n "$PH_APP_USER" ]]
+then
+	printf "%2s%s\n" "" "SUCCESS : $PH_APP_USER"
+else
+	printf "%2s%s\n" "" "ERROR : $PH_APP is not an integrated application"
+	return 1
+fi
+return 0
+}
+
 function ph_configure_moon {
 
 typeset PH_ANSWER=""
@@ -2344,7 +2361,7 @@ printf "%8s%s\n" "" "--> Updating package index (This may take a while)"
 $PH_SUDO apt-get update >/dev/null 2>&1
 [[ $? -eq 0 ]] && printf "%10s%s\n" "" "OK" || (ph_set_default_tty_states ; ph_set_default_logind_conf ; \
 			printf "%10s%s\n" "" "ERROR : Issues encountered during index update" ; printf "%2s%s\n" "" "FAILED" ; return 1) || return $?
-for PH_i in sudo acl xboxdrv git make bluez bluez-tools lsb-release expect $PH_MOON_PKGS
+for PH_i in sudo acl xboxdrv git make bluez bluez-tools lsb-release expect less $PH_MOON_PKGS
 do
 	printf "%8s%s\n" "" "--> Installing required package $PH_i"
 	if ! ph_get_pkg_inststate "$PH_i"

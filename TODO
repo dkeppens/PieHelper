@@ -1,10 +1,12 @@
-* add menu choice for usage info : TTY switching etc
+* update HOWTO to a more readable manual
+* update all code to use new ph_get_app_user function
+* change -m option to not permanently change option value for piehelper start location or not ?
 * add menu choice to display app user account
 * replace prompts in OS configuration functions for timezone, etc with lists of possible options
 * add check for mount present in ph_umount_cifs and generate warning if not
 * write backup functionality for Pi in OS section
 * change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
-* add OS module to move PieHelper to a different location
+* add menu choice or script/module to move PieHelper to a different location
 * test if Emulationstation savegames require mount as $PH_RUNAPP_USER for CIFS authentication
 * add confoper_ph.sh splash screen management module
 * support for bluetooth devices distributed over multiple adapters in confctrl_ph.sh

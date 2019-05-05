@@ -1,4 +1,5 @@
 Show Moonlight current state:ph_check_app_name -s -a Moonlight | more
+Show Moonlight run account:ph_get_app_user Moonlight
 Start or switch to Moonlight:startmoon.sh | more
 Stop Moonlight:stopmoon.sh force | more
 Restart Moonlight:restartmoon.sh | more

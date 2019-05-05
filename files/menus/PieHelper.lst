@@ -1,4 +1,5 @@
 Show PieHelper current state:ph_check_app_name -s -a PieHelper | more ; echo ""; echo "  *Duuh* What did you expect ?"
+Show PieHelper run account:ph_get_app_user PieHelper
 Start or switch to PieHelper:echo "*Sigh* I'm already running ! Stop buggering me..."
 Stop PieHelper and move to CLI tools:break
 Configure PieHelper:confpieh_ph.sh -c

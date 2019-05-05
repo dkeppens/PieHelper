@@ -1,4 +1,5 @@
 Show Emulationstation current state:ph_check_app_name -s -a Emulationstation | more
+Show Emulationstation run account:ph_get_app_user Emulationstation
 Start or switch to Emulationstation:startemul.sh | more
 Stop Emulationstation:stopemul.sh force | more
 Restart Emulationstation:restartemul.sh | more
