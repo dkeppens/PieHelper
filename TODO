@@ -1,9 +1,10 @@
+* replace prompts in OS configuration functions for timezone, etc with lists of possible options
 * add check for mount present in ph_umount_cifs and generate warning if not
 * add quit to shell for all menus and submenus
 * write backup functionality for Pi in OS section
 * change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
 * add OS module to move PieHelper to a different location
-* test if Emulationstation saves require mount as $PH_RUNAPP_USER for CIFS authentication
+* test if Emulationstation savegames require mount as $PH_RUNAPP_USER for CIFS authentication
 * add confoper_ph.sh splash screen management module
 * support for bluetooth devices distributed over multiple adapters in confctrl_ph.sh
 * test archlinux

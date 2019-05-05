@@ -67,3 +67,4 @@ ________________________
 * Verified functionality on Debian kernel 4.14.98-v7+
 * Additional checks implemented for confgenb_ph.sh
 * Clarified help for confgenb_ph.sh
+* Clarified README.md
