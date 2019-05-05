@@ -20,6 +20,7 @@ typeset -u PH_RUNAPPU=`echo $PH_RUNAPP | cut -c1-4`
 typeset -i PH_RUNAPP_TTY=0
 typeset -i PH_OLDOPTIND=$OPTIND
 OPTIND=1
+export PH_LAST_RETURN_GLOB="yes"
 
 while getopts phm: PH_OPTION 2>/dev/null
 do

@@ -33,7 +33,7 @@
 				   - Configure an integrated application
 				   - Move an integrated appplication from it's allocated to a different TTY
 				   - Configure an integrated application as the default application to start on system boot 
-				   - Detect the presence of any supported applications on your system and integrate them into PieHelper
+				   - Discover any supported applications currently installed on the system and integrate them into PieHelper
 				   - For more information about all options available for confapps_ph.sh, run 'confapps_ph.sh -h'
 	* confopts_ph.sh : used to - View and change the value of options of any supported application
 				   - View the help for options of any supported application

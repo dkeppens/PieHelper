@@ -32,4 +32,5 @@ Go to Main menu:ph_show_menu Main
 Go to Apps menu:ph_show_menu Apps
 Go to Controllers menu:ph_show_menu Controllers
 Go to Advanced menu:ph_show_menu Advanced
+Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash
 Return to previous screen:return

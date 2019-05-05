@@ -25,7 +25,7 @@ do
 	case $PH_OPTION in p)
                 ph_screen_input "$OPTARG" || exit $?
 		[[ "$PH_LISTMODE" != @(int|supp|start|run|all|) ]] && (! confapps_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$OPTARG" != @(list|tty|int|rem|conf|move|start|state) ]] && (! confapps_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$OPTARG" != @(list|tty|int|rem|conf|move|start|disc) ]] && (! confapps_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		[[ -n "$PH_ACTION" ]] && (! confapps_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_ACTION="$OPTARG" ;;
 			   l)
@@ -51,7 +51,7 @@ do
 		>&2 printf "%23s%s\n" "" "-p \"conf\" -a [confapp] |"
 		>&2 printf "%23s%s\n" "" "-p \"move\" -a [moveapp] '-t [[movetty]|\"prompt\"]' |"
 		>&2 printf "%23s%s\n" "" "-p \"start\" -a [[startapp]|\"none\"|\"prompt\"] |"
-		>&2 printf "%23s%s\n" "" "-p \"state\""
+		>&2 printf "%23s%s\n" "" "-p \"disc\""
 		>&2 printf "\n"
 		>&2 printf "%3s%s\n" "" "Where -h displays this usage"
 		>&2 printf "%9s%s\n" "" "-p specifies the action to take"
@@ -104,7 +104,7 @@ do
 		>&2 printf "%18s%s\n" "" "- The keyword \"prompt\" will make confapps_ph.sh behave interactively when it comes to startapp selection"
 		>&2 printf "%21s%s\n" "" "- The following info will be prompted for during interactive [startapp] selection :"
 		>&2 printf "%24s%s\n" "" "- Any integrated application name (required)"
-		>&2 printf "%12s%s\n" "" "\"state\" allows discovering supporting applications installed on the system"
+		>&2 printf "%12s%s\n" "" "\"disc\" allows discovering supporting applications installed on the system"
 		>&2 printf "%20s%s\n" "" "and attempts to integrate them into PieHelper when found"
 		>&2 printf "\n"
 		OPTARG="$PH_OLDOPTARG"
@@ -297,7 +297,7 @@ case $PH_ACTION in list)
 	fi
 	printf "\n"
 	exit $PH_RET_CODE ;;
-		  state)
+		  disc)
 	ph_generate_installed_apps
 	PH_RET_CODE=$?
 	printf "\n"

@@ -220,6 +220,7 @@ Display TTY currently allocated to $PH_APP:confapps_ph.sh -p tty -a $PH_APP | mo
 Move $PH_APP to another TTY:confapps_ph.sh -p move -a $PH_APP -t prompt
 Go to Main menu:ph_show_menu Main
 Go to Apps menu:ph_show_menu Apps
+Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash
 Return to previous screen:return
 EOF
 		printf "%10s%s\n" "" "OK"
@@ -296,7 +297,7 @@ PH_`echo $PH_APPU`_PRE_CMD=''								# - This is the full command to run before 
 											# - Default is ''
 											# - Allowed values are full pathnames (Values starting with '/' or '$') of scripts, sourceable scripts and executables or an empty string
 											#   Sourceable scripts can use variable names known to PieHelper
-PH_`echo $PH_APPU`_POST_CMD=''								# - This is the full command to run after stopping $PH_APP. If PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes', it will be run when the CIFS share is mounted
+PH_`echo $PH_APPU`_POST_CMD=''								# - This is the full command to run after stopping $PH_APP
 											#   Make sure the run account used for $PH_APP has adequate permission to execute when customizing this
 											# - POST-commands that fail will only generate a warning
 											# - Default is ''

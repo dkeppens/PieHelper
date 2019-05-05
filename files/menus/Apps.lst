@@ -8,4 +8,5 @@ Go to AppManagement submenu:ph_show_menu AppManagement
 Go to Main menu:ph_show_menu Main
 Go to Advanced menu:ph_show_menu Advanced
 Go to Controllers menu:ph_show_menu Controllers
+Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash
 Return to previous screen:return

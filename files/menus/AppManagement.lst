@@ -9,4 +9,5 @@ Install and add an out-of-scope application as a supported and integrated applic
 Remove an out-of-scope application from PieHelper and (optionally) uninstall it:confsupp_ph.sh -p prompt -r
 Go to Main menu:ph_show_menu Main
 Go to Apps menu:ph_show_menu Apps
+Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash
 Return to previous screen:return

@@ -14,4 +14,5 @@ Prompt for and store default values for all OS configuration functions:$PH_SUDO 
 Display the default values currently stored for all OS configuration functions:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p dispdef
 Go to Main menu:ph_show_menu Main
 Go to OS menu:ph_show_menu OS
+Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash
 Return to previous screen:return

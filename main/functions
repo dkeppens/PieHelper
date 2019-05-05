@@ -100,7 +100,8 @@ cd $PH_SCRIPTS_DIR >/dev/null 2>&1
 ls
 printf "\n%s\n\n" "Run any tool with the '-h' parameter to see help"
 printf "\n%s\n\n" "Run any tool with supported parameters or without parameters to execute their main function"
-printf "%s\n" "You can always return to the PieHelper menu by typing 'startpieh.sh' or use 'startpieh.sh -p' to restart on a pseudo-terminal"
+printf "%s\n" "You can always return to the PieHelper menu by typing 'startpieh.sh' to restart on your RaspBerry's display"
+printf "%51s%s\n" "" "or 'startpieh.sh -p' to restart on a network-based pseudo-terminal"
 return 0
 }
 
@@ -585,6 +586,8 @@ return 0
 function ph_show_menu {
 
 typeset PH_MENU="$1"
+typeset PH_LAST_RETURN="$PH_LAST_RETURN_GLOB"
+unset PH_LAST_RETURN_GLOB
 
 [[ "$1" == @(Advanced|Main|Apps|Controllers|OS) ]] && typeset PH_TYPE="menu" || typeset PH_TYPE="submenu"
 [[ "$PH_MENU" == "Settings" ]] && typeset PH_HEADER="Welcome to PieHelper $PH_VERSION Controller $PH_MENU $PH_TYPE" || \
@@ -610,6 +613,7 @@ do
 		echo "Go to Main menu:ph_show_menu Main" >>$PH_FILES_DIR/menus/Apps.lst
 		echo "Go to Advanced menu:ph_show_menu Advanced" >>$PH_FILES_DIR/menus/Apps.lst
 		echo "Go to Controllers menu:ph_show_menu Controllers" >>$PH_FILES_DIR/menus/Apps.lst
+		echo "Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash" >>$PH_FILES_DIR/menus/Apps.lst
 		echo "Return to previous screen:return" >>$PH_FILES_DIR/menus/Apps.lst
 	fi
 	set -A PH_MENU_ITEM ""
@@ -669,7 +673,17 @@ do
 			printf "\n"
 		fi
 	else
-		eval ${PH_MENU_CMD[$PH_ANSWER]} $PH_ANSWER 2>/dev/null
+		if [[ -z "$PH_LAST_RETURN" ]]
+		then
+			eval ${PH_MENU_CMD[$PH_ANSWER]} $PH_ANSWER 2>/dev/null
+		else
+			printf "\n"
+			ph_print_bannerline
+			printf "\n"
+			printf "%s\n\n" "Already on first screen"
+			ph_print_bannerline
+			printf "\n"
+		fi
 		PH_ANSWER=0
 	fi
 	[[ $PH_ANSWER -eq 0 || $PH_ANSWER -eq 1 ]] && printf "%s" "Press Enter to continue" && read 2>/dev/null
