@@ -1,7 +1,6 @@
 * update HOWTO to a more readable manual
-* update all code to use new ph_get_app_user function
+* update all code to use new ph_get_app_user function or not ?
 * change -m option to not permanently change option value for piehelper start location or not ?
-* add menu choice to display app user account
 * replace prompts in OS configuration functions for timezone, etc with lists of possible options
 * add check for mount present in ph_umount_cifs and generate warning if not
 * write backup functionality for Pi in OS section
