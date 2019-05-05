@@ -10,7 +10,7 @@
   In short, PieHelper is mainly intended for people who would like to use a RaspBerry Pi for well-known and popular applications (see default apps list below) and possibly have little to no knowledge of
   Linux to get started, as well as generally be useful for speeding up the process of installing/reinstalling systems mainly used for running those applications
   
-  All operations required to set up and use the system and these applications are offered via intuitive text menus, with the sole exception of PieHelper's initial installation
+  All operations required to set up and use the system (after the initial hardware and OS installation) and these applications are offered via intuitive text menus, with the sole exception of PieHelper's initial installation
   which is a short step-by-step process, available in the PieHelper wiki on https://github.com/dkeppens/PieHelper/wiki/Install-instructions
 
   PieHelper functions by binding each application to a specific TTY and uses autologin functionality at TTY selection  
