@@ -1,4 +1,5 @@
 * update HOWTO to a more readable manual
+* update Wiki with reference and download links
 * update all code to use new ph_get_app_user function or not ?
 * change -m option to not permanently change option value for piehelper start location or not ?
 * replace prompts in OS configuration functions for timezone, etc with lists of possible options
