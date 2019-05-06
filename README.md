@@ -1,8 +1,8 @@
 * PieHelper is an extensible, user-friendly, scripted software suite for Raspberry Pi that aims to facilitate
 
-	- all initial requisite configuration tasks when first setting up a Raspberry Pi
-	- all possible subsequent setup tasks such as installation, configuration and uninstallation of the most popular RaspBerry Pi software
-	  by integrating them into the PieHelper framework
+	- all initial configuration tasks required, after the initial hardware and OS installation of a Raspberry Pi
+	- the subsequent setup tasks such as installation, configuration and uninstallation of the most popular RaspBerry Pi software
+	  Supported software will be integrated into the PieHelper framework
 	- the management of that integrated software (stopping, starting, restarting and switching from one software to another)
 	- the process of reinstalling the system by providing built-in methods which aim to save any manual steps (such as information entered, Kodi preferences, etc) done during the initial
 	  setup to be available for automatic reuse when reinstalling
