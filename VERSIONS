@@ -69,3 +69,9 @@ ________________________
 * Clarified help for confgenb_ph.sh
 * Clarified README.md
 * Improved menus
+
+VERSION 1.07 - 15/05/2019
+________________________
+
+* Corrected some output typos
+* Interactive use of confoper_ph.sh OS configuration functions now present a list of all possible choices

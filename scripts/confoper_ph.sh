@@ -39,10 +39,67 @@ PH_LEFTSCAN=""
 PH_BOTTOMSCAN=""
 PH_UPPERSCAN=""
 PH_RESULT="SUCCESS"
+PH_SSH_KEY=""
 PATH=$PH_CUR_DIR:$PATH
 OPTIND=1
+PH_CHOICE=""
 
-export PATH PH_USER PH_DEL_PIUSER PH_HOST PH_AUDIO PH_BOOTENV PH_LOCALE PH_TZONE PH_KEYB PH_SSH_STATE PH_VID_MEM PH_RIGHTSCAN PH_LEFTSCAN PH_BOTTOMSCAN PH_UPPERSCAN PH_RESULT PH_COUNT PH_NETWAIT
+export PATH PH_USER PH_DEL_PIUSER PH_HOST PH_AUDIO PH_BOOTENV PH_LOCALE PH_TZONE PH_KEYB PH_SSH_STATE PH_VID_MEM PH_RIGHTSCAN PH_LEFTSCAN PH_BOTTOMSCAN PH_UPPERSCAN PH_RESULT PH_COUNT PH_NETWAIT PH_CHOICE PH_SSH_KEY
+
+function ph_present_list {
+
+typeset -i PH_COUNT=0
+typeset -i PH_ANSWER=1
+typeset -n PH_DEFAULT="$1"
+PH_CHOICE=""
+
+case $1 in PH_AUDIO)
+	PH_LIST=(hdmi jack auto) ;;
+	   PH_TZONE)
+	PH_LIST=(`timedatectl list-timezones | nawk 'BEGIN { ORS = " " } { print }'`) ;;
+       PH_SSH_STATE)
+	PH_LIST=(allowed disallowed) ;;
+	  PH_SSH_KEY)
+	PH_LIST=(`nawk -F':' 'BEGIN { ORS = " " } $7 !~ /\usr\/sbin\/nologin/ && $7 !~ /\/bin\/false/ && $7 !~ /\/bin\/sync/ { print $1 }' /etc/passwd`) ;;
+      PH_DEL_PIUSER)
+	PH_LIST=(yes no) ;;
+	 PH_BOOTENV)
+	PH_LIST=(cli gui) ;;
+	  PH_LOCALE)
+	PH_LIST=(`nawk 'BEGIN { ORS = " " } { print $1 }' /usr/share/i18n/SUPPORTED`) ;;
+	 PH_NETWAIT)
+	PH_LIST=(enabled disabled) ;;
+	 PH_VID_MEM)
+	PH_LIST=(16 32 64 128 256 512) ;;
+	    PH_KEYB)
+	PH_LIST=(`localectl list-x11-keymap-layouts | nawk 'BEGIN { ORS = " " } { print }'`) ;;
+	       *)
+	unset PH_LIST
+	return 1 ;;
+esac
+while [[ $PH_ANSWER -lt 1 || $PH_ANSWER -gt $PH_COUNT ]]
+do
+	[[ $PH_ANSWER -eq 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+	PH_COUNT=1
+	for PH_i in ${PH_LIST[@]}
+	do
+		printf "%14s%s\n" "" "$PH_COUNT. $PH_i"
+		PH_COUNT=$((PH_COUNT+1))
+	done
+	if ph_getdef "$1" >/dev/null 2>&1
+	then
+		printf "%14s%s\n" "" "$PH_COUNT. Use stored default ($PH_DEFAULT)" && PH_CHOICE="$PH_DEFAULT"
+	else
+		PH_COUNT=$((PH_COUNT-1))
+	fi
+	printf "\n%8s%s" "" "Your choice ? "
+	read PH_ANSWER 2>/dev/null
+done
+[[ -z "$PH_CHOICE" ]] && PH_CHOICE="${PH_LIST[$((PH_ANSWER-1))]}"
+unset -n PH_DEFAULT
+unset PH_LIST
+return 0
+}
 
 function ph_getdef {
 
@@ -148,7 +205,7 @@ case $PH_RET_CODE in 0)
 			then
 				[[ "$PH_RESULT" == "SUCCESS" ]] && PH_RESULT="PARTIALLY FAILED"
 			fi
-		fi
+		fi ;;
 esac
 return 0
 }
@@ -417,12 +474,12 @@ do
 		>&2 printf "%15s%s\n" "" "- Running this function more than once will do nothing"
 		>&2 printf "%15s%s\n" "" "- If the filesystem size was changed, the new size will only be available after a system reboot and a reboot will be proposed"
                 >&2 printf "%12s%s\n" "" "\"update\" allows running a silent update of all packages currently installed on this system"
-		>&2 printf "%15s%s\n" "" "- A reboot is recommended (but only required if kernel and/or bootloader/firmware were included in the update) which will be proposed"
+		>&2 printf "%15s%s\n" "" "- A reboot is recommended (but only required if kernel and/or bootloader/firmware were included in the update) and will be proposed"
                 >&2 printf "%12s%s\n" "" "\"boot\" allows rebooting this system"
 		>&2 printf "\n"
 		OPTIND=$PH_OLDOPTIND
 		OPTARG="$PH_OLDOPTARG"
-		unset PH_REVERSE
+		unset PH_CHOICE 
 		exit 1 ;;
 	esac
 done
@@ -712,7 +769,7 @@ case $PH_ACTION in all)
 		esac
 		if [[ -z `nawk -F\' -v opt=^"$PH_i="$ '$1 ~ opt { print $2 }' "$PH_CUR_DIR/../files/OS.defaults"` ]]
 		then
-			printf "%10s%s\n" "" "\"none\""
+			printf "%10s%s\n" "" "\"No default currently stored\""
 		else
 			printf "%10s%s\n" "" "\"`nawk -F\' -v opt=^\"$PH_i=\"$ '$1 ~ opt { print $2 }' \"$PH_CUR_DIR/../files/OS.defaults\"`\""
 		fi
@@ -791,17 +848,22 @@ case $PH_ACTION in all)
 					case $PH_i in PH_USER)
 						printf "%8s%s" "" "--> Please enter the value for 'create new user/modify existing user'/'create SSH key for user' operation : " ;;
 						PH_DEL_PIUSER)
-						printf "%8s%s" "" "--> Please enter the value for delete standard user '$PH_DEF_USER' operation (yes/no) : " ;;
+						printf "%8s%s" "" "--> Please choose whether to delete standard user '$PH_DEF_USER' : "
+						ph_present_list PH_DEL_PIUSER ;;
 						    PH_LOCALE)
-						printf "%8s%s" "" "--> Please enter the value for system locale (must be a system supported locale) : " ;;
+						printf "%8s%s" "" "--> Please choose a valid system locale : "
+						ph_present_list PH_LOCALE ;;
 		 				      PH_KEYB)
-						printf "%8s%s" "" "--> Please enter the value for keyboard layout (must be a valid keyboard layout) : " ;;
+						printf "%8s%s" "" "--> Please choose a valid keyboard layout : "
+						ph_present_list PH_KEYB ;;
 						     PH_TZONE)
-						printf "%8s%s" "" "--> Please enter the value for system timezone (must be a valid timezone identifier) : " ;;
+						printf "%8s%s" "" "--> Please choose a valid system timezone : "
+						ph_present_list PH_TZONE ;;
 						      PH_HOST)
 						printf "%8s%s" "" "--> Please enter the value for system hostname : " ;;
 						     PH_AUDIO)
-						printf "%8s%s" "" "--> Please enter the value for audio channel (hdmi/jack/auto) : " ;;
+						printf "%8s%s" "" "--> Please choose an audio channel : "
+						ph_present_list PH_AUDIO ;;
 						PH_BOTTOMSCAN)
 						printf "%8s%s" "" "--> Please enter the value for overscan bottom (must be numeric or empty (empty defaults to '30')) : " ;;
 						 PH_UPPERSCAN)
@@ -811,13 +873,17 @@ case $PH_ACTION in all)
 						  PH_LEFTSCAN)
 						printf "%8s%s" "" "--> Please enter the value for overscan left (must be numeric or empty (empty defaults to '16')) : " ;;
 						   PH_VID_MEM)	
-						printf "%8s%s" "" "--> Please enter the value for 'memory reserved for the GPU' (16/32/64/128/256/512) : " ;;
+						printf "%8s%s" "" "--> Please choose the 'memory reserved for the GPU' : "
+						ph_present_list PH_VID_MEM ;;
 						 PH_SSH_STATE)
-						printf "%8s%s" "" "--> Please enter the value for SSH state (allowed/disallowed) : " ;;
+						printf "%8s%s" "" "--> Please choose the value for the SSH state : "
+						ph_present_list PH_SSH_STATE ;;
 						   PH_BOOTENV)
-						printf "%8s%s" "" "--> Please enter the value for default boot environment (cli/gui) : " ;;
+						printf "%8s%s" "" "--> Please choose a default boot environment (cli/gui) : "
+						ph_present_list PH_BOOTENV ;;
 						   PH_NETWAIT)
-						printf "%8s%s" "" "--> Please enter the value for 'wait for network on boot' (enabled/disabled) : " ;;
+						printf "%8s%s" "" "--> Please choose a value for 'wait for network on boot' : "
+						ph_present_list PH_NETWAIT ;;
 					esac
 					read PH_ANSWER 2>/dev/null
 					PH_COUNT=$((PH_COUNT+1))
@@ -831,13 +897,13 @@ case $PH_ACTION in all)
 							exit 1
 						fi ;;
 						PH_DEL_PIUSER)
-						[[ "$PH_ANSWER" == @(yes|no) ]] && PH_DEL_PIUSER="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && break ;;
+						PH_DEL_PIUSER="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && break ;;
 						    PH_LOCALE)
-						ph_check_locale_validity "$PH_ANSWER" && PH_LOCALE="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && break ;;
+						PH_LOCALE="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && break ;;
 		 				      PH_KEYB)
-						ph_check_keyb_layout_validity "$PH_ANSWER" && PH_KEYB="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && break ;;
+						PH_KEYB="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && break ;;
 						     PH_TZONE)
-						ph_check_tzone_validity "$PH_ANSWER" && PH_TZONE="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && break ;;
+						PH_TZONE="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && break ;;
 						      PH_HOST)
 						if ph_screen_input "$PH_ANSWER"
 						then
@@ -848,7 +914,7 @@ case $PH_ACTION in all)
 							exit 1
 						fi ;;
 						     PH_AUDIO)
-						[[ "$PH_ANSWER" == @(auto|hdmi|jack) ]] && PH_AUDIO="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && break ;;
+						PH_AUDIO="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && break ;;
 						PH_BOTTOMSCAN)
 						[[ "$PH_ANSWER" == @(+([[:digit:]])|) ]] && PH_BOTTOMSCAN="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && break ;;
 						 PH_UPPERSCAN)
@@ -858,13 +924,13 @@ case $PH_ACTION in all)
 						  PH_LEFTSCAN)
 						[[ "$PH_ANSWER" == @(+([[:digit:]])|) ]] && PH_LEFTSCAN="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && break ;;
 						   PH_VID_MEM)	
-						[[ "$PH_ANSWER" == @(16|32|64|128|256|512) ]] && PH_VID_MEM="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && break ;;
+						PH_VID_MEM="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && break ;;
 						 PH_SSH_STATE)
-						[[ "$PH_ANSWER" == @(allowed|disallowed) ]] && PH_SSH_STATE="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && break ;;
+						PH_SSH_STATE="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && break ;;
 						   PH_BOOTENV)
-						[[ "$PH_ANSWER" == @(cli|gui) ]] && PH_BOOTENV="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && break ;;
+						PH_BOOTENV="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && break ;;
 						   PH_NETWAIT)
-						[[ "$PH_ANSWER" == @(enabled|disabled) ]] && PH_NETWAIT="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && break ;;
+						PH_NETWAIT="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && break ;;
 					esac
 					PH_ANSWER=""
 				done
@@ -1078,43 +1144,10 @@ case $PH_ACTION in all)
 			 sshkey)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
-			while [[ -z "$PH_ANSWER" ]]
-			do
-				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
-				printf "%8s%s" "" "--> Please enter the value for 'create SSH key for user' (should be an existing user) : "
-				read PH_ANSWER 2>/dev/null
-				[[ "$PH_ANSWER" == "def" ]] && PH_COUNT=$((PH_COUNT+1)) && PH_ANSWER="" && PH_MESSAGE="Unsupported value entered" && continue
-				if ph_screen_input "$PH_ANSWER"
-				then
-					if ph_check_user_validity "$PH_ANSWER"
-					then
-						PH_USER="$PH_ANSWER"
-						printf "%10s%s\n" "" "OK"
-						break
-					else
-						printf "%10s%s\n" "" "ERROR : User does not exist"
-						printf "%2s%s\n" "" "FAILED"
-						exit 1
-					fi
-				else
-					exit 1
-				fi
-				PH_COUNT=$((PH_COUNT+1))
-				PH_ANSWER=""
-			done
+			ph_present_list PH_SSH_KEY && PH_SSH_KEY="$PH_CHOICE" && printf "%10s%s\n" "" "OK"
 		fi
-		if [[ "$PH_USER" == "def" ]]
-		then
-			ph_getdef PH_USER || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
-			if ! ph_check_user_validity "$PH_USER"
-			then
-				printf "%10s%s\n" "" "ERROR : User does not exist"
-				printf "%2s%s\n" "" "FAILED"
-				exit 1
-			fi
-		fi
-		PH_HOME="/home/$PH_USER"
-		printf "%8s%s\n" "" "--> Checking for existing keys for user $PH_USER"
+		PH_HOME=`nawk -F':' -v usr=^"$PH_SSH_KEY"$ '$1 ~ usr { print $6 }' /etc/passwd`
+		printf "%8s%s\n" "" "--> Checking for existing keys for user $PH_SSH_KEY"
 		if [[ ! -f "$PH_HOME/.ssh/id_rsa.pub" ]]
 		then
 			printf "%10s%s\n" "" "OK (None)"
@@ -1127,7 +1160,7 @@ case $PH_ACTION in all)
 				chmod 644 "$PH_HOME/.ssh/id_rsa.pub" 2>/dev/null
 				chmod 755 "$PH_HOME" 2>/dev/null
 				cp -p "$PH_HOME/.ssh/id_rsa" "$PH_HOME/.ssh/authorized_keys"
-				chown -R "$PH_USER":"$PH_USER" "$PH_HOME" 2>/dev/null
+				chown -R "$PH_SSH_KEY":"$PH_SSH_KEY" "$PH_HOME" 2>/dev/null
 				printf "%10s%s\n" "" "OK"
 			else
 				printf "%10s%s\n" "" "ERROR : Could not create a keypair"
@@ -1139,29 +1172,10 @@ case $PH_ACTION in all)
 		printf "%2s%s\n" "" "$PH_RESULT"
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			 locale)
+		printf "%8s%s\n" "" "--> Please choose a valid system locale : "
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
-			while [[ -z "$PH_ANSWER" ]]
-			do
-				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
-				printf "%8s%s" "" "--> Please enter the value for system locale (should be a system supported locale) : "
-				read PH_ANSWER 2>/dev/null
-				[[ "$PH_ANSWER" == "def" ]] && PH_COUNT=$((PH_COUNT+1)) && PH_ANSWER="" && PH_MESSAGE="Unsupported value entered" && continue
-				if ph_check_locale_validity "$PH_ANSWER"
-				then
-					PH_LOCALE="$PH_ANSWER"
-					printf "%10s%s\n" "" "OK"
-					break
-				else
-					PH_MESSAGE="Not a system supported locale"
-				fi
-				PH_COUNT=$((PH_COUNT+1))
-				PH_ANSWER=""
-			done
-		fi
-		if [[ "$PH_LOCALE" == "def" ]]
-		then
-			ph_getdef PH_LOCALE || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+			ph_present_list PH_LOCALE && PH_LOCALE="$PH_CHOICE" && printf "%10s%s\n" "" "OK"
 		fi
 		printf "%8s%s\n" "" "--> Checking currently configured system locale"
 		PH_VALUE="`localectl status | nawk -F'=' '$0 ~ /System Locale/ { print $2 }'`"
@@ -1221,27 +1235,7 @@ case $PH_ACTION in all)
 			   keyb)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
-			while [[ -z "$PH_ANSWER" ]]
-			do
-				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
-				printf "%8s%s" "" "--> Please enter the value for keyboard layout (should be a valid keyboard layout) : "
-				read PH_ANSWER 2>/dev/null
-				[[ "$PH_ANSWER" == "def" ]] && PH_COUNT=$((PH_COUNT+1)) && PH_ANSWER="" && PH_MESSAGE="Unsupported value entered" && continue
-				if ph_check_keyb_layout_validity "$PH_ANSWER"
-				then
-					PH_KEYB="$PH_ANSWER"
-					printf "%10s%s\n" "" "OK"
-					break
-				else
-					PH_MESSAGE="Invalid keyboard layout specified"
-				fi
-				PH_COUNT=$((PH_COUNT+1))
-				PH_ANSWER=""
-			done
-		fi
-		if [[ "$PH_KEYB" == "def" ]]
-		then
-			ph_getdef PH_KEYB || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+			ph_present_list PH_KEYB && PH_KEYB="$PH_CHOICE" && printf "%10s%s\n" "" "OK"
 		fi
 		printf "%8s%s\n" "" "--> Checking currently configured keyboard layout"
 		if [[ -f /usr/bin/pacman ]]
@@ -1318,27 +1312,7 @@ case $PH_ACTION in all)
 			  tzone)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
-			while [[ -z "$PH_ANSWER" ]]
-			do
-				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
-				printf "%8s%s" "" "--> Please enter the value for system timezone (should be a valid timezone identifier) : "
-				read PH_ANSWER 2>/dev/null
-				[[ "$PH_ANSWER" == "def" ]] && PH_COUNT=$((PH_COUNT+1)) && PH_ANSWER="" && PH_MESSAGE="Unsupported value entered" && continue
-				if ph_check_tzone_validity "$PH_ANSWER"
-				then
-					PH_TZONE="$PH_ANSWER"
-					printf "%10s%s\n" "" "OK"
-					break
-				else
-					PH_MESSAGE="Invalid timezone identifier specified"
-				fi
-				PH_COUNT=$((PH_COUNT+1))
-				PH_ANSWER=""
-			done
-		fi
-		if [[ "$PH_TZONE" == "def" ]]
-		then
-			ph_getdef PH_TZONE || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+			ph_present_list PH_TZONE && PH_TZONE="$PH_CHOICE" && printf "%10s%s\n" "" "OK"
 		fi
 		printf "%8s%s\n" "" "--> Checking current timezone"
 		PH_VALUE="`cat /etc/timezone`"
@@ -1424,26 +1398,7 @@ case $PH_ACTION in all)
 			  audio)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
-			while [[ -z "$PH_ANSWER" ]]
-			do
-				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
-				printf "%8s%s" "" "--> Please enter the value for audio channel (hdmi/jack/auto) : "
-				PH_MESSAGE="Invalid response"
-				read PH_ANSWER 2>/dev/null
-				[[ "$PH_ANSWER" == "def" ]] && PH_COUNT=$((PH_COUNT+1)) && PH_ANSWER="" && PH_MESSAGE="Unsupported value entered" && continue
-				if [[ "$PH_ANSWER" == @(hdmi|jack|auto) ]]
-				then
-					PH_AUDIO="$PH_ANSWER"
-					printf "%10s%s\n" "" "OK"
-					break
-				fi
-				PH_COUNT=$((PH_COUNT+1))
-				PH_ANSWER=""
-			done
-		fi
-		if [[ "$PH_AUDIO" == "def" ]]
-		then
-			ph_getdef PH_AUDIO || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+			ph_present_list PH_AUDIO && PH_AUDIO="$PH_CHOICE" && printf "%10s%s\n" "" "OK"
 		fi
 		printf "%8s%s\n" "" "--> Checking currently configured audio output"
 		PH_VALUE="`amixer cget numid=3 | tail -1 | nawk -F'=' '{ print $2 }'`"
@@ -1488,13 +1443,13 @@ case $PH_ACTION in all)
 				do
 					[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
 					case $PH_i in PH_BOTTOMSCAN)
-							printf "%8s%s" "" "--> Please enter the value for overscan bottom (must be numeric or empty (empty is leave unchanged)) : " ;;
+							printf "%8s%s" "" "--> Please enter the value for overscan bottom (must be numeric, 'def' or empty ('def' is default, empty is leave unchanged)) : " ;;
 						       PH_UPPERSCAN)
-							printf "%8s%s" "" "--> Please enter the value for overscan top (must be numeric or empty (empty is leave unchanged)) : " ;;
+							printf "%8s%s" "" "--> Please enter the value for overscan top (must be numeric, 'def' or empty ('def' is default, empty is leave unchanged)) : " ;;
 						       PH_RIGHTSCAN)
-							printf "%8s%s" "" "--> Please enter the value for overscan right (must be numeric or empty (empty is leave unchanged)) : " ;;
+							printf "%8s%s" "" "--> Please enter the value for overscan right (must be numeric, 'def' or empty ('def' is default, empty is leave unchanged)) : " ;;
 						       	PH_LEFTSCAN)
-							printf "%8s%s" "" "--> Please enter the value for overscan left (must be numeric or empty (empty is leave unchanged)) : " ;;
+							printf "%8s%s" "" "--> Please enter the value for overscan left (must be numeric, 'def' or empty ('def' is default, empty is leave unchanged)) : " ;;
 					esac
 					PH_MESSAGE="Invalid response"
 					read PH_ANSWER 2>/dev/null
@@ -1580,26 +1535,7 @@ case $PH_ACTION in all)
 		       memsplit)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
-			while [[ -z "$PH_ANSWER" ]]
-			do
-				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
-				printf "%8s%s" "" "--> Please enter the value for 'memory reserved for the GPU' (16/32/64/128/256/512) : "
-				PH_MESSAGE="Invalid response"
-				read PH_ANSWER 2>/dev/null
-				[[ "$PH_ANSWER" == "def" ]] && PH_COUNT=$((PH_COUNT+1)) && PH_ANSWER="" && PH_MESSAGE="Unsupported value entered" && continue
-				if [[ "$PH_ANSWER" == @(16|32|64|128|256|512) ]]
-				then
-					PH_VID_MEM="$PH_ANSWER"
-					printf "%10s%s\n" "" "OK"
-					break
-				fi
-				PH_COUNT=$((PH_COUNT+1))
-				PH_ANSWER=""
-			done
-		fi
-		if [[ "$PH_VID_MEM" == "def" ]]
-		then
-			ph_getdef PH_VID_MEM || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+			ph_present_list PH_VID_MEM && PH_VID_MEM="$PH_CHOICE" && printf "%10s%s\n" "" "OK"
 		fi
 		printf "%8s%s\n" "" "--> Checking currently configured GPU memory"
 		PH_VALUE="`nawk -F'=' -v str=^\"gpu_mem\"$ '$1 ~ str { print $2 ; exit 0 } { next }' /boot/config.txt`"
@@ -1643,26 +1579,7 @@ case $PH_ACTION in all)
 			    ssh)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
-			while [[ -z "$PH_ANSWER" ]]
-			do
-				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
-				printf "%8s%s" "" "--> Please enter the value for SSH state (allowed/disallowed) : "
-				PH_MESSAGE="Invalid response"
-				read PH_ANSWER 2>/dev/null
-				[[ "$PH_ANSWER" == "def" ]] && PH_COUNT=$((PH_COUNT+1)) && PH_ANSWER="" && PH_MESSAGE="Unsupported value entered" && continue
-				if [[ "$PH_ANSWER" == @(allowed|disallowed) ]]
-				then
-					PH_SSH_STATE="$PH_ANSWER"
-					printf "%10s%s\n" "" "OK"
-					break
-				fi
-				PH_COUNT=$((PH_COUNT+1))
-				PH_ANSWER=""
-			done
-		fi
-		if [[ "$PH_SSH_STATE" == "def" ]]
-		then
-			ph_getdef PH_SSH_STATE || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+			ph_present_list PH_SSH_STATE && PH_SSH_STATE="$PH_CHOICE" && printf "%10s%s\n" "" "OK"
 		fi
 		if [[ "$PH_SSH_STATE" == "allowed" ]]
 		then
@@ -1755,26 +1672,7 @@ case $PH_ACTION in all)
 			netwait)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
-			while [[ -z "$PH_ANSWER" ]]
-			do
-				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
-				printf "%8s%s" "" "--> Please enter the value for 'wait for network on boot' (enabled/disabled) : "
-				PH_MESSAGE="Invalid response"
-				read PH_ANSWER 2>/dev/null
-				[[ "$PH_ANSWER" == "def" ]] && PH_COUNT=$((PH_COUNT+1)) && PH_ANSWER="" && PH_MESSAGE="Unsupported value entered" && continue
-				if [[ "$PH_ANSWER" == @(enabled|disabled) ]]
-				then
-					PH_NETWAIT="$PH_ANSWER"
-					printf "%10s%s\n" "" "OK"
-					break
-				fi
-				PH_COUNT=$((PH_COUNT+1))
-				PH_ANSWER=""
-			done
-		fi
-		if [[ "$PH_NETWAIT" == "def" ]]
-		then
-			ph_getdef PH_NETWAIT || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+			ph_present_list PH_NETWAIT && PH_NETWAIT="$PH_CHOICE" && printf "%10s%s\n" "" "OK"
 		fi
 		printf "%8s%s\n" "" "--> Checking current value for 'wait for network on boot'"
 		[[ -f /etc/systemd/system/dhcpcd.service.d/wait.conf ]] && PH_VALUE="enabled" || PH_VALUE="disabled"
@@ -1816,26 +1714,7 @@ EOF
 			bootenv)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
-			while [[ -z "$PH_ANSWER" ]]
-			do
-				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
-				printf "%8s%s" "" "--> Please enter the value for default boot environment (cli/gui) : "
-				PH_MESSAGE="Invalid response"
-				read PH_ANSWER 2>/dev/null
-				[[ "$PH_ANSWER" == "def" ]] && PH_COUNT=$((PH_COUNT+1)) && PH_ANSWER="" && PH_MESSAGE="Unsupported value entered" && continue
-				if [[ "$PH_ANSWER" == @(cli|gui) ]]
-				then
-					PH_BOOTENV="$PH_ANSWER"
-					printf "%10s%s\n" "" "OK"
-					break
-				fi
-				PH_COUNT=$((PH_COUNT+1))
-				PH_ANSWER=""
-			done
-		fi
-		if [[ "$PH_BOOTENV" == "def" ]]
-		then
-			ph_getdef PH_BOOTENV || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+			ph_present_list PH_BOOTENV && PH_BOOTENV="$PH_CHOICE" && printf "%10s%s\n" "" "OK"
 		fi
 		if ((grep "PH_RUNAPP_CMD='.*/PieHelper/scripts/startpieh.sh'" /etc/profile.d/PieHelper_tty* >/dev/null 2>&1) && ([[ "$PH_BOOTENV" == "gui" ]]))
 		then

@@ -1,3 +1,4 @@
+- Use the arrow keys to navigate and press 'q' to quit
 - PieHelper works by binding a supported application to a specific TTY
   When switching to a TTY, the application bound to it will autostart
   Therefore, if you already have pre-existing custom TTY setups, 

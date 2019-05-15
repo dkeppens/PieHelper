@@ -1,3 +1,7 @@
+* remove confoper_ph.sh_bck file
+* continue interactive mode for all other separate OS functions except locale
+* allow savedef and dispdef for PH_SSHKEY in confoper_ph.sh
+* unsets in confoper_ph.sh
 * update HOWTO to a more readable manual
 * update Wiki with reference and download links
 * update all code to use new ph_get_app_user function or not ?

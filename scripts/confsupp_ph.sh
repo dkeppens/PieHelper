@@ -481,7 +481,7 @@ EOF
 		printf "%s\n" "- Using interactive mode"
 		while [[ -z "$PH_APP" ]]
 		do
-			[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid reponse"
+			[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
 			printf "%8s%s" "" "--> Please enter an application name : "
 			read PH_APP 2>/dev/null
 			ph_screen_input "$PH_APP" || exit $?
@@ -493,7 +493,7 @@ EOF
 		case $PH_I_ACTION in inst)
 			while [[ -z "$PH_APP_CMD" ]]
 			do
-				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid reponse"
+				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
 				printf "%8s%s\n" "" "--> Please enter the full start command for $PH_APP"
 				printf "%12s%s" "" "Any TTY number references should be replaced by the string 'PH_TTY' : "
 				read PH_APP_CMD 2>/dev/null
@@ -510,7 +510,7 @@ EOF
 			printf "%10s%s\n" "" "OK ($PH_APP_USER)"
 			while [[ -z "$PH_APP_PKG" ]]
 			do
-				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid reponse"
+				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
 				printf "%8s%s" "" "--> Please enter the package name for application $PH_APP : "
 				read PH_APP_PKG 2>/dev/null
 				((PH_COUNT++))
