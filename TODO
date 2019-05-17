@@ -1,6 +1,7 @@
+* get currently configured values function in confoper_ph.sh and add to menus
+* create remdef function for confoper_ph.sh and add to menus
+* add functionality for passing a list of functions to confoper_ph.sh -p savedef -i
 * remove confoper_ph.sh_bck file
-* continue interactive mode for all other separate OS functions except locale
-* allow savedef and dispdef for PH_SSHKEY in confoper_ph.sh
 * unsets in confoper_ph.sh
 * update HOWTO to a more readable manual
 * update Wiki with reference and download links

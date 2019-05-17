@@ -1,15 +1,16 @@
-Prompt for and store default value for the 'create a new user' operation of the 'user' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i user
-Prompt for and store default value for the delete standard user 'pi' operation of the 'user' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i del_piuser
-Prompt for and store default value for the 'set system hostname' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i host
-Prompt for and store default value for the 'set memory reserved for the GPU' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i memsplit
-Prompt for and store default value for the 'set audio channel' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i audio
-Prompt for and store default value for the 'set system timezone' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i tzone
-Prompt for and store default value for the 'set keyboard layout' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i keyb
-Prompt for and store default value for the 'set default boot environment' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i bootenv
-Prompt for and store default value for the 'wait for network on boot' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i netwait
-Prompt for and store default value for the 'set system locale' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i locale
-Prompt for and store default value for the 'configure overscan' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i overscan
-Prompt for and store default value for the 'set SSH state' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i ssh
+Prompt for and store a default value for the 'create a new user' operation of the 'user' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i user
+Prompt for and store a default value for the 'delete standard PI user' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i del_stduser
+Prompt for and store a default value for the 'configure system hostname' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i host
+Prompt for and store a default value for the 'configure memory amount that is exclusively reserved for the GPU' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i memsplit
+Prompt for and store a default value for the 'configure audio channel' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i audio
+Prompt for and store a default value for the 'configure system timezone' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i tzone
+Prompt for and store a default value for the 'configure default keyboard layout' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i keyb
+Prompt for and store a default value for the 'configure default boot environment' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i bootenv
+Prompt for and store a default value for the 'wait for network on boot' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i netwait
+Prompt for and store a default value for the 'configure system locale' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i locale
+Prompt for and store a default value for the 'set state of SSH' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i ssh
+Prompt for and store a default value for the 'create a public/private keypair for user' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i sshkey
+Prompt for and store default values for the 'configure overscan' function:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i overscan
 Prompt for and store default values for all OS configuration functions:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p savedef -i
 Display the default values currently stored for all OS configuration functions:$PH_SUDO $PH_SCRIPTS_DIR/confoper_ph.sh -p dispdef
 Go to Main menu:ph_show_menu Main

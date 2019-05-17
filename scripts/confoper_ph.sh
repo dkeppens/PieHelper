@@ -16,6 +16,7 @@ typeset PH_MESSAGE="Invalid response"
 typeset PH_LOCALE_ENCODING=""
 typeset PH_LOCALE_NAME=""
 typeset PH_CUR_DIR="$( cd "$( dirname "$0" )" && pwd )"
+typeset PH_OLD_RESULT=""
 typeset PH_OLDOPTARG="$OPTARG"
 typeset -i PH_RET_CODE=0
 typeset -i PH_COUNT=0
@@ -24,7 +25,7 @@ typeset -i PH_FLAG=0
 typeset -i PH_INTERACTIVE=0
 typeset -i PH_OLDOPTIND=$OPTIND
 PH_USER=""
-PH_DEL_PIUSER="yes"
+PH_DEL_PIUSER=""
 PH_HOST=""
 PH_AUDIO=""
 PH_BOOTENV=""
@@ -38,16 +39,17 @@ PH_RIGHTSCAN=""
 PH_LEFTSCAN=""
 PH_BOTTOMSCAN=""
 PH_UPPERSCAN=""
-PH_RESULT="SUCCESS"
 PH_SSH_KEY=""
+PH_RESULT="SUCCESS"
+PH_CHOICE=""
 PATH=$PH_CUR_DIR:$PATH
 OPTIND=1
-PH_CHOICE=""
 
 export PATH PH_USER PH_DEL_PIUSER PH_HOST PH_AUDIO PH_BOOTENV PH_LOCALE PH_TZONE PH_KEYB PH_SSH_STATE PH_VID_MEM PH_RIGHTSCAN PH_LEFTSCAN PH_BOTTOMSCAN PH_UPPERSCAN PH_RESULT PH_COUNT PH_NETWAIT PH_CHOICE PH_SSH_KEY
 
 function ph_present_list {
 
+typeset PH_i=""
 typeset -i PH_COUNT=0
 typeset -i PH_ANSWER=1
 typeset -n PH_DEFAULT="$1"
@@ -60,7 +62,7 @@ case $1 in PH_AUDIO)
        PH_SSH_STATE)
 	PH_LIST=(allowed disallowed) ;;
 	  PH_SSH_KEY)
-	PH_LIST=(`nawk -F':' 'BEGIN { ORS = " " } $7 !~ /\usr\/sbin\/nologin/ && $7 !~ /\/bin\/false/ && $7 !~ /\/bin\/sync/ { print $1 }' /etc/passwd`) ;;
+	PH_LIST=(`nawk -F':' 'BEGIN { ORS = " " } $7 !~ /\usr\/sbin\/nologin/ && $7 !~ /\/bin\/false/ && $7 !~ /\/bin\/sync/ && $1 !~ /^root$/ { print $1 }' /etc/passwd`) ;;
       PH_DEL_PIUSER)
 	PH_LIST=(yes no) ;;
 	 PH_BOOTENV)
@@ -77,9 +79,11 @@ case $1 in PH_AUDIO)
 	unset PH_LIST
 	return 1 ;;
 esac
+printf "\n"
 while [[ $PH_ANSWER -lt 1 || $PH_ANSWER -gt $PH_COUNT ]]
 do
-	[[ $PH_ANSWER -eq 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+	[[ $PH_COUNT -eq 0 ]] && PH_COUNT=1
+	[[ $PH_ANSWER -lt 1 || $PH_ANSWER -gt $PH_COUNT ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response" || printf "\n"
 	PH_COUNT=1
 	for PH_i in ${PH_LIST[@]}
 	do
@@ -88,14 +92,14 @@ do
 	done
 	if ph_getdef "$1" >/dev/null 2>&1
 	then
-		printf "%14s%s\n" "" "$PH_COUNT. Use stored default ($PH_DEFAULT)" && PH_CHOICE="$PH_DEFAULT"
+		printf "%14s%s\n" "" "$PH_COUNT. Retain currently stored value ($PH_DEFAULT)" && PH_LIST[$((PH_COUNT-1))]="$PH_DEFAULT"
 	else
 		PH_COUNT=$((PH_COUNT-1))
 	fi
 	printf "\n%8s%s" "" "Your choice ? "
 	read PH_ANSWER 2>/dev/null
 done
-[[ -z "$PH_CHOICE" ]] && PH_CHOICE="${PH_LIST[$((PH_ANSWER-1))]}"
+PH_CHOICE="${PH_LIST[$((PH_ANSWER-1))]}"
 unset -n PH_DEFAULT
 unset PH_LIST
 return 0
@@ -128,7 +132,7 @@ PH_COUNT=$((PH_COUNT+1))
 printf "%8s%s\n" "" "--> Storing default for parameter $PH_PARAM -> Running precheck"
 printf "%10s%s\n" "" "OK"
 printf "%8s%s\n" "" "--> Prechecking for existing default"
-if grep ^"$PH_PARAM=" "$PH_CUR_DIR/../files/OS.defaults" >/dev/null
+if grep ^"$PH_PARAM=" "$PH_CUR_DIR/../files/OS.defaults" >/dev/null 2>&1
 then
 	if [[ `nawk -F\' -v opt=^"$PH_PARAM="$ '$1 ~ opt { print $2 }' $PH_CUR_DIR/../files/OS.defaults` == "$PH_VALUE" ]]
 	then
@@ -233,34 +237,37 @@ else
 	PH_DEF_USER="pi"
 fi
 
-while getopts p:s:a:n:e:t:c:f:z:u:l:b:r:k:m:w:hdi PH_OPTION 2>/dev/null
+while getopts p:d:m:r:l:b:u:z:f:k:w:c:e:n:s:a:t:hi PH_OPTION 2>/dev/null
 do
 	case $PH_OPTION in p)
 		[[ -n "$PH_ACTION" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$OPTARG" != @(all|ssh|sshkey|user|locale|keyb|tzone|host|netwait|filesys|audio|overscan|memsplit|update|bootenv|boot|savedef|dispdef|all-usedef) ]] && \
+#		[[ "$OPTARG" != @(all|ssh|sshkey|user|locale|keyb|tzone|host|netwait|filesys|audio|overscan|memsplit|del_stduser|update|bootenv|boot|savedef|dispdef|all-usedef) ]] && \
+		[[ "$OPTARG" != @(all|ssh|sshkey|user|locale|keyb|tzone|host|netwait|audio|overscan|memsplit|del_stduser|update|bootenv|boot|savedef|dispdef|all-usedef) ]] && \
 			(! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_ACTION="$OPTARG" ;;
 			   d)
-		PH_DEL_PIUSER="no" ;;
+		[[ -n "$PH_DEL_PIUSER" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$OPTARG" != @(yes|no|def) ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		PH_DEL_PIUSER="$OPTARG" ;;
 			   m)
 		[[ -n "$PH_VID_MEM" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		[[ "$OPTARG" != @(512|256|128|64|32|16|def) ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_VID_MEM="$OPTARG" ;;
 			   r)
 		[[ -n "$PH_RIGHTSCAN" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$OPTARG" != +([[:digit:]]) && "$OPTARG" != "def" ]] && printf "%s\n" "- Executing overscan function" && printf "%2s%s\n" "" "FAILED : Non-numeric value given for right overscan" && exit 1
+		[[ "$OPTARG" != +([[:digit:]]) && "$OPTARG" != "def" ]] && printf "%s\n" "- Executing overscan function" && printf "%2s%s\n" "" "FAILED : Value for right overscan must be numeric or 'def'" && exit 1
 		PH_RIGHTSCAN="$OPTARG" ;;
 			   l)
 		[[ -n "$PH_LEFTSCAN" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$OPTARG" != +([[:digit:]]) && "$OPTARG" != "def" ]] && printf "%s\n" "- Executing overscan function" && printf "%2s%s\n" "" "FAILED : Non-numeric value given for left overscan" && exit 1
+		[[ "$OPTARG" != +([[:digit:]]) && "$OPTARG" != "def" ]] && printf "%s\n" "- Executing overscan function" && printf "%2s%s\n" "" "FAILED : Value for left overscan must be numeric or 'def'" && exit 1
 		PH_LEFTSCAN="$OPTARG" ;;
 			   b)
 		[[ -n "$PH_BOTTOMSCAN" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$OPTARG" != +([[:digit:]]) && "$OPTARG" != "def" ]] && printf "%s\n" "- Executing overscan function" && printf "%2s%s\n" "" "FAILED : Non-numeric value given for bottom overscan" && exit 1
+		[[ "$OPTARG" != +([[:digit:]]) && "$OPTARG" != "def" ]] && printf "%s\n" "- Executing overscan function" && printf "%2s%s\n" "" "FAILED : Value for bottom overscan must be numeric or 'def'" && exit 1
 		PH_BOTTOMSCAN="$OPTARG" ;;
 			   u)
 		[[ -n "$PH_UPPERSCAN" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$OPTARG" != +([[:digit:]]) && "$OPTARG" != "def" ]] && printf "%s\n" "- Executing overscan function" && printf "%2s%s\n" "" "FAILED : Non-numeric value given for upper overscan" && exit 1
+		[[ "$OPTARG" != +([[:digit:]]) && "$OPTARG" != "def" ]] && printf "%s\n" "- Executing overscan function" && printf "%2s%s\n" "" "FAILED : Value for upper overscan must be numeric or 'def'" && exit 1
 		PH_UPPERSCAN="$OPTARG" ;;
 			   z)
 		[[ -n "$PH_TZONE" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
@@ -301,180 +308,190 @@ do
 		[[ -n "$PH_USER" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_USER="$OPTARG" ;;
+			   t)
+		[[ -n "$PH_SSH_KEY" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		PH_SSH_KEY="$OPTARG" ;;
 			   *)
 		>&2 printf "%s\n" "Usage : confoper_ph.sh -h |"
-		>&2 printf "%23s%s\n" "" "-p \"all\" [[[-a [alluser] '-d']|-a \"def\"] -s [\"allowed\"|\"disallowed\"|\"def\"] -n [hostname|\"def\"] -e [\"cli\"|\"gui\"|\"def\"] -w [\"enabled\"|\"disabled\"|\"def\"] \\"
-		>&2 printf "%23s%s\n" "" "           -c [\"hdmi\"|\"jack\"|\"def\"] -f [newloc|\"def\"] -z [tzone|\"def\"] '-l [lowerscan|\"def\"]' '-r [rightscan|\"def\"]' '-b [bottomscan|\"def\"]' \\"
-		>&2 printf "%23s%s\n" "" "           '-u [upperscan|\"def\"]' -k [keyb|\"def\"] -m [16|32|64|128|256|512|\"def\"]|-i] |"
+		>&2 printf "%23s%s\n" "" "-p \"all\" -a [user|\"def\"] -s [\"allowed\"|\"disallowed\"|\"def\"] -n [hostname|\"def\"] -e [\"cli\"|\"gui\"|\"def\"] -w [\"enabled\"|\"disabled\"|\"def\"] \\"
+		>&2 printf "%23s%s\n" "" "           -c [\"hdmi\"|\"jack\"|\"def\"] -f [locale|\"def\"] -z [tzone|\"def\"] '-l [leftscan|\"def\"]' '-r [rightscan|\"def\"]' '-b [bottomscan|\"def\"]' \\"
+		>&2 printf "%23s%s\n" "" "           '-u [upperscan|\"def\"]' -k [keyb|\"def\"] -m [16|32|64|128|256|512|\"def\"] -t [sshkeyuser|\"def\"] -d [\"yes\"|\"no\"|\"def\"]|-i] |"
 		>&2 printf "%23s%s\n" "" "-p \"all-usedef\" |"
-		>&2 printf "%23s%s\n" "" "-p \"savedef\" [[-a [alluser] '-d'] -s [\"allowed\"|\"disallowed\"] -n [hostname] -e [\"cli\"|\"gui\"] -c [\"hdmi\"|\"jack\"] -w [\"enabled\"|\"disabled\"] \\"
-		>&2 printf "%23s%s\n" "" "           -f [newloc] -z [tzone] '-l [lowerscan]' '-r [rightscan]' '-b [bottomscan]' '-u [upperscan]' -k [keyb] -m [16|32|64|128|256|512]| \\"
-		>&2 printf "%23s%s\n" "" "           -i '[\"user\"|\"del_stduser\"|\"ssh\"|\"host\"|\"bootenv\"|\"audio\"|\"locale\"|\"tzone\"|\"overscan\"|\"keyb\"|\"memsplit\"|\"netwait\"]'] |"
+		>&2 printf "%23s%s\n" "" "-p \"savedef\" -a [user] -s [\"allowed\"|\"disallowed\"] -n [hostname] -e [\"cli\"|\"gui\"] -c [\"hdmi\"|\"jack\"] -w [\"enabled\"|\"disabled\"] \\"
+		>&2 printf "%23s%s\n" "" "           -f [locale] -z [tzone] '-l [lowerscan]' '-r [rightscan]' '-b [bottomscan]' '-u [upperscan]' -k [keyb] -m [16|32|64|128|256|512] -t [sshkeyuser] -d [\"yes\"|\"no\"] | \\"
+		>&2 printf "%23s%s\n" "" "           -i '[\"user\"|\"del_stduser\"|\"ssh\"|\"host\"|\"bootenv\"|\"audio\"|\"locale\"|\"tzone\"|\"overscan\"|\"keyb\"|\"memsplit\"|\"netwait\"|\"sshkey\"]'] |"
 		>&2 printf "%23s%s\n" "" "-p \"dispdef\" |"
                 >&2 printf "%23s%s\n" "" "-p \"ssh\" [-s [\"allowed\"|\"disallowed\"|\"def\"]|-i] |"
-                >&2 printf "%23s%s\n" "" "-p \"sshkey\" [-a [[sshuser]|\"def\"]|-i] |"
-                >&2 printf "%23s%s\n" "" "-p \"user\" [[[-a [newuser] '-d']|-a \"def\"]|-i] |"
+                >&2 printf "%23s%s\n" "" "-p \"sshkey\" [-t [sshkeyuser|\"def\"]|-i] |"
+                >&2 printf "%23s%s\n" "" "-p \"user\" [[[-a [user] '-d']|-a \"def\"]|-i] |"
                 >&2 printf "%23s%s\n" "" "-p \"host\" [-n [hostname|\"def\"]-i] |"
                 >&2 printf "%23s%s\n" "" "-p \"bootenv\" [-e [\"cli\"|\"gui\"|\"def\"]|-i] |"
-                >&2 printf "%23s%s\n" "" "-p \"locale\" [-f [newloc|\"def\"]|-i] |"
+                >&2 printf "%23s%s\n" "" "-p \"locale\" [-f [locale|\"def\"]|-i] |"
                 >&2 printf "%23s%s\n" "" "-p \"netwait\" [-w [\"enabled\"|\"disabled\"|\"def\"]|-i] |"
                 >&2 printf "%23s%s\n" "" "-p \"tzone\" [-z [tzone|\"def\"]|-i] |"
                 >&2 printf "%23s%s\n" "" "-p \"memsplit\" [-m [16|32|64|128|256|512|\"def\"]|-i] |"
                 >&2 printf "%23s%s\n" "" "-p \"keyb\" [-k [keyb|\"def\"]|-i] |"
                 >&2 printf "%23s%s\n" "" "-p \"audio\" [-c [\"hdmi\"|\"jack\"|\"def\"]|-i] |"
+                >&2 printf "%23s%s\n" "" "-p \"del_stduser\" [-d [\"yes\"|\"no\"|\"def\"]|-i] |"
                 >&2 printf "%23s%s\n" "" "-p \"overscan\" ['-l [lowerscan|\"def\"]' '-r [rightscan|\"def\"]' '-b [bottomscan|\"def\"]' '-u [upperscan|\"def\"]'|-i] |"
-                >&2 printf "%23s%s\n" "" "-p \"filesys\" |"
+#               >&2 printf "%23s%s\n" "" "-p \"filesys\" |"
                 >&2 printf "%23s%s\n" "" "-p \"update\" |"
                 >&2 printf "%23s%s\n" "" "-p \"boot\""
 		>&2 printf "\n"
 		>&2 printf "%3s%s\n" "" "Where -h displays this usage"
                 >&2 printf "%9s%s\n" "" "-p specifies the action to take"
-                >&2 printf "%12s%s\n" "" "\"all\" allows executing all other functions besides \"all\" in a logical order, using all further parameters provided where needed"
-		>&2 printf "%15s%s\n" "" "- The order in which all functions will be executed is the following : \"user\", \"sshkey\", \"locale\", \"keyb\", \"tzone\""
-		>&2 printf "%15s%s\n" "" "  \"host\", \"filesys\", \"audio\", \"overscan\", \"memsplit\", \"ssh\", \"update\", \"netwait\", \"bootenv\" and \"boot\""
+                >&2 printf "%12s%s\n" "" "\"all\" allows executing all other functions besides itself, \"savedef\", \"dispdef\" and \"all-usedef\", in a logical order, using all additional parameters provided as needed"
+		>&2 printf "%15s%s\n" "" "- When not using interactive mode, all other parameters for this function are required"
+		>&2 printf "%15s%s\n" "" "- The order in which all functions will be executed is the following : \"keyb\", \"user\", \"sshkey\", \"locale\", \"tzone\""
+#		>&2 printf "%15s%s\n" "" "  \"host\", \"filesys\", \"audio\", \"overscan\", \"memsplit\", \"ssh\", \"update\", \"netwait\", \"bootenv\", \"del_stduser\" and \"boot\""
+		>&2 printf "%15s%s\n" "" "  \"host\", \"audio\", \"overscan\", \"memsplit\", \"ssh\", \"update\", \"netwait\", \"bootenv\", \"del_stduser\" and \"boot\""
 		>&2 printf "%15s%s\n" "" "- Special remarks for function \"all\" :"
 		>&2 printf "%18s%s\n" "" "- Any function that fails will generate an error but further function execution will not be interrupted"
-		>&2 printf "%18s%s\n" "" "- Any functions requiring a user account parameter will use [alluser] as the value for that parameter"
 		>&2 printf "%18s%s\n" "" "- A reboot will only be performed once after all functions have concluded instead of at the end of every function requiring a reboot"
 		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
-		>&2 printf "%18s%s\n" "" "- The following info will be prompted for during interactive mode :"
-		>&2 printf "%21s%s\n" "" "- The value to use for \"create new user/modify existing user\", \"delete standard user '$PH_DEF_USER'\", \"create ssh key for user\", \"system locale\", \"keyboard layout\", \"system timezone\""
-		>&2 printf "%21s%s\n" "" "  \"system hostname\", \"audio channel\", \"top, bottom, left and right overscan\", \"memory reserved for the GPU\", \"SSH state\", \"wait for network on boot\" and \"default boot environment\""
-                >&2 printf "%12s%s\n" "" "\"all-usedef\" functions like \"all\" but will use the default value stored for each required parameter"
-                >&2 printf "%15s%s\n" "" "- If no stored default can be found for one or more of the required parameters, the related function will fail but processing of the remaining function(s) will not be interrupted"
-                >&2 printf "%12s%s\n" "" "\"savedef\" allows storing the value specified for each additional parameter given as the default value for that parameter"
-		>&2 printf "%15s%s\n" "" "- For the default of any of the 4 optional overscan parameters :"
-		>&2 printf "%18s%s\n" "" "- If a new value is given and differs from the pre-existing value or there is no pre-existing value, the new value will be stored"
-		>&2 printf "%18s%s\n" "" "- If a new value is given and is equal to a pre-existing value, no operation is performed"
-		>&2 printf "%18s%s\n" "" "- If a new value is not given and there is no pre-existing value or a pre-existing value not equal to '16', a new value of '16' will be stored for left and right overscan"
-		>&2 printf "%18s%s\n" "" "- If a new value is not given and there is no pre-existing value or a pre-existing value not equal to '30', a new value of '30' will be stored for top and bottom overscan"
-		>&2 printf "%18s%s\n" "" "- If a new value is not given and there is a pre-existing value equal to '16', no operation is performed for left and right overscan"
-		>&2 printf "%18s%s\n" "" "- If a new value is not given and there is a pre-existing value equal to '30', no operation is performed for top and bottom overscan"
-		>&2 printf "%15s%s\n" "" "- For the default of the optional '-d' parameter, the value will always be stored if there is no currently stored value for it or"
-		>&2 printf "%15s%s\n" "" "  if the currently stored default value for it differs from 'yes'"
-		>&2 printf "%15s%s\n" "" "- For any other parameters, a pre-existing default value that differs from the new value specified will be replaced with the new value and"
-		>&2 printf "%15s%s\n" "" "  no operation will be performed for a pre-existing default value equal to the new value"
+		>&2 printf "%18s%s\n" "" "- The following functions are considered interactive and will always prompt for required info in interactive mode :"
+		>&2 printf "%21s%s\n" "" "- \"user\", \"del_stduser\", \"sshkey\", \"locale\", \"keyb\", \"tzone\""
+		>&2 printf "%21s%s\n" "" "  \"host\", \"audio\", \"overscan\", \"memsplit\", \"ssh\", \"netwait\" and \"bootenv\""
+                >&2 printf "%12s%s\n" "" "\"all-usedef\" functions like \"all\" but runs non-interactively by using the currently stored default values for interactive functions"
+                >&2 printf "%15s%s\n" "" "- If no stored default can be found for one or more of the functions, the related function(s) will fail but processing of the remaining function(s) will not be interrupted"
+                >&2 printf "%12s%s\n" "" "\"savedef\" allows storing a default value for the parameters required by all interactive functions"
+		>&2 printf "%15s%s\n" "" "- An error will be generated when a newly entered default is rejected, but further processing of any remaining default values specified will continue"
+		>&2 printf "%15s%s\n" "" "- 'root' cannot be stored as a default value for either [user] or [sshkeyuser]"
+		>&2 printf "%15s%s\n" "" "- The string 'def' cannot be used as the default value to store for any parameter"
+		>&2 printf "%15s%s\n" "" "- The following rules apply to the 4 overscan parameters :"
+		>&2 printf "%18s%s\n" "" "- If non-numeric values are given as default values, a warning will be generated and the values '30' and '16' will be stored instead for bottom and upperscan, or for leftscan and rightscan respectively"
+		>&2 printf "%18s%s\n" "" "- A default for each overscan parameter is saved every time this function runs, even when their respective parameters were not passed"
+		>&2 printf "%18s%s\n" "" "- If a parameter is passed and the new value given differs from the pre-existing stored default or no default is currently stored, the new value will be stored"
+		>&2 printf "%18s%s\n" "" "- If a parameter is passed and the new value given is equal to a pre-existing stored default, no operation is performed"
+		>&2 printf "%18s%s\n" "" "- For left and right overscan, if the applicable parameter is not passed and no stored default for it currently exists or is not equal to '16', a new value of '16' will be stored"
+		>&2 printf "%18s%s\n" "" "- For upper and bottom overscan, if the applicable parameter is not passed and no stored default for it currently exists or is not equal to '30', a new value of '30' will be stored"
+		>&2 printf "%18s%s\n" "" "- For left and right overscan, if the applicable parameter is not passed and has a currently stored default of '16', no operation is performed"
+		>&2 printf "%18s%s\n" "" "- For upper and bottom overscan, if the applicable parameter is not passed and has a currently stored default of '30', no operation is performed"
+		>&2 printf "%15s%s\n" "" "- For any other parameters, any pre-existing stored defaults, different from the new value entered for the applicable parameter will be replaced by the new value and"
+		>&2 printf "%15s%s\n" "" "  no operation will be performed for any pre-existing stored default, equal to the newly entered value for the applicable parameter"
+		>&2 printf "%15s%s\n" "" "- When not using interactive mode, any combination of all other parameters can additionally be passed for processing, including none at all"
 		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
-		>&2 printf "%18s%s\n" "" "-i can be followed by one of a list of allowed parameters"
-		>&2 printf "%18s%s\n" "" "- If one of a list of allowed parameters is given, the related info will be prompted for"
-		>&2 printf "%18s%s\n" "" "- The following info will be prompted for during interactive mode if none of a list of allowed parameters is given :"
-		>&2 printf "%21s%s\n" "" "- The default value to store for \"create new user/modify existing\", \"delete standard user '$PH_DEF_USER'\", \"create ssh key for user\", \"system locale\", \"keyboard layout\", \"system timezone\""
-		>&2 printf "%21s%s\n" "" "  \"system hostname\", \"audio channel\", \"top, bottom, left and right overscan\", \"memory reserved for the GPU\", \"SSH state\", \"wait for network on boot\" and \"default boot environment\""
-                >&2 printf "%12s%s\n" "" "\"dispdef\" allows displaying all currently stored default values"
-                >&2 printf "%12s%s\n" "" "\"ssh\" allows choosing whether to allow or disallow SSH logins to this system for all users besides \"root\""
+		>&2 printf "%18s%s\n" "" "- Optionally, the name of one interactive function can be passed to apply the operation exclusively to the specified function"
+		>&2 printf "%18s%s\n" "" "- If an non-interactive function name is given, the operation will fail"
+		>&2 printf "%18s%s\n" "" "- If no optional functionname is passed, all interactive functions will prompt for their respective required info and store the newly entered defaults"
+                >&2 printf "%12s%s\n" "" "\"dispdef\" allows displaying the currently stored default value for all interactive functions"
+                >&2 printf "%12s%s\n" "" "\"ssh\" allows choosing whether to allow or disallow SSH logins to this system for all users except 'root'"
 		>&2 printf "%15s%s\n" "" "-s allows selecting either \"allowed\", \"disallowed\" or \"def\""
 		>&2 printf "%18s%s\n" "" "- Selecting \"def\" will use the value stored as the default for this parameter"
 		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
 		>&2 printf "%15s%s\n" "" "- Using this function will restart the SSH server"
 		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
-                >&2 printf "%12s%s\n" "" "\"sshkey\" allows creating a public/private RSA2 keypair for SSH logins for user [sshuser]"
-		>&2 printf "%15s%s\n" "" "- The public key will be placed in '/home/[sshuser]/.ssh/id_rsa.pub' and automatically be trusted for SSH connections"
-		>&2 printf "%15s%s\n" "" "- The private key will be placed in '/home/[sshuser]/.ssh/id_rsa' and can be used when initiating passwordless SSH connections to this machine"
+                >&2 printf "%12s%s\n" "" "\"sshkey\" allows creating a public/private RSA2 keypair for SSH logins for a given user [sshkeyuser]"
+		>&2 printf "%15s%s\n" "" "- The public key will be placed in './.ssh/id_rsa.pub' under the home directory of user [sshkeyuser] and automatically be trusted for SSH connections"
+		>&2 printf "%15s%s\n" "" "- The private key will be placed in './.ssh/id_rsa' under the home directory of user [sshkeyuser] and can be used to initiate passwordless SSH connections to this machine"
 		>&2 printf "%18s%s\n" "" "- To connect passwordless from a windows machine using Putty, the private key needs to be converted to Putty format using puttygen.exe on"
 		>&2 printf "%18s%s\n" "" "  a windows machine and the save location of the converted key should be configured in the Putty.exe session manager"
-		>&2 printf "%15s%s\n" "" "-a allows setting a value for [sshuser]"
+		>&2 printf "%15s%s\n" "" "-t allows passing a value for [sshkeyuser]"
+		>&2 printf "%18s%s\n" "" "- [sshkeyuser] must be an existing user and cannot be 'root' or this function will fail"
 		>&2 printf "%18s%s\n" "" "- The keyword \"def\" can be used to specify using the stored default value for this parameter"
 		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
-		>&2 printf "%18s%s\n" "" "- The value specified for [sshuser] should already be an existing user account"
 		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
-                >&2 printf "%12s%s\n" "" "\"user\" allows creating a user account [newuser] and grant that user full sudo rights"
-		>&2 printf "%15s%s\n" "" "-a allows setting a value for [newuser]"
-		>&2 printf "%18s%s\n" "" "- [newuser] can be an already existing account as long as that user is not currently logged in"
-		>&2 printf "%18s%s\n" "" "- The following rules apply if [newuser] is an already existing account :"
-		>&2 printf "%21s%s\n" "" "- If user [newuser] is currently logged in, this function will fail"
-		>&2 printf "%21s%s\n" "" "- All properties for user [newuser] will be set to the same values that would have been used if [newuser] had been a non-existing acccount"
-		>&2 printf "%24s%s\n" "" "- If group [newuser] does not exist, it will be created"
-		>&2 printf "%21s%s\n" "" "- The password for user [newuser] will not be changed"
-		>&2 printf "%18s%s\n" "" "- The following rules apply if [newuser] is a non-existing account :"
-		>&2 printf "%21s%s\n" "" "- The primary group for account [newuser] will be set to it's new according private group named [newuser]"
-		>&2 printf "%24s%s\n" "" "- The new group [newuser] will automatically be created"
-		>&2 printf "%21s%s\n" "" "- The secondary groups for account [newuser] will be set to \"tty\",\"input\",\"audio\" and \"video\""
-		>&2 printf "%21s%s\n" "" "- The value for [newuser]'s password will be prompted for"
-		>&2 printf "%21s%s\n" "" "- The home directory for [newuser] will be created as '/home/[newuser]'"
-		>&2 printf "%21s%s\n" "" "- The shell for [newuser] will be set to '/bin/bash'"
+                >&2 printf "%12s%s\n" "" "\"user\" allows creating/modifying a user account [user] and granting full sudo rights to that account"
+		>&2 printf "%15s%s\n" "" "-a allows passing a value for [user]"
+		>&2 printf "%18s%s\n" "" "- [user] can be a new account or any already existing account except 'root'"
+		>&2 printf "%18s%s\n" "" "- The following rules apply if the value for [user] is an existing account :"
+		>&2 printf "%21s%s\n" "" "- If [user] is currently logged in or is 'root', this function will fail"
+		>&2 printf "%21s%s\n" "" "- Otherwise, all properties for user [user], except for the password, will be configured as follows :"
+		>&2 printf "%24s%s\n" "" "- The primary group for [user] will be set to [user]"
+		>&2 printf "%27s%s\n" "" "- If group [user] does not exist, it will be created"
+		>&2 printf "%24s%s\n" "" "- The secondary groups for [user] will be set/changed to \"tty\",\"input\",\"audio\" and \"video\" exclusively"
+		>&2 printf "%24s%s\n" "" "- The home directory for [user] will be set/changed to '/home/[user]'"
+		>&2 printf "%24s%s\n" "" "- The shell for [user] will be set/changed to '/bin/bash'"
+		>&2 printf "%24s%s\n" "" "- Full sudo rights will be granted to [user] if not already present"
+		>&2 printf "%18s%s\n" "" "- The following rules apply if the value for [user] is a non-existing account :"
+		>&2 printf "%21s%s\n" "" "- The primary group for [user] will be set to [user]"
+		>&2 printf "%24s%s\n" "" "- If group [user] does not exist, it will be created"
+		>&2 printf "%21s%s\n" "" "- The secondary groups for [user] will be set to \"tty\",\"input\",\"audio\" and \"video\" exclusively"
+		>&2 printf "%21s%s\n" "" "- The value for [user]'s password will be prompted for"
+		>&2 printf "%21s%s\n" "" "- The home directory for [user] will be set to '/home/[user]'"
+		>&2 printf "%21s%s\n" "" "- The shell for [user] will be set to '/bin/bash'"
+		>&2 printf "%21s%s\n" "" "- Full sudo rights will be granted to [user]"
 		>&2 printf "%18s%s\n" "" "- The keyword \"def\" can be used to specify using the stored default value for this parameter"
 		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
-		>&2 printf "%21s%s\n" "" "- The stored default for the '-d' parameter will automatically be used as well"
-		>&2 printf "%18s%s\n" "" "-d allows specifying the system default user account \"$PH_DEF_USER\" should not be removed (the default action) along with"
-		>&2 printf "%18s%s\n" "" "  it's home directory, mail spool directory and sudo configuration"
-		>&2 printf "%21s%s\n" "" "- Specifying -d is optional"
-		>&2 printf "%21s%s\n" "" "- Specifying -d when using the keyword \"def\" for [newuser] is not allowed"
-		>&2 printf "%21s%s\n" "" "- If -d is not used and user '$PH_DEF_USER' is currently logged on, removal will be delayed until the next system reboot which will be proposed"
 		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
-		>&2 printf "%18s%s\n" "" "- The following info will be prompted for during interactive mode :"
-		>&2 printf "%21s%s\n" "" "- The value to use for operation \"create new user/modify existing user\" and operation \"delete standard user '$PH_DEF_USER'\""
-                >&2 printf "%12s%s\n" "" "\"netwait\" allows specifying whether the system should wait for networking to become available before continuing the application part of the boot process"
-		>&2 printf "%15s%s\n" "" "-w allows selecting either \"enabled\" or \"disabled\""
+                >&2 printf "%12s%s\n" "" "\"del_stduser\" allows specifying whether the system's default user account \"$PH_DEF_USER\" should be removed along with"
+		>&2 printf "%12s%s\n" "" "  it's home directory, mail spool directory and sudo configuration"
+		>&2 printf "%15s%s\n" "" "- If user '$PH_DEF_USER' is currently logged in, this function will fail"
+		>&2 printf "%15s%s\n" "" "- If user '$PH_DEF_USER' does not exist, this function will generate a warning"
+		>&2 printf "%15s%s\n" "" "-d allows selecting either \"yes\", \"no\" or \"def\""
+		>&2 printf "%18s%s\n" "" "- Selecting \"def\" will use the value stored as the default for this parameter"
+		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
+                >&2 printf "%12s%s\n" "" "\"netwait\" allows specifying whether the system should wait for networking to be available before continuing the application part of the boot process"
+		>&2 printf "%15s%s\n" "" "-w allows selecting either \"enabled\", \"disabled\" or \"def\""
+		>&2 printf "%18s%s\n" "" "- Selecting \"def\" will use the value stored as the default for this parameter"
+		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
+		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
+                >&2 printf "%12s%s\n" "" "\"host\" allows changing the hostname of this machine to [hostname]"
+		>&2 printf "%15s%s\n" "" "-n allows passing a value for [hostname]"
 		>&2 printf "%18s%s\n" "" "- The keyword \"def\" can be used to specify using the value stored as the default for this parameter"
 		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
 		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
-                >&2 printf "%12s%s\n" "" "\"host\" allows changing the hostname for this machine to [hostname]"
-		>&2 printf "%15s%s\n" "" "-n allows setting a value for [hostname]"
-		>&2 printf "%18s%s\n" "" "- The keyword \"def\" can be used to specify using the value stored as the default for this parameter"
-		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
-		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
-                >&2 printf "%12s%s\n" "" "\"bootenv\" allows selecting a preferred default environment to boot into on system restarts"
+                >&2 printf "%12s%s\n" "" "\"bootenv\" allows selecting a preferred default environment to start at system boot"
 		>&2 printf "%15s%s\n" "" "-e allows selecting either \"cli\", \"gui\" or \"def\""
 		>&2 printf "%18s%s\n" "" "- Selecting \"def\" will use the value stored as the default for this parameter"
 		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
 		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
                 >&2 printf "%12s%s\n" "" "\"keyb\" allows setting the default keyboard layout to [keyb]"
-		>&2 printf "%15s%s\n" "" "-k allows setting a value for [keyb]"
+		>&2 printf "%15s%s\n" "" "-k allows passing a value for [keyb]"
 		>&2 printf "%18s%s\n" "" "- The keyword \"def\" can be used to specify using the value stored as the default for this parameter"
 		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
-		>&2 printf "%18s%s\n" "" "- The value specified for [keyb] should be a valid keyboard layout"
-		>&2 printf "%18s%s\n" "" "- If the new value specified for is different from the one currently configured on Archlinux machines, a reboot is required which will be proposed"
+		>&2 printf "%18s%s\n" "" "- The value for [keyb] should be a valid keyboard layout"
+		>&2 printf "%18s%s\n" "" "- On Archlinux machines, if the new value specified is different from the currently configured keyboard layout, a reboot is required and will be proposed"
 		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
-                >&2 printf "%12s%s\n" "" "\"memsplit\" allows setting the amount of memory to reserve exclusively for the GPU"
+                >&2 printf "%12s%s\n" "" "\"memsplit\" allows setting the amount of memory, exclusively reserved for the GPU"
 		>&2 printf "%15s%s\n" "" "-m allows selecting either \"16\", \"32\", \"64\", \"128\", \"256\" or \"def\""
 		>&2 printf "%18s%s\n" "" "- Selecting \"def\" will use the value stored as the default for this parameter"
 		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
 		>&2 printf "%18s%s\n" "" "- If the new value is different from the one currently set, activation of the new value requires a system reboot that will be proposed"
 		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
-                >&2 printf "%12s%s\n" "" "\"tzone\" allows setting the default system timezone to [tzone]"
-		>&2 printf "%15s%s\n" "" "-z allows setting a value for [tzone]"
+                >&2 printf "%12s%s\n" "" "\"tzone\" allows setting the system's default timezone to [tzone]"
+		>&2 printf "%15s%s\n" "" "-z allows passing a value for [tzone]"
 		>&2 printf "%18s%s\n" "" "- The keyword \"def\" can be used to specify using the value stored as the default for this parameter"
 		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
 		>&2 printf "%18s%s\n" "" "- The value specified for [tzone] should be a valid timezone identifier"
 		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
-                >&2 printf "%12s%s\n" "" "\"locale\" allows generating locale [newloc] and setting it as the system's default locale"
-		>&2 printf "%15s%s\n" "" "-f allows setting a value for [newloc]"
-		>&2 printf "%18s%s\n" "" "- [newloc] should be specified in the format 'locale.encoding'"
+                >&2 printf "%12s%s\n" "" "\"locale\" allows generating locale [locale] and configuring it as the system's default locale"
+		>&2 printf "%15s%s\n" "" "-f allows passing a value for [locale]"
+		>&2 printf "%18s%s\n" "" "- [locale] should be specified in the format 'locale.encoding'"
 		>&2 printf "%18s%s\n" "" "- The keyword \"def\" can be used to specify using the value stored as the default for this parameter"
 		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
 		>&2 printf "%18s%s\n" "" "- The value specified for [newloc] should be a system supported locale"
 		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
-                >&2 printf "%12s%s\n" "" "\"audio\" allows forcing audio output to the specified channel"
+                >&2 printf "%12s%s\n" "" "\"audio\" allows forcing audio output to a specific channel"
 		>&2 printf "%15s%s\n" "" "-c allows selecting either \"hdmi\", \"jack\" or \"def\""
 		>&2 printf "%18s%s\n" "" "- \"jack\" stands for the standard 3.5 inch audio jack"
 		>&2 printf "%18s%s\n" "" "- The keyword \"def\" can be used to specify using the value stored as the default for this parameter"
 		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
-		>&2 printf "%18s%s\n" "" "- If the new value is different from the one currently set, activation of the new value requires a system reboot that will be proposed"
+		>&2 printf "%18s%s\n" "" "- If the new value is different from the one currently configured, activation of the new value requires a system reboot that will be proposed"
 		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
                 >&2 printf "%12s%s\n" "" "\"overscan\" allows specifying values to use when correcting left overscan [leftscan], right overscan [rightscan], bottom overscan [bottomscan] and upper overscan [upperscan]"
-		>&2 printf "%15s%s\n" "" "- Specifying a value for any of the overscan settings is optional"
-		>&2 printf "%18s%s\n" "" "- Any overscan setting that is not specified will leave that setting's currently configured value unchanged"
-		>&2 printf "%15s%s\n" "" "-u allows setting a value for [upperscan]"
+		>&2 printf "%15s%s\n" "" "- Specifying either of the four overscan function parameters is optional"
+		>&2 printf "%18s%s\n" "" "- Any overscan function parameter left unspecified will leave that parameter's currently configured value unchanged"
+		>&2 printf "%15s%s\n" "" "-u allows passing a value for [upperscan]"
 		>&2 printf "%18s%s\n" "" "- The keyword \"def\" can be used to specify using the value stored as the default for this parameter"
 		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
-		>&2 printf "%15s%s\n" "" "-b allows setting a value for [bottomscan]"
+		>&2 printf "%15s%s\n" "" "-b allows passing a value for [bottomscan]"
 		>&2 printf "%18s%s\n" "" "- The keyword \"def\" can be used to specify using the value stored as the default for this parameter"
 		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
-		>&2 printf "%15s%s\n" "" "-l allows setting a value for [leftscan]"
+		>&2 printf "%15s%s\n" "" "-l allows passing a value for [leftscan]"
 		>&2 printf "%18s%s\n" "" "- The keyword \"def\" can be used to specify using the value stored as the default for this parameter"
 		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
-		>&2 printf "%15s%s\n" "" "-r allows setting a value for [rightscan]"
+		>&2 printf "%15s%s\n" "" "-r allows passing a value for [rightscan]"
 		>&2 printf "%18s%s\n" "" "- The keyword \"def\" can be used to specify using the value stored as the default for this parameter"
 		>&2 printf "%21s%s\n" "" "- If no stored default value can be found, this function will fail"
-		>&2 printf "%15s%s\n" "" "- If the current value of any of the overscan settings is changed, the new value(s) will only be active after a system reboot that will be proposed"
+		>&2 printf "%15s%s\n" "" "- If the current value of any of the overscan parameters is changed, the new value(s) will only be active after a system reboot that will be proposed"
 		>&2 printf "%15s%s\n" "" "-i allows specifying using interactive mode"
-		>&2 printf "%18s%s\n" "" "- The following info will be prompted for during interactive mode :"
-		>&2 printf "%21s%s\n" "" "- The value to use for \"top, bottom, left and right overscan\""
-                >&2 printf "%12s%s\n" "" "\"filesys\" allows growing the filesystem of your system to use all available harddisk space"
-		>&2 printf "%15s%s\n" "" "- Running this function more than once will do nothing"
-		>&2 printf "%15s%s\n" "" "- If the filesystem size was changed, the new size will only be available after a system reboot and a reboot will be proposed"
+#               >&2 printf "%12s%s\n" "" "\"filesys\" allows growing the filesystem of your system to use all available harddisk space"
+#		>&2 printf "%15s%s\n" "" "- Running this function more than once will do nothing"
+#		>&2 printf "%15s%s\n" "" "- If the filesystem size was changed, the new size will only be available after a system reboot that will be proposed"
                 >&2 printf "%12s%s\n" "" "\"update\" allows running a silent update of all packages currently installed on this system"
-		>&2 printf "%15s%s\n" "" "- A reboot is recommended (but only required if kernel and/or bootloader/firmware were included in the update) and will be proposed"
+		>&2 printf "%15s%s\n" "" "- A reboot is recommended (but only required if kernel and/or bootloader/firmware were included in the update) and will always be proposed"
                 >&2 printf "%12s%s\n" "" "\"boot\" allows rebooting this system"
 		>&2 printf "\n"
 		OPTIND=$PH_OLDOPTIND
@@ -488,11 +505,11 @@ OPTARG="$PH_OLDOPTARG"
 
 [[ -z "$PH_ACTION" ]] && (! confoper_ph.sh -h) && exit 1
 (([[ "$PH_ACTION" == "savedef" && $# -gt 4 ]]) && ([[ $PH_INTERACTIVE -eq 1 ]])) && (! confoper_ph.sh -h) && exit 1
-(([[ "$PH_ACTION" == "savedef" && $PH_INTERACTIVE -eq 1 ]]) && ([[ -n "$4" && "$4" != @(ssh|bootenv|user|del_stduser|host|locale|tzone|overscan|audio|keyb|memsplit|netwait) ]])) && (! confoper_ph.sh -h) && exit 1
-(([[ "$PH_ACTION" == "user" && "$PH_USER" == "def" ]]) && ([[ "$PH_DEL_PIUSER" == "no" ]])) && (! confoper_ph.sh -h) && exit 1
+(([[ "$PH_ACTION" == "savedef" && $PH_INTERACTIVE -eq 1 ]]) && ([[ -n "$4" && "$4" != @(ssh|bootenv|user|del_stduser|host|locale|tzone|overscan|audio|keyb|memsplit|netwait|sshkey) ]])) && (! confoper_ph.sh -h) && exit 1
 [[ "$PH_ACTION" == "all-usedef" && $# -gt 2 ]] && (! confoper_ph.sh -h) && exit 1
-[[ "$PH_ACTION" != @(all|savedef|user) && "$PH_DEL_PIUSER" == "no" ]] && (! confoper_ph.sh -h) && exit 1
-(([[ "$PH_ACTION" == @(all|user|sshkey) && -z "$PH_USER" ]]) && ([[ $PH_INTERACTIVE -eq 0 ]])) && (! confoper_ph.sh -h) && exit 1
+(([[ "$PH_ACTION" == @(all|user) && -z "$PH_USER" ]]) && ([[ $PH_INTERACTIVE -eq 0 ]])) && (! confoper_ph.sh -h) && exit 1
+(([[ "$PH_ACTION" == @(all|del_stduser) && -z "$PH_DEL_PIUSER" ]]) && ([[ $PH_INTERACTIVE -eq 0 ]])) && (! confoper_ph.sh -h) && exit 1
+(([[ "$PH_ACTION" == @(all|sshkey) && -z "$PH_SSH_KEY" ]]) && ([[ $PH_INTERACTIVE -eq 0 ]])) && (! confoper_ph.sh -h) && exit 1
 (([[ "$PH_ACTION" == @(all|netwait) && -z "$PH_NETWAIT" ]]) && ([[ $PH_INTERACTIVE -eq 0 ]])) && (! confoper_ph.sh -h) && exit 1
 (([[ "$PH_ACTION" == @(all|host) && -z "$PH_HOST" ]]) && ([[ $PH_INTERACTIVE -eq 0 ]])) && (! confoper_ph.sh -h) && exit 1
 (([[ "$PH_ACTION" == @(all|memsplit) && -z "$PH_VID_MEM" ]]) && ([[ $PH_INTERACTIVE -eq 0 ]])) && (! confoper_ph.sh -h) && exit 1
@@ -502,7 +519,9 @@ OPTARG="$PH_OLDOPTARG"
 (([[ "$PH_ACTION" == @(all|tzone) && -z "$PH_TZONE" ]]) && ([[ $PH_INTERACTIVE -eq 0 ]])) && (! confoper_ph.sh -h) && exit 1
 [[ -n "$PH_TZONE" && "$PH_ACTION" != @(all|savedef|tzone) ]] && (! confoper_ph.sh -h) && exit 1
 [[ -n "$PH_BOOTENV" && "$PH_ACTION" != @(all|savedef|bootenv) ]] && (! confoper_ph.sh -h) && exit 1
-[[ -n "$PH_USER" && "$PH_ACTION" != @(all|savedef|user|sshkey) ]] && (! confoper_ph.sh -h) && exit 1
+[[ -n "$PH_USER" && "$PH_ACTION" != @(all|savedef|user) ]] && (! confoper_ph.sh -h) && exit 1
+[[ -n "$PH_DEL_PIUSER" && "$PH_ACTION" != @(all|savedef|del_stduser) ]] && (! confoper_ph.sh -h) && exit 1
+[[ -n "$PH_SSH_KEY" && "$PH_ACTION" != @(all|savedef|sshkey) ]] && (! confoper_ph.sh -h) && exit 1
 [[ -n "$PH_HOST" && "$PH_ACTION" != @(all|savedef|host) ]] && (! confoper_ph.sh -h) && exit 1
 [[ -n "$PH_NETWAIT" && "$PH_ACTION" != @(all|savedef|netwait) ]] && (! confoper_ph.sh -h) && exit 1
 [[ -n "$PH_LOCALE" && "$PH_ACTION" != @(all|savedef|locale) ]] && (! confoper_ph.sh -h) && exit 1
@@ -514,9 +533,9 @@ OPTARG="$PH_OLDOPTARG"
 (([[ -n "$PH_BOTTOMSCAN" || -n "$PH_UPPERSCAN" ]]) && ([[ "$PH_ACTION" != @(all|savedef|overscan) ]])) && (! confoper_ph.sh -h) && exit 1
 [[ $PH_INTERACTIVE -eq 1 && "$PH_ACTION" == @(filesys|update|boot|dispdef|all-usedef) ]] && (! confoper_ph.sh -h) && exit 1
 (([[ $PH_INTERACTIVE -eq 1 ]]) && ([[ -n "$PH_USER" || -n "$PH_TZONE" || -n "$PH_SSH_STATE" || -n "$PH_AUDIO" || -n "$PH_HOST" || -n "$PH_BOOTENV" || -n "$PH_LOCALE" || -n "$PH_KEYB" ]])) && (! confoper_ph.sh -h) && exit 1
-(([[ $PH_INTERACTIVE -eq 1 ]]) && ([[ -n "$PH_VID_MEM" || -n "$PH_LEFTSCAN" || -n "$PH_BOTTOMSCAN" || -n "$PH_UPPERSCAN" || "$PH_DEL_PIUSER" == "no" || -n "$PH_NETWAIT" ]])) && (! confoper_ph.sh -h) && exit 1
+(([[ $PH_INTERACTIVE -eq 1 ]]) && ([[ -n "$PH_VID_MEM" || -n "$PH_LEFTSCAN" || -n "$PH_BOTTOMSCAN" || -n "$PH_UPPERSCAN" || -n "$PH_DEL_PIUSER" || -n "$PH_NETWAIT" || -n "$PH_SSH_KEY" ]])) && (! confoper_ph.sh -h) && exit 1
 
-if [[ "$PH_ACTION" != @(savedef|dispdef) && `cat /proc/$PPID/comm` != "confoper_ph.sh" ]]
+if [[ `cat /proc/$PPID/comm 2>/dev/null` != "confoper_ph.sh" ]]
 then
 	printf "%s\n" "- Checking prerequisites for system configuration"
 	printf "%8s%s\n" "" "--> Checking run account"
@@ -564,49 +583,61 @@ then
 	fi
 	printf "%2s%s\n" "" "SUCCESS"
 fi
-if [[ "$PH_ACTION" == "locale" && "$PH_LOCALE" != "def" ]]
+if [[ "$PH_SSH_KEY" == "root" ]]
+then
+	[[ $PH_INTERACTIVE -eq 0 ]] && printf "%s\n" "- Executing function $PH_ACTION (Normal mode)" || printf "%s\n" "- Executing function $PH_ACTION (Interactive mode)"
+	printf "%2s%s\n" "" "FAILED : Creating a public/private keypair for 'root' is not permitted"
+	exit 1
+fi
+if [[ "$PH_USER" == "root" ]]
+then
+	[[ $PH_INTERACTIVE -eq 0 ]] && printf "%s\n" "- Executing function $PH_ACTION (Normal mode)" || printf "%s\n" "- Executing function $PH_ACTION (Interactive mode)"
+	printf "%2s%s\n" "" "FAILED : Modifying the 'root' account is not permitted"
+	exit 1
+fi
+if (([[ "$PH_ACTION" == @(locale|savedef) ]]) && ([[ "$PH_LOCALE" != "def" && -n "$PH_LOCALE" ]]))
 then
 	if [[ $PH_INTERACTIVE -eq 0 ]]
 	then
 		if ! ph_check_locale_validity "$PH_LOCALE"
 		then
-			printf "%s\n" "- Executing function $PH_ACTION"
+			printf "%s\n" "- Executing function $PH_ACTION (Normal mode)"
 			printf "%2s%s\n" "" "FAILED : Not a system supported locale"
 			exit 1
 		fi
 	fi
 fi
-if [[ "$PH_ACTION" == "tzone" && "$PH_TZONE" != "def" ]]
+if (([[ "$PH_ACTION" == @(tzone|savedef) ]]) && ([[ "$PH_TZONE" != "def" && -n "$PH_TZONE" ]]))
 then
 	if [[ $PH_INTERACTIVE -eq 0 ]]
 	then
 		if ! ph_check_tzone_validity "$PH_TZONE"
 		then
-			printf "%s\n" "- Executing function $PH_ACTION"
+			printf "%s\n" "- Executing function $PH_ACTION (Normal mode)"
 			printf "%2s%s\n" "" "FAILED : Invalid timezone identifier specified"
 			exit 1
 		fi
 	fi
 fi
-if [[ "$PH_ACTION" == "keyb" && "$PH_KEYB" != "def" ]]
+if (([[ "$PH_ACTION" == @(keyb|savedef) ]]) && ([[ "$PH_KEYB" != "def" && -n "$PH_KEYB" ]]))
 then
 	if [[ $PH_INTERACTIVE -eq 0 ]]
 	then
 		if ! ph_check_keyb_layout_validity "$PH_KEYB"
 		then
-			printf "%s\n" "- Executing function $PH_ACTION"
+			printf "%s\n" "- Executing function $PH_ACTION (Normal mode)"
 			printf "%2s%s\n" "" "FAILED : Invalid keyboard layout specified"
 			exit 1
 		fi
 	fi
 fi
-if [[ "$PH_ACTION" == "sshkey" && "$PH_USER" != "def" ]]
+if (([[ "$PH_ACTION" == @(sshkey|savedef) ]]) && ([[ "$PH_SSH_KEY" != "def" && -n "$PH_SSH_KEY" ]]))
 then
 	if [[ $PH_INTERACTIVE -eq 0 ]]
 	then
-		if ! ph_check_user_validity "$PH_USER"
+		if ! ph_check_user_validity "$PH_SSH_KEY"
 		then
-			printf "%s\n" "- Executing function $PH_ACTION for user $PH_USER"
+			printf "%s\n" "- Executing function $PH_ACTION for user $PH_SSH_KEY (Normal mode)"
 			printf "%2s%s\n" "" "FAILED : User does not exist"
 			exit 1
 		fi
@@ -614,33 +645,39 @@ then
 fi
 if [[ "$PH_ACTION" == "user" ]]
 then
-	if [[ $PH_INTERACTIVE -eq 0 ]]
+	if who -us 2>/dev/null | nawk '{ print $1 }' 2>/dev/null | grep ^"$PH_USER"$ >/dev/null 2>&1
 	then
-		if who -us | nawk '{ print $1 }' | grep ^"$PH_USER"$ >/dev/null
-		then
-			printf "%s\n" "- Executing function $PH_ACTION for user $PH_USER"
-			printf "%2s%s\n" "" "FAILED : User is currently logged in"
-			exit 1
-		fi
+		[[ $PH_INTERACTIVE -eq 0 ]] && printf "%s\n" "- Executing function $PH_ACTION for user $PH_USER (Normal mode)" || printf "%s\n" "- Executing function $PH_ACTION for user $PH_USER (Interactive mode)"
+		printf "%2s%s\n" "" "FAILED : User is currently logged in"
+		exit 1
+	fi
+fi
+if [[ "$PH_ACTION" == "del_stduser" ]]
+then
+	if who -us 2>/dev/null | nawk '{ print $1 }' 2>/dev/null | grep ^"$PH_DEF_USER"$ >/dev/null 2>&1
+	then
+		[[ $PH_INTERACTIVE -eq 0 ]] && printf "%s\n" "- Executing function $PH_ACTION for user $PH_DEF_USER (Normal mode)" || printf "%s\n" "- Executing function $PH_ACTION for user $PH_DEF_USER (Interactive mode)"
+		printf "%2s%s\n" "" "FAILED : User is currently logged in"
+		exit 1
 	fi
 fi
 case $PH_ACTION in all)
 	if [[ $PH_INTERACTIVE -eq 1 ]]
 	then
+		"$PH_CUR_DIR/confoper_ph.sh" -p keyb -i
+		ph_set_result $? first
 		"$PH_CUR_DIR/confoper_ph.sh" -p user -i
 		ph_set_result $?
 		"$PH_CUR_DIR/confoper_ph.sh" -p sshkey -i
 		ph_set_result $?
 		"$PH_CUR_DIR/confoper_ph.sh" -p locale -i
 		ph_set_result $?
-		"$PH_CUR_DIR/confoper_ph.sh" -p keyb -i
-		ph_set_result $?
 		"$PH_CUR_DIR/confoper_ph.sh" -p tzone -i
 		ph_set_result $?
 		"$PH_CUR_DIR/confoper_ph.sh" -p host -i
 		ph_set_result $?
-		"$PH_CUR_DIR/confoper_ph.sh" -p filesys
-		ph_set_result $?
+#		"$PH_CUR_DIR/confoper_ph.sh" -p filesys
+#		ph_set_result $?
 		"$PH_CUR_DIR/confoper_ph.sh" -p audio -i
 		ph_set_result $?
 		"$PH_CUR_DIR/confoper_ph.sh" -p overscan -i
@@ -651,31 +688,27 @@ case $PH_ACTION in all)
 		ph_set_result $?
 		"$PH_CUR_DIR/confoper_ph.sh" -p update
 		ph_set_result $?
-		"$PH_CUR_DIR/confoper_ph.sh" -p bootenv -i
-		ph_set_result $?
 		"$PH_CUR_DIR/confoper_ph.sh" -p netwait -i
 		ph_set_result $?
+		"$PH_CUR_DIR/confoper_ph.sh" -p bootenv -i
+		ph_set_result $?
+		"$PH_CUR_DIR/confoper_ph.sh" -p del_stduser -i
+		ph_set_result $? last
 	else
-		if [[ "$PH_DEL_PIUSER" == "yes" ]]
-		then
-			"$PH_CUR_DIR/confoper_ph.sh" -p user -a "$PH_USER"
-			ph_set_result $?
-		else
-			"$PH_CUR_DIR/confoper_ph.sh" -p user -a "$PH_USER" -d
-			ph_set_result $?
-		fi
-		"$PH_CUR_DIR/confoper_ph.sh" -p sshkey -a "$PH_USER"
+		"$PH_CUR_DIR/confoper_ph.sh" -p keyb -k "$PH_KEYB"
+		ph_set_result $? first
+		"$PH_CUR_DIR/confoper_ph.sh" -p user -a "$PH_USER"
+		ph_set_result $?
+		"$PH_CUR_DIR/confoper_ph.sh" -p sshkey -t "$PH_SSH_KEY"
 		ph_set_result $?
 		"$PH_CUR_DIR/confoper_ph.sh" -p locale -f "$PH_LOCALE"
-		ph_set_result $?
-		"$PH_CUR_DIR/confoper_ph.sh" -p keyb -k "$PH_KEYB"
 		ph_set_result $?
 		"$PH_CUR_DIR/confoper_ph.sh" -p tzone -z "$PH_TZONE"
 		ph_set_result $?
 		"$PH_CUR_DIR/confoper_ph.sh" -p host -n "$PH_HOST"
 		ph_set_result $?
-		"$PH_CUR_DIR/confoper_ph.sh" -p filesys
-		ph_set_result $?
+#		"$PH_CUR_DIR/confoper_ph.sh" -p filesys
+#		ph_set_result $?
 		"$PH_CUR_DIR/confoper_ph.sh" -p audio -c "$PH_AUDIO"
 		ph_set_result $?
 		"$PH_CUR_DIR/confoper_ph.sh" -p overscan -u "$PH_UPPERSCAN" -b "$PH_BOTTOMSCAN" -l "$PH_LEFTSCAN" -r "$PH_RIGHTSCAN"
@@ -686,32 +719,32 @@ case $PH_ACTION in all)
 		ph_set_result $?
 		"$PH_CUR_DIR/confoper_ph.sh" -p update
 		ph_set_result $?
-		"$PH_CUR_DIR/confoper_ph.sh" -p bootenv -e "$PH_BOOTENV"
-		ph_set_result $?
 		"$PH_CUR_DIR/confoper_ph.sh" -p netwait -w "$PH_NETWAIT"
 		ph_set_result $?
+		"$PH_CUR_DIR/confoper_ph.sh" -p bootenv -e "$PH_BOOTENV"
+		ph_set_result $?
+		"$PH_CUR_DIR/confoper_ph.sh" -p del_stduser -d "$PH_DEL_PIUSER"
+		ph_set_result $? last
 	fi
 	printf "\n"
 	printf "%2s%s\n" "" "Total : $PH_RESULT"
 	printf "\n"
-	printf "%s" "Press Enter to reboot"
-	read 2>/dev/null
-	init 6 ;;
+	"$PH_CUR_DIR/confoper_ph.sh" -p boot ;;
 	     all-usedef)
+	"$PH_CUR_DIR/confoper_ph.sh" -p keyb -k "def"
+	ph_set_result $? first
 	"$PH_CUR_DIR/confoper_ph.sh" -p user -a "def"
 	ph_set_result $?
-	"$PH_CUR_DIR/confoper_ph.sh" -p sshkey -a "def"
+	"$PH_CUR_DIR/confoper_ph.sh" -p sshkey -t "def"
 	ph_set_result $?
 	"$PH_CUR_DIR/confoper_ph.sh" -p locale -f "def"
-	ph_set_result $?
-	"$PH_CUR_DIR/confoper_ph.sh" -p keyb -k "def"
 	ph_set_result $?
 	"$PH_CUR_DIR/confoper_ph.sh" -p tzone -z "def"
 	ph_set_result $?
 	"$PH_CUR_DIR/confoper_ph.sh" -p host -n "def"
 	ph_set_result $?
-	"$PH_CUR_DIR/confoper_ph.sh" -p filesys
-	ph_set_result $?
+#	"$PH_CUR_DIR/confoper_ph.sh" -p filesys
+#	ph_set_result $?
 	"$PH_CUR_DIR/confoper_ph.sh" -p audio -c "def"
 	ph_set_result $?
 	"$PH_CUR_DIR/confoper_ph.sh" -p overscan -u "def" -b "def" -l "def" -r "def"
@@ -722,48 +755,50 @@ case $PH_ACTION in all)
 	ph_set_result $?
 	"$PH_CUR_DIR/confoper_ph.sh" -p update
 	ph_set_result $?
-	"$PH_CUR_DIR/confoper_ph.sh" -p bootenv -e "def"
-	ph_set_result $?
 	"$PH_CUR_DIR/confoper_ph.sh" -p netwait -w "def"
 	ph_set_result $?
+	"$PH_CUR_DIR/confoper_ph.sh" -p bootenv -e "def"
+	ph_set_result $?
+	"$PH_CUR_DIR/confoper_ph.sh" -p del_stduser -d "def"
+	ph_set_result $? last
 	printf "\n"
 	printf "%2s%s\n" "" "Total : $PH_RESULT"
 	printf "\n"
-	printf "%s" "Press Enter to reboot"
-	read 2>/dev/null
-	init 6 ;;
+	"$PH_CUR_DIR/confoper_ph.sh" -p boot ;;
 		dispdef)
 	printf "%s\n" "- Executing function $PH_ACTION"
-	for PH_i in PH_USER PH_DEL_PIUSER PH_LOCALE PH_KEYB PH_TZONE PH_HOST PH_AUDIO PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN PH_VID_MEM PH_SSH_STATE PH_NETWAIT PH_BOOTENV
+	for PH_i in PH_USER PH_DEL_PIUSER PH_LOCALE PH_KEYB PH_TZONE PH_HOST PH_AUDIO PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN PH_VID_MEM PH_SSH_STATE PH_NETWAIT PH_BOOTENV PH_SSH_KEY
 	do
 		case $PH_i in PH_USER)
-				printf "%8s%s\n" "" "--> Displaying stored default value for 'create new user/modify existing user'/'create SSH key for user' operation" ;;
+				printf "%8s%s\n" "" "--> Displaying stored default value for the 'create new user/modify existing user' operation" ;;
 			    PH_DEL_PIUSER)
-				printf "%8s%s\n" "" "--> Displaying stored default value for delete standard user '$PH_DEF_USER' operation" ;;
+				printf "%8s%s\n" "" "--> Displaying stored default value for the 'delete standard user $PH_DEF_USER' operation" ;;
 				PH_LOCALE)
-				printf "%8s%s\n" "" "--> Displaying stored default value for system locale" ;;
+				printf "%8s%s\n" "" "--> Displaying stored default value for the system's locale" ;;
 				  PH_KEYB)
-				printf "%8s%s\n" "" "--> Displaying stored default value for keyboard layout" ;;
+				printf "%8s%s\n" "" "--> Displaying stored default value for the keyboard layout" ;;
 				 PH_TZONE)
-				printf "%8s%s\n" "" "--> Displaying stored default value for system timezone" ;;
+				printf "%8s%s\n" "" "--> Displaying stored default value for the system's timezone" ;;
 				  PH_HOST)
-				printf "%8s%s\n" "" "--> Displaying stored default value for system hostname" ;;
+				printf "%8s%s\n" "" "--> Displaying stored default value for the system's hostname" ;;
 				 PH_AUDIO)
-				printf "%8s%s\n" "" "--> Displaying stored default value for audio channel" ;;
+				printf "%8s%s\n" "" "--> Displaying stored default value for the audio channel" ;;
 			    PH_BOTTOMSCAN)
-				printf "%8s%s\n" "" "--> Displaying stored default value for overscan bottom" ;;
+				printf "%8s%s\n" "" "--> Displaying stored default value for the bottom overscan" ;;
 			     PH_UPPERSCAN)
-				printf "%8s%s\n" "" "--> Displaying stored default value for overscan top" ;;
+				printf "%8s%s\n" "" "--> Displaying stored default value for the upper overscan" ;;
 			     PH_RIGHTSCAN)
-				printf "%8s%s\n" "" "--> Displaying stored default value for overscan right" ;;
+				printf "%8s%s\n" "" "--> Displaying stored default value for the right overscan" ;;
 			      PH_LEFTSCAN)
-				printf "%8s%s\n" "" "--> Displaying stored default value for overscan left" ;;
+				printf "%8s%s\n" "" "--> Displaying stored default value for the left overscan" ;;
 			       PH_VID_MEM)	
-				printf "%8s%s\n" "" "--> Displaying stored default value for 'memory reserved for the GPU'" ;;
+				printf "%8s%s\n" "" "--> Displaying stored default value for the 'memory amount exclusively reserved for the GPU'" ;;
 			     PH_SSH_STATE)
-				printf "%8s%s\n" "" "--> Displaying stored default value for SSH state" ;;
+				printf "%8s%s\n" "" "--> Displaying stored default value for the state of SSH" ;;
+			       PH_SSH_KEY)
+				printf "%8s%s\n" "" "--> Displaying stored default value for the user account for which to create a public/private keypair" ;;
 			       PH_BOOTENV)
-				printf "%8s%s\n" "" "--> Displaying stored default value for default boot environment" ;;
+				printf "%8s%s\n" "" "--> Displaying stored default value for the default boot environment" ;;
 			       PH_NETWAIT)
 				printf "%8s%s\n" "" "--> Displaying stored default value for 'wait for network on boot'" ;;
 		esac
@@ -776,255 +811,352 @@ case $PH_ACTION in all)
 	done
 	printf "%2s%s\n\n" "" "SUCCESS" ;;
 		savedef)
-	printf "%s\n" "- Executing function $PH_ACTION"
+	[[ $PH_INTERACTIVE -eq 0 ]] && printf "%s\n" "- Executing function $PH_ACTION (Normal mode)" || printf "%s\n" "- Executing function $PH_ACTION (Interactive mode)"
 	if [[ $# -eq 2 ]]
 	then
-		for PH_i in PH_DEL_PIUSER PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN
-		do
-			if [[ "$PH_i" == "PH_DEL_PIUSER" ]]
-			then
-				if ! grep ^"PH_DEL_PIUSER=$PH_DEL_PIUSER"$ "$PH_CUR_DIR/../files/OS.defaults" >/dev/null
-				then
-					ph_savedef "PH_DEL_PIUSER" "$PH_DEL_PIUSER" 
-					ph_set_result $?
-				fi
-			else
-				if [[ "$PH_i" == @(PH_RIGHTSCAN|PH_LEFTSCAN) ]]
-				then
-					if ! grep ^"$PH_i=16"$ "$PH_CUR_DIR/../files/OS.defaults" >/dev/null
-					then
-						ph_savedef "$PH_i" "16" 
-						ph_set_result $?
-					fi
-				else
-					if ! grep ^"$PH_i=30"$ "$PH_CUR_DIR/../files/OS.defaults" >/dev/null
-					then
-						ph_savedef "$PH_i" "30" 
-						ph_set_result $?
-					fi
-				fi
-			fi
-		done
+		PH_FUNCTIONS="PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN"
+		PH_COUNT2=4
 	else
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
 			if [[ -z "$4" ]]
 			then
-				PH_FUNCTIONS="PH_SSH_STATE PH_USER PH_HOST PH_VID_MEM PH_AUDIO PH_TZONE PH_KEYB PH_BOOTENV PH_DEL_PIUSER PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN PH_NETWAIT PH_LOCALE"
+				PH_FUNCTIONS="PH_SSH_STATE PH_USER PH_HOST PH_VID_MEM PH_AUDIO PH_TZONE PH_KEYB PH_BOOTENV PH_DEL_PIUSER PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN PH_NETWAIT PH_LOCALE PH_SSH_KEY"
 			else
+				PH_FUNCTIONS="PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN"
 				case $4 in user)
-					PH_FUNCTIONS="PH_USER" ;;
+					PH_FUNCTIONS="$PH_FUNCTIONS PH_USER" ;;
 				     del_stduser)
-					PH_FUNCTIONS="PH_DEL_PIUSER" ;;
+					PH_FUNCTIONS="$PH_FUNCTIONS PH_DEL_PIUSER" ;;
 					 locale)
-					PH_FUNCTIONS="PH_LOCALE" ;;
+					PH_FUNCTIONS="$PH_FUNCTIONS PH_LOCALE" ;;
 		 			   keyb)
-					PH_FUNCTIONS="PH_KEYB" ;;
+					PH_FUNCTIONS="$PH_FUNCTIONS PH_KEYB" ;;
 					  tzone)
-					PH_FUNCTIONS="PH_TZONE" ;;
+					PH_FUNCTIONS="$PH_FUNCTIONS PH_TZONE" ;;
 					   host)
-					PH_FUNCTIONS="PH_HOST" ;;
+					PH_FUNCTIONS="$PH_FUNCTIONS PH_HOST" ;;
 					  audio)
-					PH_FUNCTIONS="PH_AUDIO" ;;
+					PH_FUNCTIONS="$PH_FUNCTIONS PH_AUDIO" ;;
 				       overscan)
-					PH_FUNCTIONS="PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN" ;;
+					: ;;
 				       memsplit)	
-					PH_FUNCTIONS="PH_VID_MEM" ;;
+					PH_FUNCTIONS="$PH_FUNCTIONS PH_VID_MEM" ;;
 					    ssh)
-					PH_FUNCTIONS="PH_SSH_STATE" ;;
+					PH_FUNCTIONS="$PH_FUNCTIONS PH_SSH_STATE" ;;
 					bootenv)
-					PH_FUNCTIONS="PH_BOOTENV" ;;
+					PH_FUNCTIONS="$PH_FUNCTIONS PH_BOOTENV" ;;
 					netwait)
-					PH_FUNCTIONS="PH_NETWAIT" ;;
+					PH_FUNCTIONS="$PH_FUNCTIONS PH_NETWAIT" ;;
+					sshkey)
+					PH_FUNCTIONS="$PH_FUNCTIONS PH_SSH_KEY" ;;
 				esac
 			fi
+			PH_COUNT2=`echo -n "$PH_FUNCTIONS" | nawk 'BEGIN { RS = " " } { next } END { print NR }'`
 			for PH_i in $PH_FUNCTIONS
 			do
-				PH_COUNT=0
+				PH_COUNT=$((PH_COUNT+1))
 				PH_ANSWER=""
 				while [[ -z "$PH_ANSWER" ]]
 				do
-					[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
 					case $PH_i in PH_USER)
-						printf "%8s%s" "" "--> Please enter the value for 'create new user/modify existing user'/'create SSH key for user' operation : " ;;
+						printf "%8s%s" "" "--> Please enter the default non-root account to store for the 'create new user/modify existing user' operation : " ;;
 						PH_DEL_PIUSER)
-						printf "%8s%s" "" "--> Please choose whether to delete standard user '$PH_DEF_USER' : "
+						printf "%8s%s" "" "--> Please choose the default to store for the 'delete standard user $PH_DEF_USER' operation : "
 						ph_present_list PH_DEL_PIUSER ;;
 						    PH_LOCALE)
-						printf "%8s%s" "" "--> Please choose a valid system locale : "
+						printf "%8s%s" "" "--> Please choose the default to store for the 'configure system locale' operation : "
 						ph_present_list PH_LOCALE ;;
 		 				      PH_KEYB)
-						printf "%8s%s" "" "--> Please choose a valid keyboard layout : "
+						printf "%8s%s" "" "--> Please choose the default to store for the 'configure keyboard layout' operation : "
 						ph_present_list PH_KEYB ;;
 						     PH_TZONE)
-						printf "%8s%s" "" "--> Please choose a valid system timezone : "
+						printf "%8s%s" "" "--> Please choose the default to store for the 'configure system timezone' operation : "
 						ph_present_list PH_TZONE ;;
 						      PH_HOST)
-						printf "%8s%s" "" "--> Please enter the value for system hostname : " ;;
+						printf "%8s%s" "" "--> Please choose the default to store for the 'configure system hostname' operation : " ;;
 						     PH_AUDIO)
-						printf "%8s%s" "" "--> Please choose an audio channel : "
+						printf "%8s%s" "" "--> Please choose the default to store for the 'configure audio channel' operation : "
 						ph_present_list PH_AUDIO ;;
 						PH_BOTTOMSCAN)
-						printf "%8s%s" "" "--> Please enter the value for overscan bottom (must be numeric or empty (empty defaults to '30')) : " ;;
+						printf "%8s%s" "" "--> Please enter the default to store for overscan bottom (must be numeric or empty (empty defaults to '30')) : " ;;
 						 PH_UPPERSCAN)
-						printf "%8s%s" "" "--> Please enter the value for overscan top (must be numeric or empty (empty defaults to '30')) : " ;;
+						printf "%8s%s" "" "--> Please enter the default to store for overscan upper (must be numeric or empty (empty defaults to '30')) : " ;;
 						 PH_RIGHTSCAN)
-						printf "%8s%s" "" "--> Please enter the value for overscan right (must be numeric or empty (empty defaults to '16')) : " ;;
+						printf "%8s%s" "" "--> Please enter the default to store for overscan right (must be numeric or empty (empty defaults to '16')) : " ;;
 						  PH_LEFTSCAN)
-						printf "%8s%s" "" "--> Please enter the value for overscan left (must be numeric or empty (empty defaults to '16')) : " ;;
+						printf "%8s%s" "" "--> Please enter the default to store for overscan left (must be numeric or empty (empty defaults to '16')) : " ;;
 						   PH_VID_MEM)	
-						printf "%8s%s" "" "--> Please choose the 'memory reserved for the GPU' : "
+						printf "%8s%s" "" "--> Please choose the default to store for the 'configure amount of memory, exclusively reserved for the GPU' operation : "
 						ph_present_list PH_VID_MEM ;;
 						 PH_SSH_STATE)
-						printf "%8s%s" "" "--> Please choose the value for the SSH state : "
+						printf "%8s%s" "" "--> Please choose the default to store for the 'configure SSH state' operation : "
 						ph_present_list PH_SSH_STATE ;;
+						   PH_SSH_KEY)
+						printf "%8s%s" "" "--> Please choose the default non-root account to store for the 'generate sshkey for user' operation : "
+						ph_present_list PH_SSH_KEY ;;
 						   PH_BOOTENV)
-						printf "%8s%s" "" "--> Please choose a default boot environment (cli/gui) : "
+						printf "%8s%s" "" "--> Please choose the default to store for the 'configure default boot environment' operation : "
 						ph_present_list PH_BOOTENV ;;
 						   PH_NETWAIT)
-						printf "%8s%s" "" "--> Please choose a value for 'wait for network on boot' : "
+						printf "%8s%s" "" "--> Please choose the default to store for the 'wait for network on boot' operation : "
 						ph_present_list PH_NETWAIT ;;
 					esac
-					read PH_ANSWER 2>/dev/null
-					PH_COUNT=$((PH_COUNT+1))
+					if [[ "$PH_i" == @(PH_USER|PH_HOST|PH_LEFTSCAN|PH_RIGHTSCAN|PH_BOTTOMSCAN|PH_UPPERSCAN) ]]
+					then
+						read PH_ANSWER 2>/dev/null
+					else
+						PH_ANSWER="$PH_CHOICE"
+					fi
 					case $PH_i in PH_USER)
 						if ph_screen_input "$PH_ANSWER"
 						then
-							PH_USER="$PH_ANSWER"
-							printf "%10s%s\n" "" "OK"
-							continue
+							if [[ "$PH_ANSWER" == @(root|def) ]]
+							then
+								printf "%10s%s\n" "" "ERROR : Cannot accept a default value of 'root' or 'def'"
+								PH_RET_CODE=1
+								PH_FUNCTIONS=`echo -n "$PH_FUNCTIONS" | sed 's/ PH_USER / /g;s/^PH_USER //g;s/ PH_USER$//g;s/^PH_USER$//g'`
+								break
+							else
+								[[ -n "$PH_ANSWER" ]] && PH_USER="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && PH_RET_CODE=0 && break
+							fi
 						else
 							exit 1
 						fi ;;
 						PH_DEL_PIUSER)
-						PH_DEL_PIUSER="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && break ;;
+						PH_DEL_PIUSER="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && PH_RET_CODE=0 && break ;;
 						    PH_LOCALE)
-						PH_LOCALE="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && break ;;
+						PH_LOCALE="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && PH_RET_CODE=0 && break ;;
 		 				      PH_KEYB)
-						PH_KEYB="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && break ;;
+						PH_KEYB="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && PH_RET_CODE=0 && break ;;
 						     PH_TZONE)
-						PH_TZONE="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && break ;;
+						PH_TZONE="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && PH_RET_CODE=0 && break ;;
 						      PH_HOST)
 						if ph_screen_input "$PH_ANSWER"
 						then
-							PH_HOST="$PH_ANSWER"
-							printf "%10s%s\n" "" "OK"
-							continue
+							if [[ "$PH_ANSWER" == "def" ]]
+							then
+								printf "%10s%s\n" "" "ERROR : Cannot accept a default value of 'def'"
+								PH_RET_CODE=1
+								PH_FUNCTIONS=`echo -n "$PH_FUNCTIONS" | sed 's/ PH_HOST / /g;s/^PH_HOST //g;s/ PH_HOST$//g;s/^PH_HOST$//g'`
+								break
+							else
+								[[ -n "$PH_ANSWER" ]] && PH_HOST="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && PH_RET_CODE=0 && break
+							fi
 						else
 							exit 1
 						fi ;;
 						     PH_AUDIO)
-						PH_AUDIO="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && break ;;
+						PH_AUDIO="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && PH_RET_CODE=0 && break ;;
 						PH_BOTTOMSCAN)
-						[[ "$PH_ANSWER" == @(+([[:digit:]])|) ]] && PH_BOTTOMSCAN="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && break ;;
+						if [[ "$PH_ANSWER" == @(+([[:digit:]])|) ]]
+						then
+							PH_BOTTOMSCAN="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && PH_RET_CODE=0 && break
+						else
+							[[ -n "$PH_ANSWER" ]] && printf "%10s%s\n" "" "Warning : Cannot accept a default value of '$PH_ANSWER' (Not a numeric value) -> Defaulting to '30'" && PH_RET_CODE=0 && break
+						fi ;;
 						 PH_UPPERSCAN)
-						[[ "$PH_ANSWER" == @(+([[:digit:]])|) ]] && PH_UPPERSCAN="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && break ;;
+						if [[ "$PH_ANSWER" == @(+([[:digit:]])|) ]]
+						then
+							PH_UPPERSCAN="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && PH_RET_CODE=0 && break
+						else
+							[[ -n "$PH_ANSWER" ]] && printf "%10s%s\n" "" "Warning : Cannot accept a default value of '$PH_ANSWER' (Not a numeric value) -> Defaulting to '30'" && PH_RET_CODE=0 && break
+						fi ;;
 						 PH_RIGHTSCAN)
-						[[ "$PH_ANSWER" == @(+([[:digit:]])|) ]] && PH_RIGHTSCAN="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && break ;;
+						if [[ "$PH_ANSWER" == @(+([[:digit:]])|) ]]
+						then
+							PH_RIGHTSCAN="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && PH_RET_CODE=0 && break
+						else
+							[[ -n "$PH_ANSWER" ]] && printf "%10s%s\n" "" "Warning : Cannot accept a default value of '$PH_ANSWER' (Not a numeric value) -> Defaulting to '16'" && PH_RET_CODE=0 && break
+						fi ;;
 						  PH_LEFTSCAN)
-						[[ "$PH_ANSWER" == @(+([[:digit:]])|) ]] && PH_LEFTSCAN="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && break ;;
+						if [[ "$PH_ANSWER" == @(+([[:digit:]])|) ]]
+						then
+							PH_LEFTSCAN="$PH_ANSWER" && printf "%10s%s\n" "" "OK" && PH_RET_CODE=0 && break
+						else
+							[[ -n "$PH_ANSWER" ]] && printf "%10s%s\n" "" "Warning : Cannot accept a default value of '$PH_ANSWER' (Not a numeric value) -> Defaulting to '16'" && PH_RET_CODE=0 && break
+						fi ;;
 						   PH_VID_MEM)	
-						PH_VID_MEM="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && break ;;
+						PH_VID_MEM="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && PH_RET_CODE=0 && break ;;
 						 PH_SSH_STATE)
-						PH_SSH_STATE="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && break ;;
+						PH_SSH_STATE="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && PH_RET_CODE=0 && break ;;
+						   PH_SSH_KEY)
+						PH_SSH_KEY="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && PH_RET_CODE=0 && break ;;
 						   PH_BOOTENV)
-						PH_BOOTENV="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && break ;;
+						PH_BOOTENV="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && PH_RET_CODE=0 && break ;;
 						   PH_NETWAIT)
-						PH_NETWAIT="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && break ;;
+						PH_NETWAIT="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && PH_RET_CODE=0 && break ;;
 					esac
 					PH_ANSWER=""
+					printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
 				done
+				if [[ $PH_COUNT -eq 1 ]]
+				then
+					[[ $PH_COUNT -ne $PH_COUNT2 ]] && ph_set_result $PH_RET_CODE first || ph_set_result $PH_RET_CODE first last
+				else
+					[[ $PH_COUNT -ne $PH_COUNT2 ]] && ph_set_result $PH_RET_CODE || ph_set_result $PH_RET_CODE last
+				fi
+			done
+		else
+			PH_FUNCTIONS="PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN"
+			[[ -n "$PH_SSH_STATE" ]] && PH_FUNCTIONS="$PH_FUNCTIONS PH_SSH_STATE"
+			[[ -n "$PH_USER" ]] && PH_FUNCTIONS="$PH_FUNCTIONS PH_USER"
+			[[ -n "$PH_HOST" ]] && PH_FUNCTIONS="$PH_FUNCTIONS PH_HOST"
+			[[ -n "$PH_VID_MEM" ]] && PH_FUNCTIONS="$PH_FUNCTIONS PH_VID_MEM"
+			[[ -n "$PH_AUDIO" ]] && PH_FUNCTIONS="$PH_FUNCTIONS PH_AUDIO"
+			[[ -n "$PH_TZONE" ]] && PH_FUNCTIONS="$PH_FUNCTIONS PH_TZONE"
+			[[ -n "$PH_KEYB" ]] && PH_FUNCTIONS="$PH_FUNCTIONS PH_KEYB"
+			[[ -n "$PH_BOOTENV" ]] && PH_FUNCTIONS="$PH_FUNCTIONS PH_BOOTENV"
+			[[ -n "$PH_DEL_PIUSER" ]] && PH_FUNCTIONS="$PH_FUNCTIONS PH_DEL_PIUSER"
+			[[ -n "$PH_NETWAIT" ]] && PH_FUNCTIONS="$PH_FUNCTIONS PH_NETWAIT"
+			[[ -n "$PH_SSH_KEY" ]] && PH_FUNCTIONS="$PH_FUNCTIONS PH_SSH_KEY"
+			[[ -n "$PH_LOCALE" ]] && PH_FUNCTIONS="$PH_FUNCTIONS PH_LOCALE"
+			PH_COUNT2=`echo -n $PH_FUNCTIONS | nawk 'BEGIN { RS = " " } { next } END { print NR }'`
+                	for PH_i in $PH_FUNCTIONS
+                	do
+				PH_COUNT=$((PH_COUNT+1))
+				if [[ "$PH_i" == @(PH_USER|PH_SSH_KEY) && `eval echo -n "\\$\$PH_i"` == @(root|def) ]]
+				then
+					printf "%10s%s\n" "" "ERROR : Cannot accept a default value of 'root' or 'def'"
+					PH_RET_CODE=1
+					PH_FUNCTIONS=`echo -n "$PH_FUNCTIONS" | sed 's/ '$PH_i' / /g;s/^'$PH_i' //g;s/ '$PH_i'$//g;s/^'$PH_i'$//g'`
+				else
+					if [[ `eval echo -n "\\$\$PH_i"` == @(root|def) ]]
+					then
+						printf "%10s%s\n" "" "ERROR : Cannot accept a default value of 'def'"
+						PH_RET_CODE=1
+						PH_FUNCTIONS=`echo -n "$PH_FUNCTIONS" | sed 's/ '$PH_i' / /g;s/^'$PH_i' //g;s/ '$PH_i'$//g;s/^'$PH_i'$//g'`
+					else
+						PH_RET_CODE=0
+					fi
+				fi
+				if [[ $PH_COUNT -eq 1 ]]
+				then
+					[[ $PH_COUNT -ne $PH_COUNT2 ]] && ph_set_result $PH_RET_CODE first || ph_set_result $PH_RET_CODE first last
+				else
+					[[ $PH_COUNT -ne $PH_COUNT2 ]] && ph_set_result $PH_RET_CODE || ph_set_result $PH_RET_CODE last
+				fi
 			done
 		fi
-		for PH_i in PH_SSH_STATE PH_USER PH_HOST PH_VID_MEM PH_AUDIO PH_TZONE PH_KEYB PH_BOOTENV PH_DEL_PIUSER PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN PH_NETWAIT PH_LOCALE
-		do
-			[[ `eval echo -n "\\$\$PH_i"` == "def" ]] && (printf "%2s%s\n" "" "FAILED : Unsupported value \"def\" detected for parameter $PH_i" ; exit 0) && exit 1
-		done
-		for PH_i in PH_SSH_STATE PH_USER PH_HOST PH_VID_MEM PH_AUDIO PH_TZONE PH_KEYB PH_BOOTENV PH_DEL_PIUSER PH_BOTTOMSCAN PH_UPPERSCAN PH_RIGHTSCAN PH_LEFTSCAN PH_NETWAIT PH_LOCALE
-		do
-			if [[ -n `eval echo -n "\\$\$PH_i"` ]]
+	fi
+	printf "%2s%s\n\n" "" "Prompting phase : $PH_RESULT"
+	PH_OLD_RESULT="$PH_RESULT"
+	PH_RESULT="SUCCESS"
+	PH_COUNT=0
+	PH_COUNT2=`echo -n $PH_FUNCTIONS | nawk 'BEGIN { RS = " " } { next } END { print NR }'`
+	for PH_i in $PH_FUNCTIONS
+	do
+		PH_COUNT=$((PH_COUNT+1))
+		if [[ "$PH_i" == @(PH_BOTTOMSCAN|PH_UPPERSCAN|PH_RIGHTSCAN|PH_LEFTSCAN) ]]
+		then
+			if [[ "$PH_i" == @(PH_RIGHTSCAN|PH_LEFTSCAN) ]]
 			then
-				if ! grep ^"$PH_i="`eval echo -n "\\$\$PH_i"`$ "$PH_CUR_DIR/../files/OS.defaults" >/dev/null
+				if ! grep ^"$PH_i=16"$ "$PH_CUR_DIR/../files/OS.defaults" >/dev/null
 				then
-					ph_savedef "$PH_i" "`eval echo -n \"\\$\$PH_i\"`" 
-					ph_set_result $?
+					ph_savedef "$PH_i" "16" 
+					PH_RET_CODE=$?
+				else
+					PH_RET_CODE=0
 				fi
 			else
-				if [[ "$PH_i" == @(PH_RIGHTSCAN|PH_LEFTSCAN) ]]
+				if ! grep ^"$PH_i=30"$ "$PH_CUR_DIR/../files/OS.defaults" >/dev/null
 				then
-					if ! grep ^"$PH_i=16"$ "$PH_CUR_DIR/../files/OS.defaults" >/dev/null
-					then
-						ph_savedef "$PH_i" "16"
-						ph_set_result $?
-					fi
-				fi
-				if [[ "$PH_i" == @(PH_BOTTOMSCAN|PH_UPPERSCAN) ]]
-				then
-					if ! grep ^"$PH_i=30"$ "$PH_CUR_DIR/../files/OS.defaults" >/dev/null
-					then
-						ph_savedef "$PH_i" "30"
-						ph_set_result $?
-					fi
+					ph_savedef "$PH_i" "30" 
+					PH_RET_CODE=$?
+				else
+					PH_RET_CODE=0
 				fi
 			fi
-		done
-	fi
+		else
+			ph_savedef "$PH_i" "`eval echo -n \"\\$\$PH_i\"`"
+			PH_RET_CODE=$?
+		fi
+		if [[ $PH_COUNT -eq 1 ]]
+		then
+			[[ $PH_COUNT -ne $PH_COUNT2 ]] && ph_set_result $PH_RET_CODE first || ph_set_result $PH_RET_CODE first last
+		else
+			[[ $PH_COUNT -ne $PH_COUNT2 ]] && ph_set_result $PH_RET_CODE || ph_set_result $PH_RET_CODE last
+		fi
+	done
 	printf "%2s%s\n" "" "INFO : Your defaults are stored in ${PH_CUR_DIR%/*}/files/OS.defaults"
-	[[ $PH_COUNT -ne 0 ]] && printf "%2s%s\n" "" "Total : $PH_RESULT" || printf "%2s%s\n" "" "Total : $PH_RESULT : Nothing to do"
+	printf "%2s%s\n\n" "" "Storing phase : $PH_RESULT"
+	case "$PH_RESULT"'_'"$PH_OLD_RESULT" in SUCCESS_SUCCESS)
+			PH_RESULT="SUCCESS" ;;
+			       		          FAILED_FAILED)
+			PH_RESULT="FAILED" ;;
+			        		              *)
+			PH_RESULT="PARTIALLY FAILED" ;;
+	esac
+	printf "%2s%s\n" "" "Total : $PH_RESULT"
+	PH_COUNT2=0 && PH_COUNT=0
 	[[ "$PH_RESULT" != "SUCCESS" ]] && exit 1 || exit 0 ;;
 		      *)
-	[[ "$PH_ACTION" != "update" ]] && printf "%s\n" "- Executing function $PH_ACTION"
+	if [[ "$PH_ACTION" != "update" ]]
+	then
+		[[ $PH_INTERACTIVE -eq 0 ]] && printf "%s\n" "- Executing function $PH_ACTION (Normal mode)" || printf "%s\n" "- Executing function $PH_ACTION (Interactive mode)"
+	fi
 	PH_RET_CODE=0
 	PH_COUNT=0
 	PH_ANSWER=""
 	case $PH_ACTION in user)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
-			for PH_i in PH_USER PH_DEL_PIUSER
+			PH_ANSWER=""
+			PH_COUNT=0
+			while [[ -z "$PH_ANSWER" ]]
 			do
-				PH_ANSWER=""
-				PH_COUNT=0
-				while [[ -z "$PH_ANSWER" ]]
-				do
-					[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
-					PH_MESSAGE="Invalid response"
-					[[ "$PH_i" == "PH_USER" ]] && printf "%8s%s" "" "--> Please enter the value for 'create new user/modify existing user' operation (cannot be a logged-in user) : " || \
-							printf "%8s%s" "" "--> Please enter the value for delete standard user '$PH_DEF_USER' operation (yes/no) : "
-					read PH_ANSWER 2>/dev/null
-					[[ "$PH_ANSWER" == "def" ]] && PH_COUNT=$((PH_COUNT+1)) && PH_ANSWER="" && PH_MESSAGE="Unsupported value entered" && continue
-					if ph_screen_input "$PH_ANSWER"
+				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
+				PH_MESSAGE="Invalid response"
+				printf "%8s%s" "" "--> Please enter a non-root, non logged-in account to use for the 'create new user/modify existing user' operation (Use keyword 'def' to retrieve stored default) : "
+				read PH_ANSWER 2>/dev/null
+				if ph_screen_input "$PH_ANSWER"
+				then
+					if [[ "$PH_ANSWER" == "def" ]]
 					then
-						if [[ "$PH_i" == "PH_USER" ]]
+						printf "%10s%s\n" "" "OK -> Fetching default"
+						if ph_getdef PH_USER
 						then
+							PH_ANSWER="$PH_USER"
+							PH_USER=""
+							printf "%8s%s" "" "--> Checking if $PH_ANSWER is currently logged-in"
+							if ! who -us | nawk '{ print $1 }' | grep ^"$PH_ANSWER"$ >/dev/null
+							then
+								printf "%10s%s\n" "" "OK (No)"
+								PH_USER="$PH_ANSWER"
+								break
+							else
+								printf "%10s%s\n" "" "ERROR (Yes)" && printf "%2s%s\n" "" "FAILED" && exit 1
+							fi
+						else
+							printf "%2s%s\n" "" "FAILED"
+							exit 1
+						fi
+					else
+						if [[ "$PH_ANSWER" == "root" ]]
+						then
+							printf "%10s%s\n" "" "ERROR : Modifying the 'root' account is not permitted"
+							printf "%2s%s\n" "" "FAILED" && exit 1
+						else
 							if ((! who -us | nawk '{ print $1 }' | grep ^"$PH_ANSWER"$ >/dev/null) && ([[ -n "$PH_ANSWER" ]]))
 							then
+								printf "%10s%s\n" "" "OK ($PH_ANSWER)"
 								PH_USER="$PH_ANSWER"
-								printf "%10s%s\n" "" "OK"
 								break
 							else
 								[[ -n "$PH_ANSWER" ]] && printf "%10s%s\n" "" "ERROR : User is currently logged in" && printf "%2s%s\n" "" "FAILED" && exit 1
 							fi
-						else
-							[[ "$PH_ANSWER" == @(yes|no) ]] && printf "%10s%s\n" "" "OK" && PH_DEL_PIUSER="$PH_ANSWER" && break
 						fi
-					else
-						exit 1
 					fi
-					PH_COUNT=$((PH_COUNT+1))
-					PH_ANSWER=""
-				done
+				else
+					exit 1
+				fi
+				PH_COUNT=$((PH_COUNT+1))
+				PH_ANSWER=""
 			done
-		fi
-		if [[ "$PH_USER" == "def" ]]
-		then
-			ph_getdef PH_USER || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
-			ph_getdef PH_DEL_PIUSER || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
-			if who -us | nawk '{ print $1 }' | grep ^"$PH_USER"$ >/dev/null 2>&1
+		else
+			if [[ "$PH_USER" == "def" ]]
 			then
-				printf "%8s%s\n" "" "--> Modifying user $PH_USER"
-				printf "%10s%s\n" "" "ERROR : User is currently logged in"
-				printf "%2s%s\n" "" "FAILED"
-				exit 1
+				ph_getdef PH_USER || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
 			fi
 		fi
 		printf "%8s%s\n" "" "--> Checking for group $PH_USER"
@@ -1062,32 +1194,32 @@ case $PH_ACTION in all)
 			if useradd -d /home/"$PH_USER" -c "$PH_USER account" -m -s /bin/bash -G tty,input,video,audio -g "$PH_USER" "$PH_USER" >/dev/null 2>&1
 			then
 				printf "%10s%s\n" "" "OK"
+				while true
+				do
+					[[ $PH_COUNT2 -ne 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Could not set password"
+					printf "%8s%s\n\n" "" "--> Please provide a password for $PH_USER"
+					passwd "$PH_USER"
+					[[ $? -eq 0 ]] && printf "\n%10s%s\n" "" "OK" && break
+					PH_COUNT2=$((PH_COUNT2+1))
+				done
+				PH_COUNT2=0
 			else
 				printf "%10s%s\n" "" "ERROR : Could not create user"
 				printf "%2s%s\n" "" "FAILED"
 				exit 1
 			fi
 		fi
-		while true
-		do
-			[[ $PH_COUNT2 -ne 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Could not set password"
-			printf "%8s%s\n\n" "" "--> Please provide a password for $PH_USER"
-			passwd "$PH_USER"
-			[[ $? -eq 0 ]] && printf "\n%10s%s\n" "" "OK" && break
-			PH_COUNT2=$((PH_COUNT2+1))
-		done
-		PH_COUNT2=0
-		printf "%8s%s\n" "" "--> Checking for sudo rules for user $PH_USER"
+		printf "%8s%s\n" "" "--> Checking for 'full root rights' sudo rules for user $PH_USER"
 		if [[ -f /etc/sudoers.d/010_"$PH_USER"-nopasswd ]]
 		then
 			printf "%10s%s\n" "" "OK (Found)"
 		else
 			printf "%10s%s\n" "" "Warning : Not Found -> Creating"
-			printf "%8s%s\n" "" "--> Creating sudo rules for user $PH_USER"
+			printf "%8s%s\n" "" "--> Creating 'full root rights' sudo rules for user $PH_USER"
 			echo "$PH_USER ALL=(ALL) NOPASSWD:SETENV: ALL" >/tmp/010_"$PH_USER"-nopasswd_tmp
 			if ! mv /tmp/010_"$PH_USER"-nopasswd_tmp /etc/sudoers.d/010_"$PH_USER"-nopasswd 2>&1
 			then
-				printf "%10s%s\n" "" "ERROR : Could not create sudo rules"
+				printf "%10s%s\n" "" "ERROR : Could not create 'full root rights' sudo rules"
 				PH_RESULT="PARTIALLY FAILED"
 			else
 				chown root:root /etc/sudoers.d/010_"$PH_USER"-nopasswd 2>/dev/null
@@ -1095,56 +1227,59 @@ case $PH_ACTION in all)
 				printf "%10s%s\n" "" "OK"
 			fi
 		fi
-		if (([[ "$PH_DEL_PIUSER" == "yes" ]]) && (id "$PH_DEF_USER" >/dev/null 2>&1))
+		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
+		    del_stduser)
+		if ! ph_check_user_validity "$PH_DEF_USER"
 		then
-			if who -us | nawk '{ print $1 }' | grep ^"$PH_DEF_USER"$ >/dev/null
+			printf "%2s%s\n" "" "SUCCESS : User does not exist"
+			exit 0
+		fi
+		if [[ $PH_INTERACTIVE -eq 1 ]]
+		then
+			ph_present_list PH_DEL_PIUSER && PH_DEL_PIUSER="$PH_CHOICE" && printf "%10s%s\n" "" "OK"
+		else
+			if [[ "$PH_DEL_PIUSER" == "def" ]]
 			then
-				printf "%8s%s\n" "" "--> Setting up delayed removal of user '$PH_DEF_USER'"
-				echo "#!/bin/sh" >/tmp/remove_std_user_tmp
-				echo "`which sudo` userdel -r $PH_DEF_USER" >>/tmp/remove_std_user_tmp
-				echo "`which sudo` unlink /etc/rc3.d/S99remove_std_user" >>/tmp/remove_std_user_tmp
-				echo "`which sudo` rm /etc/init.d/remove_std_user" >>/tmp/remove_std_user_tmp
-				mv /tmp/remove_std_user_tmp /etc/init.d/remove_std_user 2>/dev/null
-				ln -s /etc/init.d/remove_std_user /etc/rc3.d/S99remove_std_user 2>/dev/null
-				chmod 755 /etc/init.d/remove_std_user
+				ph_getdef PH_DEL_PIUSER || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+			fi
+		fi
+		if [[ "$PH_DEL_PIUSER" == "yes" ]]
+		then
+			printf "%8s%s\n" "" "--> Removing user '$PH_DEF_USER'"
+			if userdel -r "$PH_DEF_USER" >/dev/null 2>&1
+			then
 				printf "%10s%s\n" "" "OK"
 			else
-				printf "%8s%s\n" "" "--> Removing user '$PH_DEF_USER'"
-				if userdel -r "$PH_DEF_USER" >/dev/null 2>&1
+				printf "%10s%s\n" "" "ERROR : Could not delete user '$PH_DEF_USER'"
+				PH_RESULT="PARTIALLY FAILED"
+			fi
+			if [[ -f /etc/sudoers.d/010_"$PH_DEF_USER"-nopasswd ]]
+			then
+				printf "%8s%s\n" "" "--> Deleting 'full root rights' sudo rules for default user '$PH_DEF_USER'"
+				if rm /etc/sudoers.d/010_"$PH_DEF_USER"-nopasswd >/dev/null 2>&1
 				then
 					printf "%10s%s\n" "" "OK"
 				else
-					printf "%10s%s\n" "" "ERROR : Could not delete user '$PH_DEF_USER'"
-					PH_RESULT="PARTIALLY FAILED"
+					printf "%10s%s\n" "" "Warning : Could not delete 'full root rights' sudo rules"
+					[[ "$PH_RESULT" == "PARTIALLY FAILED" ]] && PH_RESULT="FAILED"
 				fi
 			fi
-			printf "%8s%s\n" "" "--> Deleting sudo rules for default user '$PH_DEF_USER'"
-			if rm /etc/sudoers.d/010_"$PH_DEF_USER"-nopasswd >/dev/null 2>&1
-			then
-				printf "%10s%s\n" "" "OK"
-			else
-				printf "%10s%s\n" "" "ERROR : Could not delete sudo rules for default user"
-				PH_RESULT="PARTIALLY FAILED"
-			fi
-		fi
-		if (([[ `cat /proc/$PPID/comm` != "confoper_ph.sh" ]]) && (who -us | nawk '{ print $1 }' | grep ^"$PH_DEF_USER"$ >/dev/null))
-		then
-			while [[ "$PH_ANSWER" != @(y|n) ]]
-			do
-				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
-				printf "%8s%s" "" "--> Reboot to process removal of default user (y/n) ? "
-				read PH_ANSWER 2>/dev/null
-				PH_COUNT=$((PH_COUNT+1))
-			done
-			printf "%10s%s\n" "" "OK"
+		else
+			printf "%8s%s\n" "" "--> Leaving user '$PH_DEF_USER' configured"
+			printf "%10s%s\n" "" "OK (Nothing to do)"
 		fi
 		printf "%2s%s\n" "" "$PH_RESULT"
-		[[ "$PH_ANSWER" == "y" ]] && init 6
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			 sshkey)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
 			ph_present_list PH_SSH_KEY && PH_SSH_KEY="$PH_CHOICE" && printf "%10s%s\n" "" "OK"
+		else
+			if [[ "$PH_SSH_KEY" == "def" ]]
+			then
+				ph_getdef PH_SSH_KEY || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+			fi
 		fi
 		PH_HOME=`nawk -F':' -v usr=^"$PH_SSH_KEY"$ '$1 ~ usr { print $6 }' /etc/passwd`
 		printf "%8s%s\n" "" "--> Checking for existing keys for user $PH_SSH_KEY"
@@ -1152,7 +1287,7 @@ case $PH_ACTION in all)
 		then
 			printf "%10s%s\n" "" "OK (None)"
 			printf "%8s%s\n" "" "--> Creating public/private keypair and trusting public key"
-			mkdir $PH_HOME/.ssh 2>/dev/null
+			mkdir -p "$PH_HOME/.ssh" 2>/dev/null
 			if ssh-keygen -t rsa -b 2048 -N "" -f "$PH_HOME/.ssh/id_rsa" >/dev/null 2>&1
 			then
 				chmod 700 "$PH_HOME/.ssh" 2>/dev/null
@@ -1172,18 +1307,22 @@ case $PH_ACTION in all)
 		printf "%2s%s\n" "" "$PH_RESULT"
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			 locale)
-		printf "%8s%s\n" "" "--> Please choose a valid system locale : "
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
 			ph_present_list PH_LOCALE && PH_LOCALE="$PH_CHOICE" && printf "%10s%s\n" "" "OK"
+		else
+			if [[ "$PH_LOCALE" == "def" ]]
+			then
+				ph_getdef PH_LOCALE || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+			fi
 		fi
 		printf "%8s%s\n" "" "--> Checking currently configured system locale"
-		PH_VALUE="`localectl status | nawk -F'=' '$0 ~ /System Locale/ { print $2 }'`"
+		PH_VALUE="`localectl status 2>/dev/null | nawk -F'=' '$0 ~ /System Locale/ { print $2 }' 2>/dev/null`"
 		if [[ "$PH_VALUE" != "$PH_LOCALE" ]]
 		then
 			printf "%10s%s\n" "" "OK ($PH_VALUE)"
 			printf "%8s%s\n" "" "--> Generating locales"
-			PH_VALUE="$PH_LOCALE `localectl list-locales | paste -s -d\" \"`"
+			PH_VALUE="$PH_LOCALE `localectl list-locales 2>/dev/null | paste -s -d\" \" 2>/dev/null`"
 			for PH_i in $PH_VALUE
 			do
 				PH_LOCALE_NAME=`grep -i ^"$PH_i " /usr/share/i18n/SUPPORTED | nawk '{ print $1 }'`
@@ -1236,11 +1375,16 @@ case $PH_ACTION in all)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
 			ph_present_list PH_KEYB && PH_KEYB="$PH_CHOICE" && printf "%10s%s\n" "" "OK"
+		else
+			if [[ "$PH_KEYB" == "def" ]]
+			then
+				ph_getdef PH_KEYB || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+			fi
 		fi
 		printf "%8s%s\n" "" "--> Checking currently configured keyboard layout"
 		if [[ -f /usr/bin/pacman ]]
 		then
-			PH_VALUE="`localectl status | nawk -F': ' '$0 ~ /X11 Layout/ { print $2 ; exit 0 } { next }'`"
+			PH_VALUE="`localectl status 2>/dev/null | nawk -F': ' '$0 ~ /X11 Layout/ { print $2 ; exit 0 } { next }' 2>/dev/null`"
 			if [[ "$PH_VALUE" != "$PH_KEYB" ]]
 			then
 				printf "%10s%s\n" "" "OK ($PH_VALUE)"
@@ -1276,7 +1420,7 @@ case $PH_ACTION in all)
 				printf "%10s%s\n" "" "OK (Nothing to do)"
 			fi
 		else
-			PH_VALUE="`nawk -F'\"' '$1 ~ /^XKBLAYOUT=$/ { print $2 ; exit 0 } { next }' /etc/default/keyboard`"
+			PH_VALUE="`nawk -F'\"' '$1 ~ /^XKBLAYOUT=$/ { print $2 ; exit 0 } { next }' /etc/default/keyboard 2>/dev/null`"
 			if [[ "$PH_VALUE" != "$PH_KEYB" ]]
 			then
 				printf "%10s%s\n" "" "OK ($PH_VALUE)"
@@ -1313,9 +1457,14 @@ case $PH_ACTION in all)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
 			ph_present_list PH_TZONE && PH_TZONE="$PH_CHOICE" && printf "%10s%s\n" "" "OK"
+		else
+			if [[ "$PH_TZONE" == "def" ]]
+			then
+				ph_getdef PH_TZONE || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+			fi
 		fi
-		printf "%8s%s\n" "" "--> Checking current timezone"
-		PH_VALUE="`cat /etc/timezone`"
+		printf "%8s%s\n" "" "--> Checking currently configured system timezone"
+		PH_VALUE="`cat /etc/timezone 2>/dev/null`"
 		if [[ "$PH_VALUE" != "$PH_TZONE" ]]
 		then
 			printf "%10s%s\n" "" "OK ($PH_VALUE)"
@@ -1344,24 +1493,35 @@ case $PH_ACTION in all)
 			while [[ -z "$PH_ANSWER" ]]
 			do
 				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
-				printf "%8s%s" "" "--> Please enter the value for system hostname : "
+				printf "%8s%s" "" "--> Please enter a value to use for the 'configure system hostname' operation (Use keyword 'def' to retrieve stored default) : "
 				read PH_ANSWER 2>/dev/null
-				[[ "$PH_ANSWER" == "def" ]] && PH_COUNT=$((PH_COUNT+1)) && PH_ANSWER="" && PH_MESSAGE="Unsupported value entered" && continue
 				if ph_screen_input "$PH_ANSWER"
 				then
-					PH_HOST="$PH_ANSWER"
-					printf "%10s%s\n" "" "OK"
-					break
+					if [[ "$PH_ANSWER" == "def" ]]
+					then
+						printf "%10s%s\n" "" "OK -> Fetching default"
+						if ! ph_getdef PH_HOST
+						then
+							printf "%2s%s\n" "" "FAILED" && exit 1
+						else
+							PH_ANSWER="$PH_HOST"
+							PH_HOST=""
+						fi
+					else
+						[[ -n "$PH_ANSWER" ]] && printf "%10s%s\n" "" "OK ($PH_ANSWER)"
+					fi
+					[[ -n "$PH_ANSWER" ]] && PH_HOST="$PH_ANSWER" && break
 				else
 					exit 1
 				fi
 				PH_COUNT=$((PH_COUNT+1))
 				PH_ANSWER=""
 			done
-		fi
-		if [[ "$PH_HOST" == "def" ]]
-		then
-			ph_getdef PH_HOST || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+		else
+			if [[ "$PH_HOST" == "def" ]]
+			then
+				ph_getdef PH_HOST || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+			fi
 		fi
 		printf "%8s%s\n" "" "--> Checking current hostname"
 		if [[ "$PH_HOST" != "$HOSTNAME" ]]
@@ -1391,16 +1551,21 @@ case $PH_ACTION in all)
 		fi
 		printf "%2s%s\n" "" "$PH_RESULT"
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
-			filesys)
-		PH_RESULT="FAILED : Currently unimplemented"
-		printf "%2s%s\n" "" "$PH_RESULT"
-		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
+#			filesys)
+#		PH_RESULT="FAILED : Currently unimplemented"
+#		printf "%2s%s\n" "" "$PH_RESULT"
+#		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			  audio)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
 			ph_present_list PH_AUDIO && PH_AUDIO="$PH_CHOICE" && printf "%10s%s\n" "" "OK"
+		else
+			if [[ "$PH_AUDIO" == "def" ]]
+			then
+				ph_getdef PH_AUDIO || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+			fi
 		fi
-		printf "%8s%s\n" "" "--> Checking currently configured audio output"
+		printf "%8s%s\n" "" "--> Checking currently configured audio channel"
 		PH_VALUE="`amixer cget numid=3 | tail -1 | nawk -F'=' '{ print $2 }'`"
 		case $PH_VALUE in 1)
 				PH_VALUE="auto" ;;
@@ -1412,7 +1577,7 @@ case $PH_ACTION in all)
 		if [[ "$PH_VALUE" != "$PH_AUDIO" ]]
 		then
 			printf "%10s%s\n" "" "OK ($PH_VALUE)"
-			printf "%8s%s\n" "" "--> Configuring audio output"
+			printf "%8s%s\n" "" "--> Configuring audio channel"
 			case $PH_AUDIO in auto)
 				PH_AUDIO="1" ;;
 				  	  hdmi)
@@ -1424,7 +1589,7 @@ case $PH_ACTION in all)
 			then
 				printf "%10s%s\n" "" "OK"
 			else
-				printf "%10s%s\n" "" "ERROR : Could not configure audio output"
+				printf "%10s%s\n" "" "ERROR : Could not configure audio channel"
 				PH_RESULT="FAILED"
 			fi
 		else
@@ -1443,21 +1608,20 @@ case $PH_ACTION in all)
 				do
 					[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
 					case $PH_i in PH_BOTTOMSCAN)
-							printf "%8s%s" "" "--> Please enter the value for overscan bottom (must be numeric, 'def' or empty ('def' is default, empty is leave unchanged)) : " ;;
+							printf "%8s%s" "" "--> Please enter the value to use for overscan bottom (must be numeric, 'def' or empty ('def' defaults to '30', empty is leave unchanged)) : " ;;
 						       PH_UPPERSCAN)
-							printf "%8s%s" "" "--> Please enter the value for overscan top (must be numeric, 'def' or empty ('def' is default, empty is leave unchanged)) : " ;;
+							printf "%8s%s" "" "--> Please enter the value to use for overscan upper (must be numeric, 'def' or empty ('def' defaults to '30', empty is leave unchanged)) : " ;;
 						       PH_RIGHTSCAN)
-							printf "%8s%s" "" "--> Please enter the value for overscan right (must be numeric, 'def' or empty ('def' is default, empty is leave unchanged)) : " ;;
+							printf "%8s%s" "" "--> Please enter the value to use for overscan right (must be numeric, 'def' or empty ('def' defaults to '16', empty is leave unchanged)) : " ;;
 						       	PH_LEFTSCAN)
-							printf "%8s%s" "" "--> Please enter the value for overscan left (must be numeric, 'def' or empty ('def' is default, empty is leave unchanged)) : " ;;
+							printf "%8s%s" "" "--> Please enter the value to use for overscan left (must be numeric, 'def' or empty ('def' defaults to '16', empty is leave unchanged)) : " ;;
 					esac
-					PH_MESSAGE="Invalid response"
+					PH_MESSAGE="Not a numeric value"
 					read PH_ANSWER 2>/dev/null
-					[[ "$PH_ANSWER" == "def" ]] && PH_COUNT=$((PH_COUNT+1)) && PH_ANSWER="" && PH_MESSAGE="Unsupported value entered" && continue
-					if [[ "$PH_ANSWER" == +([[:digit:]]) || -z "$PH_ANSWER" ]]
+					if [[ "$PH_ANSWER" == @(+([[:digit:]])|def) || -z "$PH_ANSWER" ]]
 					then
 						eval export "$PH_i"="$PH_ANSWER"
-						printf "%10s%s\n" "" "OK"
+						[[ "$PH_ANSWER" == "def" ]] && printf "%10s%s\n" "" "OK -> Fetching default" || printf "%10s%s\n" "" "OK (\"$PH_ANSWER\")"
 						break
 					fi
 					PH_COUNT=$((PH_COUNT+1))
@@ -1469,7 +1633,6 @@ case $PH_ACTION in all)
 		do
 			if [[ `eval echo -n "\\$\$PH_i"` == "def" ]]
 			then
-				PH_COUNT2=$((PH_COUNT2+1))
 				if ! ph_getdef "$PH_i"
 				then
 					PH_RET_CODE=$((PH_RET_CODE+1))
@@ -1488,34 +1651,21 @@ case $PH_ACTION in all)
 			if [[ -n `eval echo -n "\\$\$PH_i"` ]]
 			then
 				printf "%8s%s\n" "" "--> Checking currently configured value for $PH_STRING"
-				if [[ `nawk -F'=' -v str=^"$PH_STRING"$ '$1 ~ str { print $2 ; exit 0 } { next }' /boot/config.txt` == `eval echo -n "\\$\$PH_i"` ]]
+				if [[ `nawk -F'=' -v str=^"$PH_STRING"$ '$1 ~ str { print $2 ; exit 0 } { next }' /boot/config.txt 2>/dev/null` == `eval echo -n "\\$\$PH_i"` ]]
 				then
 					PH_COUNT2=$((PH_COUNT2+1))
 					printf "%10s%s\n" "" "OK (Nothing to do)"
 				else
-					printf "%10s%s\n" "" "OK"
-					PH_COUNT2=$((PH_COUNT2+1))
+					printf "%10s%s\n" "" "OK (\"`nawk -F'=' -v str=^\"$PH_STRING\"$ '$1 ~ str { print $2 ; exit 0 } { next }' /boot/config.txt 2>/dev/null`\")"
 					printf "%8s%s\n" "" "--> Configuring value `eval echo -n \"\\$\$PH_i\"` for $PH_STRING"
 					nawk -F'=' -v str=^"$PH_STRING"$ -v val=`eval echo -n "\\$\$PH_i"` '$1 ~ str { print $1 "=" val ; next } { print }' /boot/config.txt >/tmp/boot_config.txt_tmp 2>/dev/null
 					if [[ $? -eq 0 ]]
 					then
 						printf "%10s%s\n" "" "OK"
 						mv /tmp/boot_config.txt_tmp /boot/config.txt
-						if [[ `cat /proc/$PPID/comm` != "confoper_ph.sh" ]]
-						then
-							while [[ "$PH_ANSWER" != @(y|n) ]]
-							do
-								[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
-								printf "%8s%s" "" "--> Reboot to activate the new values (y/n) ? "
-								read PH_ANSWER 2>/dev/null
-								PH_COUNT=$((PH_COUNT+1))
-							done
-							printf "%10s%s\n" "" "OK"
-						fi
 					else
 						printf "%10s%s\n" "" "ERROR : Could not configure $PH_STRING"
 						PH_RETCODE=$((PH_RET_CODE+1))
-						continue
 					fi
 				fi
 			else
@@ -1524,7 +1674,18 @@ case $PH_ACTION in all)
 				PH_COUNT2=$((PH_COUNT2+1))
 			fi
 		done
-		if [[ $PH_RET_CODE -eq $PH_COUNT2 ]]
+		if (([[ `cat /proc/$PPID/comm` != "confoper_ph.sh" && $PH_COUNT2 -lt 4 ]]) && ([[ $PH_RET_CODE -lt 4 ]]))
+		then
+			while [[ "$PH_ANSWER" != @(y|n) ]]
+			do
+				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+				printf "%8s%s" "" "--> Reboot now to activate the new values (y/n) ? "
+				read PH_ANSWER 2>/dev/null
+				PH_COUNT=$((PH_COUNT+1))
+			done
+			printf "%10s%s\n" "" "OK"
+		fi
+		if [[ $PH_RET_CODE -eq 4 ]]
 		then
 			printf "%2s%s\n" "" "FAILED"
 		else
@@ -1536,17 +1697,21 @@ case $PH_ACTION in all)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
 			ph_present_list PH_VID_MEM && PH_VID_MEM="$PH_CHOICE" && printf "%10s%s\n" "" "OK"
+		else
+			if [[ "$PH_VID_MEM" == "def" ]]
+			then
+				ph_getdef PH_VID_MEM || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+			fi
 		fi
-		printf "%8s%s\n" "" "--> Checking currently configured GPU memory"
-		PH_VALUE="`nawk -F'=' -v str=^\"gpu_mem\"$ '$1 ~ str { print $2 ; exit 0 } { next }' /boot/config.txt`"
-		[[ -z "$PH_VALUE" ]] && PH_VALUE="None"
+		printf "%8s%s\n" "" "--> Checking memory amount currently configured as being exclusively reserved for the GPU"
+		PH_VALUE="`nawk -F'=' -v str=^\"gpu_mem\"$ '$1 ~ str { print $2 ; exit 0 } { next }' /boot/config.txt 2>/dev/null`"
 		if [[ "$PH_VID_MEM" != "$PH_VALUE" ]]
 		then
 			printf "%10s%s\n" "" "OK ($PH_VALUE)"
-			printf "%8s%s\n" "" "--> Configuring memory reservation for the GPU"
-			if [[ -z "$PH_VALUE" ]]
+			printf "%8s%s\n" "" "--> Configuring memory amount to be reserved exclusively for the GPU"
+			if [[ -n "$PH_VALUE" ]]
 			then
-				nawk -F'=' -v str=^"gpu_mem" -v val="$PH_VID_MEM" '$1 ~ str { print $1 "=" val ; next } { print }' /boot/config.txt >/tmp/boot_config.txt_tmp 2>/dev/null
+				nawk -F'=' -v str=^"gpu_mem" -v val="$PH_VID_MEM" '$1 ~ str { print "gpu_mem=" val ; next } { print }' /boot/config.txt >/tmp/boot_config.txt_tmp 2>/dev/null
 				if [[ $? -eq 0 ]]
 				then
 					printf "%10s%s\n" "" "OK"
@@ -1580,10 +1745,15 @@ case $PH_ACTION in all)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
 			ph_present_list PH_SSH_STATE && PH_SSH_STATE="$PH_CHOICE" && printf "%10s%s\n" "" "OK"
+		else
+			if [[ "$PH_SSH_STATE" == "def" ]]
+			then
+				ph_getdef PH_SSH_STATE || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+			fi
 		fi
 		if [[ "$PH_SSH_STATE" == "allowed" ]]
 		then
-			printf "%8s%s\n" "" "--> Checking for current SSH state"
+			printf "%8s%s\n" "" "--> Checking for current state of SSH"
 			if systemctl is-enabled ssh >/dev/null 2>&1
 			then
 				printf "%10s%s\n" "" "OK (Nothing to do)"
@@ -1615,7 +1785,7 @@ case $PH_ACTION in all)
 				fi
 			fi
 		else
-			printf "%8s%s\n" "" "--> Checking for current SSH state"
+			printf "%8s%s\n" "" "--> Checking for current state of SSH"
 			if ! systemctl is-enabled ssh >/dev/null 2>&1
 			then
 				printf "%10s%s\n" "" "OK (Nothing to do)"
@@ -1656,7 +1826,7 @@ case $PH_ACTION in all)
 		set +o pipefail
                 if [[ `cat /proc/$PPID/comm` != "confoper_ph.sh" ]]
                 then
-			printf "%s\n" "- Proposing recommended and possibly required reboot (in case of kernel and/or bootloader/firmware update)" 
+			printf "%s\n" "- Proposing recommended and possibly required (only in case of kernel and/or bootloader/firmware update) reboot" 
                         while [[ "$PH_ANSWER" != @(y|n) ]]
                         do
                                 [[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
@@ -1667,14 +1837,18 @@ case $PH_ACTION in all)
                         printf "%10s%s\n" "" "OK"
 			[[ "$PH_ANSWER" == "y" ]] && printf "%2s%s\n" "" "$PH_RESULT" && init 6
                 fi
-		printf "%2s%s\n" "" "$PH_RESULT"
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			netwait)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
 			ph_present_list PH_NETWAIT && PH_NETWAIT="$PH_CHOICE" && printf "%10s%s\n" "" "OK"
+		else
+			if [[ "$PH_NETWAIT" == "def" ]]
+			then
+				ph_getdef PH_NETWAIT || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+			fi
 		fi
-		printf "%8s%s\n" "" "--> Checking current value for 'wait for network on boot'"
+		printf "%8s%s\n" "" "--> Checking current configuration of 'wait for network on boot'"
 		[[ -f /etc/systemd/system/dhcpcd.service.d/wait.conf ]] && PH_VALUE="enabled" || PH_VALUE="disabled"
 		if [[ "$PH_NETWAIT" != "$PH_VALUE" ]]
 		then
@@ -1715,6 +1889,11 @@ EOF
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
 			ph_present_list PH_BOOTENV && PH_BOOTENV="$PH_CHOICE" && printf "%10s%s\n" "" "OK"
+		else
+			if [[ "$PH_BOOTENV" == "def" ]]
+			then
+				ph_getdef PH_BOOTENV || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+			fi
 		fi
 		if ((grep "PH_RUNAPP_CMD='.*/PieHelper/scripts/startpieh.sh'" /etc/profile.d/PieHelper_tty* >/dev/null 2>&1) && ([[ "$PH_BOOTENV" == "gui" ]]))
 		then
@@ -1723,10 +1902,10 @@ EOF
 			printf "%2s%s\n" "" "FAILED"
 			exit 1
 		fi
-		printf "%8s%s\n" "" "--> Checking current default boot environment"
+		printf "%8s%s\n" "" "--> Checking currently configured default boot environment"
 		[[ "$PH_BOOTENV" == "cli" ]] && PH_BOOTENV="multi-user.target" || \
 			PH_BOOTENV="graphical.target"
-		if [[ `systemctl get-default` != "$PH_BOOTENV" ]]
+		if [[ `systemctl get-default 2>/dev/null` != "$PH_BOOTENV" ]]
 		then
 			[[ "$PH_BOOTENV" == "graphical.target" ]] && printf "%10s%s\n" "" "OK (multi-user.target)" || \
 						printf "%10s%s\n" "" "OK (graphical.target)"
