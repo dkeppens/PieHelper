@@ -76,3 +76,5 @@ ________________________
 * Corrected some output typos
 * Interactive use of confoper_ph.sh OS configuration functions now present a list of all possible choices
 * Major improvements to confoper_ph.sh
+* Color coding and other formatting added to confopts_ph.sh and ph_configure_moon for added readability
+* Miscellaneous bugfixes

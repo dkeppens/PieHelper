@@ -1,8 +1,18 @@
-* get currently configured values function in confoper_ph.sh and add to menus
-* create remdef function for confoper_ph.sh and add to menus
-* add functionality for passing a list of functions to confoper_ph.sh -p savedef -i
-* remove confoper_ph.sh_bck file
+* additional option for confopts_ph.sh to only act on $PH_OPT_TYPE variables
+* additional option for confopts_ph.sh to only act on variables with a value different from 'N/A' and ''
+* add red color coding for all FAILED + color coding for all other scripts and function code wherever else appropriate
+* change no-root restriction in confoper_ph.sh user modify operations to no-system users
+* add skip option to all lists in confoper_ph.sh interactive modes
+* change 'prompt phase' of confoper_ph.sh -p savedef to 'parameter phase' for all modes
+* check problem for non-working supported locales in confoper_ph.sh. Not installed ?
+* add a userdel function to confoper_ph.sh and add to menus
+* add a get currently configured values function in confoper_ph.sh and add to menus
+* add a remdef function for confoper_ph.sh and add to menus
+* add functionality for passing a list of functions to confoper_ph.sh -p savedef -i instead of just one
 * unsets in confoper_ph.sh
+* no sudo rules and acls install and remove when PH_RUN_USER is 'root' and also check confoper_ph.sh
+* finish testing all confoper_ph.sh options in all modes
+* test correct quit for moonlight streaming on PTS and TTY
 * update HOWTO to a more readable manual
 * update Wiki with reference and download links
 * update all code to use new ph_get_app_user function or not ?

@@ -95,7 +95,7 @@ do
 		>&2 printf "%23s%s\n" "" "-p \"list\" -a [[listapp]|\"Ctrls\"] |"
 		>&2 printf "%23s%s\n" "" "-p \"help\" -a [[helpapp]|\"Ctrls\"] [-o [helpopt] -o [helpopt] ...|-o \"all\"] |"
 		>&2 printf "%23s%s\n" "" "-p \"set\" -a [[setapp]|\"Ctrls\"] -o [setopt]='[value]' -o [setopt]='[value]' -o ... '[-m|-n]' |"
-		>&2 printf "%23s%s\n" "" "-p \"prompt\" -a [[promptapp]|\"Ctrls\"] '-r' [-g|-s '[-m|-n]'|-d]"
+		>&2 printf "%23s%s\n" "" "-p \"prompt\" -a [[promptapp]|\"Ctrls\"] '-r' [-d|-g|-s '[-m|-n]']"
 		>&2 printf "\n"
 		>&2 printf "%3s%s\n" "" "Where -h displays this usage"
 		>&2 printf "%9s%s\n" "" "-p specifies the action to take"
@@ -190,7 +190,7 @@ then
 fi
 if [[ "$PH_ACTION" == @(set|get|help) ]]
 then
-	PH_OPTAR+=(`echo -n $PH_OPT | sed "s/'/ /g"`)
+	PH_OPTAR+=(`echo -n "$PH_OPT" | sed "s/'/ /g"`)
 	for PH_COUNT in {1..${#PH_OPTAR[@]}}
 	do
 		PH_VALAR+=("`echo $PH_VALUE | cut -d\' -f$PH_COUNT`")
@@ -215,10 +215,9 @@ then
 				printf "%2s%s\n\n" "" "FAILED : The application to start by default on system boot should be handled by 'confapps_ph.sh -p start' or the PieHelper menu" ; return 0) && unset PH_OPTAR PH_VALAR && exit 1 
 		while ((! grep ^"${PH_OPTAR[$PH_COUNT]}=" $PH_CONF_DIR/$PH_APP.conf >/dev/null 2>&1) && ([[ "${PH_OPTAR[$PH_COUNT]}" != "all" && "$PH_ACTION" != @(prompt|list) ]]))
 		do
-			for PH_i in `nawk 'BEGIN { ORS = " " } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}' $PH_CONF_DIR/$PH_APP.conf`
+			for PH_i in `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf`
 			do
-				PH_i="${PH_i%%=*}"
-				[[ "$PH_i" == "${PH_OPTAR[$PH_COUNT]}" ]] && PH_OPT_TYPE="read-only" && break 2
+				[[ "$PH_i" == "${PH_OPTAR[$PH_COUNT]}" ]] && break 2
 			done
 			case $PH_ACTION in get)
 				printf "%s\n" "- Displaying value for $PH_USE_WORD ${PH_OPTAR[$PH_COUNT]}" ;;
@@ -245,14 +244,16 @@ case $PH_ACTION in get)
 					[[ "$PH_RESOLVE" == "yes" ]] && confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT" -r || \
 						confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT"
 				done
-				for PH_OPT in `nawk 'BEGIN { ORS = " " } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}' $PH_CONF_DIR/$PH_APP.conf`
+				for PH_OPT in `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf`
 				do
 					[[ "$PH_RESOLVE" == "yes" ]] && confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT" -r || \
 						confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT"
 				done) | more
 			else
+				grep ^"$PH_OPT=" "$PH_CONF_DIR"/"$PH_APP".conf >/dev/null 2>&1 && PH_OPT_TYPE="read-write" || PH_OPT_TYPE="read-only"
 				([[ "$PH_RESOLVE" == "yes" ]] && printf "%s\n" "- Displaying value for $PH_OPT_TYPE $PH_USE_WORD $PH_OPT (Variable expansion enabled)" || \
 								printf "%s\n" "- Displaying value for $PH_OPT_TYPE $PH_USE_WORD $PH_OPT"
+				printf "\033[32m"
 				typeset -n PH_OPTVAL="$PH_OPT"
 				if [[ "$PH_RESOLVE" == "yes" ]]
 				then
@@ -260,6 +261,7 @@ case $PH_ACTION in get)
 				else
 					printf "%2s%s\n" "" "'$PH_OPTVAL'"
 				fi
+				printf "\033[0m"
 				printf "%2s%s\n" "" "$PH_RESULT"
 				printf "\n"
 				unset -n PH_OPTVAL) | more
@@ -269,22 +271,26 @@ case $PH_ACTION in get)
 		exit 0 ;;
 		  list)
 		printf "%s%s\n" "- Listing all available read-only $PH_USE_WORD" "s for $PH_APP"
-		if [[ -z `nawk 'BEGIN { ORS = " " } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}' $PH_CONF_DIR/$PH_APP.conf` ]]
+		printf "\033[32m"
+		if [[ -z `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf 2>/dev/null` ]]
 		then
-			printf "%8s%s\n" "" "\"none\"" 
+			printf "%8s%s\n" "" "\"No read-only options found\"" 
 		else
-			for PH_OPT in `nawk 'BEGIN { ORS = " " } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}' $PH_CONF_DIR/$PH_APP.conf`
+			for PH_OPT in `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf`
 			do
-				printf "%8s%s\n" "" "${PH_OPT%%=*}"
+				printf "%8s%s\n" "" "$PH_OPT"
 			done
 		fi
+		printf "\033[0m"
 		printf "%2s%s\n" "" "$PH_RESULT"
 		printf "\n"
 		printf "%s%s\n" "- Listing all available read-write $PH_USE_WORD" "s for $PH_APP"
+		printf "\033[32m"
 		for PH_OPT in `nawk -F'=' '$1 ~ /^PH_/ { print $1 ; next } { next }' $PH_CONF_DIR/$PH_APP.conf | paste -d" " -s`
 		do
 			printf "%8s%s\n" "" "$PH_OPT"
 		done
+		printf "\033[0m"
 		printf "%2s%s\n\n" "" "$PH_RESULT"
 		unset PH_OPTAR PH_VALAR
 		exit 0 ;;
@@ -298,25 +304,22 @@ case $PH_ACTION in get)
 				do
 					confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
 				done
-				for PH_OPT in `nawk 'BEGIN { ORS = " " } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}' $PH_CONF_DIR/$PH_APP.conf`
+				for PH_OPT in `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf`
 				do
 					confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
 				done) | more
 			else
+				grep ^"$PH_OPT=" "$PH_CONF_DIR"/"$PH_APP".conf >/dev/null 2>&1 && PH_OPT_TYPE="read-write" || PH_OPT_TYPE="read-only"
 				(printf "%s\n" "- Displaying help for $PH_OPT_TYPE $PH_USE_WORD $PH_OPT"
-				printf "%2s%s\n" "" "$PH_RESULT"
-				printf "\n"
-				ph_print_bannerline
-				printf "\n"
+				printf "\033[32m"
 				if [[ "$PH_OPT_TYPE" == "read-write" ]]
 				then
 					nawk -F'#' -v opt=^"$PH_OPT=" '$1 ~ opt { print $2 ; getline ; while ($1!~/^PH_/ && $0!~/^$/) { print $2 ; getline } ; exit }' $PH_CONF_DIR/$PH_APP.conf
 				else
 					nawk -F'#' -v opt=" typeset .* $PH_OPT=" '$1 ~ opt { print $2 ; getline ; while ($1!~/^PH_|^\[\[/ && $0!~/^$/) { print $2 ; getline } ; exit }' $PH_CONF_DIR/$PH_APP.conf
 				fi
-				printf "\n"
-				ph_print_bannerline
-				printf "\n") | more
+				printf "\033[0m"
+				printf "%2s%s\n\n" "" "$PH_RESULT") | more
 			fi
 		done
 		unset PH_OPTAR PH_VALAR
@@ -366,22 +369,23 @@ case $PH_ACTION in get)
 					PH_COUNT=1
 					for PH_i in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | nawk -F'=' '{ print $1 }'`
 					do
-						printf "%2s%-13s%4s%2s%s%s\n" "" "(read-write)" "" "$((PH_COUNT))" ". " "$PH_i"
+						printf "%2s%-13s%4s%2s%s\033[32m%s\033[0m\n" "" "(read-write)" "" "$((PH_COUNT))" ". " "$PH_i"
 						((PH_COUNT++))
 					done
 					PH_COUNT2=$PH_COUNT
-					for PH_i in `nawk 'BEGIN { ORS = " " } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}' $PH_CONF_DIR/$PH_APP.conf`
+					for PH_i in `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf`
 					do
-						printf "%2s%-13s%4s%2s%s%s\n" "" "(read-only)" "" "$((PH_COUNT))" ". " "${PH_i%%=*}"
+						printf "%2s%-13s%4s%2s%s\033[32m%s\033[0m\n" "" "(read-only)" "" "$((PH_COUNT))" ". " "$PH_i"
 						((PH_COUNT++))
 					done
-					printf "%23s%s\n" "$PH_COUNT. " "All"
-					printf "%23s%s\n" "$((PH_COUNT+1)). " "Return to PieHelper menu"
+					printf "%23s\033[32m%s\033[0m\n" "$PH_COUNT. " "All"
+					[[ `ps -p $PPID -o comm | tail -n +2` == "startpieh.sh" ]] && printf "%23s\033[32m%s\033[0m\n" "$((PH_COUNT+1)). " "Return to PieHelper menu" || \
+								printf "%23s\033[32m%s\033[0m\n" "$((PH_COUNT+1)). " "Exit"
 					printf "\n%8s%s" "" "Your choice ? "
 					read PH_ANSWER 2>/dev/null
 				done
 				printf "%10s%s\n" "" "OK"
-				printf "%2s%s\n" "" "SUCCESS"
+				printf "%2s%s\n\n" "" "SUCCESS"
 				[[ $PH_ANSWER -eq $((PH_COUNT+1)) ]] && unset PH_OPTAR PH_VALAR && exit 0
 				if [[ $PH_ANSWER -eq $((PH_COUNT)) ]]
 				then
@@ -391,15 +395,17 @@ case $PH_ACTION in get)
 					then
 						PH_OPT=`grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | nawk -F'=' -v choice=$PH_ANSWER 'NR == choice { print $1 }'`
 					else
-						PH_OPT=$(grep ' typeset ' $PH_CONF_DIR/$PH_APP.conf | \
-							nawk -v choice=$((PH_ANSWER-$((PH_COUNT2-1)))) 'NR == choice { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}')
+						PH_OPT=$(grep ' typeset -r ' $PH_CONF_DIR/$PH_APP.conf | \
+							nawk -v choice=$((PH_ANSWER-$((PH_COUNT2-1)))) 'NR == choice { print substr($8,0,index($8,"=")) }')
 					fi
 				fi
-				[[ "$PH_RESOLVE" == "yes" ]] && confopts_ph.sh -p get -a "$PH_APP" -o "${PH_OPT%%=*}" -r || \
-					confopts_ph.sh -p get -a "$PH_APP" -o "${PH_OPT%%=*}"
+				[[ "$PH_RESOLVE" == "yes" ]] && confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT" -r || \
+					confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT"
+				printf "\n"
 				PH_ANSWER=0
 				PH_COUNT=0
 				PH_COUNT2=0
+				printf "%s\n" "- Using interactive mode"
 			done ;;
 				     set)
 			while true
@@ -408,31 +414,33 @@ case $PH_ACTION in get)
 							printf "%8s%s\n\n" "" "--> Which read-write $PH_USE_WORD do you want to change the value of ?"
                 		while [[ $PH_ANSWER -eq 0 || $PH_ANSWER -gt $((PH_COUNT+1)) ]]
                 		do
-					[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+					[[ $PH_COUNT -gt 0 ]] && printf "\n%70s%s\n\n" "" "ERROR : Invalid response"
 					PH_COUNT=0
-					for PH_i in `nawk -F'=' -v xcpt1=^"PH_PIEH_DEBUG"$ -v xcpt2=^"PH_PIEH_STARTAPP"$ '$1 ~ /^PH_/ && $1 !~ xcpt1 && $1 !~ xcpt2 { print $1 } { next}' $PH_CONF_DIR/$PH_APP.conf`
+					for PH_i in `nawk -F'=' -v xcpt1=^"PH_PIEH_DEBUG"$ -v xcpt2=^"PH_PIEH_STARTAPP"$ ' \
+								$1 ~ /^PH_/ && $1 !~ xcpt1 && $1 !~ xcpt2 { print $1 } { next }' $PH_CONF_DIR/$PH_APP.conf`
 					do
 						typeset -n PH_OPTVAL="$PH_i"
 						PH_ALLOW_VAL="`nawk -F':' -v opt=^\"$PH_i\"$ '$1 ~ opt { print $2 }' $PH_FILES_DIR/options.allowed`"
-						[[ -n "$PH_ALLOW_VAL" ]] && PH_ALLOW_VAL="Allowed values are \"$PH_ALLOW_VAL\""
+						[[ -n "$PH_ALLOW_VAL" ]] && PH_ALLOW_VAL="(Allowed values are \"$PH_ALLOW_VAL\")"
 						if [[ "$PH_RESOLVE" == "yes" ]]
 						then
 							PH_OPTVAL=`echo "$PH_OPTVAL" | sed 's/"/\\\"/g'`
-							printf "%23s%-100s%s\n" "$((PH_COUNT+1)). " "$PH_i='`eval echo -n $PH_OPTVAL`'" "$PH_ALLOW_VAL"
+							printf "%23s\033[32m%s\033[0m%-100s%s\n" "$((PH_COUNT+1)). " "$PH_i" "='`eval echo -n $PH_OPTVAL`'" "$PH_ALLOW_VAL"
 							PH_OPTVAL=`echo "$PH_OPTVAL" | sed 's/\\\"/"/g'`
 						else
-							printf "%23s%-100s%s\n" "$((PH_COUNT+1)). " "$PH_i='`echo -n $PH_OPTVAL`'" "$PH_ALLOW_VAL"
+							printf "%23s\033[32m%s\033[0m%-100s%s\n" "$((PH_COUNT+1)). " "$PH_i" "='`echo -n $PH_OPTVAL`'" "$PH_ALLOW_VAL"
 						fi
 						((PH_COUNT++))
 						unset -n PH_OPTVAL
 						PH_ALLOW_VAL=""
 					done
-					printf "%23s%s\n" "$((PH_COUNT+1)). " "Return to PieHelper menu"
+					[[ `ps -p $PPID -o comm | tail -n +2` == "startpieh.sh" ]] && printf "%23s\033[32m%s\033[0m\n" "$((PH_COUNT+1)). " "Return to PieHelper menu" || \
+								printf "%23s\033[32m%s\033[0m\n" "$((PH_COUNT+1)). " "Exit"
 					printf "\n%8s%s" "" "Your choice ? "
 					read PH_ANSWER 2>/dev/null
 				done
 				printf "%10s%s\n" "" "OK"
-				[[ $PH_ANSWER -eq $((PH_COUNT+1)) ]] && printf "%2s%s\n" "" "SUCCESS" && unset PH_OPTAR PH_VALAR && exit 0
+				[[ $PH_ANSWER -eq $((PH_COUNT+1)) ]] && printf "%2s%s\n\n" "" "SUCCESS" && unset PH_OPTAR PH_VALAR && exit 0
 				PH_OPT=`grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | egrep -v ^"PH_PIEH_DEBUG=|PH_PIEH_STARTAPP=" | nawk -F"=" -v choice=$PH_ANSWER 'NR == choice { print $1 }'`
 				[[ "$PH_OPT" == *_NUM_CTRL ]] && (printf "%8s%s\n" "" "--> Displaying additional info for read-write $PH_USE_WORD $PH_OPT : " ; \
 							  printf "%10s%s\n\n" "" "OK" ; \
@@ -458,11 +466,12 @@ case $PH_ACTION in get)
 				printf "%8s%s" "" "--> Please enter the new value for read-write $PH_USE_WORD $PH_OPT : "
 				read PH_VALUE 2>/dev/null
 				printf "%10s%s\n" "" "OK"
-				printf "%2s%s\n" "" "SUCCESS"
+				printf "%2s%s\n\n" "" "SUCCESS"
 				[[ "$PH_TYPE" == "o" ]] && PH_TYPE="n" || PH_TYPE="m"
 				confopts_ph.sh -p set -a "$PH_APP" -"$PH_TYPE" -o "$PH_OPT"="$PH_VALUE" && export "$PH_OPT"="$PH_VALUE"
 				PH_ANSWER=0
 				PH_COUNT=0
+				printf "%s\n" "- Using interactive mode"
 			done ;;
 				    help)
 			while true
@@ -480,37 +489,37 @@ case $PH_ACTION in get)
 						do
 							typeset -n PH_OPTVAL="$PH_i"
 							PH_OPTVAL=`echo $PH_OPTVAL | sed 's/"/\\\"/g'`
-							printf "%2s%-13s%4s%2s%s%s%s%s\n" "" "(read-write)" "" "$((PH_COUNT))" ". " "$PH_i" "=" "'`eval echo $PH_OPTVAL`'"
+							printf "%2s%-13s%4s%2s%s\033[32m%s\033[0m%s%s\n" "" "(read-write)" "" "$((PH_COUNT))" ". " "$PH_i" "=" "'`eval echo $PH_OPTVAL`'"
 							PH_OPTVAL=`echo $PH_OPTVAL | sed 's/\\\"/"/g'`
 							((PH_COUNT++))
 							unset -n PH_OPTVAL
 						done
 						((PH_COUNT--))
 						PH_COUNT2=$PH_COUNT
-						for PH_i in `nawk 'BEGIN { ORS = " " } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}' $PH_CONF_DIR/$PH_APP.conf`
+						for PH_i in `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf`
 						do
-							typeset -n PH_OPTVAL="${PH_i%%=*}"
-							printf "%2s%-13s%4s%2s%s%s%s%s\n" "" "(read-only)" "" "$((PH_COUNT+1))" ". " "${PH_i%%=*}" "=" "'$(echo $PH_OPTVAL | sed 's/"/\\\"/g' | eval echo `cat`)'" 
+							typeset -n PH_OPTVAL="$PH_i"
+							printf "%2s%-13s%4s%2s%s\033[32m%s\033[0m%s%s\n" "" "(read-only)" "" "$((PH_COUNT+1))" ". " "$PH_i" "=" "'$(echo $PH_OPTVAL | sed 's/"/\\\"/g' | eval echo `cat`)'" 
 							((PH_COUNT++))
 							unset -n PH_OPTVAL
 						done
 					else
-						nawk -F'\t' 'BEGIN { count = 1 } $1 ~ /^PH_/ { printf "%2s%-13s%4s%4s%s\n", "", "(read-write)", "", count ". ", $1 ; count++ ; next } \
+						nawk -F'\t' 'BEGIN { count = 1 } $1 ~ /^PH_/ { printf "%2s%-13s%4s%4s\033[32m", "", "(read-write)", "", count ". " ; printf "%s\033[0m", substr($1,0,index($1,"=")) ; print substr($1,index($1,"=")) ; count++ ; next } \
 															{ next }' $PH_CONF_DIR/$PH_APP.conf
 						PH_COUNT=`nawk -F'\t' 'BEGIN { count = 0 } $1 ~ /^PH_/ { count++ } END { print count }' $PH_CONF_DIR/$PH_APP.conf`
 						PH_COUNT2=$PH_COUNT
-						nawk -v count=$((PH_COUNT+1)) '$0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { printf "%2s%-13s%4s%4s%s\n", "", "(read-only)", "", count ". ", $i }} ; count++ ; next }' \
-																										$PH_CONF_DIR/$PH_APP.conf
-						PH_COUNT=$((PH_COUNT+`nawk 'BEGIN { count = 0 } $0 ~ / typeset / { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { count++ }}} END { print count }' $PH_CONF_DIR/$PH_APP.conf`))
+						nawk -v count=$((PH_COUNT+1)) '$6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { printf "%2s%-13s%4s%4s\033[32m", "", "(read-only)", "", count ". " ; printf "%s\033[0m", substr($8,0,index($8,"=")) ; print substr($8,index($8,"=")) ; count++ ; next }' $PH_CONF_DIR/$PH_APP.conf
+						PH_COUNT=$((PH_COUNT+`nawk 'BEGIN { count = 0 } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { count++ } END { print count }' $PH_CONF_DIR/$PH_APP.conf`))
 					fi
 					((PH_COUNT++))
-					printf "%23s%s\n" "$PH_COUNT. " "All"
-					printf "%23s%s\n" "$((PH_COUNT+1)). " "Return to PieHelper menu"
+					printf "%23s\033[32m%s\033[0m\n" "$PH_COUNT. " "All"
+					[[ `ps -p $PPID -o comm | tail -n +2` == "startpieh.sh" ]] && printf "%23s\033[32m%s\033[0m\n" "$((PH_COUNT+1)). " "Return to PieHelper menu" || \
+								printf "%23s\033[32m%s\033[0m\n" "$((PH_COUNT+1)). " "Exit"
 					printf "\n%8s%s" "" "Your choice ? "
 					read PH_ANSWER 2>/dev/null
 				done
 				printf "%10s%s\n" "" "OK"
-				printf "%2s%s\n" "" "SUCCESS"
+				printf "%2s%s\n\n" "" "SUCCESS"
 				[[ $PH_ANSWER -eq $((PH_COUNT+1)) ]] && unset PH_OPTAR PH_VALAR && exit 0
 				if [[ $PH_ANSWER -eq $PH_COUNT ]]
 				then
@@ -520,15 +529,15 @@ case $PH_ACTION in get)
 					then
 						PH_OPT=`grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | nawk -F'=' -v choice=$PH_ANSWER 'NR==choice { print $1 }'`
 					else
-						PH_OPT=$(grep ' typeset ' $PH_CONF_DIR/$PH_APP.conf | \
-							nawk -v choice=$((PH_ANSWER-$PH_COUNT2)) 'NR == choice { for (i=1;i<=NF;i++) { if ($i~/^PH_/) { print $i }}}')
-						PH_OPT="${PH_OPT%%=*}" 
+						PH_OPT=$(grep ' typeset -r ' $PH_CONF_DIR/$PH_APP.conf | \
+							nawk -v choice=$((PH_ANSWER-$PH_COUNT2)) 'NR == choice { print substr($8,0,index($8,"=")) }')
 					fi
 				fi
 				confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
 				PH_ANSWER=0
 				PH_COUNT=0
 				PH_COUNT2=0
+				printf "%s\n" "- Using interactive mode"
 			done ;;
 		esac ;;
 esac

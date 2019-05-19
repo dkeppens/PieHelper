@@ -41,22 +41,29 @@ typeset PH_APP="Moonlight"
 typeset PH_MOON_USER=""
 typeset -i PH_COUNT=0
 typeset -i PH_OPT=0
+typeset -i PH_FLAG=0
 set -A PH_OPTAR PH_MOON_RES PH_MOON_FPS PH_MOON_BITRATE PH_MOON_PCKTSIZE PH_MOON_WIDTH PH_MOON_HEIGHT PH_MOON_USE_CTRL PH_MOON_NUM_CTRL PH_MOON_CMD_OPTS PH_MOON_GAME PH_MOON_SRV
 
 for PH_OPT in {0..$((${#PH_OPTAR[@]}-1))}
 do
-	printf "\n"
+	PH_FLAG=0
+	if [[ $PH_OPT -eq 0 ]]
+	then
+		printf "%s" "- Press Enter to start configuring $PH_APP"
+		read 2>/dev/null
+		sleep 1
+	fi
+	clear
         PH_COUNT=0
-        confopts_ph.sh -p get -a Moonlight -o "${PH_OPTAR[$PH_OPT]}" | tail -n +3
-	printf "\n"
-        confopts_ph.sh -p help -a Moonlight -o "${PH_OPTAR[$PH_OPT]}" | tail -n +3
+        confopts_ph.sh -p get -a Moonlight -o "${PH_OPTAR[$PH_OPT]}" | tail -n +4
+        confopts_ph.sh -p help -a Moonlight -o "${PH_OPTAR[$PH_OPT]}" | tail -n +4
         printf "%s\n" "- Prompting for requested change"
         while [[ $PH_ANSWER != @(y|n) ]]
         do
+                [[ "${PH_OPTAR[$PH_OPT]}" == "PH_MOON_SRV" && $PH_COUNT -eq 0 ]] && (printf "\n%8s%s\n" "" "INFO : - A value for PH_MOON_SRV is required for further configuration" ; \
+                                printf "%15s%s\n\n" "" "- An empty value for PH_MOON_SRV will end configuration but it can later be restarted using either 'confapps_ph.sh' or the PieHelper menu : ")
                 [[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
                 printf "%8s%s" "" "--> Do you want the change the value for ${PH_OPTAR[$PH_OPT]} (y/n) ? "
-                [[ "${PH_OPTAR[$PH_OPT]}" == "PH_MOON_SRV" ]] && (printf "\n\n%12s%s\n" "" "- A value for PH_MOON_SRV is required for further configuration" ; \
-                                printf "%12s%s" "" "- An empty value for PH_MOON_SRV will end configuration but it can later be restarted using either 'confapps_ph.sh' or the PieHelper menu : ")
                 read PH_ANSWER 2>/dev/null
                 if ! ph_screen_input $PH_ANSWER
                 then
@@ -65,7 +72,7 @@ do
                 fi
                 ((PH_COUNT++))
         done
-        [[ "${PH_OPTAR[$PH_OPT]}" == "PH_MOON_SRV" ]] && printf "\n%10s%s\n" "" "OK" || printf "%10s%s\n" "" "OK"
+        printf "%10s%s\n" "" "OK"
         if [[ "$PH_ANSWER" == "y" ]]
         then
                 false
@@ -73,25 +80,51 @@ do
                 do
                         [[ "$PH_ANSWER" != "y" ]] && printf "%s\n" "- Prompting for requested change"
                         PH_ANSWER=""
-                        while [[ "$PH_ANSWER" == "" ]]
-                        do
-                                printf "%8s%s" "" "--> Please enter the new value for ${PH_OPTAR[$PH_OPT]} : "
-                                read PH_ANSWER 2>/dev/null
-                                [[ "$PH_i" == "PH_MOON_GAME" ]] && break
-                        done
+                        printf "%8s%s" "" "--> Please enter the new value for ${PH_OPTAR[$PH_OPT]} : "
+                        read PH_ANSWER 2>/dev/null
                         printf "%10s%s\n" "" "OK"
-                        ph_set_option Moonlight -r "${PH_OPTAR[$PH_OPT]}"="$PH_ANSWER" && printf "%2s%s\n" "" "SUCCESS" || printf "%2s%s\n" "" "FAILED"
+                        if ph_set_option Moonlight -r "${PH_OPTAR[$PH_OPT]}"="$PH_ANSWER"
+			then
+				[[ "${PH_OPTAR[$PH_OPT]}" != "PH_MOON_SRV" ]] && printf "%2s%s\n\n" "" "SUCCESS" && PH_FLAG=1 && sleep 2 || \
+						PH_ANSWER="n"
+			else
+				printf "%2s%s\n\n" "" "FAILED"
+				printf "%s\n" "- Prompting for user preferred action"
+				printf "%8s%s\n\n" "" "--> Please select how to proceed"
+				printf "%12s%s\033[32m%s\033[0m%s\n" "" "1. " "'r'" " to retry"
+				printf "%12s%s\033[32m%s\033[0m%s\n" "" "2. " "'s'" " to skip to next option"
+				printf "%12s%s\033[32m%s\033[0m%s\n\n" "" "3. " "Any other key" " to quit"
+				printf "%8s%s\n" "" "Your choice ? "
+				read -s -n 1 PH_ANSWER 2>/dev/null
+				printf "\r"
+				case "$PH_ANSWER" in s|S)
+						printf "%10s%s\n" "" "OK"
+						printf "%2s%s\n\n" "" "FAILED : Skipped by user"
+						sleep 2
+						continue 2 ;;
+						     r|R)
+						printf "%10s%s\n" "" "OK"
+						PH_ANSWER="y"
+						false ;;
+						       *)
+						printf "%10s%s\n" "" "OK"
+						printf "%2s%s\n\n" "" "FAILED : Quit by user"
+						return 1 ;;
+				esac
+			fi
                 done
-        else
-                if [[ "${PH_OPTAR[$PH_OPT]}" == "PH_MOON_SRV" && -z "$PH_MOON_SRV" ]]
-                then
-                        unset PH_OPTAR
-			printf "\n"
-                        return 0
-                fi
         fi
+        if [[ "${PH_OPTAR[$PH_OPT]}" == "PH_MOON_SRV" && -z "$PH_MOON_SRV" ]]
+        then
+		printf "%2s%s\n\n" "" "ABORT : Empty value for PH_MOON_SRV"
+		sleep 2
+		unset PH_OPTAR
+		return 1
+	fi
+	[[ "$PH_ANSWER" == "n" && $PH_FLAG -eq 0 ]] && printf "%2s%s\n\n" "" "SUCCESS" && sleep 2
         PH_ANSWER=""
 done
+[[ -z "$PH_MOON_SRV" ]] && return 1
 PH_MOON_USER=`nawk '$1 ~ /^Moonlight$/ { print $2 ; exit 0 } { next }' $PH_CONF_DIR/installed_apps 2>/dev/null`
 printf "%s\n" "- Cleaning up Moonlight cache"
 $PH_SUDO rm -r "`getent passwd \"$PH_MOON_USER\" | cut -d':' -f6`/.cache" 2>/dev/null
@@ -426,7 +459,7 @@ typeset -i PH_OLDOPTIND=$OPTIND
 typeset -l PH_APPL=""
 
 ph_check_conf_files supp || (printf "%s\n" "- Checking for supported applications configuration file" ; \
-			printf "%2s%s\n" "" "FAILED" ; return 1) || return $?
+			printf "%2s%s\n\n" "" "FAILED" ; return 1) || return $?
 while getopts isna: PH_OPTION
 do
 	case $PH_OPTION in i)
@@ -454,7 +487,7 @@ then
 			printf "%2s%s\n\n" "" "FAILED : Application shortname \"$PH_APPL\" already in use" && \
 			return 1
 	done
-	printf "%2s%s\n" "" "SUCCESS"
+	printf "%2s%s\n\n" "" "SUCCESS"
 	return 0
 fi
 printf "%s\n" "- Determining state of $PH_APP"
@@ -469,16 +502,16 @@ fi
 if [[ -z "$PH_STATE" ]]
 then
 	printf "%2s%s\n" "" "FAILED : Application is neither integrated nor supported"
-	printf "%11s%s\n" "" "Both the PieHelper menu and the 'confsupp_ph.sh' tool can be used for adding out-of-scope applications"
+	printf "%11s%s\n\n" "" "Both the PieHelper menu and the 'confsupp_ph.sh' tool can be used for adding out-of-scope applications"
 	return 1
 fi
 if $PH_SCRIPTS_DIR/confapps_ph.sh -p list -l "$PH_FILE" | tail -n +2 | nawk '{ print $1 }' | grep ^"$PH_APP"$ >/dev/null
 then
-	printf "%2s%s\n" "" "SUCCESS : $PH_STATE"
+	printf "%2s%s\n\n" "" "SUCCESS : $PH_STATE"
 else
 	printf "%2s%s\n\n" "" "FAILED : $PH_STATE (Needed integrated) :"
 	printf "%11s%s\n" "" "- Application is either not yet installed or undiscovered"
-	printf "%11s%s\n" "" "- Both the PieHelper menu and the 'confapps_ph.sh' tool can be used for both operations"
+	printf "%11s%s\n\n" "" "- Both the PieHelper menu and the 'confapps_ph.sh' tool can be used for both operations"
 	return 1
 fi
 return 0
@@ -761,7 +794,7 @@ do
 	ph_screen_input $PH_ANSWER || return $?
 	((PH_COUNT++))
 done
-[[ "$PH_ANSWER" == "n" ]] && printf "%10s%s\n" "" "OK" && printf "%2s%s\n\n" "" "USER ABORTED" && return 1
+[[ "$PH_ANSWER" == "n" ]] && printf "%10s%s\n" "" "OK" && printf "%2s%s\n\n" "" "ABORT: At user request" && return 1
 printf "%10s%s\n" "" "OK" && printf "%2s%s\n" "" "SUCCESS"
 ph_check_conf_files supp || (printf "%s\n" "- Checking for supported applications configuration file" ; \
 			printf "%2s%s\n" "" "FAILED" ; return 1) || return $?
@@ -933,6 +966,7 @@ $PH_SUDO init 6
 function ph_set_option {
 
 typeset PH_OPTION=""
+typeset PH_ACL_USERS=""
 typeset PH_APP="$1"
 typeset PH_i=""
 typeset PH_j=""
@@ -953,6 +987,7 @@ typeset -i PH_RET_CODE=0
 typeset -i PH_OLDOPTIND=$OPTIND
 OPTIND=2
 
+PH_ACL_USERS=`getfacl $PH_SCRIPTS_DIR 2>/dev/null | nawk -F':' 'BEGIN { ORS = " " } $1 ~ /^user$/ && $2 !~ /^$/ { print $2 }'`
 [[ "$PH_APP" == "LoginScript" ]] && cp -p $PH_FILES_DIR/LoginScript.template $PH_CONF_DIR/LoginScript.conf
 ([[ -f $PH_CONF_DIR/$PH_APP.conf && $# -gt 1 ]] ; return $?) || ph_set_option PieHelper -h && while getopts o:r:h PH_OPTION 2>/dev/null
 do
@@ -982,7 +1017,7 @@ do
 	then
 		if ! grep ^"$PH_OPTARG_VAR" $PH_CONF_DIR/$PH_APP.conf >/dev/null
 		then
-			printf "%8s%s\n" "" "--> Setting read-only option $PH_OPTARG_VAR to value '$PH_OPTARG_VAL' in $PH_CONF_DIR/$PH_APP.conf"
+			printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Setting read-only option $PH_OPTARG_VAR to value " "'$PH_OPTARG_VAL'" " in $PH_CONF_DIR/$PH_APP.conf"
 			if [[ "$PH_MSG_TYPE" == "ERROR" ]]
 			then
 				((PH_RET_CODE++))
@@ -1018,7 +1053,7 @@ do
 		done
 		if [[ "$PH_OPTARG_VAL" == `echo $PH_CURVALUE` ]]
 		then
-			printf "%8s%s\n" "" "--> Setting read-write option $PH_OPTARG_VAR to value '$PH_OPTARG_VAL' in $PH_CONF_DIR/$PH_APP.conf"
+			printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Setting read-write option $PH_OPTARG_VAR to value " "'$PH_OPTARG_VAL'" " in $PH_CONF_DIR/$PH_APP.conf"
 			printf "%10s%s\n" "" "OK (Nothing to do)"
 			continue
 		fi
@@ -1068,7 +1103,7 @@ do
 				fi
 		fi
 	fi
-	printf "%8s%s\n" "" "--> Setting read-write option $PH_OPTARG_VAR to value '$PH_OPTARG_VAL' in $PH_CONF_DIR/$PH_APP.conf"
+	printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Setting read-write option $PH_OPTARG_VAR to value " "'$PH_OPTARG_VAL'" " in $PH_CONF_DIR/$PH_APP.conf"
 	PH_OPTARG_VAL="`ph_escape_paths $PH_OPTARG_VAL`"
 	if sed 's/^\('$PH_OPTARG_VAR'=\)\([^\t]*\)\(\t*#.*\)/\1'\'"$PH_OPTARG_VAL"\''\3/' $PH_CONF_DIR/$PH_APP.conf >/tmp/$PH_APP.conf_tmp 2>/dev/null
 	then
@@ -1076,7 +1111,7 @@ do
 		eval export $PH_OPTARG_VAR=\'$PH_OPTARG_VAL\'
 	else
 		PH_OPTARG_VAL="`ph_undo_escape_paths $PH_OPTARG_VAL`"
-		(printf "%10s%s%s\n" "" "$PH_MSG_TYPE" " : Could not set read-write option $PH_OPTARG_VAR to value '$PH_OPTARG_VAL' in $PH_CONF_DIR/$PH_APP.conf" ; \
+		(printf "%10s%s%s\033[32m%s\033[0m%s\n" "" "$PH_MSG_TYPE" " : Could not set read-write option $PH_OPTARG_VAR to value " "'$PH_OPTARG_VAL'" " in $PH_CONF_DIR/$PH_APP.conf" ; \
 		rm /tmp/$1.conf_tmp 2>/dev/null ; return 1)
 	fi
 	case $?_"$PH_OPTION" in !(0)_r)
@@ -1085,7 +1120,15 @@ do
 				!(0)_o)
 			continue ;;
 				0_[or])
-			printf "%10s%s\n" "" "OK" ; mv /tmp/$PH_APP.conf_tmp $PH_CONF_DIR/$PH_APP.conf
+			printf "%10s%s\n" "" "OK"
+			"$PH_SUDO" rm "$PH_CONF_DIR"/"$PH_APP".conf >/dev/null 2>&1
+			"$PH_SUDO" mv /tmp/"$PH_APP".conf_tmp "$PH_CONF_DIR"/"$PH_APP".conf >/dev/null 2>&1
+			"$PH_SUDO" chmod 664 "$PH_CONF_DIR"/"$PH_APP".conf >/dev/null 2>&1
+			"$PH_SUDO" chown "$PH_RUN_USER":`id -ng "$PH_RUN_USER"` "$PH_CONF_DIR"/"$PH_APP".conf >/dev/null 2>&1
+		        for PH_i in $PH_ACL_USERS
+       			do
+                		"$PH_SUDO" setfacl -R -m u:"$PH_i":rwx "$PH_CONF_DIR"/"$PH_APP".conf >/dev/null 2>&1
+        		done
 			if (([[ "$PH_OPTARG_VAR" == PH_"$PH_APPU"_NUM_CTRL ]]) && (echo $PH_CURVALUE_CMD_OPTS | grep ' /dev/input/eventPH_CTRL' >/dev/null))
 			then
 				PH_END=$PH_OPTARG_VAL
@@ -2319,7 +2362,7 @@ do
 	ph_screen_input $PH_ANSWER || return $?
 	((PH_COUNT++))
 done
-[[ "$PH_ANSWER" == "n" ]] && printf "%10s%s\n" "" "OK" && printf "%2s%s\n" "" "USER ABORTED" && return 1
+[[ "$PH_ANSWER" == "n" ]] && printf "%10s%s\n" "" "OK" && printf "%2s%s\n" "" "ABORT : At user request" && return 1
 printf "%10s%s\n" "" "OK" && printf "%2s%s\n" "" "SUCCESS"
 printf "%s\n" "- Checking prerequisites"
 if [[ "$PH_RUN_USER" != "root" ]]

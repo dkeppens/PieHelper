@@ -49,59 +49,54 @@ export PATH PH_USER PH_DEL_PIUSER PH_HOST PH_AUDIO PH_BOOTENV PH_LOCALE PH_TZONE
 
 function ph_present_list {
 
-typeset PH_i=""
+typeset -i PH_i=0
+typeset -i PH_ANSWER=0
 typeset -i PH_COUNT=0
-typeset -i PH_ANSWER=1
 typeset -n PH_DEFAULT="$1"
-PH_CHOICE=""
+PH_PARAM="$1"
 
-case $1 in PH_AUDIO)
+PH_CHOICE=""
+case $PH_PARAM in PH_AUDIO)
 	PH_LIST=(hdmi jack auto) ;;
-	   PH_TZONE)
+	          PH_TZONE)
 	PH_LIST=(`timedatectl list-timezones | nawk 'BEGIN { ORS = " " } { print }'`) ;;
-       PH_SSH_STATE)
+       	      PH_SSH_STATE)
 	PH_LIST=(allowed disallowed) ;;
-	  PH_SSH_KEY)
+	        PH_SSH_KEY)
 	PH_LIST=(`nawk -F':' 'BEGIN { ORS = " " } $7 !~ /\usr\/sbin\/nologin/ && $7 !~ /\/bin\/false/ && $7 !~ /\/bin\/sync/ && $1 !~ /^root$/ { print $1 }' /etc/passwd`) ;;
-      PH_DEL_PIUSER)
+      	     PH_DEL_PIUSER)
 	PH_LIST=(yes no) ;;
-	 PH_BOOTENV)
+	        PH_BOOTENV)
 	PH_LIST=(cli gui) ;;
-	  PH_LOCALE)
+	         PH_LOCALE)
 	PH_LIST=(`nawk 'BEGIN { ORS = " " } { print $1 }' /usr/share/i18n/SUPPORTED`) ;;
-	 PH_NETWAIT)
+	        PH_NETWAIT)
 	PH_LIST=(enabled disabled) ;;
-	 PH_VID_MEM)
+	        PH_VID_MEM)
 	PH_LIST=(16 32 64 128 256 512) ;;
-	    PH_KEYB)
+	           PH_KEYB)
 	PH_LIST=(`localectl list-x11-keymap-layouts | nawk 'BEGIN { ORS = " " } { print }'`) ;;
-	       *)
-	unset PH_LIST
+	                 *)
+	unset -n PH_DEFAULT
+	unset PH_LIST PH_PARAM
 	return 1 ;;
 esac
 printf "\n"
-while [[ $PH_ANSWER -lt 1 || $PH_ANSWER -gt $PH_COUNT ]]
+ph_getdef "$PH_PARAM" >/dev/null && PH_LIST+=( "Retain currently stored value ($PH_DEFAULT)" )
+while [[ $PH_ANSWER -lt 1 || $PH_ANSWER -gt ${#PH_LIST[@]} ]]
 do
-	[[ $PH_COUNT -eq 0 ]] && PH_COUNT=1
-	[[ $PH_ANSWER -lt 1 || $PH_ANSWER -gt $PH_COUNT ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response" || printf "\n"
-	PH_COUNT=1
-	for PH_i in ${PH_LIST[@]}
+	[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response" || printf "\n"
+	(for PH_i in ${!PH_LIST[@]}
 	do
-		printf "%14s%s\n" "" "$PH_COUNT. $PH_i"
-		PH_COUNT=$((PH_COUNT+1))
-	done
-	if ph_getdef "$1" >/dev/null 2>&1
-	then
-		printf "%14s%s\n" "" "$PH_COUNT. Retain currently stored value ($PH_DEFAULT)" && PH_LIST[$((PH_COUNT-1))]="$PH_DEFAULT"
-	else
-		PH_COUNT=$((PH_COUNT-1))
-	fi
+		printf "%14s%s\n" "" "$((PH_i+1)). ${PH_LIST[$PH_i]}"
+	done) | column
+	PH_COUNT=$((PH_COUNT+1))
 	printf "\n%8s%s" "" "Your choice ? "
 	read PH_ANSWER 2>/dev/null
 done
-PH_CHOICE="${PH_LIST[$((PH_ANSWER-1))]}"
+[[ $PH_ANSWER -eq ${#PH_LIST[@]} ]] && PH_CHOICE="$PH_DEFAULT" || PH_CHOICE="${PH_LIST[$((PH_ANSWER-1))]}"
 unset -n PH_DEFAULT
-unset PH_LIST
+unset PH_LIST PH_PARAM
 return 0
 }
 
@@ -113,7 +108,7 @@ typeset PH_VALUE=""
 printf "%8s%s\n" "" "--> Getting default value for parameter $PH_PARAM"
 if grep ^"$PH_PARAM=" "$PH_CUR_DIR/../files/OS.defaults" >/dev/null
 then
-	PH_VALUE="`nawk -F\' -v param=^\"$PH_PARAM=\"$ '$1 ~ param { print $2 ; exit 0 } { next }' $PH_CUR_DIR/../files/OS.defaults`"
+	PH_VALUE="`nawk -F\' -v param=^\"$PH_PARAM=\"$ '$1 ~ param { print $2 ; exit 0 } { next }' $PH_CUR_DIR/../files/OS.defaults 2>/dev/null`"
 	printf "%10s%s\n" "" "OK ($PH_VALUE)"
 else
 	printf "%10s%s\n" "" "ERROR : Could not retrieve $PH_PARAM default"
