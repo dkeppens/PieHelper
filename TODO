@@ -1,6 +1,9 @@
+* change SUCCESS location of all reminderlike displays and add color coding
+* check double newline after all SUCCESS and FAILED in functions and main.sh
+* test confapps -p rem and  - int for emulationstation
 * additional option for confopts_ph.sh to only act on $PH_OPT_TYPE variables
 * additional option for confopts_ph.sh to only act on variables with a value different from 'N/A' and ''
-* add red color coding for all FAILED/ERROR in main/functions and main/main.sh + add color coding wherever appropriate for all scripts and other code except for confopts_ph.sh
+* add red color coding for all FAILED/ERROR in main/functions and main/main.sh + add color coding wherever appropriate for all scripts and other code except for confopts_ph.sh and confapps_ph.sh
 * change no-root restriction in confoper_ph.sh user modify operations to no-system users
 * add skip option to all lists in confoper_ph.sh interactive modes
 * change 'prompt phase' of confoper_ph.sh -p savedef to 'parameter phase' for all modes

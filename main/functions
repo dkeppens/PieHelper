@@ -1277,17 +1277,13 @@ return 0
 function ph_show_emul_info {
 
 printf "%8s%s\n" "" "--> Displaying Emulationstation ROMS info"
+printf "\033[32m"
+printf "%12s%s\n\n" "" "Emulationstation ROMS can either :"
+printf "%14s%s\n" "" "- be copied locally under $PH_EMUL_SETUP_DIR/roms"
+printf "%14s%s\n" "" "- OR be provided over CIFS by setting the appropriate options for Emulationstation"
+printf "%16s%s\n" "" "using either 'confopts_ph.sh' or the PieHelper menu"
+printf "\033[0m"
 printf "%10s%s\n" "" "OK"
-printf "\n"
-ph_print_bannerline
-printf "\n"
-printf "%8s%s\n\n" "" "Emulationstation ROMS can either :"
-printf "%10s%s\n" "" "- be copied locally under $PH_EMUL_SETUP_DIR/roms"
-printf "%10s%s\n" "" "- OR be provided over CIFS by setting the appropriate options for Emulationstation"
-printf "%12s%s\n" "" "using either 'confopts_ph.sh' or the PieHelper menu"
-printf "\n"
-ph_print_bannerline
-printf "\n"
 return 0
 }
 
@@ -1307,7 +1303,7 @@ printf "%8s%s\n" "" "--> Checking for out-of-scope applications"
 [[ "$PH_APP" != @(Moonlight|Emulationstation|Bash|X11|Kodi) ]] && printf "%10s%s\n" "" "ERROR : Out-of-scope applications should be managed with confsupp_ph.sh" && \
 		printf "%2s%s\n\n" "" "FAILED" && return 1
 printf "%10s%s\n" "" "OK (No)"
-printf "%8s%s\n" "" "--> Checking for $PH_APP integration"
+printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Checking for " "$PH_APP" " integration"
 ph_check_app_name -i -a "$PH_APP" >/dev/null && printf "%10s%s\n" "" "Warning : $PH_APP already integrated" && \
 				printf "%2s%s\n\n" "" "SUCCESS" && return 0
 printf "%10s%s\n" "" "OK (Not integrated)"
@@ -1320,7 +1316,7 @@ then
 	then
 		printf "%10s%s\n" "" "Warning : X11 not found -> Installing"
 		printf "%2s%s\n" "" "SUCCESS"
-		ph_install_app X11 || (printf "%s\n" "- Integrating $PH_APP" ; \
+		ph_install_app X11 || (printf "%s\033[32m%s\033[0m\n" "- Integrating " "$PH_APP" ; \
 			printf "%2s%s\n\n" "" "FAILED" ; return 1) || return $?
 	else
 		printf "%10s%s\n" "" "OK (Found)"
@@ -1329,7 +1325,7 @@ else
 	printf "%10s%s\n" "" "OK (None)"
 fi
 printf "%2s%s\n" "" "SUCCESS"
-printf "%s\n" "- Integrating $PH_APP"
+printf "%s\033[32m%s\033[0m\n" "- Integrating " "$PH_APP"
 printf "%8s%s\n" "" "--> Checking for a package name"
 if [[ -n `eval echo \\$PH_"$PH_APPU"_PKG_NAME` ]]
 then
@@ -1340,7 +1336,7 @@ then
 		printf "%10s%s\n" "" "Warning : Could not locate or install `eval echo \\$PH_"$PH_APPU"_PKG_NAME` package"
 	else
 		printf "%10s%s\n" "" "OK"
-		printf "%2s%s\n" "" "SUCCESS"
+		printf "%2s%s\n\n" "" "SUCCESS"
 		ph_generate_installed_apps "$PH_APP"
 		eval ph_configure_"$PH_APPL"
 		return 0
@@ -1350,11 +1346,11 @@ else
 fi
 printf "%8s%s\n" "" "--> Attempting packageless integration"
 case $PH_APP in Moonlight)
-		printf "%10s%s\n" "" "OK ($PH_APP)"
+		printf "%10s%s\033[32m%s\033[0m%s\n" "" "OK (" "$PH_APP" ")"
 		cd >/dev/null
 		$PH_SUDO rm -r moonlight-embedded 2>/dev/null
 		rm /tmp/"$PH_APP".compile /tmp/"$PH_APP".generate 2>/dev/null
-		printf "%8s%s\n" "" "--> Downloading $PH_APP source"
+		printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Downloading " "$PH_APP" " source"
 		git clone https://github.com/irtimmer/moonlight-embedded.git >/dev/null 2>&1
 		[[ $? -eq 0 ]] && printf "%10s%s\n" "" "OK" || (printf "%10s%s\n" "" "ERROR : Could not download Moonlight source" ; \
 				printf "%2s%s\n\n" "" "FAILED" ; return 1) || return $?
@@ -1362,7 +1358,7 @@ case $PH_APP in Moonlight)
 		git submodule update --init >/dev/null 2>&1
 		mkdir build
 		cd build/
-		printf "%8s%s\n" "" "--> Attempting to generate build for $PH_APP source (This may take a while)"
+		printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Attempting to generate build for " "$PH_APP" " source (This may take a while)"
 		cmake ../ >/tmp/"$PH_APP".generate 2>&1
 		if [[ $? -ne 0 ]]
 		then
@@ -1370,16 +1366,16 @@ case $PH_APP in Moonlight)
 			printf "%8s%s\n" "" "--> Displaying build generation logfile (Press 'q' to quit)"
 			printf "%10s%s\n\n" "" "OK"
 			ph_print_bannerline
-			printf "\n"
+			printf "\n\033[32m"
 			less /tmp/"$PH_APP".generate
-			printf "\n"
+			printf "\033[0m\n"
 			ph_print_bannerline
 			printf "\n"
 			printf "%2s%s\n\n" "" "FAILED"
 			return 1
 		fi
 		printf "%10s%s\n" "" "OK (build location is $HOME/moonlight-embedded)"
-		printf "%8s%s\n" "" "--> Attempting to compile $PH_APP source (This may take a while)"
+		printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Attempting to compile " "$PH_APP" " source (This may take a while)"
 		make >/tmp/"$PH_APP".compile 2>&1
 		if [[ $? -ne 0 ]]
 		then
@@ -1387,9 +1383,9 @@ case $PH_APP in Moonlight)
 			printf "%8s%s\n" "" "--> Displaying compilation logfile (Press 'q' to quit)"
 			printf "%10s%s\n\n" "" "OK"
 			ph_print_bannerline
-			printf "\n"
+			printf "\n\033[32m"
 			less /tmp/"$PH_APP".compile
-			printf "\n"
+			printf "\033[0m\n"
 			ph_print_bannerline
 			printf "\n"
 			printf "%2s%s\n\n" "" "FAILED"
@@ -1399,14 +1395,15 @@ case $PH_APP in Moonlight)
 		rm /tmp/"$PH_APP".compile /tmp/"$PH_APP".generate 2>/dev/null
 		printf "%8s%s\n" "" "--> Copying files to final locations"
 		$PH_SUDO make install >/dev/null
-		printf "%10s%s\n" "" "OK" ;;
+		printf "%10s%s\n" "" "OK"
+		printf "%2s%s\n\n" "" "SUCCESS" ;;
 	 Emulationstation)
-		printf "%10s%s\n" "" "OK ($PH_APP)"
+		printf "%10s%s\033[32m%s\033[0m%s\n" "" "OK (" "$PH_APP" ")"
 		while true
 		do
 			[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid input characters detected"
-			printf "%8s%s\n\n" "" "--> Please specify a run account for $PH_APP"
-			printf "%12s%s\n" "" "- Press Enter for the default ($PH_RUN_USER)"
+			printf "%8s%s\033[32m%s\033[0m\n\n" "" "--> Please specify a run account for " "$PH_APP"
+			printf "%12s%s\033[32m%s\033[0m%s\n" "" "- Press Enter for the default (" "$PH_RUN_USER" ")"
 			printf "%12s%s" "" "- Specifying an unexisting account will force user creation : "
 			read PH_APP_USER 2>/dev/null
 			((PH_COUNT++))
@@ -1433,7 +1430,7 @@ case $PH_APP in Moonlight)
 				done
 				printf "\n%10s%s\n" "" "OK"
 			else
-				printf "\n%10s%s\n" "" "OK ($PH_APP_USER)"
+				printf "\n%10s%s\033[32m%s\033[0m%s\n" "" "OK (" "$PH_APP_USER" ")"
 			fi
 			break
 		done
@@ -1446,25 +1443,27 @@ case $PH_APP in Moonlight)
 		fi
 		cd `getent passwd "$PH_APP_USER" | cut -d':' -f6` >/dev/null
 		$PH_SUDO rm -r RetroPie-Setup 2>/dev/null
-		printf "%8s%s\n" "" "--> Downloading $PH_APP setup script"
+		printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Downloading " "$PH_APP" " setup script"
 		$PH_SUDO -E su "$PH_APP_USER" -c "git clone --depth=1 https://github.com/RetroPie/RetroPie-Setup.git" >/dev/null 2>&1
 		[[ $? -eq 0 ]] && printf "%10s%s\n" "" "OK" || (printf "%10s%s\n" "" "ERROR : Could not download $PH_APP setup script" ; \
 				printf "%2s%s\n\n" "" "FAILED" ; return 1) || return $?
 		cd `getent passwd "$PH_APP_USER" | cut -d':' -f6`/RetroPie-Setup
 		$PH_SUDO chmod +x retropie_setup.sh
-		printf "%8s%s\n\n" "" "--> Executing $PH_APP setup script"
+		printf "%8s%s\033[32m%s\033[0m%s\n\n" "" "--> Executing " "$PH_APP" " setup script"
+		printf "\033[32m"
 		printf "%12s%s\n" "" "- Use this setup script to do a basic install of $PH_APP"
 		printf "%14s%s\n" "" "Note that running basic install could take up to 30 minutes depending on your current system configuration"
 		printf "%12s%s\n" "" "- Settings for autostart configured with this script will be overridden by PieHelper"
 		printf "%12s%s\n\n" "" "- Exit the script normally after it finishes and PieHelper integration will resume"
 		printf "%12s%s" "" "Press Enter to continue"
+		printf "\033[0m"
 		read 2>/dev/null
 		printf "%10s%s\n" "" "OK"
 		printf "%2s%s\n" "" "SUCCESS"
 		clear
 		$PH_SUDO -E -u "$PH_APP_USER" sh -c "`which sudo` ./retropie_setup.sh"
-		printf "%s\n"  "- Resuming PieHelper integration for $PH_APP"
-		printf "%8s%s\n" "" "--> Attempting to determine $PH_APP base directory"
+		printf "%s\033[32m%s\033[0m\n"  "- Resuming PieHelper integration for " "$PH_APP"
+		printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Attempting to determine " "$PH_APP" " base directory"
 		if [[ -f /etc/profile.d/10-retropie.sh ]]
 		then
 			PH_EMUL_DIR_INIT=`nawk -F'"' '$1 ~ /bash/ { print $2 }' /etc/profile.d/10-retropie.sh 2>/dev/null`
@@ -1493,9 +1492,10 @@ case $PH_APP in Moonlight)
 		fi
 		! ph_set_option $PH_APP -r PH_EMUL_SETUP_DIR="$PH_EMUL_SETUP_DIR_INIT" && printf "%2s%s\n\n" "" "FAILED" && return 1
 		ph_show_emul_info
-		[[ -f /etc/profile.d/10-retropie.sh ]] && ph_move_emul_conf ;;
+		[[ -f /etc/profile.d/10-retropie.sh ]] && ph_move_emul_conf
+		printf "%2s%s\n\n" "" "SUCCESS" ;;
 			*)
-		printf "%10s%s\n" "" "ERROR : Could not integrate $PH_APP without a valid packagename"
+		printf "%10s%s\033[32m%s\033[0m%s\n" "" "ERROR : Could not integrate " "$PH_APP" " without a valid packagename"
 		printf "%18s%s\n" "" "Try manually setting PH_`echo $PH_APPU`_PKG_NAME to the correct value using 'confopts_ph.sh' or the PieHelper menu"
 		printf "%2s%s\n\n" "" "FAILED"
 		return 1 ;;
@@ -1504,18 +1504,14 @@ ph_generate_installed_apps "$PH_APP"
 if [[ "$PH_APP_USER" != "$PH_RUN_USER" ]]
 then
 	printf "%s\n" "- Displaying run account reminder"
-	printf "%2s%s\n" "" "SUCCESS"
-	printf "\n"
-	ph_print_bannerline
-	printf "\n"
-	printf "%10s%s\n\n" "" "- $PH_APP has been installed with a different run account than the default '$PH_RUN_USER'"
-	[[ "$PH_APP" == "Emulationstation" ]] && printf "%14s%s\n" "" "* Always use '$PH_SUDO' as the run account used for $PH_APP when running"
-	[[ "$PH_APP" == "Emulationstation" ]] && printf "%14s%s\n" "" "  Emulationstation tools to avoid breaking configurations"
-	printf "%14s%s\n" "" "* When using CIFS for $PH_APP, the run account for $PH_APP should have read-write permission on the share or"
-	printf "%14s%s\n" "" "  be used as the value for PH_`echo -n $PH_APPU`_CIFS_USER"
-	printf "\n"
-	ph_print_bannerline
-	printf "\n"
+	printf "\033[32m"
+	printf "%s\n" "- $PH_APP has been installed with a different run account than the default '$PH_RUN_USER'"
+	printf "%2s%s\n" "" "When using CIFS for $PH_APP, the run account for $PH_APP should have read-write permission on the share or"
+	printf "%2s%s\n" "" "be used as the value for PH_`echo -n $PH_APPU`_CIFS_USER"
+	[[ "$PH_APP" == "Emulationstation" ]] && printf "%s\n" "- Always use '$PH_SUDO' as the run account used for $PH_APP when running"
+	[[ "$PH_APP" == "Emulationstation" ]] && printf "%2s%s\n" "" "Emulationstation tools to avoid breaking configurations"
+	printf "\033[0m"
+	printf "%2s%s\n\n" "" "SUCCESS"
 fi
 eval ph_configure_"$PH_APPL"
 return 0
@@ -1542,22 +1538,25 @@ then
 	$PH_SCRIPTS_DIR/stop"$PH_APPL".sh
 fi
 printf "%s\n" "- Running some checks"
-printf "%8s%s\n" "" "--> Checking for Bash"
-[[ "$PH_APP" == "Bash" ]] && printf "%10s%s\n" "" "ERROR : Bash cannot be removed from PieHelper" && \
-		printf "%2s%s\n\n" "" "FAILED" && return 1
-printf "%10s%s\n" "" "OK (No)"
-printf "%8s%s\n" "" "--> Checking for out-of-scope applications"
-[[ "$PH_APP" != @(Moonlight|Emulationstation|X11|Kodi) ]] && printf "%10s%s\n" "" "ERROR : Out-of-scope applications should be managed with confsupp_ph.sh" && \
-		printf "%2s%s\n\n" "" "FAILED" && return 1
-printf "%10s%s\n" "" "OK (No)"
-printf "%8s%s\n" "" "--> Checking dependencies"
-if ([[ "$PH_APP" == "X11" ]] && ph_check_app_name -i -a Kodi >/dev/null ]])
+printf "%8s%s\n" "" "--> Checking if Bash"
+if [[ "$PH_APP" == "Bash" ]]
 then
-	printf "%10s%s\n" "" "ERROR : Could not remove X11 from PieHelper (Kodi is dependent)"
-	printf "%2s%s\n\n" "" "FAILED"
-	return 1
+	printf "%10s%s\n" "" "Warning : (Yes) -> Skipping package removal"
 else
-	printf "%10s%s\n" "" "OK (None)"
+	printf "%10s%s\n" "" "OK (No)"
+	printf "%8s%s\n" "" "--> Checking for out-of-scope applications"
+	[[ "$PH_APP" != @(Moonlight|Emulationstation|X11|Kodi) ]] && printf "%10s%s\n" "" "ERROR : Out-of-scope applications should be managed with confsupp_ph.sh" && \
+		printf "%2s%s\n\n" "" "FAILED" && return 1
+	printf "%10s%s\n" "" "OK (No)"
+	printf "%8s%s\n" "" "--> Checking dependencies"
+	if ([[ "$PH_APP" == "X11" ]] && ph_check_app_name -i -a Kodi >/dev/null ]])
+	then
+		printf "%10s%s\033[32m%s\033[0m%s\n" "" "ERROR : Could not remove " "X11" " from PieHelper (Kodi is dependent)"
+		printf "%2s%s\n\n" "" "FAILED"
+		return 1
+	else
+		printf "%10s%s\n" "" "OK (None)"
+	fi
 fi
 printf "%8s%s\n" "" "--> Checking if configured as the default application to start on system boot"
 if [[ "$PH_PIEH_STARTAPP" == "$PH_APP" ]]
@@ -1569,76 +1568,81 @@ else
 	printf "%10s%s\n" "" "OK (No)"
 	printf "%2s%s\n" "" "SUCCESS"
 fi
-printf "%s\n" "- Removing $PH_APP from PieHelper"
-printf "%8s%s\n" "" "--> Checking if installed as a package"
-if [[ `nawk -v app=^"$PH_APP"$ '$1 ~ app { print $3 }' $PH_CONF_DIR/installed_apps` == "yes" ]]
+printf "%s\033[32m%s\033[0m%s\n" "- Removing " "$PH_APP" " from PieHelper"
+if [[ "$PH_APP" != "Bash" ]]
 then
-	printf "%10s%s\n" "" "OK (Yes)"
-	printf "%8s%s\n" "" "--> Uninstalling `eval echo \\$PH_"$PH_APPU"_PKG_NAME` package (This may take a while)"
-	if ! ph_remove_pkg `eval echo \\$PH_"$PH_APPU"_PKG_NAME`
+	printf "%8s%s\n" "" "--> Checking if installed as a package"
+	if [[ `nawk -v app=^"$PH_APP"$ '$1 ~ app { print $3 }' $PH_CONF_DIR/installed_apps` == "yes" ]]
 	then
-		printf "%10s%s\n" "" "ERROR : Could not uninstall package `eval echo \\$PH_"$PH_APPU"_PKG_NAME`"
-		printf "%2s%s\n\n" "" "FAILED"
-		return 1
+		printf "%10s%s\n" "" "OK (Yes)"
+		printf "%8s%s\n" "" "--> Uninstalling `eval echo \\$PH_"$PH_APPU"_PKG_NAME` package (This may take a while)"
+		if ! ph_remove_pkg `eval echo \\$PH_"$PH_APPU"_PKG_NAME`
+		then
+			printf "%10s%s\n" "" "ERROR : Could not uninstall package `eval echo \\$PH_"$PH_APPU"_PKG_NAME`"
+			printf "%2s%s\n\n" "" "FAILED"
+			return 1
+		else
+			printf "%10s%s\n" "" "OK"
+			printf "%s\n" "- Cleaning up"
+		fi
 	else
-		printf "%10s%s\n" "" "OK"
-		printf "%s\n" "- Cleaning up"
+		printf "%10s%s\n" "" "OK (No)"
+		printf "%8s%s\n" "" "--> Attempting packageless removal"
+		case $PH_APP in Moonlight)
+			printf "%10s%s\033[32m%s\033[0m%s\n" "" "OK (" "$PH_APP" ")"
+			printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Checking for " "$PH_APP" " build repository at default location"
+			if [[ ! -d $HOME/moonlight-embedded ]]
+			then
+				printf "%10s%s\n" "" "Warning : Not found"
+				printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Trying to locate " "$PH_APP" " build repository"
+				PH_PATH=`$PH_SUDO find / -type d ! -fstype nfs -name moonlight-embedded 2>/dev/null`
+				[[ $? -ne 0 ]] && printf "%10s%s\n" "" "ERROR : Could not locate $PH_APP build repository" && return 1
+			else
+				printf "%10s%s\n" "" "OK (Found)"
+				PH_PATH="$HOME/moonlight-embedded"
+			fi
+			cd $PH_PATH/build
+			printf "%8s%s\n" "" "--> Removing files from final location"
+			cat install_manifest.txt | $PH_SUDO xargs rm >/dev/null 2>&1
+			printf "%10s%s\n" "" "OK"
+			cd $HOME
+			printf "%8s%s\n" "" "--> Removing build repository"
+			$PH_SUDO rm -r $PH_PATH 2>/dev/null
+			printf "%10s%s\n" "" "OK" ;;
+			 Emulationstation)
+			printf "%10s%s\033[32m%s\033[0m%s\n" "" "OK (" "$PH_APP" ")"
+			printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Checking for " "$PH_APP" " setup script at default location"
+			if [[ ! -f $PH_EMUL_SETUP_DIR-Setup/retropie_setup.sh ]]
+			then
+				printf "%10s%s\n" "" "Warning : Not found"
+				printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Trying to locate " "$PH_APP" " setup script"
+				PH_PATH=`$PH_SUDO find / -type f -perm -o=x ! -fstype nfs -name retropie_setup.sh 2>/dev/null`
+				[[ $? -ne 0 ]] && printf "%10s%s\n" "" "ERROR : Could not locate $PH_APP setup script" && return 1
+				printf "%10s%s\n" "" "OK (Found)"
+				PH_PATH=${PH_PATH%/*}
+			else
+				printf "%10s%s\n" "" "OK (Found)"
+				PH_PATH="$PH_EMUL_SETUP_DIR"-Setup
+			fi
+			ph_set_option $PH_APP -r PH_EMUL_DIR='' -r PH_EMUL_SETUP_DIR='' || (printf "%2s%s\n" "" "FAILED" ; return 1) || return $?
+			printf "%8s%s\033[32m%s\033[0m%s\n\n" "" "--> Executing " "$PH_APP" " setup script"
+			printf "\033[32m"
+			printf "%12s%s\n" "" "- Use this setup script to do an uninstall of $PH_APP"
+			printf "%12s%s\n\n" "" "- Exit the script normally after it finishes and removal from PieHelper will resume"
+			printf "%12s%s" "" "Press Enter to continue"
+			printf "\033[0m"
+			read 2>/dev/null
+			printf "%10s%s\n" "" "OK"
+			printf "%2s%s\n" "" "SUCCESS"
+			clear
+			$PH_SUDO $PH_PATH/retropie_setup.sh
+			printf "%s\n" "- Cleaning up"
+			$PH_SUDO rm -r $PH_PATH 2>/dev/null ;;
+		esac
 	fi
-else
-	printf "%10s%s\n" "" "OK (No)"
-	printf "%8s%s\n" "" "--> Attempting packageless removal"
-	case $PH_APP in Moonlight)
-		printf "%10s%s\n" "" "OK ($PH_APP)"
-		printf "%8s%s\n" "" "--> Checking for $PH_APP build repository at default location"
-		if [[ ! -d $HOME/moonlight-embedded ]]
-		then
-			printf "%10s%s\n" "" "Warning : Not found"
-			printf "%8s%s\n" "" "--> Trying to locate $PH_APP build repository"
-			PH_PATH=`$PH_SUDO find / -type d ! -fstype nfs -name moonlight-embedded 2>/dev/null`
-			[[ $? -ne 0 ]] && printf "%10s%s\n" "" "ERROR : Could not locate $PH_APP build repository" && return 1
-		else
-			printf "%10s%s\n" "" "OK (Found)"
-			PH_PATH="$HOME/moonlight-embedded"
-		fi
-		cd $PH_PATH/build
-		printf "%8s%s\n" "" "--> Removing files from final location"
-		cat install_manifest.txt | $PH_SUDO xargs rm >/dev/null 2>&1
-		printf "%10s%s\n" "" "OK"
-		cd $HOME
-		printf "%8s%s\n" "" "--> Removing build repository"
-		$PH_SUDO rm -r $PH_PATH 2>/dev/null
-		printf "%10s%s\n" "" "OK" ;;
-		 Emulationstation)
-		printf "%10s%s\n" "" "OK ($PH_APP)"
-		printf "%8s%s\n" "" "--> Checking for $PH_APP setup script at default location"
-		if [[ ! -f $PH_EMUL_SETUP_DIR-Setup/retropie_setup.sh ]]
-		then
-			printf "%10s%s\n" "" "Warning : Not found"
-			printf "%8s%s\n" "" "--> Trying to locate $PH_APP setup script"
-			PH_PATH=`$PH_SUDO find / -type f -perm -o=x ! -fstype nfs -name retropie_setup.sh 2>/dev/null`
-			[[ $? -ne 0 ]] && printf "%10s%s\n" "" "ERROR : Could not locate $PH_APP setup script" && return 1
-			printf "%10s%s\n" "" "OK (Found)"
-			PH_PATH=${PH_PATH%/*}
-		else
-			printf "%10s%s\n" "" "OK (Found)"
-			PH_PATH="$PH_EMUL_SETUP_DIR"-Setup
-		fi
-		ph_set_option $PH_APP -r PH_EMUL_DIR='' -r PH_EMUL_SETUP_DIR='' || (printf "%2s%s\n" "" "FAILED" ; return 1) || return $?
-		printf "%8s%s\n\n" "" "--> Executing $PH_APP setup script"
-		printf "%12s%s\n" "" "- Use this setup script to do an uninstall of $PH_APP"
-		printf "%12s%s\n\n" "" "- Exit the script normally after it finishes and removal from PieHelper will resume"
-		printf "%12s%s" "" "Press Enter to continue"
-		read 2>/dev/null
-		printf "%10s%s\n" "" "OK"
-		printf "%2s%s\n" "" "SUCCESS"
-		clear
-		$PH_SUDO $PH_PATH/retropie_setup.sh
-		printf "%s\n" "- Cleaning up"
-		$PH_SUDO rm -r $PH_PATH 2>/dev/null ;;
-	esac
 fi
 case $PH_APP in Kodi)
-	printf "%8s%s\n" "" "--> Removing Kodi preferences directory"
+	printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Removing " "Kodi" " preferences directory"
 	$PH_SUDO rm -r `eval echo ~$PH_APP_USER`/.kodi 2>/dev/null
 	printf "%10s%s\n" "" "OK" ;;
 	   Moonlight)
@@ -1648,7 +1652,7 @@ case $PH_APP in Kodi)
 	done ;;
 esac
 [[ $PH_APP_TTY -ne 0 ]] && ph_undo_setup_tty $PH_APP_TTY "$PH_APP"
-printf "%8s%s\n" "" "--> Removing $PH_APP as an integrated application"
+printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Removing " "$PH_APP" " as an integrated application"
 nawk -v app=^"$PH_APP"$ '$1 ~ app { next } { print }' $PH_CONF_DIR/installed_apps >/tmp/installed_apps_tmp 2>/dev/null
 [[ $? -eq 0 ]] && mv /tmp/installed_apps_tmp $PH_CONF_DIR/installed_apps
 printf "%10s%s\n" "" "OK"
@@ -1660,17 +1664,17 @@ then
 	if [[ "$PH_RUN_USER" != "$PH_APP_USER" ]]
 	then
 		ph_revoke_pieh_access "$PH_APP_USER"
-		printf "%8s%s\n\n" "" "--> Displaying reminder"
-		ph_print_bannerline
-		printf "%10s%s\n" "" "* No more PieHelper applications use run account $PH_APP_USER"
-		printf "%12s%s\n" "" "If no other applications use this account, it can be deleted manually by running '$PH_SUDO userdel -r $PH_APP_USER'"
-		ph_print_bannerline
-		printf "\n%10s%s\n" "" "OK"
+		printf "%8s%s\n" "" "--> Displaying reminder"
+		printf "\033[32m"
+		printf "%12s%s\n" "" "- No more PieHelper applications use run account $PH_APP_USER"
+		printf "%14s%s\n" "" "If no other applications use this account, it can be deleted manually by running '$PH_SUDO userdel -r $PH_APP_USER'"
+		printf "\033[0m"
+		printf "%10s%s\n" "" "OK"
 	fi
 fi
 if [[ "$PH_APP" == "Moonlight" ]]
 then
-	printf "%8s%s\n" "" "--> Removing Moonlight cache directory"
+	printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Removing " "Moonlight" " cache directory"
 	$PH_SUDO rm -r `getent passwd "$PH_APP_USER" | cut -d':' -f6`/.cache 2>/dev/null
 	printf "%10s%s\n" "" "OK"
 fi
@@ -1686,12 +1690,12 @@ typeset -u PH_APPU=`echo "${PH_APP_READ[$PH_i]}" | cut -c1-4`
 typeset -i PH_COUNT=0
 typeset -i PH_COUNT2=0
 
-printf "%8s%s\n" "" "--> Checking if ${PH_APP_READ[$PH_i]} is installed as a package"
+printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Checking if " "${PH_APP_READ[$PH_i]}" " is installed as a package"
 eval ph_get_pkg_inststate \$PH_"$PH_APPU"_PKG_NAME
 if [[ $? -eq 0 ]]
 then
 	printf "%10s%s\n" "" "OK (Found)"
-	printf "%8s%s\n" "" "--> Attempting to determine run account for ${PH_APP_READ[$PH_i]}"
+	printf "%8s%s\033[32m%s\033[0m\n" "" "--> Attempting to determine run account for " "${PH_APP_READ[$PH_i]}"
 	if [[ "$PH_APP" == "kodi-standalone" ]]
 	then 
 		PH_APP_USER=`systemctl show kodi 2>/dev/null | nawk -F'=' '$1 ~ /^User$/ { print $2 }'`
@@ -1710,8 +1714,8 @@ then
 	while true
 	do
 		[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid input characters detected"
-		printf "%8s%s\n\n" "" "--> Please specify a run account for ${PH_APP_READ[$PH_i]}"
-		printf "%12s%s\n" "" "- Press Enter for the default ($PH_RUN_USER)"
+		printf "%8s%s\033[32m%s\033[0m\n\n" "" "--> Please specify a run account for " "${PH_APP_READ[$PH_i]}"
+		printf "%12s%s\033[32m%s\033[0m%s\n" "" "- Press Enter for the default (" "$PH_RUN_USER" ")"
 		printf "%12s%s" "" "- Specifying an unexisting account will force user creation : "
 		read PH_APP_USER 2>/dev/null
 		((PH_COUNT++))
@@ -1738,7 +1742,7 @@ then
 			done
 			printf "\n%10s%s\n" "" "OK"
 		else
-			printf "\n%10s%s\n" "" "OK ($PH_APP_USER)"
+			printf "\n%10s%s\033[32m%s\033[0m%s\n" "" "OK (" "$PH_APP_USER" ")"
 		fi
 		break
 	done
@@ -1750,7 +1754,7 @@ then
 		ph_grant_pieh_access "$PH_APP_USER"
 	fi
 fi
-printf "%8s%s\n" "" "--> Adding ${PH_APP_READ[$PH_i]} to integrated applications configuration file"
+printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Adding " "${PH_APP_READ[$PH_i]}" " to integrated applications configuration file"
 echo -e "${PH_APP_READ[$PH_i]}\t$PH_APP_USER\t$PH_PACKAGED\t-" >>$PH_CONF_DIR/installed_apps
 if [[ "${PH_APP_GRAPH[$PH_i]}" == "yes" ]]
 then
