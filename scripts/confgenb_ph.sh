@@ -72,14 +72,14 @@ OPTARG="$PH_OLDOPTARG"
 
 if [[ $# -ne 0 ]]
 then
-	[[ -z "$PH_NEW_VERSION" ]] && printf "%s\n" "- Creating a new build archive for PieHelper" && printf "%2s%s\n" "" "ERROR : Version is required and unspecified" && exit 1
+	[[ -z "$PH_NEW_VERSION" ]] && printf "%s\n" "- Creating a new build archive for PieHelper" && printf "%2s\033[31m%s\033[0m%s\n" "" "ERROR" " : Version is required and unspecified" && exit 1
 	printf "%s\n" "- Creating a new build archive for PieHelper version $PH_NEW_VERSION"
-	[[ "$PH_GIT_UPDATE" == "no" && -n "$PH_GIT_COMMSG" ]] && printf "%2s%s\n" "" "ERROR : Commit message specified while not comitting" && exit 1
+	[[ "$PH_GIT_UPDATE" == "no" && -n "$PH_GIT_COMMSG" ]] && printf "%2s\033[31m%s\033[0m%s\n" "" "ERROR" " : Commit message specified while not comitting" && exit 1
 	for PH_i in `nawk 'BEGIN { ORS = " " } { print $1 }' $PH_CONF_DIR/installed_apps`
 	do
 		if mount | nawk '{ for (i=0;i<NF;i++) { if ($i == "type") { print $(i-1) }}}' | grep ^"${PH_SCRIPTS_DIR%/*}/mnt/$PH_i"$ >/dev/null 2>&1
 		then
-			printf "%2s%s\n" "" "FAILED : Active CIFS mount for $PH_i present on default mountpoint"
+			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Active CIFS mount for $PH_i present on default mountpoint"
 			exit 1
 		fi
 	done
@@ -91,15 +91,15 @@ then
 		then
 			printf "%10s%s\n" "" "OK"
 		else
-			printf "%10s%s\n" "" "ERROR : Issues encountered removing ACLs"
-			printf "%2s%s\n\n" "" "FAILED"
+			printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Issues encountered removing ACLs"
+			printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED"
 			exit 1
 		fi
 	done
-	ph_set_all_options_to_default || (printf "%2s%s\n\n" "" "FAILED" ; return 1) || exit $?
+	ph_set_all_options_to_default || (printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 1) || exit $?
 	printf "%8s%s\n" "" "--> Creating new first_run file in $PH_FILES_DIR"
-	touch $PH_FILES_DIR/first_run 2>/dev/null || (printf "%10s%s\n" "" "ERROR : Could not create new first_run file in $PH_FILES_DIR" ; \
-							ph_restore_options ; printf "%2s%s\n\n" "" "FAILED" ; exit 1) || exit $?
+	touch $PH_FILES_DIR/first_run 2>/dev/null || (printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not create new first_run file in $PH_FILES_DIR" ; \
+							ph_restore_options ; printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; exit 1) || exit $?
 	printf "%10s%s\n" "" "OK"
 	printf "%8s%s\n" "" "--> Updating version number to $PH_NEW_VERSION"
 	PH_OLD_VERSION="$PH_VERSION"
@@ -126,9 +126,9 @@ EOF
 	printf "%10s%s\n" "" "OK"
 	printf "%8s%s\n" "" "--> Removing installed applications configuration file"
 	mv $PH_CONF_DIR/installed_apps /tmp/installed_apps_tmp 2>/dev/null
-	[[ $? -eq 0 ]] && printf "%10s%s\n" "" "OK" || (printf "%10s%s\n" "" "ERROR : Could not remove installed applications configuration file" ; \
+	[[ $? -eq 0 ]] && printf "%10s%s\n" "" "OK" || (printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not remove installed applications configuration file" ; \
 							mv /tmp/supported_apps_tmp $PH_CONF_DIR/supported_apps ; mv /tmp/controller_cli_ids_tmp $PH_CONF_DIR/controller_cli_ids ; \
-							echo "$PH_OLD_VERSION" >$PH_CONF_DIR/VERSION ; rm $PH_FILES_DIR/first_run ; ph_restore_options ; printf "%2s%s\n\n" "" "FAILED" ; return 1) || \
+							echo "$PH_OLD_VERSION" >$PH_CONF_DIR/VERSION ; rm $PH_FILES_DIR/first_run ; ph_restore_options ; printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 1) || \
 							exit 1
 	printf "%8s%s\n" "" "--> Removing any old build archives"
 	rm $PH_BUILD_DIR/PieHelper-*.tar 2>/dev/null
@@ -151,7 +151,7 @@ EOF
 			then
 				printf "%10s%s\n" "" "OK"
 			else
-				printf "%10s%s\n" "" "ERROR : Issues encountered locally committing $PH_NEW_VERSION changes to git"
+				printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Issues encountered locally committing $PH_NEW_VERSION changes to git"
 				PH_RESULT="PARTIALLY FAILED"
 			fi
 			printf "%8s%s\n" "" "--> Tagging local git build as $PH_NEW_VERSION"
@@ -167,7 +167,7 @@ EOF
 			then
 				printf "%10s%s\n" "" "OK"
 			else
-				printf "%10s%s\n" "" "ERROR : Issues encountered committing all changes to remote github master repository"
+				printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Issues encountered committing all changes to remote github master repository"
 				PH_RESULT="PARTIALLY FAILED"
 			fi
 			cd - >/dev/null 2>&1
@@ -175,9 +175,9 @@ EOF
 	fi
 	printf "%8s%s\n" "" "--> Creating a new tarball archive for PieHelper \"$PH_NEW_VERSION\""
 	cd $PH_SCRIPTS_DIR/.. ; tar -X $PH_FILES_DIR/exclude -cvf $PH_BUILD_DIR/PieHelper-$PH_NEW_VERSION.tar ./* >/dev/null 2>&1 || \
-		(printf "%10s%s\n" "" "ERROR : Could not create a new tarball archive for PieHelper $PH_NEW_VERSION" ; mv /tmp/installed_apps_tmp $PH_CONF_DIR/installed_apps ; \
+		(printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not create a new tarball archive for PieHelper $PH_NEW_VERSION" ; mv /tmp/installed_apps_tmp $PH_CONF_DIR/installed_apps ; \
 		 mv /tmp/supported_apps_tmp $PH_CONF_DIR/supported_apps ; mv /tmp/controller_cli_ids_tmp $PH_CONF_DIR/controller_cli_ids ; \
-		 echo "$PH_OLD_VERSION" >$PH_CONF_DIR/VERSION ; rm $PH_FILES_DIR/first_run ; ph_restore_options ; printf "%2s%s\n\n" "" "FAILED" ; exit 1) || \
+		 echo "$PH_OLD_VERSION" >$PH_CONF_DIR/VERSION ; rm $PH_FILES_DIR/first_run ; ph_restore_options ; printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; exit 1) || \
 		 exit $?
 	printf "%10s%s\n" "" "OK"
 	printf "%8s%s\n" "" "--> Attempting to determine required remote mounts for PieHelper"
@@ -192,7 +192,7 @@ EOF
 			if [[ $? -ne 0 ]]
 			then
 				PH_RESULT="PARTIALLY FAILED"
-				printf "%10s%s\n" "" "ERROR : Issues encountered creating timestamped backup"
+				printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Issues encountered creating timestamped backup"
 			else
 				printf "%10s%s\n" "" "OK"
 			fi
@@ -226,11 +226,11 @@ EOF
 		then
 			printf "%10s%s\n" "" "OK"
 		else
-			printf "%10s%s\n" "" "ERROR : Issues encountered restoring ACLs"
+			printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Issues encountered restoring ACLs"
 			PH_RESULT="PARTIALLY FAILED"
 		fi
 	done
-	printf "%2s%s\n\n" "" "$PH_RESULT"
+	[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 	unset PH_REVERSE
 	exit 0
 else

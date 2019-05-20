@@ -49,7 +49,7 @@ do
 		if [[ "${OPTARG%%=*}" == "all" && $PH_ACTION == "set" ]]
 		then
 			printf "%s\n" "- Changing value for option ${OPTARG%%=*}"
-			printf "%2s%s\n\n" "" "FAILED : Unknown option"
+			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Unknown option"
 			unset PH_OPTAR PH_VALAR
 			OPTARG="$PH_OLDOPTARG"
 			OPTIND=$PH_OLDOPTIND
@@ -200,19 +200,19 @@ then
 		if (([[ "${PH_OPTAR[$PH_COUNT]}" == "all" && ${#PH_OPTAR[@]} -gt 1 ]]) && ([[ "$PH_ACTION" == "get" ]]))
 		then
 			printf "%s\n" "- Displaying value for $PH_USE_WORD ${PH_OPTAR[0]}"
-			printf "%2s%s\n\n" "" "FAILED : Unsupported use of the keyword \"all\""
+			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Unsupported use of the keyword \"all\""
 			exit 1
 		fi
 		if (([[ "${PH_OPTAR[$PH_COUNT]}" == "all" && ${#PH_OPTAR[@]} -gt 1 ]]) && ([[ "$PH_ACTION" == "help" ]]))
 		then
 			printf "%s\n" "- Displaying help for $PH_USE_WORD ${PH_OPTAR[0]}"
-			printf "%2s%s\n\n" "" "FAILED : Unsupported use of the keyword \"all\""
+			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Unsupported use of the keyword \"all\""
 			exit 1
 		fi
 		[[ "${PH_OPTAR[$PH_COUNT]}" == "PH_PIEH_DEBUG" && "$PH_ACTION" == "set" ]] && (printf "%s\n" "- Changing value for $PH_USE_WORD ${PH_OPTAR[$PH_COUNT]}" ; \
-				printf "%2s%s\n\n" "" "FAILED : Module debug should be handled by 'confpieh_ph.sh' or the PieHelper menu" ; return 0) && unset PH_OPTAR PH_VALAR && exit 1 
+				printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Module debug should be handled by 'confpieh_ph.sh' or the PieHelper menu" ; return 0) && unset PH_OPTAR PH_VALAR && exit 1 
 		[[ "${PH_OPTAR[$PH_COUNT]}" == "PH_PIEH_STARTAPP" && "$PH_ACTION" == "set" ]] && (printf "%s\n" "- Changing value for $PH_USE_WORD ${PH_OPTAR[$PH_COUNT]}" ; \
-				printf "%2s%s\n\n" "" "FAILED : The application to start by default on system boot should be handled by 'confapps_ph.sh -p start' or the PieHelper menu" ; return 0) && unset PH_OPTAR PH_VALAR && exit 1 
+				printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : The application to start by default on system boot should be handled by 'confapps_ph.sh -p start' or the PieHelper menu" ; return 0) && unset PH_OPTAR PH_VALAR && exit 1 
 		while ((! grep ^"${PH_OPTAR[$PH_COUNT]}=" $PH_CONF_DIR/$PH_APP.conf >/dev/null 2>&1) && ([[ "${PH_OPTAR[$PH_COUNT]}" != "all" && "$PH_ACTION" != @(prompt|list) ]]))
 		do
 			for PH_i in `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf`
@@ -226,7 +226,7 @@ then
 					  help)
 				printf "%s\n" "- Displaying help for $PH_USE_WORD ${PH_OPTAR[$PH_COUNT]}" ;;
 			esac
-			printf "%2s%s\n\n" "" "FAILED : Unknown $PH_USE_WORD"
+			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Unknown $PH_USE_WORD"
 			unset PH_OPTAR PH_VALAR
 			exit 1
 		done
@@ -262,8 +262,7 @@ case $PH_ACTION in get)
 					printf "%2s%s\n" "" "'$PH_OPTVAL'"
 				fi
 				printf "\033[0m"
-				printf "%2s%s\n" "" "$PH_RESULT"
-				printf "\n"
+				[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 				unset -n PH_OPTVAL) | more
 			fi
 		done
@@ -282,8 +281,7 @@ case $PH_ACTION in get)
 			done
 		fi
 		printf "\033[0m"
-		printf "%2s%s\n" "" "$PH_RESULT"
-		printf "\n"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 		printf "%s%s\n" "- Listing all available read-write $PH_USE_WORD" "s for $PH_APP"
 		printf "\033[32m"
 		for PH_OPT in `nawk -F'=' '$1 ~ /^PH_/ { print $1 ; next } { next }' $PH_CONF_DIR/$PH_APP.conf | paste -d" " -s`
@@ -291,7 +289,7 @@ case $PH_ACTION in get)
 			printf "%8s%s\n" "" "$PH_OPT"
 		done
 		printf "\033[0m"
-		printf "%2s%s\n\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 		unset PH_OPTAR PH_VALAR
 		exit 0 ;;
 		  help)
@@ -319,7 +317,7 @@ case $PH_ACTION in get)
 					nawk -F'#' -v opt=" typeset .* $PH_OPT=" '$1 ~ opt { print $2 ; getline ; while ($1!~/^PH_|^\[\[/ && $0!~/^$/) { print $2 ; getline } ; exit }' $PH_CONF_DIR/$PH_APP.conf
 				fi
 				printf "\033[0m"
-				printf "%2s%s\n\n" "" "$PH_RESULT") | more
+				[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT") | more
 			fi
 		done
 		unset PH_OPTAR PH_VALAR
@@ -338,13 +336,13 @@ case $PH_ACTION in get)
 				then
 					if mount | nawk '{ for (i=0;i<NF;i++) { if ($i == "type") { print $(i-1) }}}' | grep ^"${PH_SCRIPTS_DIR%/*}/mnt/$PH_j"$ >/dev/null 2>&1
 					then
-						printf "%2s%s\n" "" "FAILED : Cannot change value for ${PH_OPTAR[$PH_COUNT]} while CIFS mount is active on default mountpoint"
+						printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Cannot change value for ${PH_OPTAR[$PH_COUNT]} while CIFS mount is active on default mountpoint"
 						exit 1
 					fi
 				fi
 			fi
-			[[ "${PH_OPTAR[$PH_COUNT]}" == "PH_PIEH_DEBUG" ]] && printf "%2s%s\n\n" "" "FAILED : Module debug should be handled by confpieh_ph.sh" && unset PH_OPTAR PH_VALAR && exit 1 
-			[[ "${PH_OPTAR[$PH_COUNT]}" == "PH_PIEH_STARTAPP" ]] && printf "%2s%s\n\n" "" "FAILED : The application to start by default on system boot should be handled by confapps_ph.sh -p start" && \
+			[[ "${PH_OPTAR[$PH_COUNT]}" == "PH_PIEH_DEBUG" ]] && printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Module debug should be handled by confpieh_ph.sh" && unset PH_OPTAR PH_VALAR && exit 1 
+			[[ "${PH_OPTAR[$PH_COUNT]}" == "PH_PIEH_STARTAPP" ]] && printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : The application to start by default on system boot should be handled by confapps_ph.sh -p start" && \
 											unset PH_OPTAR PH_VALAR && exit 1 
 		done
 		eval ph_set_option "$PH_APP" `echo -n "$(for PH_COUNT in {0..\`echo -n $((${#PH_OPTAR[@]}-1))\`};do;eval echo -en -$PH_TYPE ${PH_OPTAR[$PH_COUNT]}='\"\\${PH_VALAR[$PH_COUNT]}\"'\" \";done)"`
@@ -353,7 +351,7 @@ case $PH_ACTION in get)
 		then
 			[[ $PH_RET_CODE -eq ${#PH_OPTAR[@]} ]] && PH_RESULT="FAILED" || PH_RESULT="PARTIALLY FAILED"
 		fi
-		printf "%2s%s\n\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 		unset PH_OPTAR PH_VALAR
 		exit $PH_RET_CODE ;;
 		  prompt)
@@ -365,7 +363,7 @@ case $PH_ACTION in get)
 							printf "%8s%s\n\n" "" "--> Which $PH_USE_WORD do you want to view the value of ?"
                 		while [[ $PH_ANSWER -eq 0 || $PH_ANSWER -gt $((PH_COUNT+1)) ]]
                 		do
-					[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+					[[ $PH_COUNT -gt 0 ]] && printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : Invalid response"
 					PH_COUNT=1
 					for PH_i in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | nawk -F'=' '{ print $1 }'`
 					do
@@ -414,7 +412,7 @@ case $PH_ACTION in get)
 							printf "%8s%s\n\n" "" "--> Which read-write $PH_USE_WORD do you want to change the value of ?"
                 		while [[ $PH_ANSWER -eq 0 || $PH_ANSWER -gt $((PH_COUNT+1)) ]]
                 		do
-					[[ $PH_COUNT -gt 0 ]] && printf "\n%70s%s\n\n" "" "ERROR : Invalid response"
+					[[ $PH_COUNT -gt 0 ]] && printf "\n%70s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : Invalid response"
 					PH_COUNT=0
 					for PH_i in `nawk -F'=' -v xcpt1=^"PH_PIEH_DEBUG"$ -v xcpt2=^"PH_PIEH_STARTAPP"$ ' \
 								$1 ~ /^PH_/ && $1 !~ xcpt1 && $1 !~ xcpt2 { print $1 } { next }' $PH_CONF_DIR/$PH_APP.conf`
@@ -480,7 +478,7 @@ case $PH_ACTION in get)
 							printf "%8s%s\n\n" "" "--> Which $PH_USE_WORD do you want to display help for ?"
                 		while [[ $PH_ANSWER -eq 0 || $PH_ANSWER -gt $((PH_COUNT+1)) ]]
                 		do
-					[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+					[[ $PH_COUNT -gt 0 ]] && printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : Invalid response"
 					PH_COUNT=1
 					PH_COUNT2=$PH_COUNT
 					if [[ "$PH_RESOLVE" == "yes" ]]

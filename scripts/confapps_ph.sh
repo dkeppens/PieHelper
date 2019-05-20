@@ -124,29 +124,36 @@ then
 	! ph_check_app_name -i -a "$PH_APP" && exit 1
 fi
 [[ "$PH_APP" == "PieHelper" && "$PH_ACTION" == "rem" ]] && printf "%s\n" "- Removing $PH_APP" && \
-			printf "%2s%s\n\n" "" "FAILED : $PH_APP should be removed with 'confpieh_ph.sh -s'" && \
+			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : $PH_APP should be removed with 'confpieh_ph.sh -s'" && \
 			exit 1
 [[ "$PH_APP" == "PieHelper" && "$PH_ACTION" == "conf" ]] && printf "%s\n" "- Configuring $PH_APP" && \
-			printf "%2s%s\n\n" "" "FAILED : $PH_APP should be configured with 'confpieh_ph.sh -c'" && \
+			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : $PH_APP should be configured with 'confpieh_ph.sh -c'" && \
 			exit 1
 [[ "$PH_APP" == "PieHelper" && "$PH_ACTION" == "int" ]] && printf "%s\n" "- Installing $PH_APP" && \
-			printf "%2s%s\n\n" "" "FAILED : $PH_APP is already integrated into PieHelper" && \
+			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : $PH_APP is already integrated into PieHelper" && \
 			exit 1
 case $PH_ACTION in list)
 	case $PH_LISTMODE in int)
 		printf "%s\n" "- Listing applications currently integrated with PieHelper"
+		printf "\033[32m"
 		nawk '{ printf "%8s%s\n", "", $1 }' "$PH_CONF_DIR/installed_apps"
+		printf "\033[0m"
 		printf "%2s%s\n\n" "" "SUCCESS" ;;
 			     supp)
 		printf "%s\n" "- Listing currently supported applications"
+		printf "\033[32m"
 		nawk '{ printf "%8s%s\n", "", $1 }' "$PH_CONF_DIR/supported_apps"
+		printf "\033[0m"
 		printf "%2s%s\n\n" "" "SUCCESS" ;;
 			    start)
 		printf "%s\n" "- Listing application currently configured to start by default on system boot"
+		printf "\033[32m"
 		printf "%8s%s\n" "" "$PH_PIEH_STARTAPP"
+		printf "\033[0m"
 		printf "%2s%s\n\n" "" "SUCCESS" ;;
 			      run)
 		printf "%s\n" "- Listing applications currently running"
+		printf "\033[32m"
 		for PH_APP in `nawk 'BEGIN { ORS = " " } { print $1 }' "$PH_CONF_DIR/installed_apps"`
 		do
 			PH_APP_TTY=`ph_get_tty_for_app "$PH_APP"`
@@ -172,7 +179,8 @@ case $PH_ACTION in list)
 				fi
 			fi
 		done
-		[[ $PH_COUNT -eq 0 ]] && printf "%8s%s\n" "" "\"none\""
+		[[ $PH_COUNT -eq 0 ]] && printf "%8s%s\n" "" "\"No applications running\""
+		printf "\033[0m"
 		PH_COUNT=0
 		printf "%2s%s\n\n" "" "SUCCESS" ;;
 		              all)
@@ -190,14 +198,16 @@ case $PH_ACTION in list)
 	if [[ "$PH_APP" != "all" ]]
 	then
 		! ph_check_app_name -i -a "$PH_APP" && exit 1
-		printf "%s\n" "- Displaying TTY currently allocated to $PH_APP"
+		printf "%s\033[32m%s\033[0m\n" "- Displaying TTY currently allocated to " "$PH_APP"
+		printf "\033[32m"
 		PH_APP_TTY=`nawk -v app=^"$PH_APP"$ '$1 ~ app { if ($4!~/^-$/) { print $4 } else { print 0 }}' $PH_CONF_DIR/installed_apps`
 		if [[ $PH_APP_TTY -ne 0 ]]
 		then
 			printf "%2s%s\n" "" "\"$PH_APP_TTY\""
 		else
-			printf "%2s%s\n" "" "\"none\""
+			printf "%2s%s\n" "" "\"No TTY allocated\""
 		fi
+		printf "\033[0m"
 		printf "%2s%s\n\n" "" "SUCCESS"
 	else
 		for PH_APP in `nawk 'BEGIN { ORS = " " } { print $1 }' $PH_CONF_DIR/installed_apps`
@@ -220,8 +230,8 @@ case $PH_ACTION in list)
 	PH_APP_TTY=`ph_get_tty_for_app $PH_APP`
 	if [[ $? -eq 0 || $PH_APP_TTY -eq 0 ]]
 	then
-		printf "%s\n" "- Executing TTY move for $PH_APP"
-		printf "%2s%s\n\n" "" "FAILED : No TTY currently allocated to $PH_APP"
+		printf "%s\033[32m%s\033[0m\n" "- Executing TTY move for " "$PH_APP"
+		printf "%2s\033[31m%s\033[0m%s\033[32m%s\033[0m\n\n" "" "FAILED" " : No TTY currently allocated to " "$PH_APP"
 		exit 1
 	fi
 	PH_APP_CMD=`nawk -v app=^"$PH_APP"$ 'BEGIN { ORS=" " } $1 ~ app { for (i=2;i<=NF;i++) { if (i==NF) { ORS="" ; print $i } else { print $i }}}' $PH_CONF_DIR/supported_apps`
@@ -232,19 +242,19 @@ case $PH_ACTION in list)
 	then
 		$PH_SCRIPTS_DIR/stop"$PH_APPL".sh || exit $?
 	fi
-	printf "%s\n" "- Executing TTY move for $PH_APP"
+	printf "%s\033[32m%s\033[0m\n" "- Executing TTY move for " "$PH_APP"
 	case $PH_APP_NEWTTY in +([[:digit:]]))
 		if [[ $PH_APP_NEWTTY -le 1 || $PH_APP_NEWTTY -gt $PH_PIEH_MAX_TTYS || `cut -f4 $PH_CONF_DIR/installed_apps | grep ^$PH_APP_NEWTTY$` ]]
 		then
-			printf "%2s%s\n\n" "" "FAILED : Invalid or allocated TTY given"
+			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Invalid or allocated TTY given"
 			exit 1
 		fi ;;
 			               prompt)
 		PH_APP_NEWTTY="0"
 		while [[ ($PH_APP_NEWTTY -le 1 || $PH_APP_NEWTTY -gt $PH_PIEH_MAX_TTYS || `cut -f4 $PH_CONF_DIR/installed_apps | grep ^$PH_APP_NEWTTY$`) ]]
 		do
-			[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid or allocated TTY given"
-			printf "%8s%s" "" "--> Please enter a new TTY for $PH_APP (Press Enter for the default of the first available TTY): "
+			[[ $PH_COUNT -gt 0 ]] && printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : Invalid or allocated TTY given"
+			printf "%8s%s\033[32m%s\033[0m%s" "" "--> Please enter a new TTY for " "$PH_APP" " (Press Enter for the default of the first available TTY): "
 			read PH_APP_NEWTTY 2>/dev/null
 			ph_screen_input $PH_APP_NEWTTY || exit $?
 			[[ "$PH_APP_NEWTTY" == "" ]] && break
@@ -254,11 +264,11 @@ case $PH_ACTION in list)
 		printf "%10s%s\n" "" "OK" ;;
 			       		    *)
                 PH_APP_NEWTTY=`ph_get_tty_for_app none`
-                printf "%8s%s\n" "" "--> Attempting to determine TTY for $PH_APP"
+                printf "%8s%s\033[32m%s\033[0m\n" "" "--> Attempting to determine TTY for " "$PH_APP"
                 if [[ $? -eq 1 && $PH_APP_NEWTTY -eq 0 ]]
                 then
-                        printf "%10s%s\n" "" "ERROR : All TTY's already allocated"
-                        printf "%2s%s\n\n" "" "FAILED"
+                        printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : All TTY's already allocated"
+                        printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED"
 			exit 1
 		else
                         printf "%10s%s\n" "" "OK"
@@ -267,11 +277,11 @@ case $PH_ACTION in list)
 	if [[ "$PH_APP_NEWTTY" == "" ]]
 	then
 		PH_APP_NEWTTY=`ph_get_tty_for_app none`
-                printf "%8s%s\n" "" "--> Attempting to determine TTY for $PH_APP"
+                printf "%8s%s\033[32m%s\033[0m\n" "" "--> Attempting to determine TTY for " "$PH_APP"
                 if [[ $? -eq 1 && $PH_APP_NEWTTY -eq 0 ]]
                 then
-                        printf "%10s%s\n" "" "ERROR : All TTY's already allocated"
-                        printf "%2s%s\n\n" "" "FAILED"
+                        printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : All TTY's already allocated"
+                        printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED"
 			exit 1
 		else
                         printf "%10s%s\n" "" "OK"

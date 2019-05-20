@@ -85,7 +85,7 @@ printf "\n"
 ph_getdef "$PH_PARAM" >/dev/null && PH_LIST+=( "Retain currently stored value ($PH_DEFAULT)" )
 while [[ $PH_ANSWER -lt 1 || $PH_ANSWER -gt ${#PH_LIST[@]} ]]
 do
-	[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response" || printf "\n"
+	[[ $PH_COUNT -gt 0 ]] && printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : Invalid response" || printf "\n"
 	(for PH_i in ${!PH_LIST[@]}
 	do
 		printf "%14s%s\n" "" "$((PH_i+1)). ${PH_LIST[$PH_i]}"
@@ -111,7 +111,7 @@ then
 	PH_VALUE="`nawk -F\' -v param=^\"$PH_PARAM=\"$ '$1 ~ param { print $2 ; exit 0 } { next }' $PH_CUR_DIR/../files/OS.defaults 2>/dev/null`"
 	printf "%10s%s\n" "" "OK ($PH_VALUE)"
 else
-	printf "%10s%s\n" "" "ERROR : Could not retrieve $PH_PARAM default"
+	printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not retrieve $PH_PARAM default"
 	return 1
 fi
 eval export "$PH_PARAM"="$PH_VALUE"
@@ -138,7 +138,7 @@ then
 	printf "%8s%s\n" "" "--> Removing existing stored default of parameter $PH_PARAM"
 	sed "/^$PH_PARAM=/d" "$PH_CUR_DIR/../files/OS.defaults" >/tmp/OS.defaults_tmp 2>&1
 	[[ $? -eq 0 ]] && (printf "%10s%s\n" "" "OK" ; mv /tmp/OS.defaults_tmp "$PH_CUR_DIR/../files/OS.defaults" ; return 0) || \
-				(printf "%10s%s\n" "" "ERROR : Could not remove existing default" ; return 1) || return $?
+				(printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not remove existing default" ; return 1) || return $?
 else
 	printf "%10s%s\n" "" "OK (Not Found)"
 fi
@@ -250,19 +250,19 @@ do
 		PH_VID_MEM="$OPTARG" ;;
 			   r)
 		[[ -n "$PH_RIGHTSCAN" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$OPTARG" != +([[:digit:]]) && "$OPTARG" != "def" ]] && printf "%s\n" "- Executing overscan function" && printf "%2s%s\n" "" "FAILED : Value for right overscan must be numeric or 'def'" && exit 1
+		[[ "$OPTARG" != +([[:digit:]]) && "$OPTARG" != "def" ]] && printf "%s\n" "- Executing overscan function" && printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Value for right overscan must be numeric or 'def'" && exit 1
 		PH_RIGHTSCAN="$OPTARG" ;;
 			   l)
 		[[ -n "$PH_LEFTSCAN" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$OPTARG" != +([[:digit:]]) && "$OPTARG" != "def" ]] && printf "%s\n" "- Executing overscan function" && printf "%2s%s\n" "" "FAILED : Value for left overscan must be numeric or 'def'" && exit 1
+		[[ "$OPTARG" != +([[:digit:]]) && "$OPTARG" != "def" ]] && printf "%s\n" "- Executing overscan function" && printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Value for left overscan must be numeric or 'def'" && exit 1
 		PH_LEFTSCAN="$OPTARG" ;;
 			   b)
 		[[ -n "$PH_BOTTOMSCAN" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$OPTARG" != +([[:digit:]]) && "$OPTARG" != "def" ]] && printf "%s\n" "- Executing overscan function" && printf "%2s%s\n" "" "FAILED : Value for bottom overscan must be numeric or 'def'" && exit 1
+		[[ "$OPTARG" != +([[:digit:]]) && "$OPTARG" != "def" ]] && printf "%s\n" "- Executing overscan function" && printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Value for bottom overscan must be numeric or 'def'" && exit 1
 		PH_BOTTOMSCAN="$OPTARG" ;;
 			   u)
 		[[ -n "$PH_UPPERSCAN" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$OPTARG" != +([[:digit:]]) && "$OPTARG" != "def" ]] && printf "%s\n" "- Executing overscan function" && printf "%2s%s\n" "" "FAILED : Value for upper overscan must be numeric or 'def'" && exit 1
+		[[ "$OPTARG" != +([[:digit:]]) && "$OPTARG" != "def" ]] && printf "%s\n" "- Executing overscan function" && printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Value for upper overscan must be numeric or 'def'" && exit 1
 		PH_UPPERSCAN="$OPTARG" ;;
 			   z)
 		[[ -n "$PH_TZONE" ]] && (! confoper_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
@@ -534,16 +534,16 @@ if [[ `cat /proc/$PPID/comm 2>/dev/null` != "confoper_ph.sh" ]]
 then
 	printf "%s\n" "- Checking prerequisites for system configuration"
 	printf "%8s%s\n" "" "--> Checking run account"
-	[[ `whoami` == "root" ]] && printf "%10s%s\n" "" "OK (root)" || (printf "%10s%s\n" "" "ERROR : confoper_ph.sh must be run as root" ; printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
-	printf "%2s%s\n" "" "SUCCESS"
+	[[ `whoami` == "root" ]] && printf "%10s%s\n" "" "OK (root)" || (printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : confoper_ph.sh must be run as root" ; printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; exit 1) || exit $?
+	printf "%2s%s\n\n" "" "SUCCESS"
 	printf "%s\n" "- Checking prerequisites for PieHelper"
 	printf "%8s%s\n" "" "--> Checking for presence of /proc filesystem"
 	if mount | grep ^"proc on /proc type proc" >/dev/null
 	then
         	printf "%10s%s\n" "" "OK (Found)"
 	else
-		printf "%10s%s\n" "" "ERROR : Not found"
-		printf "%2s%s\n" "" "FAILED"
+		printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Not found"
+		printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED"
 		exit 1
 	fi
 	for PH_i in sudo ksh "$PH_KEYB_PKG" alsa-utils tzdata
@@ -559,35 +559,35 @@ then
 			then
 				printf "%10s%s\n" "" "OK"
 			else
-				printf "%10s%s\n" "" "ERROR : Could not install $PH_i"
-				printf "%2s%s\n" "" "FAILED"
+				printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not install $PH_i"
+				printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED"
 				exit 1
 			fi
 		fi
 	done
 	printf "%8s%s\n" "" "--> Checking for systemd service management"
-	[[ -f `which systemctl 2>/dev/null` ]] && printf "%10s%s\n" "" "OK (Found)" || (printf "%10s%s\n" "" "ERROR : Not found" ; printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+	[[ -f `which systemctl 2>/dev/null` ]] && printf "%10s%s\n" "" "OK (Found)" || (printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Not found" ; printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; exit 1) || exit $?
 	printf "%8s%s\n" "" "--> Checking for package manager"
 	if [[ -f /usr/bin/pacman || -f /usr/bin/apt-get ]]
 	then
 		[[ -f /usr/bin/apt-get ]] && printf "%10s%s\n" "" "OK (apt-get)" || printf "%10s%s\n" "" "OK (pacman)"
 	else
-		printf "%10s%s\n" "" "ERROR : Not found"
-		printf "%2s%s\n" "" "FAILED"
+		printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Not found"
+		printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED"
 		exit 1
 	fi
-	printf "%2s%s\n" "" "SUCCESS"
+	printf "%2s%s\n\n" "" "SUCCESS"
 fi
 if [[ "$PH_SSH_KEY" == "root" ]]
 then
 	[[ $PH_INTERACTIVE -eq 0 ]] && printf "%s\n" "- Executing function $PH_ACTION (Normal mode)" || printf "%s\n" "- Executing function $PH_ACTION (Interactive mode)"
-	printf "%2s%s\n" "" "FAILED : Creating a public/private keypair for 'root' is not permitted"
+	printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Creating a public/private keypair for 'root' is not permitted"
 	exit 1
 fi
 if [[ "$PH_USER" == "root" ]]
 then
 	[[ $PH_INTERACTIVE -eq 0 ]] && printf "%s\n" "- Executing function $PH_ACTION (Normal mode)" || printf "%s\n" "- Executing function $PH_ACTION (Interactive mode)"
-	printf "%2s%s\n" "" "FAILED : Modifying the 'root' account is not permitted"
+	printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Modifying the 'root' account is not permitted"
 	exit 1
 fi
 if (([[ "$PH_ACTION" == @(locale|savedef) ]]) && ([[ "$PH_LOCALE" != "def" && -n "$PH_LOCALE" ]]))
@@ -597,7 +597,7 @@ then
 		if ! ph_check_locale_validity "$PH_LOCALE"
 		then
 			printf "%s\n" "- Executing function $PH_ACTION (Normal mode)"
-			printf "%2s%s\n" "" "FAILED : Not a system supported locale"
+			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Not a system supported locale"
 			exit 1
 		fi
 	fi
@@ -609,7 +609,7 @@ then
 		if ! ph_check_tzone_validity "$PH_TZONE"
 		then
 			printf "%s\n" "- Executing function $PH_ACTION (Normal mode)"
-			printf "%2s%s\n" "" "FAILED : Invalid timezone identifier specified"
+			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Invalid timezone identifier specified"
 			exit 1
 		fi
 	fi
@@ -621,7 +621,7 @@ then
 		if ! ph_check_keyb_layout_validity "$PH_KEYB"
 		then
 			printf "%s\n" "- Executing function $PH_ACTION (Normal mode)"
-			printf "%2s%s\n" "" "FAILED : Invalid keyboard layout specified"
+			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Invalid keyboard layout specified"
 			exit 1
 		fi
 	fi
@@ -633,7 +633,7 @@ then
 		if ! ph_check_user_validity "$PH_SSH_KEY"
 		then
 			printf "%s\n" "- Executing function $PH_ACTION for user $PH_SSH_KEY (Normal mode)"
-			printf "%2s%s\n" "" "FAILED : User does not exist"
+			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : User does not exist"
 			exit 1
 		fi
 	fi
@@ -643,7 +643,7 @@ then
 	if who -us 2>/dev/null | nawk '{ print $1 }' 2>/dev/null | grep ^"$PH_USER"$ >/dev/null 2>&1
 	then
 		[[ $PH_INTERACTIVE -eq 0 ]] && printf "%s\n" "- Executing function $PH_ACTION for user $PH_USER (Normal mode)" || printf "%s\n" "- Executing function $PH_ACTION for user $PH_USER (Interactive mode)"
-		printf "%2s%s\n" "" "FAILED : User is currently logged in"
+		printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : User is currently logged in"
 		exit 1
 	fi
 fi
@@ -652,7 +652,7 @@ then
 	if who -us 2>/dev/null | nawk '{ print $1 }' 2>/dev/null | grep ^"$PH_DEF_USER"$ >/dev/null 2>&1
 	then
 		[[ $PH_INTERACTIVE -eq 0 ]] && printf "%s\n" "- Executing function $PH_ACTION for user $PH_DEF_USER (Normal mode)" || printf "%s\n" "- Executing function $PH_ACTION for user $PH_DEF_USER (Interactive mode)"
-		printf "%2s%s\n" "" "FAILED : User is currently logged in"
+		printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : User is currently logged in"
 		exit 1
 	fi
 fi
@@ -721,9 +721,7 @@ case $PH_ACTION in all)
 		"$PH_CUR_DIR/confoper_ph.sh" -p del_stduser -d "$PH_DEL_PIUSER"
 		ph_set_result $? last
 	fi
-	printf "\n"
-	printf "%2s%s\n" "" "Total : $PH_RESULT"
-	printf "\n"
+	[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "Total : $PH_RESULT" || printf "%2s%s\033[31m%s\033[0m\n\n" "" "Total : " "$PH_RESULT"
 	"$PH_CUR_DIR/confoper_ph.sh" -p boot ;;
 	     all-usedef)
 	"$PH_CUR_DIR/confoper_ph.sh" -p keyb -k "def"
@@ -757,8 +755,7 @@ case $PH_ACTION in all)
 	"$PH_CUR_DIR/confoper_ph.sh" -p del_stduser -d "def"
 	ph_set_result $? last
 	printf "\n"
-	printf "%2s%s\n" "" "Total : $PH_RESULT"
-	printf "\n"
+	[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "Total : $PH_RESULT" || printf "%2s%s\033[31m%s\033[0m\n\n" "" "Total : " "$PH_RESULT"
 	"$PH_CUR_DIR/confoper_ph.sh" -p boot ;;
 		dispdef)
 	printf "%s\n" "- Executing function $PH_ACTION"
@@ -908,7 +905,7 @@ case $PH_ACTION in all)
 						then
 							if [[ "$PH_ANSWER" == @(root|def) ]]
 							then
-								printf "%10s%s\n" "" "ERROR : Cannot accept a default value of 'root' or 'def'"
+								printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Cannot accept a default value of 'root' or 'def'"
 								PH_RET_CODE=1
 								PH_FUNCTIONS=`echo -n "$PH_FUNCTIONS" | sed 's/ PH_USER / /g;s/^PH_USER //g;s/ PH_USER$//g;s/^PH_USER$//g'`
 								break
@@ -931,7 +928,7 @@ case $PH_ACTION in all)
 						then
 							if [[ "$PH_ANSWER" == "def" ]]
 							then
-								printf "%10s%s\n" "" "ERROR : Cannot accept a default value of 'def'"
+								printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Cannot accept a default value of 'def'"
 								PH_RET_CODE=1
 								PH_FUNCTIONS=`echo -n "$PH_FUNCTIONS" | sed 's/ PH_HOST / /g;s/^PH_HOST //g;s/ PH_HOST$//g;s/^PH_HOST$//g'`
 								break
@@ -983,7 +980,7 @@ case $PH_ACTION in all)
 						PH_NETWAIT="$PH_CHOICE" && printf "%10s%s\n" "" "OK" && PH_RET_CODE=0 && break ;;
 					esac
 					PH_ANSWER=""
-					printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
+					printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : $PH_MESSAGE"
 				done
 				if [[ $PH_COUNT -eq 1 ]]
 				then
@@ -1012,13 +1009,13 @@ case $PH_ACTION in all)
 				PH_COUNT=$((PH_COUNT+1))
 				if [[ "$PH_i" == @(PH_USER|PH_SSH_KEY) && `eval echo -n "\\$\$PH_i"` == @(root|def) ]]
 				then
-					printf "%10s%s\n" "" "ERROR : Cannot accept a default value of 'root' or 'def'"
+					printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Cannot accept a default value of 'root' or 'def'"
 					PH_RET_CODE=1
 					PH_FUNCTIONS=`echo -n "$PH_FUNCTIONS" | sed 's/ '$PH_i' / /g;s/^'$PH_i' //g;s/ '$PH_i'$//g;s/^'$PH_i'$//g'`
 				else
 					if [[ `eval echo -n "\\$\$PH_i"` == @(root|def) ]]
 					then
-						printf "%10s%s\n" "" "ERROR : Cannot accept a default value of 'def'"
+						printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Cannot accept a default value of 'def'"
 						PH_RET_CODE=1
 						PH_FUNCTIONS=`echo -n "$PH_FUNCTIONS" | sed 's/ '$PH_i' / /g;s/^'$PH_i' //g;s/ '$PH_i'$//g;s/^'$PH_i'$//g'`
 					else
@@ -1034,7 +1031,7 @@ case $PH_ACTION in all)
 			done
 		fi
 	fi
-	printf "%2s%s\n\n" "" "Prompting phase : $PH_RESULT"
+	[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "Prompting phase : $PH_RESULT" || printf "%2s%s\033[31m%s\033[0m\n\n" "" "Prompting phase : " "$PH_RESULT"
 	PH_OLD_RESULT="$PH_RESULT"
 	PH_RESULT="SUCCESS"
 	PH_COUNT=0
@@ -1074,7 +1071,7 @@ case $PH_ACTION in all)
 		fi
 	done
 	printf "%2s%s\n" "" "INFO : Your defaults are stored in ${PH_CUR_DIR%/*}/files/OS.defaults"
-	printf "%2s%s\n\n" "" "Storing phase : $PH_RESULT"
+	[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "Storing phase : $PH_RESULT" || printf "%2s%s\033[31m%s\033[0m\n\n" "" "Storing phase : " "$PH_RESULT"
 	case "$PH_RESULT"'_'"$PH_OLD_RESULT" in SUCCESS_SUCCESS)
 			PH_RESULT="SUCCESS" ;;
 			       		          FAILED_FAILED)
@@ -1082,7 +1079,7 @@ case $PH_ACTION in all)
 			        		              *)
 			PH_RESULT="PARTIALLY FAILED" ;;
 	esac
-	printf "%2s%s\n" "" "Total : $PH_RESULT"
+	[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "Total : $PH_RESULT" || printf "%2s%s\033[31m%s\033[0m\n\n" "" "Total : " "$PH_RESULT"
 	PH_COUNT2=0 && PH_COUNT=0
 	[[ "$PH_RESULT" != "SUCCESS" ]] && exit 1 || exit 0 ;;
 		      *)
@@ -1100,7 +1097,7 @@ case $PH_ACTION in all)
 			PH_COUNT=0
 			while [[ -z "$PH_ANSWER" ]]
 			do
-				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
+				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : $PH_MESSAGE"
 				PH_MESSAGE="Invalid response"
 				printf "%8s%s" "" "--> Please enter a non-root, non logged-in account to use for the 'create new user/modify existing user' operation (Use keyword 'def' to retrieve stored default) : "
 				read PH_ANSWER 2>/dev/null
@@ -1120,17 +1117,17 @@ case $PH_ACTION in all)
 								PH_USER="$PH_ANSWER"
 								break
 							else
-								printf "%10s%s\n" "" "ERROR (Yes)" && printf "%2s%s\n" "" "FAILED" && exit 1
+								printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" "(Yes)" && printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" && exit 1
 							fi
 						else
-							printf "%2s%s\n" "" "FAILED"
+							printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED"
 							exit 1
 						fi
 					else
 						if [[ "$PH_ANSWER" == "root" ]]
 						then
-							printf "%10s%s\n" "" "ERROR : Modifying the 'root' account is not permitted"
-							printf "%2s%s\n" "" "FAILED" && exit 1
+							printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Modifying the 'root' account is not permitted"
+							printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" && exit 1
 						else
 							if ((! who -us | nawk '{ print $1 }' | grep ^"$PH_ANSWER"$ >/dev/null) && ([[ -n "$PH_ANSWER" ]]))
 							then
@@ -1138,7 +1135,7 @@ case $PH_ACTION in all)
 								PH_USER="$PH_ANSWER"
 								break
 							else
-								[[ -n "$PH_ANSWER" ]] && printf "%10s%s\n" "" "ERROR : User is currently logged in" && printf "%2s%s\n" "" "FAILED" && exit 1
+								[[ -n "$PH_ANSWER" ]] && printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : User is currently logged in" && printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" && exit 1
 							fi
 						fi
 					fi
@@ -1151,7 +1148,7 @@ case $PH_ACTION in all)
 		else
 			if [[ "$PH_USER" == "def" ]]
 			then
-				ph_getdef PH_USER || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+				ph_getdef PH_USER || (printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; exit 1) || exit $?
 			fi
 		fi
 		printf "%8s%s\n" "" "--> Checking for group $PH_USER"
@@ -1163,8 +1160,8 @@ case $PH_ACTION in all)
 			then
 				printf "%10s%s\n" "" "OK"
 			else
-				printf "%10s%s\n" "" "ERROR : Could not create group"
-				printf "%2s%s\n" "" "FAILED"
+				printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not create group"
+				printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED"
 				exit 1
 			fi
 		else
@@ -1179,8 +1176,8 @@ case $PH_ACTION in all)
 			then
 				printf "%10s%s\n" "" "OK"
 			else
-				printf "%10s%s\n" "" "ERROR : Could not modify user"
-				printf "%2s%s\n" "" "FAILED"
+				printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not modify user"
+				printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED"
 				exit 1
 			fi
 		else
@@ -1191,7 +1188,7 @@ case $PH_ACTION in all)
 				printf "%10s%s\n" "" "OK"
 				while true
 				do
-					[[ $PH_COUNT2 -ne 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Could not set password"
+					[[ $PH_COUNT2 -ne 0 ]] && printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : Could not set password"
 					printf "%8s%s\n\n" "" "--> Please provide a password for $PH_USER"
 					passwd "$PH_USER"
 					[[ $? -eq 0 ]] && printf "\n%10s%s\n" "" "OK" && break
@@ -1199,8 +1196,8 @@ case $PH_ACTION in all)
 				done
 				PH_COUNT2=0
 			else
-				printf "%10s%s\n" "" "ERROR : Could not create user"
-				printf "%2s%s\n" "" "FAILED"
+				printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not create user"
+				printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED"
 				exit 1
 			fi
 		fi
@@ -1214,7 +1211,7 @@ case $PH_ACTION in all)
 			echo "$PH_USER ALL=(ALL) NOPASSWD:SETENV: ALL" >/tmp/010_"$PH_USER"-nopasswd_tmp
 			if ! mv /tmp/010_"$PH_USER"-nopasswd_tmp /etc/sudoers.d/010_"$PH_USER"-nopasswd 2>&1
 			then
-				printf "%10s%s\n" "" "ERROR : Could not create 'full root rights' sudo rules"
+				printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not create 'full root rights' sudo rules"
 				PH_RESULT="PARTIALLY FAILED"
 			else
 				chown root:root /etc/sudoers.d/010_"$PH_USER"-nopasswd 2>/dev/null
@@ -1222,12 +1219,12 @@ case $PH_ACTION in all)
 				printf "%10s%s\n" "" "OK"
 			fi
 		fi
-		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 		    del_stduser)
 		if ! ph_check_user_validity "$PH_DEF_USER"
 		then
-			printf "%2s%s\n" "" "SUCCESS : User does not exist"
+			printf "%2s%s\n\n" "" "SUCCESS : User does not exist"
 			exit 0
 		fi
 		if [[ $PH_INTERACTIVE -eq 1 ]]
@@ -1236,7 +1233,7 @@ case $PH_ACTION in all)
 		else
 			if [[ "$PH_DEL_PIUSER" == "def" ]]
 			then
-				ph_getdef PH_DEL_PIUSER || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+				ph_getdef PH_DEL_PIUSER || (printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; exit 1) || exit $?
 			fi
 		fi
 		if [[ "$PH_DEL_PIUSER" == "yes" ]]
@@ -1246,7 +1243,7 @@ case $PH_ACTION in all)
 			then
 				printf "%10s%s\n" "" "OK"
 			else
-				printf "%10s%s\n" "" "ERROR : Could not delete user '$PH_DEF_USER'"
+				printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not delete user '$PH_DEF_USER'"
 				PH_RESULT="PARTIALLY FAILED"
 			fi
 			if [[ -f /etc/sudoers.d/010_"$PH_DEF_USER"-nopasswd ]]
@@ -1264,7 +1261,7 @@ case $PH_ACTION in all)
 			printf "%8s%s\n" "" "--> Leaving user '$PH_DEF_USER' configured"
 			printf "%10s%s\n" "" "OK (Nothing to do)"
 		fi
-		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			 sshkey)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
@@ -1273,7 +1270,7 @@ case $PH_ACTION in all)
 		else
 			if [[ "$PH_SSH_KEY" == "def" ]]
 			then
-				ph_getdef PH_SSH_KEY || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+				ph_getdef PH_SSH_KEY || (printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; exit 1) || exit $?
 			fi
 		fi
 		PH_HOME=`nawk -F':' -v usr=^"$PH_SSH_KEY"$ '$1 ~ usr { print $6 }' /etc/passwd`
@@ -1293,13 +1290,13 @@ case $PH_ACTION in all)
 				chown -R "$PH_SSH_KEY":"$PH_SSH_KEY" "$PH_HOME" 2>/dev/null
 				printf "%10s%s\n" "" "OK"
 			else
-				printf "%10s%s\n" "" "ERROR : Could not create a keypair"
+				printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not create a keypair"
 				PH_RESULT="FAILED"
 			fi
 		else
 			printf "%10s%s\n" "" "OK (Nothing to do)"
 		fi
-		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			 locale)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
@@ -1308,7 +1305,7 @@ case $PH_ACTION in all)
 		else
 			if [[ "$PH_LOCALE" == "def" ]]
 			then
-				ph_getdef PH_LOCALE || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+				ph_getdef PH_LOCALE || (printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; exit 1) || exit $?
 			fi
 		fi
 		printf "%8s%s\n" "" "--> Checking currently configured system locale"
@@ -1333,7 +1330,7 @@ case $PH_ACTION in all)
 							mv /tmp/locale.gen_tmp /etc/locale.gen 2>/dev/null
 						else
 							rm /tmp/locale.gen_tmp 2>/dev/null
-							printf "%10s%s\n" "" "ERROR : Could not generate locale"
+							printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not generate locale"
 							PH_RESULT="FAILED"
 						fi
 					fi
@@ -1353,18 +1350,18 @@ case $PH_ACTION in all)
 						printf "%10s%s\n" "" "OK"
 						. /etc/default/locale
 					else
-						printf "%10s%s\n" "" "ERROR : Could not configure locale"
+						printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not configure locale"
 						PH_RESULT="PARTIALLY FAILED"
 					fi
 				else
-					printf "%10s%s\n" "" "ERROR : Could not generate locale"
+					printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not generate locale"
 					PH_RESULT="FAILED"
 				fi
 			fi
 		else
 			printf "%10s%s\n" "" "OK (Nothing to do)"
 		fi
-		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			   keyb)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
@@ -1373,7 +1370,7 @@ case $PH_ACTION in all)
 		else
 			if [[ "$PH_KEYB" == "def" ]]
 			then
-				ph_getdef PH_KEYB || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+				ph_getdef PH_KEYB || (printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; exit 1) || exit $?
 			fi
 		fi
 		printf "%8s%s\n" "" "--> Checking currently configured keyboard layout"
@@ -1388,7 +1385,7 @@ case $PH_ACTION in all)
 				then
 					if ! nawk -F'=' -v val="$PH_KEYB" '$1 ~ /KEYMAP/ { print $1 "=" val ; next } { print }' /etc/vconsole.conf >/tmp/vconsole.conf_tmp 2>/dev/null
 					then
-						printf "%10s%s\n" "" "ERROR : Could not configure keyboard"
+						printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not configure keyboard"
 						rm /tmp/vconsole.conf_tmp 2>/dev/null
 						localectl set-x11-keymap "$PH_VALUE" >/dev/null 2>&1
 					else
@@ -1399,7 +1396,7 @@ case $PH_ACTION in all)
 						then
 							while [[ "$PH_ANSWER" != @(y|n) ]]
 							do
-								[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+								[[ $PH_COUNT -gt 0 ]] && printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : Invalid response"
 								printf "%8s%s" "" "--> Reboot to activate keyboard settings (y/n) ? "
 								read PH_ANSWER 2>/dev/null
 								PH_COUNT=$((PH_COUNT+1))
@@ -1408,7 +1405,7 @@ case $PH_ACTION in all)
 						fi
 					fi
 				else
-					printf "%10s%s\n" "" "ERROR : Could not configure keyboard"
+					printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not configure keyboard"
 					PH_RESULT="FAILED"
 				fi
 			else
@@ -1433,19 +1430,19 @@ case $PH_ACTION in all)
 						setsid sh -c 'exec setupcon -k --force <> /dev/tty1 >&0 2>&1' >/dev/null 2>&1
 						udevadm trigger --subsystem-match=input --action=change >/dev/null 2>&1
 					else
-						printf "%10s%s\n" "" "ERROR : Could not configure keyboard"
+						printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not configure keyboard"
 						mv /tmp/default_keyboard_bck /etc/default/keyboard 2>/dev/null
 						PH_RESULT="FAILED"
 					fi
 				else
-					printf "%10s%s\n" "" "ERROR : Could not configure keyboard"
+					printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not configure keyboard"
 					PH_RESULT="FAILED"
 				fi
 			else
 				printf "%10s%s\n" "" "OK (Nothing to do)"
 			fi
 		fi
-		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 		[[ "$PH_ANSWER" == "y" ]] && init 6
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			  tzone)
@@ -1455,7 +1452,7 @@ case $PH_ACTION in all)
 		else
 			if [[ "$PH_TZONE" == "def" ]]
 			then
-				ph_getdef PH_TZONE || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+				ph_getdef PH_TZONE || (printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; exit 1) || exit $?
 			fi
 		fi
 		printf "%8s%s\n" "" "--> Checking currently configured system timezone"
@@ -1474,20 +1471,20 @@ case $PH_ACTION in all)
 			else
 				mv /tmp/timezone_bck /etc/timezone 2>/dev/null
 				mv /tmp/localtime_bck /etc/localtime 2>/dev/null
-				printf "%10s%s\n" "" "ERROR : Could not configure timezone"
+				printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not configure timezone"
 				PH_RESULT="FAILED"
 			fi
 		else
 			printf "%10s%s\n" "" "OK (Nothing to do)"
 		fi
-		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			   host)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
 		then
 			while [[ -z "$PH_ANSWER" ]]
 			do
-				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
+				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : $PH_MESSAGE"
 				printf "%8s%s" "" "--> Please enter a value to use for the 'configure system hostname' operation (Use keyword 'def' to retrieve stored default) : "
 				read PH_ANSWER 2>/dev/null
 				if ph_screen_input "$PH_ANSWER"
@@ -1497,7 +1494,7 @@ case $PH_ACTION in all)
 						printf "%10s%s\n" "" "OK -> Fetching default"
 						if ! ph_getdef PH_HOST
 						then
-							printf "%2s%s\n" "" "FAILED" && exit 1
+							printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" && exit 1
 						else
 							PH_ANSWER="$PH_HOST"
 							PH_HOST=""
@@ -1515,7 +1512,7 @@ case $PH_ACTION in all)
 		else
 			if [[ "$PH_HOST" == "def" ]]
 			then
-				ph_getdef PH_HOST || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+				ph_getdef PH_HOST || (printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; exit 1) || exit $?
 			fi
 		fi
 		printf "%8s%s\n" "" "--> Checking current hostname"
@@ -1531,24 +1528,24 @@ case $PH_ACTION in all)
 				if ! hostname "$PH_HOST" >/dev/null 2>&1
 				then
 					mv /tmp/hosts_bck /etc/hosts 2>/dev/null
-					printf "%10s%s\n" "" "ERROR : Could not set hostname"
+					printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not set hostname"
 					PH_RESULT="FAILED"
 				else
 					printf "%10s%s\n" "" "OK"
 					rm /tmp/hosts_bck 2>/dev/null
 				fi
 			else
-				printf "%10s%s\n" "" "ERROR : Could not set hostname"
+				printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not set hostname"
 				PH_RESULT="FAILED"
 			fi
 		else
 			printf "%10s%s\n" "" "OK (Nothing to do)"
 		fi
-		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 #			filesys)
 #		PH_RESULT="FAILED : Currently unimplemented"
-#		printf "%2s%s\n" "" "$PH_RESULT"
+#		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 #		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			  audio)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
@@ -1557,7 +1554,7 @@ case $PH_ACTION in all)
 		else
 			if [[ "$PH_AUDIO" == "def" ]]
 			then
-				ph_getdef PH_AUDIO || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+				ph_getdef PH_AUDIO || (printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; exit 1) || exit $?
 			fi
 		fi
 		printf "%8s%s\n" "" "--> Checking currently configured audio channel"
@@ -1584,13 +1581,13 @@ case $PH_ACTION in all)
 			then
 				printf "%10s%s\n" "" "OK"
 			else
-				printf "%10s%s\n" "" "ERROR : Could not configure audio channel"
+				printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not configure audio channel"
 				PH_RESULT="FAILED"
 			fi
 		else
 			printf "%10s%s\n" "" "OK (Nothing to do)"
 		fi
-		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 		       overscan)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
@@ -1601,7 +1598,7 @@ case $PH_ACTION in all)
 				PH_COUNT=0
 				while [[ -z "$PH_ANSWER" ]]
 				do
-					[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : $PH_MESSAGE"
+					[[ $PH_COUNT -gt 0 ]] && printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : $PH_MESSAGE"
 					case $PH_i in PH_BOTTOMSCAN)
 							printf "%8s%s" "" "--> Please enter the value to use for overscan bottom (must be numeric, 'def' or empty ('def' defaults to '30', empty is leave unchanged)) : " ;;
 						       PH_UPPERSCAN)
@@ -1659,7 +1656,7 @@ case $PH_ACTION in all)
 						printf "%10s%s\n" "" "OK"
 						mv /tmp/boot_config.txt_tmp /boot/config.txt
 					else
-						printf "%10s%s\n" "" "ERROR : Could not configure $PH_STRING"
+						printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not configure $PH_STRING"
 						PH_RETCODE=$((PH_RET_CODE+1))
 					fi
 				fi
@@ -1673,7 +1670,7 @@ case $PH_ACTION in all)
 		then
 			while [[ "$PH_ANSWER" != @(y|n) ]]
 			do
-				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : Invalid response"
 				printf "%8s%s" "" "--> Reboot now to activate the new values (y/n) ? "
 				read PH_ANSWER 2>/dev/null
 				PH_COUNT=$((PH_COUNT+1))
@@ -1682,9 +1679,9 @@ case $PH_ACTION in all)
 		fi
 		if [[ $PH_RET_CODE -eq 4 ]]
 		then
-			printf "%2s%s\n" "" "FAILED"
+			printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED"
 		else
-			[[ $PH_RET_CODE -eq 0 ]] && printf "%2s%s\n" "" "SUCCESS" || printf "%2s%s\n" "" "PARTIALLY FAILED"
+			[[ $PH_RET_CODE -eq 0 ]] && printf "%2s%s\n\n" "" "SUCCESS" || printf "%2s\033[31m%s\033[0m\n\n" "" "PARTIALLY FAILED"
 		fi
 		[[ "$PH_ANSWER" == "y" ]] && init 6
 		[[ $PH_RET_CODE -eq 0 ]] && exit 0 || exit 1 ;;
@@ -1695,7 +1692,7 @@ case $PH_ACTION in all)
 		else
 			if [[ "$PH_VID_MEM" == "def" ]]
 			then
-				ph_getdef PH_VID_MEM || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+				ph_getdef PH_VID_MEM || (printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; exit 1) || exit $?
 			fi
 		fi
 		printf "%8s%s\n" "" "--> Checking memory amount currently configured as being exclusively reserved for the GPU"
@@ -1712,7 +1709,7 @@ case $PH_ACTION in all)
 					printf "%10s%s\n" "" "OK"
 					mv /tmp/boot_config.txt_tmp /boot/config.txt
 				else
-					printf "%10s%s\n" "" "ERROR : Could not configure GPU memory reservation"
+					printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not configure GPU memory reservation"
 					PH_RESULT="FAILED"
 				fi
 			else
@@ -1723,7 +1720,7 @@ case $PH_ACTION in all)
 			then
 				while [[ "$PH_ANSWER" != @(y|n) ]]
 				do
-					[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+					[[ $PH_COUNT -gt 0 ]] && printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : Invalid response"
 					printf "%8s%s" "" "--> Reboot to activate the new values (y/n) ? "
 					read PH_ANSWER 2>/dev/null
 					PH_COUNT=$((PH_COUNT+1))
@@ -1733,7 +1730,7 @@ case $PH_ACTION in all)
 		else
 			printf "%10s%s\n" "" "OK (Nothing to do)"
 		fi
-		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 		[[ "$PH_ANSWER" == "y" ]] && init 6
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			    ssh)
@@ -1743,7 +1740,7 @@ case $PH_ACTION in all)
 		else
 			if [[ "$PH_SSH_STATE" == "def" ]]
 			then
-				ph_getdef PH_SSH_STATE || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+				ph_getdef PH_SSH_STATE || (printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; exit 1) || exit $?
 			fi
 		fi
 		if [[ "$PH_SSH_STATE" == "allowed" ]]
@@ -1757,7 +1754,7 @@ case $PH_ACTION in all)
 				printf "%8s%s\n" "" "--> Enabling SSH"
 				if ! systemctl enable ssh >/dev/null 2>&1
 				then
-					printf "%10s%s\n" "" "ERROR : Could not enable SSH"
+					printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not enable SSH"
 					PH_RESULT="PARTIALLY FAILED"
 				else
 					printf "%10s%s\n" "" "OK"
@@ -1772,7 +1769,7 @@ case $PH_ACTION in all)
 				printf "%8s%s\n" "" "--> Starting sshd"
 				if ! systemctl start ssh >/dev/null 2>&1
 				then
-					printf "%10s%s\n" "" "ERROR : Could not start sshd"
+					printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not start sshd"
 					[[ "$PH_RESULT" == "PARTIALLY FAILED" ]] && PH_RESULT="FAILED"
 					[[ "$PH_RESULT" == "SUCCESS" ]] && PH_RESULT="PARTIALLY FAILED"
 				else
@@ -1789,7 +1786,7 @@ case $PH_ACTION in all)
 				printf "%8s%s\n" "" "--> Disabling SSH"
 				if ! systemctl disable ssh >/dev/null 2>&1
 				then
-					printf "%10s%s\n" "" "ERROR : Could not disable SSH"
+					printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not disable SSH"
 					PH_RESULT="PARTIALLY FAILED"
 				else
 					printf "%10s%s\n" "" "OK"
@@ -1804,7 +1801,7 @@ case $PH_ACTION in all)
 				printf "%8s%s\n" "" "--> Stopping sshd"
 				if ! systemctl stop ssh >/dev/null 2>&1
 				then
-					printf "%10s%s\n" "" "ERROR : Could not stop sshd"
+					printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not stop sshd"
 					[[ "$PH_RESULT" == "PARTIALLY FAILED" ]] && PH_RESULT="FAILED"
 					[[ "$PH_RESULT" == "SUCCESS" ]] && PH_RESULT="PARTIALLY FAILED"
 				else
@@ -1812,7 +1809,7 @@ case $PH_ACTION in all)
 				fi
 			fi
 		fi
-		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			 update)
 		set -o pipefail
@@ -1824,13 +1821,19 @@ case $PH_ACTION in all)
 			printf "%s\n" "- Proposing recommended and possibly required (only in case of kernel and/or bootloader/firmware update) reboot" 
                         while [[ "$PH_ANSWER" != @(y|n) ]]
                         do
-                                [[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+                                [[ $PH_COUNT -gt 0 ]] && printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : Invalid response"
                                 printf "%8s%s" "" "--> Reboot system (y/n) ? "
                                 read PH_ANSWER 2>/dev/null
                                 PH_COUNT=$((PH_COUNT+1))
                         done
                         printf "%10s%s\n" "" "OK"
-			[[ "$PH_ANSWER" == "y" ]] && printf "%2s%s\n" "" "$PH_RESULT" && init 6
+			if [[ "$PH_ANSWER" == "y" ]]
+			then
+				[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
+				init 6
+			else
+				[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
+			fi
                 fi
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			netwait)
@@ -1840,7 +1843,7 @@ case $PH_ACTION in all)
 		else
 			if [[ "$PH_NETWAIT" == "def" ]]
 			then
-				ph_getdef PH_NETWAIT || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+				ph_getdef PH_NETWAIT || (printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; exit 1) || exit $?
 			fi
 		fi
 		printf "%8s%s\n" "" "--> Checking current configuration of 'wait for network on boot'"
@@ -1859,7 +1862,7 @@ ExecStart=/usr/lib/dhcpcd5/dhcpcd -q -w
 EOF
 				if [[ $? -ne 0 ]]
 				then
-					printf "%10s%s\n" "" "ERROR : Could not create configuration file"
+					printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not create configuration file"
 					PH_RESULT="FAILED" 
 				else
 					printf "%10s%s\n" "" "OK"
@@ -1869,7 +1872,7 @@ EOF
 				rm -f /etc/systemd/system/dhcpcd.service.d/wait.conf 2>/dev/null
 				if [[ $? -ne 0 ]]
 				then
-					printf "%10s%s\n" "" "ERROR : Could not remove configuration file"
+					printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not remove configuration file"
 					PH_RESULT="FAILED" 
 				else
 					printf "%10s%s\n" "" "OK"
@@ -1878,7 +1881,7 @@ EOF
 		else
 			printf "%10s%s\n" "" "OK (Nothing to do)"
 		fi
-		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			bootenv)
 		if [[ $PH_INTERACTIVE -eq 1 ]]
@@ -1887,14 +1890,14 @@ EOF
 		else
 			if [[ "$PH_BOOTENV" == "def" ]]
 			then
-				ph_getdef PH_BOOTENV || (printf "%2s%s\n" "" "FAILED" ; exit 1) || exit $?
+				ph_getdef PH_BOOTENV || (printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; exit 1) || exit $?
 			fi
 		fi
 		if ((grep "PH_RUNAPP_CMD='.*/PieHelper/scripts/startpieh.sh'" /etc/profile.d/PieHelper_tty* >/dev/null 2>&1) && ([[ "$PH_BOOTENV" == "gui" ]]))
 		then
 			printf "%8s%s\n" "" "--> Setting default boot environment to $PH_BOOTENV"
-			printf "%10s%s\n" "" "ERROR : PieHelper is configured and is not compatible with a graphical default boot environment"
-			printf "%2s%s\n" "" "FAILED"
+			printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : PieHelper is configured and is not compatible with a graphical default boot environment"
+			printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED"
 			exit 1
 		fi
 		printf "%8s%s\n" "" "--> Checking currently configured default boot environment"
@@ -1909,21 +1912,21 @@ EOF
 			then
 				printf "%10s%s\n" "" "OK"
 			else
-				printf "%10s%s\n" "" "ERROR : Could not configure default boot environment"
+				printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not configure default boot environment"
 				PH_RESULT="FAILED"
 			fi
 		else
 			printf "%10s%s\n" "" "OK (Nothing to do)"
 		fi
-		printf "%2s%s\n" "" "$PH_RESULT"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			   boot)
-		printf "%2s%s\n" "" "$PH_RESULT"
-		printf "\n"
+		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 		printf "%s" "Press Enter to reboot"
 		read 2>/dev/null
 		init 6 ;;
 	esac
 	[[ $PH_RET_CODE -ne 0 ]] && PH_RESULT="FAILED"
-	printf "%2s%s\n" "" "$PH_RESULT" && exit $PH_RET_CODE ;;
+	[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
+	exit $PH_RET_CODE ;;
 esac

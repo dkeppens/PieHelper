@@ -49,7 +49,7 @@ do
 	PH_FLAG=0
 	if [[ $PH_OPT -eq 0 ]]
 	then
-		printf "%s" "- Press Enter to start configuring $PH_APP"
+		printf "%s\033[32m%s\033[0m" "- Press Enter to start configuring " "$PH_APP"
 		read 2>/dev/null
 		sleep 1
 	fi
@@ -184,7 +184,7 @@ typeset PH_STATE=""
 [[ -f $PH_FILES_DIR/first_run ]] && PH_STATE="unconfigured" || \
                 PH_STATE="configured"
 printf "%s\n" "- Displaying PieHelper current version and configuration state"
-printf "%2s%s\n" "" "PieHelper $PH_VERSION is currently : \"$PH_STATE\""
+printf "%2s%s\033[32m%s\033[0m\n" "" "PieHelper $PH_VERSION is currently : " "\"$PH_STATE\""
 printf "%2s%s\n\n" "" "SUCCESS"
 return 0
 }
@@ -208,7 +208,7 @@ function ph_configure_emul {
 typeset -i PH_ALSA_CARD=0
 typeset -i PH_ALSA_DEVICE=0
 
-printf "%s\n" "- Configuring Emulationstation"
+printf "%s\033[32m%s\033[0m\n" "- Configuring " "Emulationstation"
 printf "%8s%s\n" "" "--> Configuring ALSA audio"
 PH_ALSA_CARD=`aplay -l | nawk 'BEGIN { ORS = "" } $0 ~ /HDMI/ { for (i=1;i<=NF;i++) { if ($i~/^card$/) { sub(/:/,"",$(i+1)) ; print $(i+1) }}}'`
 PH_ALSA_DEVICE=`aplay -l | nawk 'BEGIN { ORS = "" } $0 ~ /HDMI/ { for (i=1;i<=NF;i++) { if ($i~/^device$/) { sub(/:/,"",$(i+1)) ; print $(i+1) }}}'`
@@ -226,21 +226,21 @@ return 0
 
 function ph_configure_x11 {
 
-printf "%s\n" "- Configuring X11"
+printf "%s\033[32m%s\033[0m\n" "- Configuring " "X11"
 printf "%2s%s\n\n" "" "SUCCESS : Nothing to configure"
 return 0
 }
 
 function ph_configure_bash {
 
-printf "%s\n" "- Configuring Bash"
+printf "%s\033[32m%s\033[0m\n" "- Configuring " "Bash"
 printf "%2s%s\n\n" "" "SUCCESS : Nothing to configure"
 return 0
 }
 
 function ph_configure_kodi {
 
-printf "%s\n" "- Configuring Kodi"
+printf "%s\033[32m%s\033[0m\n" "- Configuring " "Kodi"
 printf "%2s%s\n\n" "" "SUCCESS : Nothing to configure"
 return 0
 }
@@ -345,21 +345,6 @@ then
 			cat "/tmp/xboxdrv"$PH_CTRL_CLI_ID".pid" >/dev/null 2>&1 && printf "%10s%s\n" "" "ERROR : Could not start xboxdrv instance" && >$PH_CONF_DIR/controller_cli_ids && return 1
 			echo $((PH_EVDEVS+`echo $((PH_CTRL_CLI_ID-1))`)) >>$PH_CONF_DIR/controller_cli_ids ;;
 ## correct button mappings for the three cases below
-				       PS4_@(usb|sonywadapt))
-			($PH_SUDO nice --adjustment="-9" `which xboxdrv` \
-				--evdev /dev/input/event$PH_CLI_ID \
-				--evdev-absmap ABS_X=x1,ABS_Y=y1 \
-				--evdev-absmap ABS_Z=x2,ABS_RZ=y2 \
-				--evdev-absmap ABS_RX=lt,ABS_RY=rt \
-				--evdev-absmap ABS_HAT0X=dpad_x,ABS_HAT0Y=dpad_y \
-				--evdev-keymap BTN_SELECT=tl,BTN_START=tr \
-				--evdev-keymap KEY_#308=lb,BTN_Z=rb \
-				--evdev-keymap KEY_#305=a,BTN_C=b,KEY_#304=x,KEY_#307=y \
-				--evdev-keymap BTN_TL2=back,BTN_MODE=guide,BTN_TR2=start \
-				--axismap -y1=y1,-y2=y2 \
-				--pid-file "/tmp/xboxdrv"$PH_CTRL_CLI_ID".pid" --silent --detach-kernel-driver --mimic-xpad &) >/dev/null 2>&1
-			cat "/tmp/xboxdrv"$PH_CTRL_CLI_ID".pid" >/dev/null 2>&1 && printf "%10s%s\n" "" "ERROR : Could not start xboxdrv instance" && >$PH_CONF_DIR/controller_cli_ids && return 1
-			echo $((PH_EVDEVS+`echo $((PH_CTRL_CLI_ID-1))`)) >>$PH_CONF_DIR/controller_cli_ids ;; 
 		   			   	 PS3_bluetooth)
 			($PH_SUDO nice --adjustment="-9" `which xboxdrv` \
 				--evdev /dev/input/event$PH_CLI_ID \
@@ -390,6 +375,21 @@ then
 				--pid-file "/tmp/xboxdrv"$PH_CTRL_CLI_ID".pid" --silent --detach-kernel-driver --mimic-xpad &) >/dev/null 2>&1
 			cat "/tmp/xboxdrv"$PH_CTRL_CLI_ID".pid" >/dev/null 2>&1 && printf "%10s%s\n" "" "ERROR : Could not start xboxdrv instance" && >$PH_CONF_DIR/controller_cli_ids && return 1
 			echo $((PH_EVDEVS+`echo $((PH_CTRL_CLI_ID-1))`)) >>$PH_CONF_DIR/controller_cli_ids ;;
+				         		     *)
+			($PH_SUDO nice --adjustment="-9" `which xboxdrv` \
+				--evdev /dev/input/event$PH_CLI_ID \
+				--evdev-absmap ABS_X=x1,ABS_Y=y1 \
+				--evdev-absmap ABS_Z=x2,ABS_RZ=y2 \
+				--evdev-absmap ABS_RX=lt,ABS_RY=rt \
+				--evdev-absmap ABS_HAT0X=dpad_x,ABS_HAT0Y=dpad_y \
+				--evdev-keymap BTN_SELECT=tl,BTN_START=tr \
+				--evdev-keymap KEY_#308=lb,BTN_Z=rb \
+				--evdev-keymap KEY_#305=a,BTN_C=b,KEY_#304=x,KEY_#307=y \
+				--evdev-keymap BTN_TL2=back,BTN_MODE=guide,BTN_TR2=start \
+				--axismap -y1=y1,-y2=y2 \
+				--pid-file "/tmp/xboxdrv"$PH_CTRL_CLI_ID".pid" --silent --detach-kernel-driver --mimic-xpad &) >/dev/null 2>&1
+			cat "/tmp/xboxdrv"$PH_CTRL_CLI_ID".pid" >/dev/null 2>&1 && printf "%10s%s\n" "" "ERROR : Could not start xboxdrv instance" && >$PH_CONF_DIR/controller_cli_ids && return 1
+			echo $((PH_EVDEVS+`echo $((PH_CTRL_CLI_ID-1))`)) >>$PH_CONF_DIR/controller_cli_ids ;; 
 		esac
 		unset -n PH_CLI_ID PH_CONN
 	done
@@ -491,11 +491,11 @@ then
 	return 0
 fi
 printf "%s\n" "- Determining state of $PH_APP"
-if $PH_SCRIPTS_DIR/confapps_ph.sh -p list -l supp | tail -n +2 | nawk '{ print $1 }' | grep ^"$PH_APP"$ >/dev/null
+if "$PH_SCRIPTS_DIR"/confapps_ph.sh -p list -l supp | tail -n +2 | tac | tail -n +3 | grep ^".*$PH_APP"$ >/dev/null
 then
 	PH_STATE="supported"
 fi
-if $PH_SCRIPTS_DIR/confapps_ph.sh -p list -l int | tail -n +2 | nawk '{ print $1 }' | grep ^"$PH_APP"$ >/dev/null
+if "$PH_SCRIPTS_DIR"/confapps_ph.sh -p list -l int | tail -n +2 | tac | tail -n +3 | grep ^".*$PH_APP"$ >/dev/null
 then
 	PH_STATE="integrated"
 fi
@@ -505,7 +505,7 @@ then
 	printf "%11s%s\n\n" "" "Both the PieHelper menu and the 'confsupp_ph.sh' tool can be used for adding out-of-scope applications"
 	return 1
 fi
-if $PH_SCRIPTS_DIR/confapps_ph.sh -p list -l "$PH_FILE" | tail -n +2 | nawk '{ print $1 }' | grep ^"$PH_APP"$ >/dev/null
+if $PH_SCRIPTS_DIR/confapps_ph.sh -p list -l "$PH_FILE" | tail -n +2 | tac | tail -n +3 | grep ^".*$PH_APP"$ >/dev/null
 then
 	printf "%2s%s\n\n" "" "SUCCESS : $PH_STATE"
 else
@@ -1121,14 +1121,17 @@ do
 			continue ;;
 				0_[or])
 			printf "%10s%s\n" "" "OK"
-			"$PH_SUDO" rm "$PH_CONF_DIR"/"$PH_APP".conf >/dev/null 2>&1
+			[[ "$PH_APP" != "LoginScript" ]] && "$PH_SUDO" rm "$PH_CONF_DIR"/"$PH_APP".conf >/dev/null 2>&1
 			"$PH_SUDO" mv /tmp/"$PH_APP".conf_tmp "$PH_CONF_DIR"/"$PH_APP".conf >/dev/null 2>&1
-			"$PH_SUDO" chmod 664 "$PH_CONF_DIR"/"$PH_APP".conf >/dev/null 2>&1
-			"$PH_SUDO" chown "$PH_RUN_USER":`id -ng "$PH_RUN_USER"` "$PH_CONF_DIR"/"$PH_APP".conf >/dev/null 2>&1
-		        for PH_i in $PH_ACL_USERS
-       			do
-                		"$PH_SUDO" setfacl -R -m u:"$PH_i":rwx "$PH_CONF_DIR"/"$PH_APP".conf >/dev/null 2>&1
-        		done
+			if [[ "$PH_APP" != "LoginScript" ]]
+			then
+				"$PH_SUDO" chmod 664 "$PH_CONF_DIR"/"$PH_APP".conf >/dev/null 2>&1
+				"$PH_SUDO" chown "$PH_RUN_USER":`id -ng "$PH_RUN_USER"` "$PH_CONF_DIR"/"$PH_APP".conf >/dev/null 2>&1
+		        	for PH_i in $PH_ACL_USERS
+       				do
+                			"$PH_SUDO" setfacl -R -m u:"$PH_i":rwx "$PH_CONF_DIR"/"$PH_APP".conf >/dev/null 2>&1
+        			done
+			fi
 			if (([[ "$PH_OPTARG_VAR" == PH_"$PH_APPU"_NUM_CTRL ]]) && (echo $PH_CURVALUE_CMD_OPTS | grep ' /dev/input/eventPH_CTRL' >/dev/null))
 			then
 				PH_END=$PH_OPTARG_VAL
@@ -1829,7 +1832,7 @@ do
 	PH_COUNT=0
 	PH_APP=`echo ${PH_PATH_READ[$PH_i]} | nawk -F'/' '{ print $NF ; exit }'`
 	PH_APP_CMD=`nawk -v app=^"${PH_APP_READ[$PH_i]}"$ 'BEGIN { ORS=" " } $1 ~ app { for (i=2;i<=NF;i++) { if (i==NF) { ORS="" ; print $i } else { print $i }}}' $PH_CONF_DIR/supported_apps`
-	printf "%8s%s\n" "" "--> Attempting to find executable $PH_APP at default location"
+	printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Attempting to find executable " "$PH_APP" " at default location"
 	`cut -f1 $PH_CONF_DIR/installed_apps | grep ^"${PH_APP_READ[$PH_i]}"$ >/dev/null 2>&1` && \
 			printf "%10s%s\n" "" "Warning : ${PH_APP_READ[$PH_i]} already integrated -> Skipping" && continue
 	while [[ $PH_ANSWER -eq 0 || $PH_ANSWER -ge 4 ]]
@@ -1955,9 +1958,7 @@ printf "%8s%s\n" "" "--> Removing login script PieHelper_tty$PH_RUNAPP_TTY.sh"
 $PH_SUDO rm /etc/profile.d/PieHelper_tty$PH_RUNAPP_TTY.sh 2>/dev/null
 printf "%10s%s\n" "" "OK"
 printf "%8s%s\n" "" "--> Removing TTY info from integrated applications configuration file"
-#nawk -v runapp=^"$PH_RUNAPP"$ -v runapptty=$PH_RUNAPP_TTY '$1 ~ runapp { print $1 "\t" $2 "\t" $3 "\t" "-" ; next } \
-#								{ print }' $PH_CONF_DIR/installed_apps >/tmp/installed_apps 2>/dev/null
-nawk -v runapp=^"$PH_RUNAPP"$ -v runapptty=$PH_RUNAPP_TTY '$1 ~ runapp { next } \
+nawk -v runapp=^"$PH_RUNAPP"$ -v runapptty=$PH_RUNAPP_TTY '$1 ~ runapp { print $1 "\t" $2 "\t" $3 "\t" "-" ; next } \
 								{ print }' $PH_CONF_DIR/installed_apps >/tmp/installed_apps 2>/dev/null
 [[ $? -eq 0 ]] && mv /tmp/installed_apps $PH_CONF_DIR/installed_apps
 printf "%10s%s\n" "" "OK"
@@ -2021,14 +2022,14 @@ typeset -i PH_COUNT=0
 
 printf "%s\n" "- Setting the application to start by default on system boot"
 printf "%8s%s\n" "" "--> Fetching currently configured application to start by default on system boot"
-printf "%10s%s\n" "" "OK ($PH_PIEH_STARTAPP)"
+printf "%10s%s\033[32m%s\033[0m%s\n" "" "OK (" "$PH_PIEH_STARTAPP" ")"
 if [[ $# -ne 0 ]]
 then
 	PH_STARTAPP="$1"
 	printf "%8s%s\n" "" "--> Comparing old and new values"
-	[[ "$PH_PIEH_STARTAPP" == "$PH_STARTAPP" ]] && printf "%10s%s\n" "" "Warning : Nothing to do (Both $PH_PIEH_STARTAPP)" && \
+	[[ "$PH_PIEH_STARTAPP" == "$PH_STARTAPP" ]] && printf "%10s%s\033[32m%s\033[0m%s\n" "" "Warning : Nothing to do (Both " "$PH_PIEH_STARTAPP" ")" && \
 				printf "%2s%s\n" "" "SUCCESS" && return 0
-	printf "%10s%s\n" "" "OK ($PH_STARTAPP)"
+	printf "%10s%s\033[32m%s\033[0m%s\n" "" "OK (" "$PH_STARTAPP" ")"
 	if [[ "$PH_STARTAPP" == "none" ]]
 	then
 		ph_undo_app_for_start && (printf "%2s%s\n" "" "SUCCESS" ; return 0) && return $? || \
@@ -2045,8 +2046,8 @@ else
 	while true
 	do
 		[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
-		nawk '{ printf "%10s", "" ; print NR ". " $1 }' $PH_CONF_DIR/installed_apps
-		printf "%10s%s\n\n" "" "${#PH_APP_READ[@]}. none"
+		nawk '{ printf "%10s", "" ; printf "%s\033[32m%s\033[0m\n", NR ". ", $1 }' $PH_CONF_DIR/installed_apps
+		printf "%10s%s\033[32m%s\033[0m\n\n" "" "${#PH_APP_READ[@]}. " "none"
 		printf "%8s%s" "" "Your choice : "
 		read PH_APP_READ[0] 2>/dev/null
 		((PH_COUNT++))
@@ -2060,9 +2061,9 @@ else
 			printf "%10s%s\n" "" "OK"
 			PH_STARTAPP=`nawk -v startapp=${PH_APP_READ[0]} '{ if (NR==startapp) { print $1 }}' $PH_CONF_DIR/installed_apps`
 			printf "%8s%s\n" "" "--> Comparing old and new values"
-			[[ "$PH_PIEH_STARTAPP" == "$PH_STARTAPP" ]] && printf "%10s%s\n" "" "Warning : Nothing to do (Both $PH_PIEH_STARTAPP)" && \
+			[[ "$PH_PIEH_STARTAPP" == "$PH_STARTAPP" ]] && printf "%10s%s\033[32m%s\033[0m%s\n" "" "Warning : Nothing to do (Both " "$PH_PIEH_STARTAPP" ")" && \
 						printf "%2s%s\n" "" "SUCCESS" && unset PH_APP_READ && return 0
-			printf "%10s%s\n" "" "OK ($PH_STARTAPP)"
+			printf "%10s%s\033[32m%s\033[0m%s\n" "" "OK (" "$PH_STARTAPP" ")"
 			if [[ "$PH_PIEH_STARTAPP" != "none" ]]
 			then
 				ph_undo_app_for_start
@@ -2075,12 +2076,12 @@ else
 			if [[ "$PH_PIEH_STARTAPP" == "none" ]]
 			then
 				printf "%8s%s\n" "" "--> Comparing old and new values"
-				[[ "$PH_PIEH_STARTAPP" == "$PH_STARTAPP" ]] && printf "%10s%s\n" "" "Warning : Nothing to do (Both $PH_PIEH_STARTAPP)" && \
+				[[ "$PH_PIEH_STARTAPP" == "$PH_STARTAPP" ]] && printf "%10s%s\033[32m%s\033[0m%s\n" "" "Warning : Nothing to do (Both " "$PH_PIEH_STARTAPP" ")" && \
 							printf "%2s%s\n" "" "SUCCESS" && unset PH_APP_READ && return 0
-				printf "%10s%s\n" "" "OK ($PH_STARTAPP)"
+				printf "%10s%s\033[32m%s\033[0m%s\n" "" "OK (" "$PH_STARTAPP" ")"
 			fi
 			ph_set_option PieHelper -r PH_PIEH_STARTAPP="$PH_STARTAPP" || \
-				(printf "%2s%s\n" "" "FAILED" ;  printf "%s\n" "You'll need to manually set PH_PIEH_STARTAPP to \"none\" in $PH_CONF_DIR/PieHelper.conf" ; \
+				(printf "%2s%s\n" "" "FAILED" ;  printf "%s\033[32m%s\033[0m%s\n" "You'll need to manually set PH_PIEH_STARTAPP to " "\"none\"" " in $PH_CONF_DIR/PieHelper.conf" ; \
 				 return 1) || return $?
 			ph_set_tty_for_boot 0
 			printf "%2s%s\n" "" "SUCCESS"
@@ -2154,6 +2155,7 @@ printf "%8s%s\n" "" "--> Checking for supported applications configuration file"
 if [[ ! -f $PH_CONF_DIR/supported_apps ]]
 then
         printf "%10s%s\n" "" "Warning : Not found -> Creating"
+        printf "%8s%s\n" "" "--> Creating PieHelper configuration files"
         cat >$PH_CONF_DIR/supported_apps <<EOF
 PieHelper       $PH_SCRIPTS_DIR/startpieh.sh
 Bash    /bin/bash
@@ -2162,9 +2164,11 @@ Kodi    `which xinit` /usr/bin/kodi-standalone -- :0 -nolisten tcp vtPH_TTY
 X11     /usr/bin/startx -- :1 vtPH_TTY
 Emulationstation        /usr/bin/emulationstation
 EOF
+        printf "%10s%s\n" "" "OK"
 else
         printf "%10s%s\n" "" "OK (Found)"
 fi
+printf "%2s%s\n\n" "" "SUCCESS"
 printf "%s\n" "- Checking TTY configurations"
 printf "%8s%s\n" "" "--> Checking configuration of TTY1"
 if [[ -f /etc/systemd/system/getty@tty1.service.d/autostart.conf ]]

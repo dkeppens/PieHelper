@@ -118,7 +118,7 @@ OPTARG="$PH_OLDOPTARG"
 
 [[ -z "$PH_APP_USER" ]] && PH_APP_USER="$PH_RUN_USER"
 [[ "$PH_APP" == @(Kodi|Emulationstation|Moonlight|X11|Bash|PieHelper) ]] && printf "%s\n" "- Managing an out-of-scope application $PH_APP" && \
-				printf "%2s%s\n\n" "" "FAILED : Standard application detected -> Use confapps_ph.sh" && exit 1
+				printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Standard application detected -> Use confapps_ph.sh" && exit 1
 [[ "$PH_ACTION" == @(inst|rem) && -z "$PH_APP" ]] && (! confsupp_ph.sh -h) && exit 1
 [[ "$PH_ACTION" == @(inst) && -z "$PH_APP_PKG" ]] && (! confsupp_ph.sh -h) && exit 1
 [[ "$PH_ACTION" == "prompt" && ("$PH_APP_PKG" != "" || "$PH_APP" != "" || "$PH_APP_CMD" != "" || "$PH_APP_USR" != "") ]] && (! confsupp_ph.sh -h) && exit 1
@@ -134,15 +134,15 @@ then
 	then
 		[[ "$PH_ACTION" == "inst" ]] && printf "%s\n" "- Adding a new out-of-scope application $PH_APP" || \
 					printf "%s\n" "- Removing out-of-scope application $PH_APP"
-		printf "%2s%s\n\n" "" "FAILED : Invalid package"
+		printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Invalid package"
 		exit 1
 	fi
 fi
 case $PH_ACTION in inst)
 		printf "%s\n" "- Running some checks"
 		printf "%8s%s\n" "" "--> Checking current number of out-of-scope applications"
-		[[ `cat $PH_CONF_DIR/supported_apps | wc -l` -ge 11 ]] && printf "%10s%s\n" "" "ERROR : The maximum number of out-of-scope applications has been reached" && \
-										printf "%2s%s\n\n" "" "FAILED" && exit 1
+		[[ `cat $PH_CONF_DIR/supported_apps | wc -l` -ge 11 ]] && printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : The maximum number of out-of-scope applications has been reached" && \
+										printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" && exit 1
 		printf "%10s%s\n" "" "OK ($(echo $((`cat $PH_CONF_DIR/supported_apps | wc -l`-6))))"
 		printf "%8s%s\n" "" "--> Checking for package \"$PH_APP_PKG\""
 		if ph_get_pkg_inststate "$PH_APP_PKG"
@@ -151,8 +151,8 @@ case $PH_ACTION in inst)
 		else
 			printf "%10s%s\n" "" "Warning : Could not find package $PH_APP_PKG -> Installing"
 			printf "%8s%s\n" "" "--> Installing package \"$PH_APP_PKG\""
-			ph_install_pkg "$PH_APP_PKG" && printf "%10s%s\n" "" "OK" || (printf "%10s%s\n" "" "ERROR : Could not install package $PH_APP_PKG" ; \
-											printf "%2s%s\n\n" "" "FAILED" ; return 1) || exit $?
+			ph_install_pkg "$PH_APP_PKG" && printf "%10s%s\n" "" "OK" || (printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not install package $PH_APP_PKG" ; \
+											printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 1) || exit $?
 		fi
 		printf "%8s%s\n" "" "--> Checking run account"
                 id $PH_APP_USER >/dev/null 2>&1
@@ -174,7 +174,7 @@ case $PH_ACTION in inst)
 		if [[ $? -eq 0 ]]
 		then
 			printf "%10s%s\n" "" "OK (No)"
-			printf "%2s%s\n" "" "SUCCESS"
+			printf "%2s%s\n\n" "" "SUCCESS"
 			printf "%s\n" "- Adding a new out-of-scope application $PH_APP"
 		else
 			printf "%10s%s\n" "" "OK (Yes)"
@@ -183,12 +183,12 @@ case $PH_ACTION in inst)
 			if [[ $? -eq 0 ]]
 			then
 				printf "%10s%s\n" "" "OK (Found)"
-				printf "%2s%s\n" "" "SUCCESS"
+				printf "%2s%s\n\n" "" "SUCCESS"
 			else
 				printf "%10s%s\n" "" "Warning : X11 Not found -> Installing"
-				printf "%2s%s\n" "" "SUCCESS"
+				printf "%2s%s\n\n" "" "SUCCESS"
 				ph_install_app X11 || (printf "%s\n" "- Adding a new out-of-scope application $PH_APP" ; \
-					printf "%2s%s\n\n" "" "FAILED" ; return 1) || exit $?
+					printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 1) || exit $?
 			fi
 			printf "%s\n" "- Adding a new out-of-scope application $PH_APP"
 			printf "%8s%s\n" "" "--> Attempting to detect next available display"
@@ -412,8 +412,8 @@ EOF
 		printf "%8s%s\n" "" "--> Removing $PH_APP from supported applications configuration file"
 		nawk -v app=^"$PH_APP"$ '$1 ~ app { next } { print }' $PH_CONF_DIR/supported_apps >/tmp/supported_apps_tmp
 		[[ $? -eq 0 ]] && (printf "%10s%s\n" "" "OK" ; mv /tmp/supported_apps_tmp $PH_CONF_DIR/supported_apps) || \
-					(printf "%10s%s\n" "" "ERROR : Could not remove $PH_APP from supported applications configuration file" ; \
-					 printf "%2s%s\n\n" "" "FAILED" ; return 1) || exit $?
+					(printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not remove $PH_APP from supported applications configuration file" ; \
+					 printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 1) || exit $?
 		if [[ $PH_APP_TTY -ne 0 ]]
 		then
 			ph_undo_setup_tty $PH_APP_TTY "$PH_APP"
@@ -421,8 +421,8 @@ EOF
 			printf "%8s%s\n" "" "--> Removing $PH_APP from installed applications configuration file"
 			nawk -v app=^"$PH_APP"$ '$1 ~ app { next } { print }' $PH_CONF_DIR/installed_apps >/tmp/installed_apps_tmp
 			[[ $? -eq 0 ]] && (printf "%10s%s\n" "" "OK" ; mv /tmp/installed_apps_tmp $PH_CONF_DIR/installed_apps) || \
-				(printf "%10s%s\n" "" "ERROR : Could not remove $PH_APP from installed applications configuration file" ; \
-				 printf "%2s%s\n\n" "" "FAILED" ; return 1) || exit $?
+				(printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not remove $PH_APP from installed applications configuration file" ; \
+				 printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 1) || exit $?
 		fi
 		if nawk -v user=^"$PH_APP_USER"$ '$2 ~ user { exit 1 } { next }' $PH_CONF_DIR/installed_apps >/dev/null 2>&1
 		then
@@ -451,7 +451,7 @@ EOF
 		if [[ -n "$PH_APP_PKG" ]]
 		then
 			printf "%8s%s\n" "" "--> Removing package \"$PH_APP_PKG\""
-			ph_remove_pkg "$PH_APP_PKG" && printf "%10s%s\n" "" "OK" || printf "%10s%s\n" "" "ERROR : Could not remove package"
+			ph_remove_pkg "$PH_APP_PKG" && printf "%10s%s\n" "" "OK" || printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not remove package"
 		fi
 		printf "%8s%s\n" "" "--> Removing $PH_APP options from options.defaults"
 		for PH_j in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | nawk -F'=' '{ print $1 }' | paste -d" " -s`
@@ -481,7 +481,7 @@ EOF
 		printf "%s\n" "- Using interactive mode"
 		while [[ -z "$PH_APP" ]]
 		do
-			[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+			[[ $PH_COUNT -gt 0 ]] && printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : Invalid response"
 			printf "%8s%s" "" "--> Please enter an application name : "
 			read PH_APP 2>/dev/null
 			ph_screen_input "$PH_APP" || exit $?
@@ -493,7 +493,7 @@ EOF
 		case $PH_I_ACTION in inst)
 			while [[ -z "$PH_APP_CMD" ]]
 			do
-				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : Invalid response"
 				printf "%8s%s\n" "" "--> Please enter the full start command for $PH_APP"
 				printf "%12s%s" "" "Any TTY number references should be replaced by the string 'PH_TTY' : "
 				read PH_APP_CMD 2>/dev/null
@@ -510,13 +510,13 @@ EOF
 			printf "%10s%s\n" "" "OK ($PH_APP_USER)"
 			while [[ -z "$PH_APP_PKG" ]]
 			do
-				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : Invalid response"
 				printf "%8s%s" "" "--> Please enter the package name for application $PH_APP : "
 				read PH_APP_PKG 2>/dev/null
 				((PH_COUNT++))
 			done
 			printf "%10s%s\n" "" "OK"
-			printf "%2s%s\n" "" "SUCCESS"
+			printf "%2s%s\n\n" "" "SUCCESS"
 			confsupp_ph.sh -p inst -a "$PH_APP" -c "$PH_APP_CMD" -u "$PH_APP_USER" -b "$PH_APP_PKG" | more
 			exit $? ;;
 				   rem)
@@ -524,7 +524,7 @@ EOF
 			printf "%12s%s" "" "Leaving this empty will leave the package installed : "
 			read PH_APP_PKG
 			printf "%10s%s\n" "" "OK"
-			printf "%2s%s\n" "" "SUCCESS"
+			printf "%2s%s\n\n" "" "SUCCESS"
 			if [[ -z "$PH_APP_PKG" ]]
 			then
 				confsupp_ph.sh -p rem -a "$PH_APP" | more

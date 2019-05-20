@@ -84,8 +84,10 @@ do
 		>&2 printf "%18s%s\n" "" "- Any invalid module names specified will be skipped and generate an error without blocking remaining module processing"
 		>&2 printf "%18s%s\n" "" "- Any valid module names specified with their current debug state set to 'no' will be switched to 'yes'"
 		>&2 printf "%18s%s\n" "" "- Any valid module names specified with their current debug state set to 'yes' will be set to 'no'"
-		>&2 printf "%18s%s\n" "" "- 'confpieh_ph.sh' is not a valid module name and should be debugged manually"
+		>&2 printf "%18s%s\n" "" "- 'confpieh_ph.sh' is not a valid module name for 'debug' operations and should be debugged manually"
 		>&2 printf "%18s%s\n" "" "- The keyword \"all\" can be used to switch the debug state on all relevant PieHelper modules"
+		>&2 printf "%18s%s\n" "" "- The keyword \"enabled\" can be used to switch the debug state on all PieHelper modules with a current debug state of 'enabled'"
+		>&2 printf "%18s%s\n" "" "- The keyword \"disabled\" can be used to switch the debug state on all PieHelper modules with a current debug state of 'disabled'"
 		>&2 printf "%18s%s\n" "" "- The keyword \"prompt\" makes confpieh_ph.sh behave interactively when it comes to module selection"
 		>&2 printf "%21s%s\n" "" "- The following info will be prompted for during interactive debug state actions :"
 		>&2 printf "%24s%s\n" "" "- PieHelper module name(s) (required)"
@@ -111,9 +113,9 @@ then
 	then
 		if [[ "$PH_ACTION" == "debug" ]]
 		then
-			printf "%s\n" "- Changing debug mode for specified modules" && printf "%2s%s\n" "" "FAILED : Using keyword $PH_FOUND together with other module names is unsupported" && exit 1
+			printf "%s\n" "- Changing debug mode for specified modules" && printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Using keyword $PH_FOUND together with other module names is unsupported" && exit 1
 		else
-			printf "%s\n" "- Listing specified modules" && printf "%2s%s\n" "" "FAILED : Using keyword $PH_FOUND together with other module names is unsupported" && exit 1
+			printf "%s\n" "- Listing specified modules" && printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Using keyword $PH_FOUND together with other module names is unsupported" && exit 1
 		fi
 	fi
 fi
@@ -135,28 +137,30 @@ case $PH_ACTION in repair)
 		exit $? ;;
 		    debug) 	
                 case $PH_MODULES in all)
-                        PH_MODULES=`$PH_SCRIPTS_DIR/confpieh_ph.sh -p list -m all | tail -n +2 | nawk '$1 !~ /SUCCESS/ { print $1 } { next }' | paste -d',' -s` ;;
+                        PH_MODULES=`$PH_SCRIPTS_DIR/confpieh_ph.sh -p list -m all | tail -n +2 | nawk '$1 !~ /SUCCESS/ { print $1 } { next }' | paste -d',' -s`
+                        PH_MODULES=`echo "$PH_MODULES" | sed "s/^confpieh_ph.sh,//;s/,confpieh_ph.sh,/,/;s/,confpieh_ph.sh$//;s/^confpieh_ph.sh$//"` ;;
 				 prompt)
 			PH_MODULES=""
 			printf "%s\n" "- Using interactive mode"
 			while [[ -z "$PH_MODULES" ]]
 			do
-				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : Invalid response"
 				printf "%8s%s" "" "--> Please enter a comma-separated list of relevant PieHelper module names (The keywords \"all\",\"disabled\",\"enabled\" can be used to respectively select all/all disabled/all enabled modules) : "
 				read PH_MODULES >/dev/null 2>&1
 				((PH_COUNT++))
 			done
 			printf "%10s%s\n" "" "OK"
-			printf "%2s%s\n" "" "SUCCESS"
+			printf "%2s%s\n\n" "" "SUCCESS"
 			confpieh_ph.sh -p debug -m "$PH_MODULES"
 			exit $? ;;
 		esac
 		if [[ "$PH_MODULES" == @(enabled|disabled) ]]
 		then
 			PH_MODULES=`confpieh_ph.sh -p list -m "$PH_MODULES" | nawk 'BEGIN { ORS = "," } $2 ~ /^debug_enabled=/ { print $1 }' | sed 's/.$//'`
+                        PH_MODULES=`echo "$PH_MODULES" | sed "s/^confpieh_ph.sh,//;s/,confpieh_ph.sh,/,/;s/,confpieh_ph.sh$//;s/^confpieh_ph.sh$//"`
 			if [[ -z "$PH_MODULES" ]]
 			then
-				printf "%s\n" "- Changing debug mode for specified modules" && printf "%2s%s\n" "" "SUCCESS : No modules selected by keyword" && exit 0
+				printf "%s\n" "- Changing debug mode for specified modules" && printf "%2s%s\n\n" "" "SUCCESS : No modules selected by keyword" && exit 0
 			fi
 		fi
                 for PH_i in `sed 's/,/ /g' <<<$PH_MODULES`
@@ -167,7 +171,7 @@ case $PH_ACTION in repair)
                                 PH_i=`find $PH_MAIN_DIR/.. -name $PH_i 2>/dev/null`
                                 if [[ -n "$PH_i" ]] && [[ "$PH_j" != @(confpieh_ph.sh|10-retropie.sh) ]]
                                 then
-                                        if grep '#set -x' $PH_i >/dev/null
+                                        if grep '#set -x' "$PH_i" >/dev/null
                                         then
                                                 printf "%s\n" "- Enabling debug mode for module $PH_j"
                                                 PH_SSTRING='#set -x'
@@ -176,14 +180,14 @@ case $PH_ACTION in repair)
                                                 if ! ph_set_option PieHelper -r PH_PIEH_DEBUG="$PH_VALUE"
 						then
 							PH_RESULT="FAILED"
-							printf "%2s%s\n\n" "" "$PH_RESULT : Could not enable debug mode for module $PH_j"
+							printf "%2s\033[31m%s\033[0m%s\n\n" "" "$PH_RESULT" " : Could not enable debug mode for module $PH_j"
 							continue
 						fi
                                         else
                                                 printf "%s\n" "- Disabling debug mode for module $PH_j"
                                                 PH_SSTRING='set -x'
                                                 PH_STRING='#set -x'
-                                                if echo $PH_PIEH_DEBUG | grep ',' >/dev/null
+                                                if echo "$PH_PIEH_DEBUG" | grep ',' >/dev/null
                                                 then
                                                         PH_VALUE=`echo $PH_PIEH_DEBUG | sed "s/^$PH_j,//;s/,$PH_j,/,/;s/,$PH_j$//"`
                                                 else
@@ -192,34 +196,39 @@ case $PH_ACTION in repair)
                                                 if ! ph_set_option PieHelper -r PH_PIEH_DEBUG="$PH_VALUE"
 						then
 							PH_RESULT="FAILED"
-							printf "%2s%s\n\n" "" "$PH_RESULT : Could not disable debug mode for module $PH_j"
+							printf "%2s\033[31m%s\033[0m%s\n\n" "" "$PH_RESULT" " : Could not disable debug mode for module $PH_j"
 							continue
 						fi
                                         fi
-                                        if sed "s/^$PH_SSTRING/$PH_STRING/g" $PH_i >/tmp/"$PH_j"_debug 2>/dev/null
+                                        if sed "s/^$PH_SSTRING/$PH_STRING/g" "$PH_i" >/tmp/"$PH_j"_debug 2>/dev/null
                                         then
-                                                mv /tmp/"$PH_j"_debug $PH_i 2>/dev/null
-                                                $PH_SUDO chown $PH_RUN_USER:`$PH_SUDO id -gn $PH_RUN_USER` $PH_i 2>/dev/null
-                                                $PH_SUDO chmod 750 $PH_i 2>/dev/null
-						printf "%2s%s\n\n" "" "$PH_RESULT"
+                                                mv /tmp/"$PH_j"_debug "$PH_i" 2>/dev/null
+                                                $PH_SUDO chown "$PH_RUN_USER":"`$PH_SUDO id -gn $PH_RUN_USER`" "$PH_i" 2>/dev/null
+                                                $PH_SUDO chmod 750 "$PH_i" 2>/dev/null
+						[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
                                         else
 						PH_RESULT="PARTIALLY FAILED"
-                                                if grep '#set -x' $PH_i >/dev/null
+                                                if grep '#set -x' "$PH_i" >/dev/null
                                                 then
-                                                        PH_VALUE=`echo $PH_PIEH_DEBUG | sed "s/^$PH_j,//;s/,$PH_j,/,/;s/,$PH_j$//"`
-                                                        ph_set_option PieHelper -r PH_PIEH_DEBUG="$PH_VALUE"
+                                                	if echo "$PH_PIEH_DEBUG" | grep ',' >/dev/null
+                                                	then
+                                                		PH_VALUE=`echo "$PH_PIEH_DEBUG" | sed "s/^$PH_j,//;s/,$PH_j,/,/;s/,$PH_j$//"`
+                                                       		ph_set_option PieHelper -r PH_PIEH_DEBUG="$PH_VALUE"
+                                                	else
+                                                       		PH_VALUE=""
+                                                	fi
                                                 else
                                                         [[ -z "$PH_PIEH_DEBUG" ]] && PH_VALUE="$PH_j" || PH_VALUE="$PH_PIEH_DEBUG,$PH_j"
                                                         ph_set_option PieHelper -r PH_PIEH_DEBUG="$PH_VALUE"
                                                 fi
-						[[ "$PH_STRING" == '#set -x' ]] && printf "%2s%s\n\n" "" "$PH_RESULT : Could not disable debug mode for module $PH_j" || \
-							printf "%2s%s\n\n" "" "$PH_RESULT : Could not enable debug mode for module $PH_j"
+						[[ "$PH_STRING" == '#set -x' ]] && printf "%2s\033[31m%s\033[0m%s\n\n" "" "$PH_RESULT" " : Could not disable debug mode for module $PH_j" || \
+							printf "%2s\033[31m%s\033[0m%s\n\n" "" "$PH_RESULT" " : Could not enable debug mode for module $PH_j"
                                         fi
                                 else
 					PH_RESULT="FAILED"
 					printf "%s\n" "- Enabling debug module for $PH_j"
-					[[ "$PH_j" != "confpieh_ph.sh" ]] && printf "%2s%s\n\n" "" "$PH_RESULT : Unknown module $PH_j" || \
-								printf "%2s%s\n\n" "" "$PH_RESULT : Debug for module 'confpieh_ph.sh' must be handled manually"
+					[[ "$PH_j" != "confpieh_ph.sh" ]] && printf "%2s\033[31m%s\033[0m%s\n\n" "" "$PH_RESULT" " : Unknown module $PH_j" || \
+								printf "%2s\033[31m%s\033[0m%s\n\n" "" "$PH_RESULT" " : Debug for module 'confpieh_ph.sh' must be handled manually"
                                 fi ;;
                                       *)
 				PH_RESULT="SUCCESS"
@@ -232,10 +241,10 @@ case $PH_ACTION in repair)
                                                 [[ -z "$PH_PIEH_DEBUG" ]] && PH_VALUE="$PH_i" || PH_VALUE="$PH_PIEH_DEBUG,$PH_i"
                                                 if ph_set_option PieHelper -r PH_PIEH_DEBUG="$PH_VALUE"
 						then
-							printf "%2s%s\n\n" "" "$PH_RESULT"
+							[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 						else
 							PH_RESULT="FAILED"
-							printf "%2s%s\n\n" "" "$PH_RESULT : Could not enable debug mode for module $PH_i"
+							printf "%2s\033[31m%s\033[0m%s\n\n" "" "$PH_RESULT" " : Could not enable debug mode for module $PH_i"
 						fi
                                         else
                                                 if echo $PH_PIEH_DEBUG | grep ',' >/dev/null
@@ -246,16 +255,16 @@ case $PH_ACTION in repair)
                                                	fi
                                                	if ph_set_option PieHelper -r PH_PIEH_DEBUG="$PH_VALUE"
 						then
-							printf "%2s%s\n\n" "" "$PH_RESULT"
+							[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 						else
 							PH_RESULT="FAILED"
-							printf "%2s%s\n\n" "" "$PH_RESULT : Could not disable debug mode for module $PH_i"
+							printf "%2s\033[31m%s\033[0m%s\n\n" "" "$PH_RESULT" " : Could not disable debug mode for module $PH_i"
 						fi
                                         fi
                                 else
 					PH_RESULT="FAILED"
 					printf "%s\n" "- Enabling debug mode for module $PH_i"
-                                        printf "%2s%s\n\n" "" "$PH_RESULT : Unknown module $PH_i"
+                                        printf "%2s\033[31m%s\033[0m%s\n\n" "" "$PH_RESULT" " : Unknown module $PH_i"
                                 fi ;;
                         esac
                 done
@@ -267,13 +276,13 @@ case $PH_ACTION in repair)
 			printf "%s\n" "- Using interactive mode"
 			while [[ -z "$PH_MODULES" ]]
 			do
-				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s%s\n\n" "" "ERROR : Invalid response"
+				[[ $PH_COUNT -gt 0 ]] && printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : Invalid response"
 				printf "%8s%s" "" "--> Please enter a comma-separated list of relevant PieHelper module names (The keywords \"all\",\"disabled\",\"enabled\" can be used to respectively select all/all disabled/all enabled modules) : "
 				read PH_MODULES >/dev/null 2>&1
 				((PH_COUNT++))
 			done
 			printf "%10s%s\n" "" "OK"
-			printf "%2s%s\n" "" "SUCCESS"
+			printf "%2s%s\n\n" "" "SUCCESS"
 			confpieh_ph.sh -p list -m "$PH_MODULES"
 			exit $?
 		fi
@@ -299,7 +308,7 @@ case $PH_ACTION in repair)
 			printf "%s\n" "- Listing all modules with an enabled debug state"
 			if [[ -z "$PH_PIEH_DEBUG" ]]
 			then
-				printf "%2s%-40s\n" "" "\"none\""
+				printf "%2s%-40s\n" "" "\"No modules with debug enabled\""
 			else
 				for PH_j in `echo -n "$PH_PIEH_DEBUG" | sed 's/,/ /g'`
 				do
@@ -319,7 +328,7 @@ case $PH_ACTION in repair)
 					fi
 				done
 			else
-				printf "%2s%-40s\n" "" "\"none\""
+				printf "%2s%-40s\n" "" "\"No modules with debug disabled\""
 			fi ;;
 				      *)
 			printf "%s\n" "- Listing all specified modules"
