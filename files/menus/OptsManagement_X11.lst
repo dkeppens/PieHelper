@@ -1,0 +1,12 @@
+List all available options for X11:confopts_ph.sh -p list -a X11 | more
+View the value of any X11 option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a X11 -g
+View the value of any X11 option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a X11 -g -r
+View/Change the value of read-write X11 option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a X11 -s
+View/Change the value of read-write X11 option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a X11 -s -r
+Set all X11 options back to default:ph_set_all_options_to_default X11
+Display help for X11 option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a X11 -d
+Display help for X11 option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a X11 -d -r
+Go to Main menu:ph_show_menu Main
+Go to Apps menu:ph_show_menu Apps
+Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash
+Return to previous screen:return

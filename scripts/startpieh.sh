@@ -35,7 +35,7 @@ do
 			OPTARG="$PH_OLDOPTARG"
 			exit 1
 		fi
-		if [[ "$OPTARG" != @(Main|Controllers|Apps|Advanced|Settings|PS3|PS4|XBOX360|AppManagement|OS|OSdefaults|`nawk 'BEGIN { ORS = "|" } { print $1 }' $PH_CONF_DIR/supported_apps`) ]]
+		if [[ "$OPTARG" != @(Main|Controllers|Apps|Advanced|Settings|PS3|PS4|XBOX360|AppManagement|OptsManagement|TTYManagement|OS|OSdefaults|`nawk 'BEGIN { ORS = "|" } { print $1 "|" "OptsManagement_" $1 "|" "TTYManagement_" $1 }' $PH_CONF_DIR/supported_apps`|) ]]
 		then
 			if ! startpieh.sh -h
 			then
@@ -78,7 +78,8 @@ do
                 >&2 printf "%9s%s\n" "" "-m allows starting $PH_RUNAPP directly in menu [menu] instead of the default Main menu"
                 >&2 printf "%12s%s\n" "" "- Specifying -m is optional"
                 >&2 printf "%12s%s\n" "" "- Allowed values for [menu] are \"Main\", \"Controllers\", \"Apps\", \"Advanced\", \"Settings\", \"PS3\", \"PS4\", \"XBOX360\", \"AppManagement\","
-                >&2 printf "%12s%s\n" "" "  or the name of any supported application"
+                >&2 printf "%12s%s\n" "" "  \"OptsManagement\", \"TTYManagement\", the name of any supported application, as well as both \"OptsManagement\" and \"TTYManagement\" concatenated with '_' and"
+                >&2 printf "%12s%s\n" "" "  the name of any supported application, f.e. \"OptsManagement_Bash\" or \"TTYManagement_Moonlight\""
                 >&2 printf "%15s%s\n" "" "- By default, the current value of option PH_PIEH_CMD_OPTS will be used"
                 >&2 printf "%18s%s\n" "" "- If PH_PIEH_CMD_OPTS has no value, it will be set to 'Main'"
                 >&2 printf "%15s%s\n" "" "- If an empty string is specified for [menu], the default will be used"

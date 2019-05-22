@@ -1,0 +1,12 @@
+List all available options for Moonlight:confopts_ph.sh -p list -a Moonlight | more
+View the value of any Moonlight option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Moonlight -g
+View the value of any Moonlight option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Moonlight -g -r
+View/Change the value of read-write Moonlight option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Moonlight -s
+View/Change the value of read-write Moonlight option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Moonlight -s -r
+Set all Moonlight options back to default:ph_set_all_options_to_default Moonlight
+Display help for Moonlight option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Moonlight -d
+Display help for Moonlight option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Moonlight -d -r
+Go to Main menu:ph_show_menu Main
+Go to Apps menu:ph_show_menu Apps
+Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash
+Return to previous screen:return

@@ -71,6 +71,8 @@ do
                 >&2 printf "%15s%s\n" "" "- A maximum of 5 out-of-scope applications can be added"
                 >&2 printf "%15s%s\n" "" "-a allows specifying an application name for [instapp]"
                 >&2 printf "%18s%s\n" "" "- The first four letters should be a case-insensitive unique identifier of the application"
+                >&2 printf "%18s%s\n" "" "- An empty configuration routine for [instapp] will automatically be created in '$PH_MAIN_DIR/functions.user'"
+                >&2 printf "%18s%s\n" "" "  These can be developed by the user"
                 >&2 printf "%15s%s\n" "" "-b allows specifying a packagename [instpkg]"
                 >&2 printf "%18s%s\n" "" "- A package is a requirement for out-of-scope applications"
                 >&2 printf "%18s%s\n" "" "- If the specified package is currently uninstalled it will be installed first"
@@ -199,8 +201,8 @@ case $PH_ACTION in inst)
 			PH_APP_CMD=`sed "s/ :0 / :$PH_i /g" <<<$PH_APP_CMD`
 			printf "%10s%s\n" "" "OK"
 		fi
-		printf "%8s%s\n" "" "--> Adding a new menu item"
-		cat >$PH_FILES_DIR/menus/$PH_APP.lst <<EOF
+		printf "%8s%s\n" "" "--> Adding new menu items"
+		cat >"$PH_FILES_DIR"/menus/"$PH_APP".lst <<EOF
 Show $PH_APP current state:ph_check_app_name -s -a $PH_APP | more
 Show $PH_APP run account:ph_get_app_user $PH_APP
 Start or switch to $PH_APP:start$PH_APPL.sh | more
@@ -208,8 +210,16 @@ Stop $PH_APP:stop$PH_APPL.sh force | more
 Restart $PH_APP:restart$PH_APPL.sh | more
 Install $PH_APP and integrate with PieHelper:confapps_ph.sh -p int -a $PH_APP
 Remove $PH_APP from PieHelper and uninstall:confapps_ph.sh -p rem -a $PH_APP
-Configure $PH_APP (requires development from user):confapps_ph.sh -p conf -a $PH_APP
 Update $PH_APP to the latest version (only if installed as a package):ph_update_pkg \$PH_`echo $PH_APPU`_PKG_NAME | more
+Configure $PH_APP (can be extended by user development -> See Manual):confapps_ph.sh -p conf -a $PH_APP
+Go to the OptsManagement for $PH_APP submenu:ph_show_menu OptsManagement_$PH_APP
+Go to the TTYManagement for $PH_APP submenu:ph_show_menu TTYManagement_$PH_APP
+Go to Main menu:ph_show_menu Main
+Go to Apps menu:ph_show_menu Apps
+Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash
+Return to previous screen:return
+EOF
+		cat >"$PH_FILES_DIR"/menus/OptsManagement_"$PH_APP".lst <<EOF
 List all available options for $PH_APP:confopts_ph.sh -p list -a $PH_APP | more
 View the value of any $PH_APP option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a $PH_APP -g
 View the value of any $PH_APP option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a $PH_APP -g -r
@@ -217,6 +227,12 @@ View/Change the value of read-write $PH_APP option(s) (Variable expansion disabl
 View/Change the value of read-write $PH_APP option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a $PH_APP -s -r
 Display help for $PH_APP option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a $PH_APP -d
 Display help for $PH_APP option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a $PH_APP -d -r
+Go to Main menu:ph_show_menu Main
+Go to Apps menu:ph_show_menu Apps
+Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash
+Return to previous screen:return
+EOF
+		cat >"$PH_FILES_DIR"/menus/TTYManagement_"$PH_APP".lst <<EOF
 Display TTY currently allocated to $PH_APP:confapps_ph.sh -p tty -a $PH_APP | more
 Move $PH_APP to another TTY:confapps_ph.sh -p move -a $PH_APP -t prompt
 Go to Main menu:ph_show_menu Main
@@ -226,7 +242,7 @@ Return to previous screen:return
 EOF
 		printf "%10s%s\n" "" "OK"
 		printf "%8s%s\n" "" "--> Adding a config file"
-		cat >$PH_CONF_DIR/$PH_APP.conf <<EOF
+		cat >"$PH_CONF_DIR"/"$PH_APP".conf <<EOF
 # General $PH_APP configuration
 # Do NOT edit the configuration files manually. Always use PieHelper to make changes
 # Refer to the $PH_APP documentation for more info on some of these settings
@@ -431,8 +447,12 @@ EOF
 				ph_revoke_pieh_access "$PH_APP_USER"
 			fi
 		fi
-		printf "%8s%s\n" "" "--> Removing $PH_APP menu item"
-		rm $PH_FILES_DIR/menus/$PH_APP.lst 2>/dev/null
+		printf "%8s%s\n" "" "--> Removing $PH_APP menu items"
+		rm "$PH_FILES_DIR"/menus/"$PH_APP".lst 2>/dev/null
+		[[ "`ls -l $PH_FILES_DIR/menus/OptsManagement.lst | nawk -F'/' '{ print $NF }' | cut -d'.' -f1 | cut -d'_' -f2`" == "$PH_APP" ]] && \
+				ph_set_link_to_app `nawk -v app=^"$PH_APP"$ '$1 !~ app { print $1 ; exit 0 }' "$PH_CONF_DIR"/installed_apps`
+		rm "$PH_FILES_DIR"/menus/OptsManagement_"$PH_APP".lst 2>/dev/null
+		rm "$PH_FILES_DIR"/menus/TTYManagement_"$PH_APP".lst 2>/dev/null
 		printf "%10s%s\n" "" "OK"
 		printf "%8s%s\n" "" "--> Removing $PH_APP scripts"
 		rm $PH_SCRIPTS_DIR/start"$PH_APPL".sh 2>/dev/null

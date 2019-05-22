@@ -3,19 +3,12 @@ Show Kodi run account:ph_get_app_user Kodi
 Start or switch to Kodi:startkodi.sh | more
 Stop Kodi:stopkodi.sh force | more
 Restart Kodi:restartkodi.sh | more
-Install Kodi and integrate with PieHelper:confapps_ph.sh -p int -a Kodi
+Install Kodi and integrate with PieHelper:confapps_ph.sh -p inst -a Kodi
 Remove Kodi from PieHelper and uninstall:confapps_ph.sh -p rem -a Kodi
 Update Kodi to the latest version (only if installed as a package):ph_update_pkg $PH_KODI_PKG_NAME | more
-List all available options for Kodi:confopts_ph.sh -p list -a Kodi | more
-View the value of any Kodi option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Kodi -g
-View the value of any Kodi option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Kodi -g -r
-View/Change the value of read-write Kodi option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Kodi -s
-View/Change the value of read-write Kodi option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Kodi -s -r
-Set all Kodi options back to default:ph_set_all_options_to_default Kodi
-Display help for Kodi option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Kodi -d
-Display help for Kodi option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Kodi -d -r
-Display TTY currently allocated to Kodi:confapps_ph.sh -p tty -a Kodi | more
-Move Kodi to another TTY:confapps_ph.sh -p move -a Kodi -t prompt
+Configure Kodi:confapps_ph.sh -p conf -a Kodi
+Go to the OptsManagement for Kodi submenu:ph_show_menu OptsManagement_Kodi
+Go to the TTYManagement for Kodi submenu:ph_show_menu TTYManagement_Kodi
 Go to Main menu:ph_show_menu Main
 Go to Apps menu:ph_show_menu Apps
 Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash

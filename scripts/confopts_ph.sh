@@ -1,5 +1,5 @@
 #!/bin/ksh
-# Manage application options and controller settings (by Davy Keppens on 06/11/2018)
+# Manage application options and controllers settings (by Davy Keppens on 06/11/2018)
 # Enable/Disable debug by running confpieh_ph.sh -p debug -m confopts_ph.sh
 
 . $(dirname $0)/../main/main.sh || exit $? && set +x
@@ -48,7 +48,7 @@ do
 		[[ -z "${OPTARG%%=*}" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		if [[ "${OPTARG%%=*}" == "all" && $PH_ACTION == "set" ]]
 		then
-			printf "%s\n" "- Changing value for option ${OPTARG%%=*}"
+			printf "%s\033[36m%s\033[0m\033[32m%s\033[0m\n" "- " "Changing value of option " "'${OPTARG%%=*}'"
 			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Unknown option"
 			unset PH_OPTAR PH_VALAR
 			OPTARG="$PH_OLDOPTARG"
@@ -58,10 +58,34 @@ do
 		if [[ -n "$PH_OPT" ]]
 		then
 			PH_OPT="$PH_OPT'${OPTARG%%=*}"
-			PH_VALUE="$PH_VALUE'${OPTARG##*=}"
+			if (echo -n "$OPTARG" | grep '=' >/dev/null 2>&1)
+			then
+				if [[ "${OPTARG##*=}" == "N/A" ]]
+				then
+					printf "%s\033[36m%s\033[0m\033[32m%s\033[0m\n" "- " "Changing value of " "'${OPTARG%%=*}'"
+					printf "%2s\033[31m%s\033[0m%s\033[32m%s\033[0m%s\n\n" "" "FAILED" " : Cannot accept " "'N/A'" " as a value (Reserved string)"
+					unset PH_OPTAR PH_VALAR
+					OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+				fi
+				PH_VALUE="$PH_VALUE'${OPTARG##*=}"
+			else
+				PH_VALUE="$PH_VALUE'N/A"
+			fi
 		else
 			PH_OPT="${OPTARG%%=*}"
-			PH_VALUE="${OPTARG##*=}"
+			if (echo -n "$OPTARG" | grep '=' >/dev/null 2>&1)
+			then
+				if [[ "${OPTARG##*=}" == "N/A" ]]
+				then
+					printf "%s\033[36m%s\033[0m\033[32m%s\033[0m\n" "- " "Changing value of " "'${OPTARG%%=*}'"
+					printf "%2s\033[31m%s\033[0m%s\033[32m%s\033[0m%s\n\n" "- " "FAILED" " : Cannot accept " "'N/A'" " as a value (Reserved string)"
+					unset PH_OPTAR PH_VALAR
+					OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+				fi
+				PH_VALUE="${OPTARG##*=}"
+			else
+				PH_VALUE="N/A"
+			fi
 		fi ;;
                           g)
                 [[ "$PH_ACTION" != @(prompt|) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
@@ -99,32 +123,35 @@ do
 		>&2 printf "\n"
 		>&2 printf "%3s%s\n" "" "Where -h displays this usage"
 		>&2 printf "%9s%s\n" "" "-p specifies the action to take"
-		>&2 printf "%12s%s\n" "" "\"get\" allows displaying the value of the option(s) [getopt] of an application [getapp] or the controller settings"
+		>&2 printf "%12s%s\n" "" "\"get\" allows displaying the value of an option [getopt] of an application [getapp] or the value of a controllers setting"
 		>&2 printf "%15s%s\n" "" "- Variables in option values will automatically be expanded when displaying"
 		>&2 printf "%15s%s\n" "" "-a allows specifying an application name for [getapp]"
-		>&2 printf "%15s%s\n" "" "-o allows specifying an optionname for [getopt]"
+		>&2 printf "%18s%s\n" "" "- The keyword 'Ctrls' can be used to operate on controllers settings"
+		>&2 printf "%15s%s\n" "" "-o allows specifying the name of an option or a controllers setting for [getopt]"
 		>&2 printf "%18s%s\n" "" "- Multiple instances of -o are allowed"
 		>&2 printf "%18s%s\n" "" "- The keyword \"all\" can be used to request displaying the value of all options of [getapp]"
 		>&2 printf "%21s%s\n" "" "- The keyword \"all\" is unsupported when using multiple instances of -o"
 		>&2 printf "%15s%s\n" "" "-r allows requesting expansion of all variables present in the value for option [getopt]"
 		>&2 printf "%18s%s\n" "" "- Specifying -r is optional"
 		>&2 printf "%18s%s\n" "" "- Variables are not expanded by default"
-		>&2 printf "%12s%s\n" "" "\"list\" allows listing all existing options of application [listapp] or all existing controller settings"
-		>&2 printf "%12s%s\n" "" "\"help\" allows displaying information about the option(s) [helpopt] of an application [helpapp] or the controller settings"
+		>&2 printf "%12s%s\n" "" "\"list\" allows listing all existing options of application [listapp] or all existing controllers settings"
+		>&2 printf "%12s%s\n" "" "\"help\" allows displaying information about the option(s) [helpopt] of an application [helpapp] or the controllers settings"
 		>&2 printf "%15s%s\n" "" "-a allows specifying an application name for [helpapp]"
-		>&2 printf "%18s%s\n" "" "- The keyword \"Ctrls\" can be used to operate on the controller settings instead"
-		>&2 printf "%15s%s\n" "" "-o allows specifying an optionname for [helpopt]"
+		>&2 printf "%18s%s\n" "" "- The keyword 'Ctrls' can be used to operate on controllers settings"
+		>&2 printf "%15s%s\n" "" "-o allows specifying the name of an option or a controllers setting for [helpopt]"
 		>&2 printf "%18s%s\n" "" "- Multiple instances of -o are allowed"
 		>&2 printf "%18s%s\n" "" "- The keyword \"all\" can be used to request displaying information about all options of [helpapp]"
 		>&2 printf "%21s%s\n" "" "- The keyword \"all\" is unsupported when using multiple instances of -o"
-		>&2 printf "%12s%s\n" "" "\"set\" allows changing the value of an option [setopt] of an application [setapp] or a read-write controller setting to [value]"
+		>&2 printf "%12s%s\n" "" "\"set\" allows changing the value of an option [setopt] of an application [setapp] or a read-write controllers setting to [value]"
 		>&2 printf "%15s%s\n" "" "- Set actions will fail on read-only options"
 		>&2 printf "%15s%s\n" "" "-a allows specifying an application name for [setapp]"
-		>&2 printf "%15s%s\n" "" "-o allows specifying an optionname for [setopt] and it's new value"
+		>&2 printf "%18s%s\n" "" "- The keyword 'Ctrls' can be used to operate on controllers settings"
+		>&2 printf "%15s%s\n" "" "-o allows specifying the name of an option or a controller settings [setopt] and it's new value [value]"
 		>&2 printf "%18s%s\n" "" "- Multiple instances of -o are allowed"
-		>&2 printf "%18s%s\n" "" "- Always surround [value] with single quotes in the form option='[value]' when [value] does not contain variables or no variables which should be expanded by the current shell"
+		>&2 printf "%18s%s\n" "" "- [value] cannot be the reserved string 'N/A'"
+		>&2 printf "%18s%s\n" "" "- Always surround [value] with single quotes in the form option='[value]' when [value] contains variables that should not be expanded by the current shell"
 		>&2 printf "%18s%s\n" "" "  Use double quotes to surround [value] in the form option="[value]" in all other cases"
-		>&2 printf "%18s%s\n" "" "- Composite strings (containing spaces) in [value] should be surrounded with double quotes"
+		>&2 printf "%18s%s\n" "" "- Composite strings (containing spaces) and variables within [value] should be surrounded with double quotes"
 		>&2 printf "%18s%s\n" "" "- Using single quotes within [value] is not permitted due to being a POSIX limitation"
 		>&2 printf "%18s%s\n" "" "- Any event-based input device id references in [value] for an option holding an application's command line options should have the"
 		>&2 printf "%18s%s\n" "" "  numeric id replaced by the string 'PH_CTRL%' where '%' is '1' for controller 1, '2' for controller 2, etc"
@@ -139,8 +166,9 @@ do
 		>&2 printf "%15s%s\n" "" "-n allows marking the operation as non-mandatory"
 		>&2 printf "%18s%s\n" "" "- Specifying -n is optional"
 		>&2 printf "%18s%s\n" "" "- Non-mandatory operations will return a warning when they fail"
-		>&2 printf "%12s%s\n" "" "\"prompt\" makes confopts_ph.sh behave interactively when it comes to passing an optionname when acting on application [promptapp] or the controller settings"
+		>&2 printf "%12s%s\n" "" "\"prompt\" makes confopts_ph.sh behave interactively when it comes to passing an optionname of application [promptapp] or passing the name of a controllers setting"
 		>&2 printf "%15s%s\n" "" "-a allows specifying an application name for [promptapp]"
+		>&2 printf "%18s%s\n" "" "- The keyword 'Ctrls' can be used to operate on controllers settings"
 		>&2 printf "%15s%s\n" "" "-g specifies a get action in interactive mode"
 		>&2 printf "%15s%s\n" "" "-s specifies a set action in interactive mode"
 		>&2 printf "%18s%s\n" "" "- Set actions will fail on read-only options"
@@ -199,20 +227,26 @@ then
 	do
 		if (([[ "${PH_OPTAR[$PH_COUNT]}" == "all" && ${#PH_OPTAR[@]} -gt 1 ]]) && ([[ "$PH_ACTION" == "get" ]]))
 		then
-			printf "%s\n" "- Displaying value for $PH_USE_WORD ${PH_OPTAR[0]}"
-			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Unsupported use of the keyword \"all\""
+			printf "%s\033[36m%s\033[0m\033[32m%s\033[0m\n" "- " "Displaying value of $PH_USE_WORD " "'${PH_OPTAR[0]}'"
+			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Unsupported use of the keyword 'all'"
 			exit 1
 		fi
 		if (([[ "${PH_OPTAR[$PH_COUNT]}" == "all" && ${#PH_OPTAR[@]} -gt 1 ]]) && ([[ "$PH_ACTION" == "help" ]]))
 		then
-			printf "%s\n" "- Displaying help for $PH_USE_WORD ${PH_OPTAR[0]}"
-			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Unsupported use of the keyword \"all\""
+			printf "%s\033[36m%s\033[0m\033[32m%s\033[0m\n" "- " "Displaying help of $PH_USE_WORD " "'${PH_OPTAR[0]}'"
+			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Unsupported use of the keyword 'all'"
 			exit 1
 		fi
-		[[ "${PH_OPTAR[$PH_COUNT]}" == "PH_PIEH_DEBUG" && "$PH_ACTION" == "set" ]] && (printf "%s\n" "- Changing value for $PH_USE_WORD ${PH_OPTAR[$PH_COUNT]}" ; \
+		[[ "$PH_ACTION" == "set" && "${PH_VALAR[$PH_COUNT]}" == "N/A" ]] && \
+				(printf "%s\033[36m%s\033[0m\033[32m%s\033[0m\n" "- " "Changing value of $PH_USE_WORD " "'${PH_OPTAR[$PH_COUNT]}'" ; \
+				printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : No value passed" ; return 0) && unset PH_OPTAR PH_VALAR && exit 1
+		[[ "${PH_OPTAR[$PH_COUNT]}" == "PH_PIEH_DEBUG" && "$PH_ACTION" == "set" ]] && \
+				(printf "%s\033[36m%s\033[0m\033[32m%s\033[0m\n" "- " "Changing value of $PH_USE_WORD " "'${PH_OPTAR[$PH_COUNT]}'" ; \
 				printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Module debug should be handled by 'confpieh_ph.sh' or the PieHelper menu" ; return 0) && unset PH_OPTAR PH_VALAR && exit 1 
-		[[ "${PH_OPTAR[$PH_COUNT]}" == "PH_PIEH_STARTAPP" && "$PH_ACTION" == "set" ]] && (printf "%s\n" "- Changing value for $PH_USE_WORD ${PH_OPTAR[$PH_COUNT]}" ; \
-				printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : The application to start by default on system boot should be handled by 'confapps_ph.sh -p start' or the PieHelper menu" ; return 0) && unset PH_OPTAR PH_VALAR && exit 1 
+		[[ "${PH_OPTAR[$PH_COUNT]}" == "PH_PIEH_STARTAPP" && "$PH_ACTION" == "set" ]] && \
+				(printf "%s\033[36m%s\033[0m\033[32m%s\033[0m\n" "- " "Changing value of $PH_USE_WORD " "'${PH_OPTAR[$PH_COUNT]}'" ; \
+				printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : The application to start by default on system boot should be handled by 'confapps_ph.sh -p start' or the PieHelper menu" ; return 0) && \
+					unset PH_OPTAR PH_VALAR && exit 1 
 		while ((! grep ^"${PH_OPTAR[$PH_COUNT]}=" $PH_CONF_DIR/$PH_APP.conf >/dev/null 2>&1) && ([[ "${PH_OPTAR[$PH_COUNT]}" != "all" && "$PH_ACTION" != @(prompt|list) ]]))
 		do
 			for PH_i in `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf`
@@ -220,11 +254,11 @@ then
 				[[ "$PH_i" == "${PH_OPTAR[$PH_COUNT]}" ]] && break 2
 			done
 			case $PH_ACTION in get)
-				printf "%s\n" "- Displaying value for $PH_USE_WORD ${PH_OPTAR[$PH_COUNT]}" ;;
+				printf "%s\033[36m%s\033[0m\033[32m%s\033[0m\n" "- " "Displaying value of $PH_USE_WORD " "'${PH_OPTAR[$PH_COUNT]}'" ;;
 					   set)
-				printf "%s\n" "- Changing value for $PH_USE_WORD ${PH_OPTAR[$PH_COUNT]}" ;;
+				printf "%s\033[36m%s\033[0m\033[32m%s\033[0m\n" "- " "Changing value of $PH_USE_WORD " "'${PH_OPTAR[$PH_COUNT]}'" ;;
 					  help)
-				printf "%s\n" "- Displaying help for $PH_USE_WORD ${PH_OPTAR[$PH_COUNT]}" ;;
+				printf "%s\033[36m%s\033[0m\033[32m%s\033[0m\n" "- " "Displaying help of $PH_USE_WORD " "'${PH_OPTAR[$PH_COUNT]}'" ;;
 			esac
 			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Unknown $PH_USE_WORD"
 			unset PH_OPTAR PH_VALAR
@@ -251,8 +285,8 @@ case $PH_ACTION in get)
 				done) | more
 			else
 				grep ^"$PH_OPT=" "$PH_CONF_DIR"/"$PH_APP".conf >/dev/null 2>&1 && PH_OPT_TYPE="read-write" || PH_OPT_TYPE="read-only"
-				([[ "$PH_RESOLVE" == "yes" ]] && printf "%s\n" "- Displaying value for $PH_OPT_TYPE $PH_USE_WORD $PH_OPT (Variable expansion enabled)" || \
-								printf "%s\n" "- Displaying value for $PH_OPT_TYPE $PH_USE_WORD $PH_OPT"
+				([[ "$PH_RESOLVE" == "yes" ]] && printf "%s\033[36m%s\033[0m\033[32m%s\033[0m\033[36m%s\033[0m\n" "- " "Displaying value of $PH_OPT_TYPE $PH_USE_WORD " "'$PH_OPT'" " (Variable expansion enabled)" || \
+								printf "%s\033[36m%s\033[0m\033[32m%s\033[0m\n" "- " "Displaying value of $PH_OPT_TYPE $PH_USE_WORD " "'$PH_OPT'"
 				printf "\033[32m"
 				typeset -n PH_OPTVAL="$PH_OPT"
 				if [[ "$PH_RESOLVE" == "yes" ]]
@@ -269,7 +303,7 @@ case $PH_ACTION in get)
 		unset PH_OPTAR PH_VALAR
 		exit 0 ;;
 		  list)
-		printf "%s%s\n" "- Listing all available read-only $PH_USE_WORD" "s for $PH_APP"
+		printf "%s\033[36m%s%s\033[0m\033[32m%s\033[0m\n" "- " "Listing all available read-only $PH_USE_WORD" "s for " "'$PH_APP'"
 		printf "\033[32m"
 		if [[ -z `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf 2>/dev/null` ]]
 		then
@@ -282,7 +316,7 @@ case $PH_ACTION in get)
 		fi
 		printf "\033[0m"
 		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
-		printf "%s%s\n" "- Listing all available read-write $PH_USE_WORD" "s for $PH_APP"
+		printf "%s\033[36m%s%s\033[0m\033[32m%s\033[0m\n" "- " "Listing all available read-write $PH_USE_WORD" "s for " "'$PH_APP'"
 		printf "\033[32m"
 		for PH_OPT in `nawk -F'=' '$1 ~ /^PH_/ { print $1 ; next } { next }' $PH_CONF_DIR/$PH_APP.conf | paste -d" " -s`
 		do
@@ -308,13 +342,15 @@ case $PH_ACTION in get)
 				done) | more
 			else
 				grep ^"$PH_OPT=" "$PH_CONF_DIR"/"$PH_APP".conf >/dev/null 2>&1 && PH_OPT_TYPE="read-write" || PH_OPT_TYPE="read-only"
-				(printf "%s\n" "- Displaying help for $PH_OPT_TYPE $PH_USE_WORD $PH_OPT"
-				printf "\033[32m"
+				(printf "%s\033[36m%s\033[0m\033[32m%s\033[0m\n" "- " "Displaying help for $PH_OPT_TYPE $PH_USE_WORD " "'$PH_OPT'"
+				printf "\033[36m%s\033[0m\033[32m\n\n" "  ___________________________________________________________"
 				if [[ "$PH_OPT_TYPE" == "read-write" ]]
 				then
-					nawk -F'#' -v opt=^"$PH_OPT=" '$1 ~ opt { print $2 ; getline ; while ($1!~/^PH_/ && $0!~/^$/) { print $2 ; getline } ; exit }' $PH_CONF_DIR/$PH_APP.conf
+					nawk -F'#' -v opt=^"$PH_OPT=" '$1 ~ opt { print $2 ; getline ; while ($1!~/^PH_/ && $0!~/^$/) { print $2 ; getline } ; exit }' "$PH_CONF_DIR"/"$PH_APP".conf 2>/dev/null
+					[[ $? -eq 0 ]] && PH_RESULT="SUCCESS" || PH_RESULT="FAILED"
 				else
-					nawk -F'#' -v opt=" typeset .* $PH_OPT=" '$1 ~ opt { print $2 ; getline ; while ($1!~/^PH_|^\[\[/ && $0!~/^$/) { print $2 ; getline } ; exit }' $PH_CONF_DIR/$PH_APP.conf
+					nawk -F'#' -v opt=" typeset .* $PH_OPT=" '$1 ~ opt { print $2 ; getline ; while ($1!~/^PH_|^\[\[/ && $0!~/^$/) { print $2 ; getline } ; exit }' "$PH_CONF_DIR"/"$PH_APP".conf 2>/dev/null
+					[[ $? -eq 0 ]] && PH_RESULT="SUCCESS" || PH_RESULT="FAILED"
 				fi
 				printf "\033[0m"
 				[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT") | more
@@ -323,7 +359,7 @@ case $PH_ACTION in get)
 		unset PH_OPTAR PH_VALAR
 		exit 0 ;;
 		   set)
-		printf "%s%s%s\n" "- Changing value for $PH_USE_WORD" "s" " $(for PH_COUNT in {0..`echo $((${#PH_OPTAR[@]}-1))`};do;echo -n "${PH_OPTAR[$PH_COUNT]} ";done)"
+		printf "%s\033[36m%s%s\033[0m\033[32m%s\033[0m\n" "- " "Changing value of $PH_USE_WORD" "(s)" " $(for PH_COUNT in {0..`echo $((${#PH_OPTAR[@]}-1))`};do;echo -n "'${PH_OPTAR[$PH_COUNT]}' ";done)"
 		for PH_COUNT in {0..`echo $((${#PH_OPTAR[@]}-1))`}
 		do
 			if [[ "${PH_OPTAR[$PH_COUNT]}" == *_CIFS_SHARE ]]
@@ -355,10 +391,10 @@ case $PH_ACTION in get)
 		unset PH_OPTAR PH_VALAR
 		exit $PH_RET_CODE ;;
 		  prompt)
-		printf "%s\n" "- Using interactive mode"
 		case $PH_I_ACTION in get)
 			while true
 			do
+				printf "%s\033[36m%s\033[0m\n" "- " "Displaying value(s) using interactive mode"
 				[[ "$PH_RESOLVE" == "yes" ]] && printf "%8s%s\n\n" "" "--> Which $PH_USE_WORD do you want to view the value of ? (Variable expansion enabled)" || \
 							printf "%8s%s\n\n" "" "--> Which $PH_USE_WORD do you want to view the value of ?"
                 		while [[ $PH_ANSWER -eq 0 || $PH_ANSWER -gt $((PH_COUNT+1)) ]]
@@ -403,11 +439,11 @@ case $PH_ACTION in get)
 				PH_ANSWER=0
 				PH_COUNT=0
 				PH_COUNT2=0
-				printf "%s\n" "- Using interactive mode"
 			done ;;
 				     set)
 			while true
 			do
+				printf "%s\033[36m%s\033[0m\n" "- " "Changing value(s) using interactive mode"
 				[[ "$PH_RESOLVE" == "yes" ]] && printf "%8s%s\n\n" "" "--> Which read-write $PH_USE_WORD do you want to change the value of ? (Variable expansion enabled)" || \
 							printf "%8s%s\n\n" "" "--> Which read-write $PH_USE_WORD do you want to change the value of ?"
                 		while [[ $PH_ANSWER -eq 0 || $PH_ANSWER -gt $((PH_COUNT+1)) ]]
@@ -461,19 +497,26 @@ case $PH_ACTION in get)
 							  printf "\n" ; \
 							  ph_print_bannerline ; \
 							  printf "\n")
-				printf "%8s%s" "" "--> Please enter the new value for read-write $PH_USE_WORD $PH_OPT : "
+				printf "%8s%s\033[32m%s\033[0m\n" "" "--> Please enter the new value for read-write $PH_USE_WORD " "'$PH_OPT'"
+				printf "%12s%s" "" "('N/A' is a reserved string and cannot be used) : "
 				read PH_VALUE 2>/dev/null
-				printf "%10s%s\n" "" "OK"
-				printf "%2s%s\n\n" "" "SUCCESS"
-				[[ "$PH_TYPE" == "o" ]] && PH_TYPE="n" || PH_TYPE="m"
-				confopts_ph.sh -p set -a "$PH_APP" -"$PH_TYPE" -o "$PH_OPT"="$PH_VALUE" && export "$PH_OPT"="$PH_VALUE"
+				if [[ "$PH_VALUE" == 'N/A' ]]
+				then
+					printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Cannot accept 'N/A' as a value" 
+					printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" && PH_ANSWER=0 && PH_COUNT=0
+				else
+					printf "%10s%s\n" "" "OK"
+					printf "%2s%s\n\n" "" "SUCCESS"
+					[[ "$PH_TYPE" == "o" ]] && PH_TYPE="n" || PH_TYPE="m"
+					confopts_ph.sh -p set -a "$PH_APP" -"$PH_TYPE" -o "$PH_OPT"="$PH_VALUE" && export "$PH_OPT"="$PH_VALUE"
+				fi
 				PH_ANSWER=0
 				PH_COUNT=0
-				printf "%s\n" "- Using interactive mode"
 			done ;;
 				    help)
 			while true
 			do
+				printf "%s\033[36m%s\033[0m\n" "- " "Displaying help(s) using interactive mode"
 				[[ "$PH_RESOLVE" == "yes" ]] && printf "%8s%s\n\n" "" "--> Which $PH_USE_WORD do you want to display help for ? (Variable expansion enabled)" || \
 							printf "%8s%s\n\n" "" "--> Which $PH_USE_WORD do you want to display help for ?"
                 		while [[ $PH_ANSWER -eq 0 || $PH_ANSWER -gt $((PH_COUNT+1)) ]]
@@ -535,7 +578,6 @@ case $PH_ACTION in get)
 				PH_ANSWER=0
 				PH_COUNT=0
 				PH_COUNT2=0
-				printf "%s\n" "- Using interactive mode"
 			done ;;
 		esac ;;
 esac

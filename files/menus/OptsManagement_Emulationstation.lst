@@ -1,0 +1,12 @@
+List all available options for Emulationstation:confopts_ph.sh -p list -a Emulationstation | more
+View the value of any Emulationstation option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Emulationstation -g
+View the value of any Emulationstation option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Emulationstation -g -r
+View/Change the value of read-write Emulationstation option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Emulationstation -s
+View/Change the value of read-write Emulationstation option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Emulationstation -s -r
+Set all Emulationstation options back to default:ph_set_all_options_to_default Emulationstation
+Display help for Emulationstation option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Emulationstation -d
+Display help for Emulationstation option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Emulationstation -d -r
+Go to Main menu:ph_show_menu Main
+Go to Apps menu:ph_show_menu Apps
+Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash
+Return to previous screen:return

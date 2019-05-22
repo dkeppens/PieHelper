@@ -3,19 +3,11 @@ Show Emulationstation run account:ph_get_app_user Emulationstation
 Start or switch to Emulationstation:startemul.sh | more
 Stop Emulationstation:stopemul.sh force | more
 Restart Emulationstation:restartemul.sh | more
-Install Emulationstation and integrate with PieHelper:confapps_ph.sh -p int -a Emulationstation
+Install Emulationstation and integrate with PieHelper:confapps_ph.sh -p inst -a Emulationstation
 Remove Emulationstation from PieHelper and uninstall:confapps_ph.sh -p rem -a Emulationstation
-Configure Emulationstation (configures ALSA audio):confapps_ph.sh -p conf -a Emulationstation | more
-List all available options for Emulationstation:confopts_ph.sh -p list -a Emulationstation | more
-View the value of any Emulationstation option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Emulationstation -g
-View the value of any Emulationstation option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Emulationstation -g -r
-View/Change the value of read-write Emulationstation option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Emulationstation -s
-View/Change the value of read-write Emulationstation option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Emulationstation -s -r
-Set all Emulationstation options back to default:ph_set_all_options_to_default Emulationstation
-Display help for Emulationstation option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a Emulationstation -d
-Display help for Emulationstation option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a Emulationstation -d -r
-Display TTY currently allocated to Emulationstation:confapps_ph.sh -p tty -a Emulationstation | more
-Move Emulationstation to another TTY:confapps_ph.sh -p move -a Emulationstation -t prompt
+Configure Emulationstation:confapps_ph.sh -p conf -a Emulationstation
+Go to the OptsManagement for Emulationstation submenu:ph_show_menu OptsManagement_Emulationstation
+Go to the TTYManagement for Emulationstation submenu:ph_show_menu TTYManagement_Emulationstation
 Go to Main menu:ph_show_menu Main
 Go to Apps menu:ph_show_menu Apps
 Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash

@@ -1,3 +1,8 @@
+* add support for -o parameter to confopts_ph.sh -p prompt -s -o XXXX and make changes for that in ph_configure_app_options + reflect in menus if needed
+* add option for confopts_ph.sh to list option default(s) + add to menus
+* add option for confopts_ph.sh to set option(s) to defaults + reflect in menus
+* Split ph_install into install and integrate and split ph_remove into de-integrate and remove (disc option of 'confapps_ph.sh' becomes integrate) + reflect in menus
+* add display error capability when launching start scripts from command line and receiving failed result
 * change SUCCESS location of all reminderlike displays and add color coding
 * check double newline after all SUCCESS and FAILED in functions and main.sh
 * test confapps -p rem and  - int for emulationstation
