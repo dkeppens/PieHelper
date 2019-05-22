@@ -18,6 +18,7 @@ typeset PH_OPTION=""
 typeset PH_RESOLVE=""
 typeset PH_RESULT="SUCCESS"
 typeset PH_TYPE=""
+typeset PH_DISP_TYPE=""
 typeset PH_USE_WORD=""
 typeset PH_ALLOW_VAL=""
 typeset PH_OLDOPTARG="$OPTARG"
@@ -30,7 +31,7 @@ set -A PH_OPTAR
 set -A PH_VALAR
 OPTIND=1
 
-while getopts a:o:p:hgsdrmn PH_OPTION 2>/dev/null
+while getopts a:o:p:t:hgsdrmn PH_OPTION 2>/dev/null
 do
 	case $PH_OPTION in a)
 		! ph_screen_input "$OPTARG" && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
@@ -113,28 +114,34 @@ do
 		[[ "$PH_I_ACTION" != @(set|) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		[[ -n "$PH_TYPE" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
                 PH_TYPE="o" ;;
+			  t)
+		[[ "$OPTARG" != @(rw|ro) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ -n "$PH_DISP_TYPE" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+                PH_DISP_TYPE="$OPTARG" ;;
 			   *)
 		>&2 printf "%s\n" "Usage : confopts_ph.sh -h |"
-		>&2 printf "%23s%s\n" "" "-p \"get\" -a [[getapp]|\"Ctrls\"] [-o [getopt] -o [getopt] ...|-o \"all\"] '-r' |"
-		>&2 printf "%23s%s\n" "" "-p \"list\" -a [[listapp]|\"Ctrls\"] |"
-		>&2 printf "%23s%s\n" "" "-p \"help\" -a [[helpapp]|\"Ctrls\"] [-o [helpopt] -o [helpopt] ...|-o \"all\"] |"
+		>&2 printf "%23s%s\n" "" "-p \"get\" -a [[getapp]|\"Ctrls\"] [-o [getopt] -o [getopt] ... |-o \"all\" '-t [\"rw\"|\"ro\"]'] '-r' |"
+		>&2 printf "%23s%s\n" "" "-p \"list\" -a [[listapp]|\"Ctrls\"] '-t [\"rw\"|\"ro\"]' |"
+		>&2 printf "%23s%s\n" "" "-p \"help\" -a [[helpapp]|\"Ctrls\"] [-o [helpopt] -o [helpopt] ...|-o \"all\" '-t [\"rw\"|\"ro\"]'] |"
 		>&2 printf "%23s%s\n" "" "-p \"set\" -a [[setapp]|\"Ctrls\"] -o [setopt]='[value]' -o [setopt]='[value]' -o ... '[-m|-n]' |"
-		>&2 printf "%23s%s\n" "" "-p \"prompt\" -a [[promptapp]|\"Ctrls\"] '-r' [-d|-g|-s '[-m|-n]']"
+		>&2 printf "%23s%s\n" "" "-p \"prompt\" -a [[promptapp]|\"Ctrls\"] '-r' [-d '-t [\"rw\"|\"ro\"]'|-g '-t [\"rw\"|\"ro\"]'|-s '[-m|-n]']"
 		>&2 printf "\n"
 		>&2 printf "%3s%s\n" "" "Where -h displays this usage"
 		>&2 printf "%9s%s\n" "" "-p specifies the action to take"
 		>&2 printf "%12s%s\n" "" "\"get\" allows displaying the value of an option [getopt] of an application [getapp] or the value of a controllers setting"
-		>&2 printf "%15s%s\n" "" "- Variables in option values will automatically be expanded when displaying"
 		>&2 printf "%15s%s\n" "" "-a allows specifying an application name for [getapp]"
 		>&2 printf "%18s%s\n" "" "- The keyword 'Ctrls' can be used to operate on controllers settings"
 		>&2 printf "%15s%s\n" "" "-o allows specifying the name of an option or a controllers setting for [getopt]"
 		>&2 printf "%18s%s\n" "" "- Multiple instances of -o are allowed"
 		>&2 printf "%18s%s\n" "" "- The keyword \"all\" can be used to request displaying the value of all options of [getapp]"
 		>&2 printf "%21s%s\n" "" "- The keyword \"all\" is unsupported when using multiple instances of -o"
+		>&2 printf "%21s%s\n" "" "-t allows specifying one of two possible types to restrict the returned results to"
+		>&2 printf "%24s%s\n" "" "- Possible types to filter on are \"rw\" (read-write) and \"ro\" (read-only)"
+		>&2 printf "%24s%s\n" "" "- Specifying '-t' is optional"
+		>&2 printf "%24s%s\n" "" "  If not specified, the default is to return results of both types" 
 		>&2 printf "%15s%s\n" "" "-r allows requesting expansion of all variables present in the value for option [getopt]"
 		>&2 printf "%18s%s\n" "" "- Specifying -r is optional"
 		>&2 printf "%18s%s\n" "" "- Variables are not expanded by default"
-		>&2 printf "%12s%s\n" "" "\"list\" allows listing all existing options of application [listapp] or all existing controllers settings"
 		>&2 printf "%12s%s\n" "" "\"help\" allows displaying information about the option(s) [helpopt] of an application [helpapp] or the controllers settings"
 		>&2 printf "%15s%s\n" "" "-a allows specifying an application name for [helpapp]"
 		>&2 printf "%18s%s\n" "" "- The keyword 'Ctrls' can be used to operate on controllers settings"
@@ -142,11 +149,22 @@ do
 		>&2 printf "%18s%s\n" "" "- Multiple instances of -o are allowed"
 		>&2 printf "%18s%s\n" "" "- The keyword \"all\" can be used to request displaying information about all options of [helpapp]"
 		>&2 printf "%21s%s\n" "" "- The keyword \"all\" is unsupported when using multiple instances of -o"
+		>&2 printf "%21s%s\n" "" "-t allows specifying one of two possible types to restrict the returned results to"
+		>&2 printf "%24s%s\n" "" "- Possible types to filter on are \"rw\" (read-write) and \"ro\" (read-only)"
+		>&2 printf "%24s%s\n" "" "- Specifying '-t' is optional"
+		>&2 printf "%24s%s\n" "" "  If not specified, the default is to return results of both types" 
+		>&2 printf "%12s%s\n" "" "\"list\" allows listing all existing options of application [listapp] or all existing controllers settings"
+		>&2 printf "%15s%s\n" "" "-a allows specifying an application name for [listapp]"
+		>&2 printf "%18s%s\n" "" "- The keyword 'Ctrls' can be used to operate on controllers settings"
+		>&2 printf "%15s%s\n" "" "-t allows specifying one of two possible types to restrict the returned results to"
+		>&2 printf "%18s%s\n" "" "- Possible types to filter on are \"rw\" (read-write) and \"ro\" (read-only)"
+		>&2 printf "%18s%s\n" "" "- Specifying '-t' is optional"
+		>&2 printf "%18s%s\n" "" "  If not specified, the default is to return results of both types" 
 		>&2 printf "%12s%s\n" "" "\"set\" allows changing the value of an option [setopt] of an application [setapp] or a read-write controllers setting to [value]"
 		>&2 printf "%15s%s\n" "" "- Set actions will fail on read-only options"
 		>&2 printf "%15s%s\n" "" "-a allows specifying an application name for [setapp]"
 		>&2 printf "%18s%s\n" "" "- The keyword 'Ctrls' can be used to operate on controllers settings"
-		>&2 printf "%15s%s\n" "" "-o allows specifying the name of an option or a controller settings [setopt] and it's new value [value]"
+		>&2 printf "%15s%s\n" "" "-o allows specifying the name of an option or a controllers setting [setopt] and it's new value [value]"
 		>&2 printf "%18s%s\n" "" "- Multiple instances of -o are allowed"
 		>&2 printf "%18s%s\n" "" "- [value] cannot be the reserved string 'N/A'"
 		>&2 printf "%18s%s\n" "" "- Always surround [value] with single quotes in the form option='[value]' when [value] contains variables that should not be expanded by the current shell"
@@ -170,11 +188,16 @@ do
 		>&2 printf "%15s%s\n" "" "-a allows specifying an application name for [promptapp]"
 		>&2 printf "%18s%s\n" "" "- The keyword 'Ctrls' can be used to operate on controllers settings"
 		>&2 printf "%15s%s\n" "" "-g specifies a get action in interactive mode"
+		>&2 printf "%18s%s\n" "" "-t allows specifying one of two possible types to restrict the listed results in the interactive menu to"
+		>&2 printf "%21s%s\n" "" "- Possible types to filter on are \"rw\" (read-write) and \"ro\" (read-only)"
+		>&2 printf "%21s%s\n" "" "- Specifying '-t' is optional"
+		>&2 printf "%21s%s\n" "" "  If not specified, the default is to list results of both types" 
 		>&2 printf "%15s%s\n" "" "-s specifies a set action in interactive mode"
+		>&2 printf "%18s%s\n" "" "- [value] cannot be the reserved string 'N/A'"
 		>&2 printf "%18s%s\n" "" "- Set actions will fail on read-only options"
 		>&2 printf "%18s%s\n" "" "- No surrounding quotes are required when entering the new value in interactive mode"
-		>&2 printf "%18s%s\n" "" "- Composite strings (containing spaces) in the new value entered should be surrounded with double quotes"
-		>&2 printf "%18s%s\n" "" "- Using single quotes within the new vale entered is not permitted due to being a POSIX limitation"
+		>&2 printf "%18s%s\n" "" "- Composite strings (containing spaces) and variables within [value] should be surrounded with double quotes"
+		>&2 printf "%18s%s\n" "" "- Using single quotes within the new value entered is not permitted due to being a POSIX limitation"
 		>&2 printf "%18s%s\n" "" "- Any event-based input device id references in the new value entered for an option holding an application's command line options should have the"
 		>&2 printf "%18s%s\n" "" "  numeric id replaced by the string 'PH_CTRL%' where '%' is '1' for controller 1, '2' for controller 2, etc"
 		>&2 printf "%18s%s\n" "" "- Changes to an option that sets the controller amount for an application will automatically be reflected to"
@@ -189,6 +212,10 @@ do
 		>&2 printf "%21s%s\n" "" "- Non-mandatory operations will return a warning when they fail"
 		>&2 printf "%21s%s\n" "" "- Specifying -n is optional"
 		>&2 printf "%15s%s\n" "" "-d specifies a display help action in interactive mode"
+		>&2 printf "%18s%s\n" "" "-t allows specifying one of two possible types to restrict the listed results in the interactive menu to"
+		>&2 printf "%21s%s\n" "" "- Possible types to filter on are \"rw\" (read-write) and \"ro\" (read-only)"
+		>&2 printf "%21s%s\n" "" "- Specifying '-t' is optional"
+		>&2 printf "%21s%s\n" "" "  If not specified, the default is to list results of both types" 
 		>&2 printf "%15s%s\n" "" "-r allows requesting expansion of all variables present in all option values displayed in any interactive mode"
 		>&2 printf "%18s%s\n" "" "- Specifying -r is optional"
 		>&2 printf "%18s%s\n" "" "- Variables are not expanded by default"
@@ -202,6 +229,10 @@ done
 OPTARG="$PH_OLDOPTARG"
 OPTIND=$PH_OLDOPTIND
 
+(([[ -n "$PH_DISP_TYPE" && "$PH_OPT" != "all" ]]) && ([[ "$PH_ACTION" == @(get|help) ]])) && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && exit 1
+(([[ -n "$PH_DISP_TYPE" ]]) && ([[ "$PH_ACTION" == "set" || "$PH_I_ACTION" == "set" ]])) && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && exit 1
+(([[ -z "$PH_DISP_TYPE" && "$PH_OPT" == "all" ]]) && ([[ "$PH_ACTION" == @(get|help) ]])) && PH_DISP_TYPE="all"
+(([[ -z "$PH_DISP_TYPE" ]]) && ([[ "$PH_I_ACTION" == @(get|help) || "$PH_ACTION" == "list" ]])) && PH_DISP_TYPE="all"
 [[ -n "$PH_RESOLVE" && "$PH_ACTION" != @(get|prompt) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && exit 1
 [[ -z "$PH_RESOLVE" ]] && PH_RESOLVE="no"
 (([[ -z "$PH_TYPE" ]]) && ([[ "$PH_ACTION" == "set" || "$PH_I_ACTION" == "set" ]])) && PH_TYPE="r"
@@ -273,16 +304,22 @@ case $PH_ACTION in get)
 			PH_OPT="${PH_OPTAR[$PH_COUNT]}"
 			if [[ "$PH_OPT" == "all" ]]
 			then
-				(for PH_OPT in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | cut -d'=' -f1 | paste -d" " -s`
-				do
-					[[ "$PH_RESOLVE" == "yes" ]] && confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT" -r || \
-						confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT"
-				done
-				for PH_OPT in `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf`
-				do
-					[[ "$PH_RESOLVE" == "yes" ]] && confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT" -r || \
-						confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT"
-				done) | more
+				(if [[ "$PH_DISP_TYPE" == @(rw|all) ]]
+				then
+					for PH_OPT in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | cut -d'=' -f1 | paste -d" " -s`
+					do
+						[[ "$PH_RESOLVE" == "yes" ]] && confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT" -r || \
+							confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT"
+					done
+				fi
+				if [[ "$PH_DISP_TYPE" == @(ro|all) ]]
+				then
+					for PH_OPT in `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf`
+					do
+						[[ "$PH_RESOLVE" == "yes" ]] && confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT" -r || \
+							confopts_ph.sh -p get -a "$PH_APP" -o "$PH_OPT"
+					done
+				fi) | more
 			else
 				grep ^"$PH_OPT=" "$PH_CONF_DIR"/"$PH_APP".conf >/dev/null 2>&1 && PH_OPT_TYPE="read-write" || PH_OPT_TYPE="read-only"
 				([[ "$PH_RESOLVE" == "yes" ]] && printf "%s\033[36m%s\033[0m\033[32m%s\033[0m\033[36m%s\033[0m\n" "- " "Displaying value of $PH_OPT_TYPE $PH_USE_WORD " "'$PH_OPT'" " (Variable expansion enabled)" || \
@@ -303,27 +340,33 @@ case $PH_ACTION in get)
 		unset PH_OPTAR PH_VALAR
 		exit 0 ;;
 		  list)
-		printf "%s\033[36m%s%s\033[0m\033[32m%s\033[0m\n" "- " "Listing all available read-only $PH_USE_WORD" "s for " "'$PH_APP'"
-		printf "\033[32m"
-		if [[ -z `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf 2>/dev/null` ]]
+		if [[ "$PH_DISP_TYPE" == @(ro|all) ]]
 		then
-			printf "%8s%s\n" "" "\"No read-only options found\"" 
-		else
-			for PH_OPT in `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf`
+			printf "%s\033[36m%s%s\033[0m\033[32m%s\033[0m\n" "- " "Listing all available read-only $PH_USE_WORD" "s for " "'$PH_APP'"
+			printf "\033[32m"
+			if [[ -z `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf 2>/dev/null` ]]
+			then
+				printf "%8s%s\n" "" "\"No read-only options found\"" 
+			else
+				for PH_OPT in `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf`
+				do
+					printf "%8s%s\n" "" "$PH_OPT"
+				done
+			fi
+			printf "\033[0m"
+			[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
+		fi
+		if [[ "$PH_DISP_TYPE" == @(rw|all) ]]
+		then
+			printf "%s\033[36m%s%s\033[0m\033[32m%s\033[0m\n" "- " "Listing all available read-write $PH_USE_WORD" "s for " "'$PH_APP'"
+			printf "\033[32m"
+			for PH_OPT in `nawk -F'=' '$1 ~ /^PH_/ { print $1 ; next } { next }' $PH_CONF_DIR/$PH_APP.conf | paste -d" " -s`
 			do
 				printf "%8s%s\n" "" "$PH_OPT"
 			done
+			printf "\033[0m"
+			[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 		fi
-		printf "\033[0m"
-		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
-		printf "%s\033[36m%s%s\033[0m\033[32m%s\033[0m\n" "- " "Listing all available read-write $PH_USE_WORD" "s for " "'$PH_APP'"
-		printf "\033[32m"
-		for PH_OPT in `nawk -F'=' '$1 ~ /^PH_/ { print $1 ; next } { next }' $PH_CONF_DIR/$PH_APP.conf | paste -d" " -s`
-		do
-			printf "%8s%s\n" "" "$PH_OPT"
-		done
-		printf "\033[0m"
-		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 		unset PH_OPTAR PH_VALAR
 		exit 0 ;;
 		  help)
@@ -332,14 +375,20 @@ case $PH_ACTION in get)
 			PH_OPT="${PH_OPTAR[$PH_COUNT]}"
 			if [[ "$PH_OPT" == "all" ]]
 			then
-				(for PH_OPT in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | cut -d'=' -f1 | paste -d" " -s`
-				do
-					confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
-				done
-				for PH_OPT in `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf`
-				do
-					confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
-				done) | more
+				(if [[ "$PH_DISP_TYPE" == @(rw|all) ]]
+				then
+					for PH_OPT in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | cut -d'=' -f1 | paste -d" " -s`
+					do
+						confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
+					done
+				fi
+				if [[ "$PH_DISP_TYPE" == @(ro|all) ]]
+				then
+					for PH_OPT in `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf`
+					do
+						confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
+					done
+				fi) | more
 			else
 				grep ^"$PH_OPT=" "$PH_CONF_DIR"/"$PH_APP".conf >/dev/null 2>&1 && PH_OPT_TYPE="read-write" || PH_OPT_TYPE="read-only"
 				(printf "%s\033[36m%s\033[0m\033[32m%s\033[0m\n" "- " "Displaying help for $PH_OPT_TYPE $PH_USE_WORD " "'$PH_OPT'"
@@ -401,17 +450,23 @@ case $PH_ACTION in get)
                 		do
 					[[ $PH_COUNT -gt 0 ]] && printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : Invalid response"
 					PH_COUNT=1
-					for PH_i in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | nawk -F'=' '{ print $1 }'`
-					do
-						printf "%2s%-13s%4s%2s%s\033[32m%s\033[0m\n" "" "(read-write)" "" "$((PH_COUNT))" ". " "$PH_i"
-						((PH_COUNT++))
-					done
+					if [[ "$PH_DISP_TYPE" == @(rw|all) ]]
+					then
+						for PH_i in `grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | nawk -F'=' '{ print $1 }'`
+						do
+							printf "%2s%-13s%4s%2s%s\033[32m%s\033[0m\n" "" "(read-write)" "" "$((PH_COUNT))" ". " "$PH_i"
+							((PH_COUNT++))
+						done
+					fi
 					PH_COUNT2=$PH_COUNT
-					for PH_i in `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf`
-					do
-						printf "%2s%-13s%4s%2s%s\033[32m%s\033[0m\n" "" "(read-only)" "" "$((PH_COUNT))" ". " "$PH_i"
-						((PH_COUNT++))
-					done
+					if [[ "$PH_DISP_TYPE" == @(ro|all) ]]
+					then
+						for PH_i in `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf`
+						do
+							printf "%2s%-13s%4s%2s%s\033[32m%s\033[0m\n" "" "(read-only)" "" "$((PH_COUNT))" ". " "$PH_i"
+							((PH_COUNT++))
+						done
+					fi
 					printf "%23s\033[32m%s\033[0m\n" "$PH_COUNT. " "All"
 					[[ `ps -p $PPID -o comm | tail -n +2` == "startpieh.sh" ]] && printf "%23s\033[32m%s\033[0m\n" "$((PH_COUNT+1)). " "Return to PieHelper menu" || \
 								printf "%23s\033[32m%s\033[0m\n" "$((PH_COUNT+1)). " "Exit"
@@ -526,31 +581,45 @@ case $PH_ACTION in get)
 					PH_COUNT2=$PH_COUNT
 					if [[ "$PH_RESOLVE" == "yes" ]]
 					then
-						for PH_i in `nawk -F'=' '$1 ~ /^PH_/ { print $1 }' $PH_CONF_DIR/$PH_APP.conf`
-						do
-							typeset -n PH_OPTVAL="$PH_i"
-							PH_OPTVAL=`echo $PH_OPTVAL | sed 's/"/\\\"/g'`
-							printf "%2s%-13s%4s%2s%s\033[32m%s\033[0m%s%s\n" "" "(read-write)" "" "$((PH_COUNT))" ". " "$PH_i" "=" "'`eval echo $PH_OPTVAL`'"
-							PH_OPTVAL=`echo $PH_OPTVAL | sed 's/\\\"/"/g'`
-							((PH_COUNT++))
-							unset -n PH_OPTVAL
-						done
-						((PH_COUNT--))
+						if [[ "$PH_DISP_TYPE" == @(rw|all) ]]
+						then
+							for PH_i in `nawk -F'=' '$1 ~ /^PH_/ { print $1 }' $PH_CONF_DIR/$PH_APP.conf`
+							do
+								typeset -n PH_OPTVAL="$PH_i"
+								PH_OPTVAL=`echo $PH_OPTVAL | sed 's/"/\\\"/g'`
+								printf "%2s%-13s%4s%2s%s\033[32m%s\033[0m%s%s\n" "" "(read-write)" "" "$((PH_COUNT))" ". " "$PH_i" "=" "'`eval echo $PH_OPTVAL`'"
+								PH_OPTVAL=`echo $PH_OPTVAL | sed 's/\\\"/"/g'`
+								((PH_COUNT++))
+								unset -n PH_OPTVAL
+							done
+							((PH_COUNT--))
+						fi
 						PH_COUNT2=$PH_COUNT
-						for PH_i in `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf`
-						do
-							typeset -n PH_OPTVAL="$PH_i"
-							printf "%2s%-13s%4s%2s%s\033[32m%s\033[0m%s%s\n" "" "(read-only)" "" "$((PH_COUNT+1))" ". " "$PH_i" "=" "'$(echo $PH_OPTVAL | sed 's/"/\\\"/g' | eval echo `cat`)'" 
-							((PH_COUNT++))
-							unset -n PH_OPTVAL
-						done
+						if [[ "$PH_DISP_TYPE" == @(ro|all) ]]
+						then
+							[[ "$PH_DISP_TYPE" == "ro" ]] && ((PH_COUNT--))
+							for PH_i in `nawk 'BEGIN { ORS = " " } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { print substr($8,0,index($8,"=")) }' $PH_CONF_DIR/$PH_APP.conf`
+							do
+								typeset -n PH_OPTVAL="$PH_i"
+								printf "%2s%-13s%4s%2s%s\033[32m%s\033[0m%s%s\n" "" "(read-only)" "" "$((PH_COUNT+1))" ". " "$PH_i" "=" "'$(echo $PH_OPTVAL | sed 's/"/\\\"/g' | eval echo `cat`)'" 
+								((PH_COUNT++))
+								unset -n PH_OPTVAL
+							done
+						fi
 					else
-						nawk -F'\t' 'BEGIN { count = 1 } $1 ~ /^PH_/ { printf "%2s%-13s%4s%4s\033[32m", "", "(read-write)", "", count ". " ; printf "%s\033[0m", substr($1,0,index($1,"=")) ; print substr($1,index($1,"=")) ; count++ ; next } \
+						if [[ "$PH_DISP_TYPE" == @(rw|all) ]]
+						then
+							nawk -F'\t' 'BEGIN { count = 1 } $1 ~ /^PH_/ { printf "%2s%-13s%4s%4s\033[32m", "", "(read-write)", "", count ". " ; printf "%s\033[0m", substr($1,0,index($1,"=")) ; print substr($1,index($1,"=")) ; count++ ; next } \
 															{ next }' $PH_CONF_DIR/$PH_APP.conf
-						PH_COUNT=`nawk -F'\t' 'BEGIN { count = 0 } $1 ~ /^PH_/ { count++ } END { print count }' $PH_CONF_DIR/$PH_APP.conf`
+							PH_COUNT=`nawk -F'\t' 'BEGIN { count = 0 } $1 ~ /^PH_/ { count++ } END { print count }' $PH_CONF_DIR/$PH_APP.conf`
+						fi
 						PH_COUNT2=$PH_COUNT
-						nawk -v count=$((PH_COUNT+1)) '$6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { printf "%2s%-13s%4s%4s\033[32m", "", "(read-only)", "", count ". " ; printf "%s\033[0m", substr($8,0,index($8,"=")) ; print substr($8,index($8,"=")) ; count++ ; next }' $PH_CONF_DIR/$PH_APP.conf
-						PH_COUNT=$((PH_COUNT+`nawk 'BEGIN { count = 0 } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { count++ } END { print count }' $PH_CONF_DIR/$PH_APP.conf`))
+						if [[ "$PH_DISP_TYPE" == @(ro|all) ]]
+						then
+							[[ "$PH_DISP_TYPE" == "ro" ]] && ((PH_COUNT--))
+							nawk -v count=$((PH_COUNT+1)) '$6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { printf "%2s%-13s%4s%4s\033[32m", "", "(read-only)", "", count ". " ; printf "%s\033[0m", substr($8,0,index($8,"=")) ; print substr($8,index($8,"=")) ; count++ ; next }' $PH_CONF_DIR/$PH_APP.conf
+							PH_COUNT=$((PH_COUNT+`nawk 'BEGIN { count = 0 } $6 ~ /^typeset$/ && $7 ~ /^-r$/ && $8 ~ /^PH_/ { count++ } END { print count }' $PH_CONF_DIR/$PH_APP.conf`))
+						fi
 					fi
 					((PH_COUNT++))
 					printf "%23s\033[32m%s\033[0m\n" "$PH_COUNT. " "All"
@@ -565,16 +634,23 @@ case $PH_ACTION in get)
 				if [[ $PH_ANSWER -eq $PH_COUNT ]]
 				then
 					PH_OPT="all"
+					[[ "$PH_DISP_TYPE" == "all" ]] && confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT" || confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT" -t "$PH_DISP_TYPE"
 				else
 					if [[ $PH_ANSWER -le $PH_COUNT2 ]]
 					then
 						PH_OPT=`grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | nawk -F'=' -v choice=$PH_ANSWER 'NR==choice { print $1 }'`
 					else
-						PH_OPT=$(grep ' typeset -r ' $PH_CONF_DIR/$PH_APP.conf | \
-							nawk -v choice=$((PH_ANSWER-$PH_COUNT2)) 'NR == choice { print substr($8,0,index($8,"=")) }')
+						PH_OPT=$(if [[ "$PH_DISP_TYPE" == "all" ]]
+							 then
+							 	grep ' typeset -r ' $PH_CONF_DIR/$PH_APP.conf | \
+								nawk -v choice=$((PH_ANSWER-$PH_COUNT2)) 'NR == choice { print substr($8,0,index($8,"=")) }'
+							 else
+							 	grep ' typeset -r ' $PH_CONF_DIR/$PH_APP.conf | \
+								nawk -v choice=$PH_ANSWER 'NR == choice { print substr($8,0,index($8,"=")) }'
+							fi)
 					fi
+					confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
 				fi
-				confopts_ph.sh -p help -a "$PH_APP" -o "$PH_OPT"
 				PH_ANSWER=0
 				PH_COUNT=0
 				PH_COUNT2=0
