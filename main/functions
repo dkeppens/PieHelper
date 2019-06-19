@@ -1,6 +1,16 @@
 # PieHelper function declarations (By Davy Keppens on 06/10/18)
 # Toggle debugstate of a specific function between Enable/Disable by running confpieh_ph.sh -p debug -m 'function_name'
 
+function ph_check_user_validity {
+
+[[ -z "$1" ]] && return 0
+if ! id "$1" >/dev/null 2>&1
+then
+        return 1
+fi
+return 0
+}
+
 function ph_set_result {
 
 typeset -i PH_RET_CODE=$1
@@ -47,13 +57,13 @@ function ph_get_app_user {
 typeset PH_APP="$1"
 typeset PH_APP_USER=""
 
-printf "%s\033[36m%s\033[32m\n" "- " "Displaying $PH_APP run account"
-PH_APP_USER=`nawk -v app=^"$PH_APP"$ '$1 ~ app { print $2 }' $PH_CONF_DIR/installed_apps`
+[[ "$2" != "short" ]] && printf "%s\033[36m%s\033[32m\n" "- " "Displaying $PH_APP run account"
+PH_APP_USER=`nawk -v app=^"$PH_APP"$ '$1 ~ app && $2 !~ /^-$/ { print $2 }' "$PH_CONF_DIR"/installed_apps 2>/dev/null`
 if [[ -n "$PH_APP_USER" ]]
 then
-	printf "%2s%s\n" "" "SUCCESS : $PH_APP_USER"
+	[[ "$2" == "short" ]] && echo -n "$PH_APP_USER" || printf "%2s%s\n" "" "SUCCESS : $PH_APP_USER"
 else
-	printf "%2s%s\n" "" "ERROR : $PH_APP is not an integrated application"
+	[[ "$2" != "short" ]] && printf "%2s%s\n" "" "ERROR : $PH_APP is not an integrated application"
 	return 1
 fi
 return 0
@@ -304,7 +314,7 @@ then
 				if [[ -n "$PH_MOON_SRV" ]]
 				then
 					PH_MOON_PATH="`nawk '$1 ~ /^Moonlight$/ { printf $2 }' $PH_CONF_DIR/supported_apps 2>/dev/null`"
-					PH_MOON_USER="`nawk '$1 ~ /^Moonlight$/ { print $2 ; exit 0 } { next }' $PH_CONF_DIR/installed_apps 2>/dev/null`"
+					PH_MOON_USER=`ph_get_app_user Moonlight short` 
 					if [[ -d "`getent passwd \"$PH_MOON_USER\" | cut -d':' -f6`/.cache" ]]
 					then
 						printf "%8s%s\n" "" "--> Cleaning up Moonlight cache"
@@ -1333,7 +1343,8 @@ return $PH_RET_CODE
 function ph_mount_cifs_share {
 
 typeset PH_i=""
-typeset -u PH_APPU=`echo $1 | cut -c1-4`
+typeset PH_APP="$1"
+typeset -u PH_APPU=`echo $PH_APP | cut -c1-4`
 typeset -i PH_LENGTH=`echo $PH_APPU | wc -c`
 typeset -i PH_RET_CODE=0
 for PH_i in PH_"$PH_APPU"_CIFS_USER PH_"$PH_APPU"_CIFS_PASS PH_"$PH_APPU"_CIFS_SRV PH_"$PH_APPU"_CIFS_DIR PH_"$PH_APPU"_CIFS_SUBDIR PH_"$PH_APPU"_CIFS_MPT
@@ -1341,15 +1352,24 @@ do
 	eval [[ -n \$OLD_$PH_i ]] && typeset -n TMP_`echo $PH_i | cut -c$((PH_LENGTH+4))-`=OLD_"$PH_i" || \
 					typeset -n TMP_`echo $PH_i | cut -c$((PH_LENGTH+4))-`="$PH_i"
 done
+typeset TMP_RUN_USER=`ph_get_app_user "$PH_APP" short`
 
 printf "%8s%s\n" "" "--> Mounting cifs share"
-for PH_i in _CIFS_USER _CIFS_PASS _CIFS_SRV _CIFS_DIR _CIFS_SUBDIR _CIFS_MPT
-do
-	eval [[ -z \"\$TMP$PH_i\" ]] && printf "%10s%s\n" "" "ERROR : Required variable PH_$PH_APPU$PH_i is unset" && PH_RET_CODE=1 && break
-done
+if [[ -z "$TMP_RUN_USER" ]]
+then
+	printf "%10s%s\n" "" "ERROR : Could not determine run account for '$PH_APP'"
+	PH_RET_CODE=1
+fi
 if [[ $PH_RET_CODE -eq 0 ]]
 then
-	$PH_SUDO `which mount` -t cifs -o username="$TMP_CIFS_USER" -o password="$TMP_CIFS_PASS" -o rw,uid="$TMP_CIFS_USER" \
+	for PH_i in _CIFS_USER _CIFS_PASS _CIFS_SRV _CIFS_DIR _CIFS_SUBDIR _CIFS_MPT
+	do
+		eval [[ -z \"\$TMP$PH_i\" ]] && printf "%10s%s\n" "" "ERROR : Required variable PH_$PH_APPU$PH_i is unset" && PH_RET_CODE=1 && break
+	done
+fi
+if [[ $PH_RET_CODE -eq 0 ]]
+then
+	"$PH_SUDO" `which mount` -t cifs -o username="$TMP_CIFS_USER" -o password="$TMP_CIFS_PASS" -o rw,uid="$TMP_RUN_USER" \
 					"//$TMP_CIFS_SRV$TMP_CIFS_DIR$TMP_CIFS_SUBDIR" `eval echo -n "$TMP_CIFS_MPT"` 2>/dev/null
 	[[ $? -ne 0 ]] && printf "%10s%s\n" "" "ERROR : Could not mount \"$TMP_CIFS_DIR$TMP_CIFS_SUBDIR\" from server $TMP_CIFS_SRV to `eval echo -n \"$TMP_CIFS_MPT\"`" && PH_RET_CODE=1 || \
 			printf "%10s%s\n" "" "OK"
@@ -1639,15 +1659,15 @@ case $PH_APP in Moonlight)
 		return 1 ;;
 esac
 ph_integrate_apps "$PH_APP"
-if [[ "$PH_APP_USER" != "$PH_RUN_USER" ]]
+if [[ "$PH_APP_USER" != "$PH_RUN_USER" && "$PH_APP_USER" != "root" ]]
 then
 	printf "%s\033[36m%s\033[0m\n" "- " "Displaying reminder for multiple account use"
 	printf "\033[32m"
-	printf "%s\n" "- $PH_APP has been installed with a different run account than the default '$PH_RUN_USER'"
-	printf "%2s%s\n" "" "When using CIFS for $PH_APP, the run account for $PH_APP should have read-write permission on the share or"
-	printf "%2s%s\n" "" "be used as the value for PH_`echo -n $PH_APPU`_CIFS_USER"
-	[[ "$PH_APP" == "Emulationstation" ]] && printf "%s\n" "- Always use '$PH_SUDO' as the run account used for $PH_APP when running"
-	[[ "$PH_APP" == "Emulationstation" ]] && printf "%2s%s\n" "" "Emulationstation tools to avoid breaking configurations"
+	printf "%s\n" "- $PH_APP has been installed with a different run account than 'root' or the default '$PH_RUN_USER'"
+	printf "%2s%s\n" "" "When using CIFS for '$PH_APP', the run account for '$PH_APP' should be created on CIFS server PH_`echo -n $PH_APPU`_CIFS_SRV and"
+	printf "%2s%s\n" "" "be granted read-write permissions on the share"
+	[[ "$PH_APP" == "Emulationstation" ]] && printf "%s\n" "- When running '$PH_APP' CLI tools, make sure to run them as user '$PH_APP_USER'"
+	[[ "$PH_APP" == "Emulationstation" ]] && printf "%2s%s\n" "" "preceded by '$PH_SUDO' to avoid breaking Emulationstation configurations"
 	printf "\033[0m"
 	printf "%2s%s\n\n" "" "SUCCESS"
 fi
@@ -1790,26 +1810,10 @@ do
 	ph_set_option_to_default "$PH_i" || PH_RESULT="PARTIALLY FAILED"
 done
 [[ $PH_APP_TTY -ne 0 ]] && ph_undo_setup_tty $PH_APP_TTY "$PH_APP"
-printf "%8s%s\n" "" "--> Removing $PH_APP as an integrated application"
-nawk -v app=^"$PH_APP"$ '$1 ~ app { next } { print }' $PH_CONF_DIR/installed_apps >/tmp/installed_apps_tmp 2>/dev/null
-[[ $? -eq 0 ]] && mv /tmp/installed_apps_tmp $PH_CONF_DIR/installed_apps
-printf "%10s%s\n" "" "OK"
 printf "%8s%s\n" "" "--> Removing default mountpoint for CIFS mounts ($PH_CONF_DIR/../mnt/$PH_APP)"
 rm -r $PH_CONF_DIR/../mnt/$PH_APP >/dev/null 2>&1
 printf "%10s%s\n" "" "OK"
-if nawk -v user=^"$PH_APP_USER"$ '$2 ~ user { exit 1 } { next }' $PH_CONF_DIR/installed_apps >/dev/null 2>&1
-then
-	if [[ "$PH_RUN_USER" != "$PH_APP_USER" ]]
-	then
-		ph_revoke_pieh_access "$PH_APP_USER"
-		printf "%8s%s\n" "" "--> Displaying reminder for out-of-use accounts"
-		printf "\033[32m"
-		printf "%12s%s\n" "" "- No more PieHelper applications use run account '$PH_APP_USER'"
-		printf "%14s%s\n" "" "If no other applications use this account, it can be deleted manually by running '$PH_SUDO userdel -r $PH_APP_USER' or through the PieHelper menu"
-		printf "\033[0m"
-		printf "%10s%s\n" "" "OK"
-	fi
-fi
+ph_cleanup_run_account -u "$PH_APP_USER" -a "$PH_APP"
 if [[ "$PH_APP" == "Moonlight" ]]
 then
 	printf "%8s%s\n" "" "--> Removing Moonlight cache directory"
@@ -1817,6 +1821,87 @@ then
 	printf "%10s%s\n" "" "OK"
 fi
 printf "%2s%s\n\n" "" "$PH_RESULT"
+return 0
+}
+
+function ph_cleanup_run_account {
+
+typeset PH_APP=""
+typeset PH_APP_USER=""
+typeset PH_FORCE="no"
+typeset PH_OPTION=""
+typeset PH_MESSAGE=""
+typeset PH_OLDOPTARG="$OPTARG"
+typeset -i PH_RET_CODE=0
+typeset -i PH_OLDOPTIND=$OPTIND
+
+while getopts fa:u: PH_OPTION
+do
+        case $PH_OPTION in a)
+                PH_APP="$OPTARG" ;;
+                           u)
+                PH_APP_USER="$OPTARG"
+		PH_MESSAGE="run account '$PH_APP_USER'" ;;
+                           f)
+                PH_FORCE="yes" ;;
+        esac
+done
+OPTIND=$PH_OLDOPTIND
+OPTARG="$PH_OLDOPTARG"
+
+[[ -z "$PH_APP" && -z "$PH_APP_USER" ]] && return 1
+if [[ -z "$PH_APP_USER" ]]
+then
+	if [[ "$PH_FORCE" == "no" ]]
+	then
+		PH_APP_USER=`ph_get_app_user "$PH_APP" short`
+		[[ -z "$PH_APP_USER" ]] && printf "%8s%s\n" "" "--> Removing '$PH_APP' as an integrated application" && printf "%10s%s\n" "" "ERROR : Could not detect run account for '$PH_APP' (Use '-f' to force)" && return 1
+		ph_revoke_pieh_access "$PH_APP_USER"
+		PH_MESSAGE="run account '$PH_APP_USER'"
+	else
+		PH_MESSAGE="the run account previously attributed to '$PH_APP'"
+	fi
+else
+	[[ "$PH_FORCE" == "no" ]] && printf "%8s%s\n" "" "--> Removing unknown integrated application with run account '$PH_APP_USER'" && \
+					printf "%10s%s\n" "" "ERROR : Could not detect application name for deletion (Use '-f' to force)" && return 1
+	ph_revoke_pieh_access "$PH_APP_USER"
+	PH_MESSAGE="unknown application with run account '$PH_APP_USER'"
+fi
+if [[ -n "$PH_APP" ]]
+then
+	printf "%8s%s\n" "" "--> Removing '$PH_APP' as an integrated application"
+	nawk -v app=^"$PH_APP"$ '$1 ~ app { next } { print }' "$PH_CONF_DIR"/installed_apps >/tmp/installed_apps_tmp 2>/dev/null
+	[[ $? -eq 0 ]] && mv /tmp/installed_apps_tmp "$PH_CONF_DIR"/installed_apps
+else
+	printf "%8s%s\n" "" "--> Removing $PH_MESSAGE"
+	nawk -v user=^"$PH_APP_USER"$ '$2 ~ user && $1 ~ /^-$/ { next } { print }' "$PH_CONF_DIR"/installed_apps >/tmp/installed_apps_tmp 2>/dev/null
+	[[ $? -eq 0 ]] && mv /tmp/installed_apps_tmp "$PH_CONF_DIR"/installed_apps
+fi
+printf "%10s%s\n" "" "OK"
+printf "%8s%s\n" "" "--> Checking run accounts of remaining integrated applications"
+if [[ -n "$PH_APP_USER" ]]
+then
+	nawk -v user=^"$PH_APP_USER"$ '$2 ~ user { exit 1 } { next }' "$PH_CONF_DIR"/installed_apps >/dev/null 2>&1
+	PH_RET_CODE=$?
+else
+	printf "%10s%s\n" "" "Warning : Could not determine $PH_MESSAGE"
+	printf "%20s%s\n" "" "Manual verification whether '$PH_APP'\'s old run account is still in-use by remaining PieHelper-integrated applications or any other applications is required" 
+	printf "%24s%s\n" "" "- If not, the account can be deleted manually by running '$PH_SUDO userdel -r ' followed by the account to remove or by using the PieHelper menu"
+	printf "%24s%s\n" "" "- The presence of ACLs could not be checked automatically and any lingering ACL configurations for this account can be deleted manually using '$PH_SUDO' with the 'setfacl' utility"
+	return 0
+fi
+if [[ $PH_RET_CODE -eq 1 ]]
+then
+	printf "%10s%s\n" "" "OK (out-of-use account)"
+	printf "%8s%s\n" "" "--> Displaying reminder for out-of-use accounts"
+	printf "\033[32m"
+	printf "%12s%s\n" "" "- No more PieHelper-integrated applications use run account '$PH_APP_USER'"
+	printf "%14s%s\n" "" "If no other applications use this account, it can be deleted manually by running '$PH_SUDO userdel -r $PH_APP_USER' or by using the PieHelper menu"
+	printf "\033[0m"
+	printf "%10s%s\n" "" "OK"
+else
+	printf "%10s%s\n" "" "OK ('$PH_APP_USER' in use)"
+fi
 return 0
 }
 
@@ -1918,11 +2003,21 @@ function ph_revoke_pieh_access {
 typeset PH_APP_USER="$1"
 
 printf "%8s%s\n" "" "--> Removing ACLs for user $PH_APP_USER"
-$PH_SUDO setfacl -R -x u:"$PH_APP_USER" $PH_SCRIPTS_DIR/../../PieHelper >/dev/null 2>&1
-printf "%10s%s\n" "" "OK"
+if [[ "$PH_APP_USER" == "root" || "$PH_APP_USER" == "$PH_RUN_USER" ]]
+then
+	printf "%10s%s\n" "" "OK (No action for run account '$PH_APP_USER')"
+else
+	"$PH_SUDO" setfacl -R -x u:"$PH_APP_USER" $PH_SCRIPTS_DIR/../../PieHelper >/dev/null 2>&1
+	printf "%10s%s\n" "" "OK"
+fi
 printf "%8s%s\n" "" "--> Removing sudo rules for $PH_APP_USER"
-$PH_SUDO rm /etc/sudoers.d/020_pieh-"$PH_APP_USER" 2>/dev/null
-printf "%10s%s\n" "" "OK"
+if [[ "$PH_APP_USER" == "root" || "$PH_APP_USER" == "$PH_RUN_USER" ]]
+then
+	printf "%10s%s\n" "" "OK (No action for run account '$PH_APP_USER')"
+else
+	"$PH_SUDO" rm /etc/sudoers.d/020_pieh-"$PH_APP_USER" 2>/dev/null
+	printf "%10s%s\n" "" "OK"
+fi
 return 0
 }
 
@@ -1931,14 +2026,24 @@ function ph_grant_pieh_access {
 typeset PH_APP_USER="$1"
 
 printf "%8s%s\n" "" "--> Installing ACLs for $PH_APP_USER"
-$PH_SUDO setfacl -R -m u:"$PH_APP_USER":rwx $PH_SCRIPTS_DIR/../../PieHelper >/dev/null 2>&1
-printf "%10s%s\n" "" "OK"
+if [[ "$PH_APP_USER" == "root" || "$PH_APP_USER" == "$PH_RUN_USER" ]]
+then
+	printf "%10s%s\n" "" "OK (No action for run account '$PH_APP_USER')"
+else
+	"$PH_SUDO" setfacl -R -m u:"$PH_APP_USER":rwx "$PH_SCRIPTS_DIR"/../../PieHelper >/dev/null 2>&1
+	printf "%10s%s\n" "" "OK"
+fi
 printf "%8s%s\n" "" "--> Installing sudo rules for $PH_APP_USER"
-echo "$PH_APP_USER ALL=(ALL) NOPASSWD:SETENV: ALL" >/tmp/020_pieh-"$PH_APP_USER"
-$PH_SUDO chown root:root /tmp/020_pieh-"$PH_APP_USER"
-$PH_SUDO chmod 440 /tmp/020_pieh-"$PH_APP_USER"
-$PH_SUDO mv /tmp/020_pieh-"$PH_APP_USER" /etc/sudoers.d
-printf "%10s%s\n" "" "OK"
+if [[ "$PH_APP_USER" == "root" || "$PH_APP_USER" == "$PH_RUN_USER" ]]
+then
+	printf "%10s%s\n" "" "OK (No action for run account '$PH_APP_USER')"
+else
+	echo "$PH_APP_USER ALL=(ALL) NOPASSWD:SETENV: ALL" >/tmp/020_pieh-"$PH_APP_USER"
+	"$PH_SUDO" chown root:root /tmp/020_pieh-"$PH_APP_USER"
+	"$PH_SUDO" chmod 440 /tmp/020_pieh-"$PH_APP_USER"
+	"$PH_SUDO" mv /tmp/020_pieh-"$PH_APP_USER" /etc/sudoers.d
+	printf "%10s%s\n" "" "OK"
+fi
 return 0
 }
 
@@ -2095,16 +2200,19 @@ typeset PH_RUNAPP="$2"
 typeset -i PH_RUNAPP_TTY=$1
 
 printf "%8s%s\n" "" "--> Removing TTY$PH_RUNAPP_TTY autologin configuration"
-$PH_SUDO rm -r /etc/systemd/system/getty@tty$PH_RUNAPP_TTY.service.d 2>/dev/null
+"$PH_SUDO" rm -r /etc/systemd/system/getty@tty$PH_RUNAPP_TTY.service.d 2>/dev/null
 printf "%10s%s\n" "" "OK"
 printf "%8s%s\n" "" "--> Removing login script PieHelper_tty$PH_RUNAPP_TTY.sh"
-$PH_SUDO rm /etc/profile.d/PieHelper_tty$PH_RUNAPP_TTY.sh 2>/dev/null
+"$PH_SUDO" rm /etc/profile.d/PieHelper_tty$PH_RUNAPP_TTY.sh 2>/dev/null
 printf "%10s%s\n" "" "OK"
-printf "%8s%s\n" "" "--> Removing TTY info from integrated applications configuration file"
-nawk -v runapp=^"$PH_RUNAPP"$ -v runapptty=$PH_RUNAPP_TTY '$1 ~ runapp { print $1 "\t" $2 "\t" $3 "\t" "-" ; next } \
+if [[ -n "$PH_RUNAPP" ]]
+then
+	printf "%8s%s\n" "" "--> Removing TTY info from integrated applications configuration file"
+	nawk -v runapp=^"$PH_RUNAPP"$ -v runapptty=$PH_RUNAPP_TTY '$1 ~ runapp { print $1 "\t" $2 "\t" $3 "\t" "-" ; next } \
 								{ print }' $PH_CONF_DIR/installed_apps >/tmp/installed_apps 2>/dev/null
-[[ $? -eq 0 ]] && mv /tmp/installed_apps $PH_CONF_DIR/installed_apps
-printf "%10s%s\n" "" "OK"
+	[[ $? -eq 0 ]] && mv /tmp/installed_apps $PH_CONF_DIR/installed_apps
+	printf "%10s%s\n" "" "OK"
+fi
 return 0
 }
 
@@ -2284,6 +2392,24 @@ echo "$PH_RUNAPP"
 return 0
 }
 
+function ph_get_app_user_from_tty_config {
+
+typeset PH_RUNAPP_USER=""
+
+PH_RUNAPP_USER=`"$PH_SUDO" cat /etc/systemd/system/getty@tty$PH_i.service.d/autologin.conf 2>/dev/null | nawk '$2 ~ /autologin/ { print $3 }' 2>/dev/null`
+echo -n "$PH_RUNAPP_USER"
+return 0
+}
+
+function ph_get_app_user_from_login_script {
+
+typeset PH_RUNAPP_USER=""
+
+PH_RUNAPP_USER=`"$PH_SUDO" ls -la /etc/profile.d/PieHelper_tty$PH_i.sh 2>/dev/null | nawk '{ print $3 }' 2>/dev/null`
+echo -n "$PH_RUNAPP_USER"
+return 0
+}
+
 function ph_repair_pieh {
 
 typeset PH_RUNAPP_USER=""
@@ -2291,6 +2417,8 @@ typeset PH_RUNAPP=""
 typeset PH_RESULT="SUCCESS"
 typeset -i PH_STARTAPP_TTY=0
 typeset -i PH_i=2
+typeset -i PH_COUNT=0
+typeset -i PH_NR_CHANGES_MADE=0
 
 export PH_i
 
@@ -2314,138 +2442,182 @@ else
 fi
 printf "%2s%s\n\n" "" "SUCCESS"
 printf "%s\n" "- Checking TTY configurations"
-printf "%8s%s\n" "" "--> Checking configuration of TTY1"
+printf "%8s%s\n" "" "--> Checking configuration of 'TTY1'"
 if [[ -f /etc/systemd/system/getty@tty1.service.d/autostart.conf ]]
 then
         PH_STARTAPP_TTY=`nawk '$0 ~ /^ExecStartPost=/ { print $NF }' /etc/systemd/system/getty@tty1.service.d/autostart.conf`
-        PH_RUNAPP=`nawk -v tty=\^$PH_STARTAPP_TTY\$ '$4 ~ tty { print $1 }' $PH_CONF_DIR/installed_apps`
+        PH_RUNAPP=`nawk -v tty=\^$PH_STARTAPP_TTY\$ '$4 ~ tty { print $1 }' "$PH_CONF_DIR"/installed_apps`
         if [[ "$PH_RUNAPP" != "" ]]
         then
                 if [[ "$PH_RUNAPP" != "$PH_PIEH_STARTAPP" ]]
                 then
-                        printf "%10s%s\n" "" "Warning : Configured startapp differs from PH_PIEH_STARTAPP -> Resetting PH_PIEH_STARTAPP to \"$PH_RUNAPP\""
+                        printf "%10s%s\n" "" "Warning : Configured StartApp conflicts with PH_PIEH_STARTAPP value -> Setting PH_PIEH_STARTAPP to '$PH_RUNAPP'"
                         ph_set_option PieHelper -r PH_PIEH_STARTAPP="$PH_RUNAPP" || PH_RESULT="PARTIALLY FAILED"
                 else
-                        printf "%10s%s\n" "" "OK (TTY1)"
+                        printf "%10s%s\n" "" "OK : Global start config ('$PH_PIEH_STARTAPP')"
                 fi
         else
                 if [[ "$PH_PIEH_STARTAPP" != "none" ]]
                 then
-                        printf "%10s%s\n\n" "" "Warning : Too much missing information for TTY1 -> Setting startapp to \"none\""
-                        printf "%20s%s\n" "" "- You might want to choose a new application to start by default on system boot"
-                        printf "%22s%s\n" "" "A new startapp can be set with confapps_ph.sh or the PieHelper menu"
+                        printf "%10s%s\n\n" "" "Warning : Too much missing information for 'TTY1' -> Setting global start config to 'none'"
+                        printf "%20s%s\n" "" "You might want to choose a new application to start by default on system boot"
+                        printf "%20s%s\n" "" "A new StartApp can be set with 'confapps_ph.sh' or the PieHelper menu"
                         ph_set_app_for_start none >/dev/null || PH_RESULT="PARTIALLY FAILED"
-                        ph_set_pieh_tty_states || PH_RESULT="PARTIALLY FAILED"
                 else
-                        printf "%10s%s\n\n" "" "Warning : Too much missing information for TTY1 -> Removing remaining configuration"
-                        printf "%20s%s\n" "" "- You might want to choose a new application to start by default on system boot"
-                        printf "%22s%s\n" "" "A new startapp can be set with confapps_ph.sh or the PieHelper menu"
-                        $PH_SUDO rm -r /etc/systemd/system/getty@tty1.service.d/autostart.conf 2>/dev/null
-                        ph_set_pieh_tty_states || PH_RESULT="PARTIALLY FAILED"
+                        printf "%10s%s\n\n" "" "Warning : Too much missing information for 'TTY1' -> Setting global start config to 'none'"
+                        printf "%20s%s\n" "" "You might want to choose a new application to start by default on system boot"
+                        printf "%20s%s\n" "" "A new StartApp can be set with 'confapps_ph.sh' or the PieHelper menu"
+                        "$PH_SUDO" rm -r /etc/systemd/system/getty@tty1.service.d/autostart.conf 2>/dev/null
                 fi
         fi
 else
         if [[ "$PH_PIEH_STARTAPP" != "none" ]]
         then
-                printf "%10s%s\n" "" "Warning : Missing autostart configuration for TTY1 -> Reconfiguring TTY1"
-                printf "%8s%s\n" "" "--> Attempting to determine TTY for $PH_PIEH_STARTAPP"
-                PH_STARTAPP_TTY=`nawk -v app=^"$PH_PIEH_STARTAPP"$ '$1 ~ app && $4 !~ /^-$/ { print $4 }' $PH_CONF_DIR/installed_apps`
+                printf "%10s%s\n" "" "Warning : PH_PIEH_STARTAPP value conflicts with configured StartApp -> Reconfiguring 'TTY1'"
+                printf "%8s%s\n" "" "--> Attempting to determine TTY for '$PH_PIEH_STARTAPP'"
+                PH_STARTAPP_TTY=`nawk -v app=^"$PH_PIEH_STARTAPP"$ '$1 ~ app && $4 !~ /^-$/ { print $4 }' "$PH_CONF_DIR"/installed_apps 2>/dev/null`
                 if [[ $PH_STARTAPP_TTY -eq 0 ]]
                 then
-                        printf "%10s%s\n" "" "Warning : Could not determine TTY for $PH_PIEH_STARTAPP -> Resetting PH_PIEH_STARTAPP to \"none\""
+                        printf "%10s%s\n" "" "Warning : Could not determine TTY for '$PH_PIEH_STARTAPP' -> Setting PH_PIEH_STARTAPP to 'none'"
                         ph_set_option PieHelper -r PH_PIEH_STARTAPP='none' || PH_RESULT="PARTIALLY FAILED"
                 else
-                        printf "%10s%s\n" "" "OK"
+                        printf "%10s%s\n" "" "OK : TTY found ('$PH_STARTAPP_TTY')"
                         ph_set_tty_for_boot $PH_STARTAPP_TTY
                 fi
-        else
-                ph_set_pieh_tty_states >/dev/null || PH_RESULT="PARTIALLY FAILED"
+	else
+		printf "%10s%s\n" "" "OK : Global start config ('none')"
         fi
 fi
 while [[ $PH_i -le $PH_PIEH_MAX_TTYS ]]
 do
-        printf "%8s%s\n" "" "--> Checking configuration of TTY$PH_i"
-        if cut -f4 $PH_CONF_DIR/installed_apps | grep ^"$PH_i"$ >/dev/null
+	PH_COUNT=0
+	PH_RUNAPP=""
+	PH_RUNAPP_USER=""
+        printf "%8s%s\n" "" "--> Checking basic configuration for 'TTY$PH_i'"
+        if cut -f4 "$PH_CONF_DIR"/installed_apps | grep ^"$PH_i"$ >/dev/null
         then
-                PH_RUNAPP=`nawk -v tty=\^$PH_i\$ '$4 ~ tty { print $1 }' $PH_CONF_DIR/installed_apps`
-                PH_RUNAPP_USER=`nawk -v tty=\^$PH_i\$ '$4 ~ tty { print $2 }' $PH_CONF_DIR/installed_apps`
+                PH_RUNAPP=`nawk -v runapptty=\^$PH_i\$ '$4 ~ runapptty { print $1 }' "$PH_CONF_DIR"/installed_apps 2>/dev/null`
+		if [[ -z "$PH_RUNAPP" ]]
+		then
+			printf "%10s%s\n" "" "Warning : Missing application name for 'TTY$PH_i' -> Detecting"
+			[[ -f /etc/profile.d/PieHelper_tty$PH_i.sh ]] && PH_RUNAPP=`ph_get_app_from_login_script`
+			if [[ -z "$PH_RUNAPP" ]]
+			then
+				((PH_NR_CHANGES_MADE++))
+				PH_RUNAPP_USER=`ph_get_app_user_from_login_script`
+				[[ -z "$PH_RUNAPP_USER" ]] && PH_RUNAPP_USER=`ph_get_app_user_from_tty_config`
+				PH_COUNT=`nawk -v runappuser=^"$PH_RUNAPP_USER"$ -v runapptty=\^$PH_i\$ 'BEGIN { count = 0 } $2 ~ runappuser && $4 !~ runapptty { count++ } END { print count }' "$PH_CONF_DIR"/installed_apps 2>/dev/null`
+				if [[ $PH_COUNT -eq 0 && -n "$PH_RUNAPP_USER" ]]
+				then
+					PH_RUNAPP=`ph_get_app_from_tty_config`
+				else
+					printf "%10s%s\n" "" "Warning : Too much missing information for 'TTY$PH_i' -> Removing remaining configuration where possible"
+					if [[ -z "$PH_RUNAPP_USER" ]]
+					then
+						ph_undo_setup_tty $PH_i
+					        printf "%8s%s\n" "" "--> Removing basic TTY info"
+						nawk -v runapptty=\^$PH_RUNAPP_TTY\$ '$4 ~ runapptty { next } \
+                                                                { print }' "$PH_CONF_DIR"/installed_apps >/tmp/installed_apps 2>/dev/null
+						[[ $? -eq 0 ]] && mv /tmp/installed_apps $PH_CONF_DIR/installed_apps
+						printf "%10s%s\n" "" "OK"
+					else
+						ph_undo_setup_tty $PH_i
+						ph_cleanup_run_account -u "$PH_RUNAPP_USER" -f
+					fi
+					printf "%10s%s\n" "" "OK : Removed (application name unknown)"
+				fi
+			else
+				((PH_NR_CHANGES_MADE++))
+			fi
+		fi
+		if [[ -z "$PH_RUNAPP" ]]
+		then
+			((PH_i++)) && continue
+		else
+			(([[ $PH_NR_CHANGES_MADE -eq 0 ]]) || ([[ $PH_COUNT -eq 0 && -n "$PH_RUNAPP_USER" ]])) && printf "%10s%s\n" "" "OK (application name '$PH_RUNAPP')"
+		fi
+                PH_RUNAPP_USER=`ph_get_app_user "$PH_RUNAPP" short`
+		if [[ -z "$PH_RUNAPP_USER" ]]
+		then
+			printf "%10s%s\n" "" "Warning : Missing run account for 'TTY$PH_i' -> Detecting"
+			[[ -n "$PH_RUNAPP_USER" ]] && ((PH_NR_CHANGES_MADE++)) || PH_RUNAPP_USER=`ph_get_app_user_from_login_script`
+			if [[ -z "$PH_RUNAPP_USER" ]]
+			then
+				((PH_NR_CHANGES_MADE++))
+				PH_RUNAPP_USER=`ph_get_app_user_from_tty_config`
+				if [[ -z "$PH_RUNAPP_USER" ]]
+				then
+					printf "%10s%s\n" "" "Warning : Too much missing information for 'TTY$PH_i' -> Removing remaining configuration where possible"
+					ph_undo_setup_tty $PH_i
+					ph_cleanup_run_account -a "$PH_RUNAPP" -f
+                                	printf "%10s%s\n" "" "OK : Removing (run account unknown)"
+				fi
+			fi
+		fi
+		if [[ -z "$PH_RUNAPP_USER" ]]
+		then
+			((PH_i++)) && continue
+		else
+			printf "%10s%s\n" "" "OK (run account '$PH_RUNAPP_USER')"
+		fi
+		printf "%8s%s\n" "" "--> Reapplying 'TTY$PH_i' basic config"
+		nawk -v runapp="$PH_RUNAPP" -v runapptty=\^$PH_i\$ -v runappuser="$PH_RUNAPP_USER" '$4 ~ runapptty { print runapp "\t" runappuser "\t" $3 "\t" $4 ; next } \
+				{ print }' "$PH_CONF_DIR"/installed_apps >/tmp/installed_apps 2>/dev/null
+		[[ $? -eq 0 ]] && mv /tmp/installed_apps "$PH_CONF_DIR"/installed_apps 2>/dev/null
+		printf "%10s%s\n" "" "OK : basic config ('TTY$PH_i')"
+	else
+                if [[ -f /etc/systemd/system/getty@tty$PH_i.service.d/autologin.conf || -f /etc/profile.d/PieHelper_tty$PH_i.sh ]]
+                then
+			printf "%10s%s\n" "" "Warning : Advanced configuration found without basic configuration ('TTY$PH_i' Will be handled in 'advanced' or subsequent runs)"
+		else
+			printf "%10s%s\n" "" "OK : No basic config found ('TTY$PH_i')"
+		fi
+	fi
+        ((PH_i++))
+done
+PH_i=2
+PH_NR_CHANGES_MADE=0
+while [[ $PH_i -le $PH_PIEH_MAX_TTYS ]]
+do
+	PH_COUNT=0
+	PH_RUNAPP=""
+	PH_RUNAPP_USER=""
+        printf "%8s%s\n" "" "--> Checking advanced configurations for 'TTY$PH_i'"
+	PH_RUNAPP=`nawk -v runapptty=^\$PH_i\$ '$4 ~ runapptty { print $1 }' "$PH_CONF_DIR"/installed_apps 2>/dev/null`
+	PH_RUNAPP_USER=`nawk -v runapptty=^\$PH_i\$ '$4 ~ runapptty { print $2 }' "$PH_CONF_DIR"/installed_apps 2>/dev/null`
+        if cut -f4 "$PH_CONF_DIR"/installed_apps | grep ^"$PH_i"$ >/dev/null
+        then
                 if [[ ! -f /etc/systemd/system/getty@tty$PH_i.service.d/autologin.conf || ! -f /etc/profile.d/PieHelper_tty$PH_i.sh ]]
                 then
-                        printf "%10s%s\n" "" "Warning : Missing autologin configuration or missing login script for TTY$PH_i -> Reconfiguring TTY$PH_i"
-                        ph_setup_tty $PH_i "$PH_RUNAPP"
-                else
-                        if ([[ "$PH_RUN_USER" != "$PH_RUNAPP_USER" ]] && [[ ! -f /etc/sudoers.d/020_pieh-"$PH_RUNAPP_USER" ]])
-                        then
-                                printf "%10s%s\n" "" "Warning : Missing sudo rules for user $PH_RUNAPP_USER -> Restoring"
-                                ph_grant_pieh_access "$PH_RUNAPP_USER"
-                        else
-                                printf "%10s%s\n" "" "OK (TTY$PH_i)"
-                        fi
+                        printf "%10s%s\n" "" "Warning : Missing autologin configuration or missing login script for 'TTY$PH_i' -> Reapplying advanced configurations"
+                        if [[ -n "$PH_RUNAPP" ]]
+			then
+				((PH_NR_CHANGES_MADE++))
+				ph_setup_tty $PH_i "$PH_RUNAPP" 
+			else
+				[[ -n "$PH_RUNAPP_USER" ]] && printf "%10s%s\n" "" "Warning : Basic configuration still unknown ('TTY$PH_i' might be handled in subsequent runs)"
+			fi
+			[[ -n "$PH_RUNAPP_USER" ]] && ph_grant_pieh_access "$PH_RUNAPP_USER"
+		else
+			printf "%10s%s\n" "" "OK : All configuration ('TTY$PH_i') -> Reapplying ACLs and sudo rules"
+			[[ -n "$PH_RUNAPP_USER" ]] && ph_grant_pieh_access "$PH_RUNAPP_USER"
                 fi
-        else
-                if [[ -f /etc/systemd/system/getty@tty$PH_i.service.d/autologin.conf ]]
-                then
-                        if [[ -f /etc/profile.d/PieHelper_tty$PH_i.sh ]]
-                        then
-                                printf "%10s%s\n" "" "Warning : Missing information in integrated applications configuration file for TTY$PH_i -> Restoring"
-                                printf "%8s%s\n" "" "--> Restoring info to integrated applications configuration file"
-                                PH_RUNAPP=`ph_get_app_from_login_script`
-                                nawk -v runapp=^"$PH_RUNAPP"$ -v runapptty=$PH_i '$1 ~ runapp { print $1 "\t" $2 "\t" $3 "\t" runapptty ; next } \
-                                                                                                         { print }' $PH_CONF_DIR/installed_apps >/tmp/installed_apps 2>/dev/null
-                                [[ $? -eq 0 ]] && mv /tmp/installed_apps $PH_CONF_DIR/installed_apps
-                                printf "%10s%s\n" "" "OK"
-                                PH_RUNAPP_USER=`nawk -v tty=\^$PH_i\$ '$4 ~ tty { print $2 }' $PH_CONF_DIR/installed_apps`
-                                if [[ "$PH_RUN_USER" != "$PH_RUNAPP_USER" ]]
-                                then
-                                        printf "%8s%s\n" "" "--> Running additional check on sudo rules"
-                                        if [[ -f /etc/sudoers.d/020_pieh-"$PH_RUNAPP_USER" ]]
-                                        then
-                                                printf "%10s%s\n" "" "OK"
-                                        else
-                                                printf "%10s%s\n" "" "Warning : Missing sudo rules for user $PH_RUNAPP_USER -> Restoring"
-                                                ph_grant_pieh_access "$PH_RUNAPP_USER"
-                                        fi
-                                fi
-                        else
-                                printf "%10s%s\n" "" "Warning : Too much missing information for TTY$PH_i -> Removing remaining configuration where possible"
-                                printf "%8s%s\n" "" "--> Removing remaining configuration information"
-                                $PH_SUDO rm -r /etc/systemd/system/getty@tty$PH_i.service.d
-                                printf "%10s%s\n" "" "OK"
-                        fi
-                else
-                        if [[ -f /etc/profile.d/PieHelper_tty$PH_i.sh ]]
-                        then
-                                printf "%10s%s\n" "" "Warning : Missing autologin configuration for TTY$PH_i -> Reconfiguring TTY$PH_i"
-                                PH_RUNAPP=`ph_get_app_from_login_script`
-                                ph_setup_tty $PH_i "$PH_RUNAPP"
-                                printf "%8s%s\n" "" "--> Running additional check on integrated applications configuration file"
-                                printf "%10s%s\n" "" "Warning : Missing information in integrated applications configuration file for TTY$PH_i -> Restoring"
-                                printf "%8s%s\n" "" "--> Restoring info to integrated applications configuration file"
-                                nawk -v runapp=^"$PH_RUNAPP"$ -v runapptty=$PH_i '$1 ~ runapp { print $1 "\t" $2 "\t" $3 "\t" runapptty ; next } \
-                                                                                                         { print }' $PH_CONF_DIR/installed_apps >/tmp/installed_apps 2>/dev/null
-                                [[ $? -eq 0 ]] && mv /tmp/installed_apps $PH_CONF_DIR/installed_apps
-                                printf "%10s%s\n" "" "OK"
-                                PH_RUNAPP_USER=`nawk -v tty=\^$PH_i\$ '$4 ~ tty { print $2 }' $PH_CONF_DIR/installed_apps`
-                                if [[ "$PH_RUN_USER" != "$PH_RUNAPP_USER" ]]
-                                then
-                                        printf "%8s%s\n" "" "--> Running additional check on sudo rules"
-                                        if [[ -f /etc/sudoers.d/020_pieh-"$PH_RUNAPP_USER" ]]
-                                        then
-                                                printf "%10s%s\n" "" "OK"
-                                        else
-                                                printf "%10s%s\n" "" "Warning : Missing sudo rules for user $PH_RUNAPP_USER -> Restoring"
-                                                ph_grant_pieh_access "$PH_RUNAPP_USER"
-                                        fi
-                                fi
-                        else
-                                printf "%10s%s\n" "" "OK (TTY$PH_i)"
-                        fi
-                fi
+	else
+		printf "%10s%s\n" "" "OK : All configuration (No configuration for 'TTY$PH_i')"
+		ph_undo_setup_tty $PH_i >/dev/null 2>&1
         fi
-        ((PH_i ++))
+        ((PH_i++))
 done
-printf "%2s%s\n\n" "" "$PH_RESULT"
 unset PH_i
+if [[ $PH_NR_CHANGES_MADE -gt 0 ]]
+then
+        printf "%8s%s\n" "" "--> Changes detected in last run -> Preparing additional run"
+	printf "%10s%s\n" "" "OK"
+	printf "%2s%s\n\n" "" "$PH_RESULT"
+	ph_repair_pieh
+else
+	printf "%2s%s\n\n" "" "$PH_RESULT (Remaining problems should be resolved manually)"
+fi
 return 0
 }
 
@@ -2724,12 +2896,12 @@ typeset -n PH_RUNAPPU_PERSISTENT=PH_"$PH_RUNAPPU"_PERSISTENT
 
 PH_PIEH_TTY=`ph_get_tty_for_app PieHelper`
 PH_MOON_PATH=`nawk '$1 ~ /^Moonlight$/ { printf $2 }' $PH_CONF_DIR/supported_apps 2>/dev/null`
-PH_RUNAPP_USER=`nawk -v app=^"$PH_RUNAPP"$ '$1 ~ app { print $2 ; exit 0 } { next }' $PH_CONF_DIR/installed_apps 2>/dev/null`
+PH_RUNAPP_USER=`ph_get_app_user "$PH_RUNAPP" short`
 case $1 in start)
 	PH_RUNAPP_TTY=`ph_get_tty_for_app $PH_RUNAPP`
 	if [[ "$PH_RUNAPP" == "Moonlight" && `$PH_SUDO fgconsole` -ne $PH_RUNAPP_TTY ]]
 	then
-		$PH_SUDO -E su "$PH_RUNAPP_USER" -c "LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib $PH_MOON_PATH list $PH_MOON_SRV" >/dev/null 2>&1
+		"$PH_SUDO" -E su "$PH_RUNAPP_USER" -c "LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib $PH_MOON_PATH list $PH_MOON_SRV" >/dev/null 2>&1
 		if [[ $? -ne 0 ]]
 		then
 			printf "%8s%s\n" "" "--> Starting $PH_RUNAPP"

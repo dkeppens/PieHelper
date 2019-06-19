@@ -279,16 +279,20 @@ PH_`echo $PH_APPU`_NUM_CTRL='1'								# - This is the number of controllers you
 											# - Allowed values are '1', '2', '3' and '4'
 PH_`echo $PH_APPU`_CIFS_SHARE='no'							# - This indicates whether you want to mount a CIFS share from a local network server PH_`echo $PH_APPU`_CIFS_SRV before $PH_APP starts and
 											#   umount it after $PH_APP shuts down
-											# - If the run account for $PH_APP is different from PieHelper's run account, then $PH_APP's run account should always be granted
-											#   read-write permission on the configured CIFS share, even when it is not being used as the value for PH_`echo $PH_APPU`_CIFS_USER
 											# - Default is 'no'
 											# - Allowed values are 'yes' and 'no'
 											# - Important : * Keep in mind that setting this to 'yes' requires you to enable CIFS sharing on PH_`echo $PH_APPU`_CIFS_SRV
 											#               * You should also make sure your PI has adequate permissions to access that share
+											#               * Enable UNIX permissions functionality on your CIFS server if available
 											#               * Lastly, a user account PH_`echo $PH_APPU`_CIFS_USER with a password PH_`echo $PH_APPU`_CIFS_PASS should be created on PH_`echo $PH_APPU`_CIFS_SRV
+											#               * Check PH_`echo $PH_APPU`_CIFS_USER help for more information on specific rules applicable to PH_`echo $PH_APPU`_CIFS_USER values
 PH_`echo $PH_APPU`_CIFS_USER=''								# - This is the user account on local network server PH_`echo $PH_APPU`_CIFS_SRV with password PH_`echo $PH_APPU`_CIFS_PASS
 											#   if PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes'
+											# - If the run account for $PH_APP is different from PH_`echo $PH_APPU`_CIFS_USER's value and not 'root', then $PH_APP's run account should always be
+											#   created on PH_`echo $PH_APPU`_CIFS_SRV and granted read-write permissions to the share
+											# - This account should be granted read-write permission to the configured share on PH_`echo $PH_APPU`_CIFS_SRV
 											# - Default is ''
+											# - Allowed values are locally existing accounts and an empty string
 PH_`echo $PH_APPU`_CIFS_PASS=''								# - This is the password for user PH_`echo $PH_APPU`_CIFS_USER on local network server PH_`echo $PH_APPU`_CIFS_SRV if PH_`echo $PH_APPU`_CIFS_SHARE is set to 'yes'
 											# - The password should not contain any single quote (') characters
 											# - Default is ''
@@ -346,6 +350,7 @@ EOF
 		printf "%8s%s\n" "" "--> Adding options to options.allowed"
 		echo "PH_`echo $PH_APPU`_PERSISTENT:yes or no:\"\$PH_OPTARG_VAL\" == @(yes|no)" >>$PH_FILES_DIR/options.allowed
 		echo "PH_`echo $PH_APPU`_CIFS_SHARE:yes or no:\"\$PH_OPTARG_VAL\" == @(yes|no)" >>$PH_FILES_DIR/options.allowed
+		echo "PH_`echo $PH_APPU`_CIFS_USER:a locally existing account or an empty string:\`\$(ph_check_user_validity \"\$PH_OPTARG_VAL\") echo \$?\` -eq 0" >>$PH_FILES_DIR/options.allowed
 		echo "PH_`echo $PH_APPU`_CIFS_SRV:a valid ipv4 address or an empty string:\`\$(ph_check_ip_validity \"\$PH_OPTARG_VAL\") echo \$?\` -eq 0" >>$PH_FILES_DIR/options.allowed
 		echo "PH_`echo $PH_APPU`_CIFS_DIR:an empty string or starting with / or \$:\"\$PH_OPTARG_VAL\" == @(/*|\\\$*|)" >>$PH_FILES_DIR/options.allowed
 		echo "PH_`echo $PH_APPU`_CIFS_SUBDIR:an empty string or starting with / or \$:\"\$PH_OPTARG_VAL\" == @(/*|\\\$*|)" >>$PH_FILES_DIR/options.allowed
@@ -481,7 +486,7 @@ EOF
 		done
 		printf "%10s%s\n" "" "OK"
 		printf "%8s%s\n" "" "--> Removing $PH_APP options from options.allowed"
-		for PH_j in PH_`echo $PH_APPU`_CIFS_SHARE PH_`echo $PH_APPU`_CIFS_SRV PH_`echo $PH_APPU`_PERSISTENT PH_`echo $PH_APPU`_CIFS_DIR PH_`echo $PH_APPU`_CIFS_SUBDIR PH_`echo $PH_APPU`_CIFS_MPT PH_`echo $PH_APPU`_USE_CTRL PH_`echo $PH_APPU`_NUM_CTRL PH_`echo $PH_APPU`_PRE_CMD PH_`echo $PH_APPU`_POST_CMD
+		for PH_j in PH_`echo $PH_APPU`_CIFS_SHARE PH_`echo $PH_APPU`_CIFS_USER PH_`echo $PH_APPU`_CIFS_SRV PH_`echo $PH_APPU`_PERSISTENT PH_`echo $PH_APPU`_CIFS_DIR PH_`echo $PH_APPU`_CIFS_SUBDIR PH_`echo $PH_APPU`_CIFS_MPT PH_`echo $PH_APPU`_USE_CTRL PH_`echo $PH_APPU`_NUM_CTRL PH_`echo $PH_APPU`_PRE_CMD PH_`echo $PH_APPU`_POST_CMD
 		do
 			nawk -F':' -v app=^"$PH_j"$ '$1 ~ app { next } { print }' $PH_FILES_DIR/options.allowed >/tmp/options_allowed_tmp
 			[[ $? -eq 0 ]] && mv /tmp/options_allowed_tmp $PH_FILES_DIR/options.allowed

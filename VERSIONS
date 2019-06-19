@@ -78,3 +78,12 @@ ________________________
 * Major improvements to confoper_ph.sh
 * Color coding and other formatting added to confopts_ph.sh and ph_configure_moon for added readability
 * Miscellaneous bugfixes
+
+VERSION 1.08 - 19/06/2019
+________________________
+
+* Bugfix for mounting a CIFS share for an integrated application which has a run account different from the account used to authenticate to the CIFS server
+* Updated help information for CIFS-related options
+* Some general small code changes
+* Bugfix for unnecessary ACLs and sudo rules when running an integrated app as 'root'
+* ph_repair_pieh can now detect and fix additional possible configuration issues

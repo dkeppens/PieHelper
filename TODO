@@ -1,3 +1,11 @@
+* Why *CIFS_USER not correctly reset to old value when confgenb_ph.sh fails ?
+* Verify impact of last code changes on all PieHelper functionality
+* Change checks in ph_repair_pieh and ph_cleanup_run_account to really verify existing users etc
+* change ph_cleanup_run_account for correct handling of all cases
+* add colour coding to ph_repair_pieh and ph_cleanup_run_account
+* add better intermediate and end result handling for ph_repair_pieh
+* check code for startshit in ph_repair_pieh
+* test all cases for ph_repair_pieh
 * add support for -o parameter to confopts_ph.sh -p prompt -s -o XXXX and make changes for that in ph_configure_app_options + reflect in menus if needed
 * add option for confopts_ph.sh to list option default(s) + add to menus
 * add option for confopts_ph.sh to set option(s) to defaults + reflect in menus
@@ -17,7 +25,7 @@
 * add a remdef function for confoper_ph.sh and add to menus
 * add functionality for passing a list of functions to confoper_ph.sh -p savedef -i instead of just one
 * unsets in confoper_ph.sh
-* no sudo rules and acls install and remove when PH_RUN_USER is 'root' and also check confoper_ph.sh
+* check confoper_ph.sh for cases when PH_RUN_USER is 'root'
 * finish testing all confoper_ph.sh options in all modes
 * test correct quit for moonlight streaming on PTS and TTY
 * update HOWTO to a more readable manual
