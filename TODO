@@ -1,7 +1,7 @@
 * Why *CIFS_USER not correctly reset to old value when confgenb_ph.sh fails ?
 * Verify impact of last code changes on all PieHelper functionality
 * Change checks in ph_repair_pieh and ph_cleanup_run_account to really verify existing users etc
-* change ph_cleanup_run_account for correct handling of all cases
+* change ph_cleanup_run_account and maybe ph_repair_pieh for correct handling of all cases, including '-' as allocated TTY
 * add colour coding to ph_repair_pieh and ph_cleanup_run_account
 * add better intermediate and end result handling for ph_repair_pieh
 * check code for startshit in ph_repair_pieh
