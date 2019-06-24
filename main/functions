@@ -1333,7 +1333,7 @@ do
 		fi
 		if grep ^"$PH_OPTARG_VAR:" $PH_FILES_DIR/options.allowed >/dev/null
 		then
-			printf "%8s%s\n" "" "--> Checking new value for $PH_OPTARG_VAR against allowed defaults"
+			printf "%8s%s\n" "" "--> Checking new value for '$PH_OPTARG_VAR' against allowed defaults"
 			PH_OPT_DEFS=`grep ^"$PH_OPTARG_VAR:" $PH_FILES_DIR/options.allowed | nawk -F':' '{ print $2 }'`
 			PH_OPT_REGEX=`grep ^"$PH_OPTARG_VAR:" $PH_FILES_DIR/options.allowed | nawk -F':' '{ print $3 }'`
 			eval [[ $PH_OPT_REGEX ]] \
@@ -1359,7 +1359,7 @@ do
 					fi
 					continue
 				else
-       					printf "%10s\033[32m%s033[0m\n" "" "OK"
+       					printf "%10s\033[32m%s\033[0m\n" "" "OK"
 				fi
 		fi
 	fi
