@@ -64,7 +64,7 @@ do
 		>&2 printf "%18s%s\n" "" "  the PieHelper menu on condition that a package exists for the application in question"
 		>&2 printf "%18s%s\n" "" "- The currently allocated TTY will also be displayed for each running application"
 		>&2 printf "%15s%s\n" "" "-l \"int\" selects all applications currently integrated with PieHelper"
-		>&2 printf "%15s%s\n" "" "-l \"halt\" selects all applications currently integrated with PieHelper having an allocated TTY"
+		>&2 printf "%15s%s\n" "" "-l \"halt\" selects all non-running applications currently integrated with, PieHelper having an allocated TTY"
 		>&2 printf "%15s%s\n" "" "-l \"run\" selects all PieHelper applications currently running"
 		>&2 printf "%15s%s\n" "" "-l \"start\" selects the PieHelper application currently configured to start by default on system boot"
 		>&2 printf "%15s%s\n" "" "-l \"all\" selects all of the above"
@@ -163,7 +163,13 @@ case "$PH_ACTION" in list)
 			     halt)
 		printf "\033[36m%s\033[0m\n" "- Listing halted applications"
 		printf "\033[32m"
-		nawk '$4 !~ /^-/ { printf "%8s%s\n", "", $1 }' "$PH_CONF_DIR/installed_apps"
+		for PH_APP in `nawk 'BEGIN { ORS = " " } $4 !~ /^-/ { print $1 }' "$PH_CONF_DIR"/installed_apps`
+		do
+			if ! "$PH_SCRIPTS_DIR"/confapps_ph.sh -p list -l run | tail -n +2 | tac | tail -n +3 | grep ^".*$PH_APP" >/dev/null
+                        then
+				printf "%8s%s\n" "" "$PH_APP"
+                        fi
+		done
 		printf "\033[0m"
 		printf "%2s%s\n\n" "" "SUCCESS" ;;
 			     supp)

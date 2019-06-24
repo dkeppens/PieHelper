@@ -746,7 +746,7 @@ then
 	if "$PH_SCRIPTS_DIR"/confapps_ph.sh -p list -l int | tail -n +2 | tac | tail -n +3 | grep ^".*$PH_APP"$ >/dev/null
 	then
 		PH_STATE="integrated"
-		if "$PH_SCRIPTS_DIR"/confapps_ph.sh -p tty -a "$PH_APP" | grep "'No TTY allocated'" >/dev/null
+		if "$PH_SCRIPTS_DIR"/confapps_ph.sh -p list -l halt | tail -n +2 | tac | tail -n +3 | grep ^".*$PH_APP"$ >/dev/null
 		then
 			PH_STATE="halted"
 			if "$PH_SCRIPTS_DIR"/confapps_ph.sh -p list -l run | tail -n +2 | tac | tail -n +3 | grep ^".*$PH_APP" >/dev/null
