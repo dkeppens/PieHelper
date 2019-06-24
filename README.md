@@ -51,7 +51,7 @@
 * Feedback, bug reports and feature requests can be reported on the official github repository
   or emailed to the address listed below
 
-* Current state : Released
+* Current state : Released but still under active development (Bugs are likely !)
 
 * Important notes :
 
