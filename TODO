@@ -1,3 +1,7 @@
+* create functions for all and adapt all to use them -> leads to more flexibility ie ph_add_app_integration and differentiate with ph_integrate_apps etc...
+* write new functions to replace code in confsupp_ph.sh for removing alloweds and defaults
+* change ph_revoke for prompt for user removal
+* Test changes made for !!!!UPDATE CODE TO REFLECT MOVE TO new function ph_get_app_pkgname -> ph_install_app/ph_remove_app/all instances of creation of ph_installed_apps
 * Why *CIFS_USER not correctly reset to old value when confgenb_ph.sh fails ?
 * Verify impact of last code changes on all PieHelper functionality
 * Change checks in ph_repair_pieh and ph_cleanup_run_account to really verify existing users etc

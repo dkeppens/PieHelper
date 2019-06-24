@@ -34,12 +34,15 @@ done
 OPTIND=$PH_OLDOPTIND
 OPTARG="$PH_OLDOPTARG"
 
-ph_check_app_name -i -a "$PH_STOPAPP" || exit $?
-printf "%s\n" "- Disabling $PH_STOPAPP"
+if [[ `"$PH_SUDO" cat /proc/"$PPID"/comm 2>/dev/null` != "confsupp_ph.sh" ]]
+then
+        ph_check_app_name -i -a "$PH_STOPAPP" || exit "$?"
+fi
+printf "\033[36m%s\033[0m\n" "- Disabling '$PH_STOPAPP'"
 printf "%8s%s\n" "" "--> Attempting to determine TTY for $PH_STOPAPP"
 PH_STOPAPP_TTY=`ph_get_tty_for_app $PH_STOPAPP`
 [[ $? -eq 1 && $PH_STOPAPP_TTY -ne 0 ]] && printf "%10s%s\n" "" "OK (TTY$PH_STOPAPP_TTY)" || \
-		(printf "%10s%s\n" "" "Warning : Could not determine TTY for $PH_STOPAPP" ; printf "%2s%s\n" "" "SUCCESS" ; return 1) || \
+		(printf "%10s%s\n" "" "Warning : Could not determine TTY for $PH_STOPAPP" ; printf "%2s\033[32m%s\033[0m\n\n" "" "SUCCESS" ; return 1) || \
 		 exit 0
 PH_STOPAPP_CMD=`nawk -v runapp=^"$PH_STOPAPP"$ 'BEGIN { ORS=" " } $1 ~ runapp { for (i=2;i<=NF;i++) { if (i==NF) { ORS="" ; print $i } else { print $i }}}' $PH_CONF_DIR/supported_apps`
 PH_STOPAPP_CMD=`sed "s/PH_TTY/$PH_STOPAPP_TTY/" <<<$PH_STOPAPP_CMD`

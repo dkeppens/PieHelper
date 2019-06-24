@@ -484,7 +484,7 @@ case $PH_ACTION in get)
 					then
 						PH_OPT=`grep ^"PH_" $PH_CONF_DIR/$PH_APP.conf | nawk -F'=' -v choice=$PH_ANSWER 'NR == choice { print $1 }'`
 					else
-						PH_OPT=$(grep ' typeset -r ' $PH_CONF_DIR/$PH_APP.conf | \
+						PH_OPT=$(grep ' typeset -' $PH_CONF_DIR/$PH_APP.conf | \
 							nawk -v choice=$((PH_ANSWER-$((PH_COUNT2-1)))) 'NR == choice { print substr($8,0,index($8,"=")) }')
 					fi
 				fi
@@ -642,10 +642,10 @@ case $PH_ACTION in get)
 					else
 						PH_OPT=$(if [[ "$PH_DISP_TYPE" == "all" ]]
 							 then
-							 	grep ' typeset -r ' $PH_CONF_DIR/$PH_APP.conf | \
+							 	grep ' typeset -' $PH_CONF_DIR/$PH_APP.conf | \
 								nawk -v choice=$((PH_ANSWER-$PH_COUNT2)) 'NR == choice { print substr($8,0,index($8,"=")) }'
 							 else
-							 	grep ' typeset -r ' $PH_CONF_DIR/$PH_APP.conf | \
+							 	grep ' typeset -' $PH_CONF_DIR/$PH_APP.conf | \
 								nawk -v choice=$PH_ANSWER 'NR == choice { print substr($8,0,index($8,"=")) }'
 							fi)
 					fi
