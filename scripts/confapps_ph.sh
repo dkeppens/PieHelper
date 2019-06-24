@@ -10,6 +10,7 @@ typeset PH_ACTION=""
 typeset PH_LISTMODE=""
 typeset PH_APP=""
 typeset PH_APP_CMD=""
+typeset PH_APP_PKG=""
 typeset PH_STATE=""
 typeset PH_APP_NEWTTY=""
 typeset PH_OLDOPTARG="$OPTARG"
@@ -17,20 +18,20 @@ typeset -l PH_APPL=""
 typeset -i PH_APP_TTY=0
 typeset -i PH_COUNT=0
 typeset -i PH_RET_CODE=0
-typeset -i PH_OLDOPTIND=$OPTIND
-OPTIND=1
+typeset -i PH_OLDOPTIND="$OPTIND"
+OPTIND="1"
 
 while getopts hp:l:a:t: PH_OPTION 2>/dev/null
 do
-	case $PH_OPTION in p)
+	case "$PH_OPTION" in p)
                 ph_screen_input "$OPTARG" || exit $?
-		[[ "$PH_LISTMODE" != @(int|supp|start|run|all|) ]] && (! confapps_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$PH_LISTMODE" != @(pres|int|supp|halt|run|start|all|) ]] && (! confapps_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		[[ "$OPTARG" != @(list|tty|inst|rem|conf|move|start|disc) ]] && (! confapps_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		[[ -n "$PH_ACTION" ]] && (! confapps_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_ACTION="$OPTARG" ;;
 			   l)
                 ph_screen_input "$OPTARG" || exit $?
-		[[ "$OPTARG" != @(int|supp|start|run|all) ]] && (! confapps_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+		[[ "$OPTARG" != @(pres|int|supp|halt|run|start|all) ]] && (! confapps_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		[[ -n "$PH_LISTMODE" ]] && (! confapps_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
 		PH_LISTMODE="$OPTARG" ;;
 			   a)
@@ -44,7 +45,7 @@ do
 		PH_APP_NEWTTY="$OPTARG" ;;
 			   *)
 		>&2 printf "%s\n" "Usage : confapps_ph.sh -h |"
-		>&2 printf "%23s%s\n" "" "-p \"list\" -l [\"int\"|\"start\"|\"supp\"|\"run\"|\"all\"] |"
+		>&2 printf "%23s%s\n" "" "-p \"list\" -l [\"pres\"|\"int\"|\"supp\"|\"halt\"|\"run\"|\"start\"|\"all\"] |"
 		>&2 printf "%23s%s\n" "" "-p \"tty\" -a [[ttyapp]|\"all\"] |"
 		>&2 printf "%23s%s\n" "" "-p \"inst\" -a [instapp] |"
 		>&2 printf "%23s%s\n" "" "-p \"rem\" -a [remapp] |"
@@ -56,14 +57,16 @@ do
 		>&2 printf "%3s%s\n" "" "Where -h displays this usage"
 		>&2 printf "%9s%s\n" "" "-p specifies the action to take"
 		>&2 printf "%12s%s\n" "" "\"list\" allows listing the application(s) selected with -l"
-		>&2 printf "%15s%s\n" "" "-l \"int\" selects all applications currently integrated with PieHelper"
-		>&2 printf "%15s%s\n" "" "-l \"start\" selects the application currently configured to start by default on system boot"
-		>&2 printf "%15s%s\n" "" "-l \"supp\" selects all currently supported applications"
-		>&2 printf "%18s%s\n" "" "- Applications supported by default are \"Moonlight\",\"X11\",\"Bash\",\"Kodi\",\"Emulationstation\" and \"PieHelper\""
-		>&2 printf "%18s%s\n" "" "- Additional out-of-scope applications can and should be removed from or added to PieHelper as supported and integrated applications using confsupp_ph.sh or"
-		>&2 printf "%20s%s\n" "" "the PieHelper menu on condition that a package exists for the application in question"
-		>&2 printf "%15s%s\n" "" "-l \"run\" selects all applications currently running"
+		>&2 printf "%15s%s\n" "" "-l \"pres\" selects all PieHelper applications for which their configured package name is present on the system"
+		>&2 printf "%15s%s\n" "" "-l \"supp\" selects all PieHelper supported applications"
+		>&2 printf "%18s%s\n" "" "- Applications supported by default are 'Moonlight','X11','Bash','Kodi','Emulationstation' and 'PieHelper'"
+		>&2 printf "%18s%s\n" "" "- Additional out-of-scope applications can and should be removed from or added to PieHelper as supported and integrated applications using 'confsupp_ph.sh' or"
+		>&2 printf "%18s%s\n" "" "  the PieHelper menu on condition that a package exists for the application in question"
 		>&2 printf "%18s%s\n" "" "- The currently allocated TTY will also be displayed for each running application"
+		>&2 printf "%15s%s\n" "" "-l \"int\" selects all applications currently integrated with PieHelper"
+		>&2 printf "%15s%s\n" "" "-l \"halt\" selects all applications currently integrated with PieHelper having an allocated TTY"
+		>&2 printf "%15s%s\n" "" "-l \"run\" selects all PieHelper applications currently running"
+		>&2 printf "%15s%s\n" "" "-l \"start\" selects the PieHelper application currently configured to start by default on system boot"
 		>&2 printf "%15s%s\n" "" "-l \"all\" selects all of the above"
 		>&2 printf "%12s%s\n" "" "\"tty\" allows displaying the TTY currently allocated to application [ttyapp]"
 		>&2 printf "%15s%s\n" "" "-a allows specifying an application name for [ttyapp]"
@@ -74,7 +77,7 @@ do
 		>&2 printf "%18s%s\n" "" "- Installing and integrating out-of-scope applications is instead handled by either 'confsupp_ph.sh' or the PieHelper menu"
 		>&2 printf "%18s%s\n" "" "- If [instapp] is already installed but not integrated, [instapp] will be integrated"
 		>&2 printf "%18s%s\n" "" "- The appropriate configuration routine for [instapp] will be run automatically after integration is finished succesfully"
-		>&2 printf "%18s%s\n" "" "- [instapp] cannot be \"PieHelper\" (duh)"
+		>&2 printf "%18s%s\n" "" "- [instapp] cannot be 'PieHelper' (duh)"
 		>&2 printf "%18s%s\n" "" "- [instapp] must already be known to PieHelper as a supported application"
 		>&2 printf "%18s%s\n" "" "- Moonlight and Emulationstation will attempt a packageless install if the packagename is unset or cannot be found"
 		>&2 printf "%18s%s\n" "" "- The appropriate configure function for [instapp] will automatically be run after a succesfull integration"
@@ -100,7 +103,7 @@ do
 		>&2 printf "%15s%s\n" "" "-t allows specifying a new number for [movetty]"
 		>&2 printf "%18s%s\n" "" "- Specifying a new TTY number is optional"
 		>&2 printf "%18s%s\n" "" "  If no new number is specified the first available TTY will be used"
-		>&2 printf "%18s%s\n" "" "- The keyword \"prompt\" will make confapps_ph.sh behave interactively when it comes to new TTY number selection"
+		>&2 printf "%18s%s\n" "" "- The keyword 'prompt' will make confapps_ph.sh behave interactively when it comes to new TTY number selection"
 		>&2 printf "%21s%s\n" "" "- The following info will be prompted for during interactive TTY moves :"
 		>&2 printf "%24s%s\n" "" "- TTY number to move [moveapp] to"
 		>&2 printf "%27s%s\n" "" "- Entering a new TTY number is optional"
@@ -108,8 +111,8 @@ do
 		>&2 printf "%12s%s\n" "" "\"start\" allows configuring an application [startapp] to start by default on system boot"
 		>&2 printf "%15s%s\n" "" "-a allows specifying an application name for [startapp]"
 		>&2 printf "%18s%s\n" "" "- [startapp] should already be known to PieHelper as an integrated application"
-		>&2 printf "%18s%s\n" "" "- The keyword \"none\" can be used to remove the current configuration for starting an application by default on system boot"
-		>&2 printf "%18s%s\n" "" "- The keyword \"prompt\" will make confapps_ph.sh behave interactively when it comes to startapp selection"
+		>&2 printf "%18s%s\n" "" "- The keyword 'none' can be used to remove the current configuration for starting an application by default on system boot"
+		>&2 printf "%18s%s\n" "" "- The keyword 'prompt' will make confapps_ph.sh behave interactively when it comes to startapp selection"
 		>&2 printf "%21s%s\n" "" "- The following info will be prompted for during interactive [startapp] selection :"
 		>&2 printf "%24s%s\n" "" "- Any integrated application name (required)"
 		>&2 printf "%12s%s\n" "" "\"disc\" allows discovering all supported applications installed on the system"
@@ -140,27 +143,43 @@ fi
 [[ "$PH_APP" == "PieHelper" && "$PH_ACTION" == "inst" ]] && printf "%s\033[36m%s\033[0m\n" "- " "Installing $PH_APP" && \
 			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : $PH_APP is already installed and integrated" && \
 			exit 1
-case $PH_ACTION in list)
-	case $PH_LISTMODE in int)
-		printf "%s\033[36m%s\033[0m\n" "- " "Listing applications currently integrated with PieHelper"
+case "$PH_ACTION" in list)
+	case "$PH_LISTMODE" in int)
+		printf "\033[36m%s\033[0m\n" "- Listing integrated applications"
 		printf "\033[32m"
 		nawk '{ printf "%8s%s\n", "", $1 }' "$PH_CONF_DIR/installed_apps"
 		printf "\033[0m"
 		printf "%2s%s\n\n" "" "SUCCESS" ;;
+			     pres)
+		printf "\033[36m%s\033[0m\n" "- Listing present applications"
+		printf "\033[32m"
+		for PH_APP in `nawk 'BEGIN { ORS = " " } { print $1 }' "$PH_CONF_DIR"/supported_apps`
+		do
+			PH_APP_PKG=`ph_get_app_pkg_name "$PH_APP"`
+			`ph_get_pkg_inststate "$PH_APP_PKG"` && printf "%8s%s\n" "" "$PH_APP"
+		done
+		printf "\033[0m"
+		printf "%2s%s\n\n" "" "SUCCESS" ;;
+			     halt)
+		printf "\033[36m%s\033[0m\n" "- Listing halted applications"
+		printf "\033[32m"
+		nawk '$4 !~ /^-/ { printf "%8s%s\n", "", $1 }' "$PH_CONF_DIR/installed_apps"
+		printf "\033[0m"
+		printf "%2s%s\n\n" "" "SUCCESS" ;;
 			     supp)
-		printf "%s\033[36m%s\033[0m\n" "- " "Listing currently supported applications"
+		printf "\033[36m%s\033[0m\n" "- Listing supported applications"
 		printf "\033[32m"
 		nawk '{ printf "%8s%s\n", "", $1 }' "$PH_CONF_DIR/supported_apps"
 		printf "\033[0m"
 		printf "%2s%s\n\n" "" "SUCCESS" ;;
 			    start)
-		printf "%s\033[36m%s\033[0m\n" "- " "Listing application currently configured to start by default on system boot"
+		printf "\033[36m%s\033[0m\n" "- Listing application to start by default on system boot"
 		printf "\033[32m"
 		printf "%8s%s\n" "" "$PH_PIEH_STARTAPP"
 		printf "\033[0m"
 		printf "%2s%s\n\n" "" "SUCCESS" ;;
 			      run)
-		printf "%s\033[36m%s\033[0m\n" "- " "Listing applications currently running"
+		printf "\033[36m%s\033[0m\n" "- Listing running applications"
 		printf "\033[32m"
 		for PH_APP in `nawk 'BEGIN { ORS = " " } { print $1 }' "$PH_CONF_DIR/installed_apps"`
 		do
@@ -187,13 +206,15 @@ case $PH_ACTION in list)
 				fi
 			fi
 		done
-		[[ $PH_COUNT -eq 0 ]] && printf "%8s%s\n" "" "\"No applications running\""
+		[[ $PH_COUNT -eq 0 ]] && printf "%8s%s\n" "" "None"
 		printf "\033[0m"
 		PH_COUNT=0
 		printf "%2s%s\n\n" "" "SUCCESS" ;;
 		              all)
-		confapps_ph.sh -p list -l int
+		confapps_ph.sh -p list -l pres
 		confapps_ph.sh -p list -l supp
+		confapps_ph.sh -p list -l int
+		confapps_ph.sh -p list -l halt
 		confapps_ph.sh -p list -l run
 		confapps_ph.sh -p list -l start ;;
 	esac
@@ -244,7 +265,7 @@ case $PH_ACTION in list)
 	fi
 	PH_APP_CMD=`nawk -v app=^"$PH_APP"$ 'BEGIN { ORS=" " } $1 ~ app { for (i=2;i<=NF;i++) { if (i==NF) { ORS="" ; print $i } else { print $i }}}' $PH_CONF_DIR/supported_apps`
 	PH_APP_CMD=`sed "s/PH_TTY/$PH_APP_TTY/" <<<"$PH_APP_CMD"`
-	pgrep -t tty$PH_APP_TTY -f "$PH_APP_CMD" >/dev/null && PH_STATE="running"
+	pgrep -t tty"$PH_APP_TTY" -f "$PH_APP_CMD" >/dev/null && PH_STATE="running"
 	PH_APPL=`echo "$PH_APP" | cut -c1-4`
 	if [[ -n "$PH_STATE" ]]
 	then
