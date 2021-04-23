@@ -1,6 +1,0 @@
-Display TTY currently allocated to Moonlight:confapps_ph.sh -p tty -a Moonlight | more
-Move Moonlight to another TTY:confapps_ph.sh -p move -a Moonlight -t prompt
-Go to Main menu:ph_show_menu Main
-Go to Apps menu:ph_show_menu Apps
-Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash
-Return to previous screen:return

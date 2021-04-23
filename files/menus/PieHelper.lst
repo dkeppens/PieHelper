@@ -1,14 +1,7 @@
-Show PieHelper current state:ph_check_app_name -s -a PieHelper | more ; echo ""; echo "  *Duuh* What did you expect ?"
-Show PieHelper run account:ph_get_app_user PieHelper
-Start or switch to PieHelper:echo "*Sigh* I'm already running ! Stop buggering me..."
-Stop PieHelper and move to CLI tools:break
-Configure PieHelper:confpieh_ph.sh -c
-Unconfigure PieHelper:confpieh_ph.sh -u
-Unconfigure and uninstall PieHelper:confpieh_ph.sh -s
-List PieHelper configuration state and version:confpieh_ph.sh -g | more
-Go to the OptsManagement for PieHelper submenu:ph_show_menu OptsManagement_PieHelper
-Go to the TTYManagement for PieHelper submenu:ph_show_menu TTYManagement_PieHelper
-Go to Main menu:ph_show_menu Main
-Go to Apps menu:ph_show_menu Apps
+Go to 'OptsManagement for PieHelper' submenu:ph_show_menu OptsManagement_PieHelper
+Go to 'TTYManagement for PieHelper' submenu:ph_show_menu TTYManagement_PieHelper
+Go to 'AppManagement for PieHelper' submenu:ph_show_menu AppManagement_PieHelper
+Go to 'Main' menu:ph_show_menu Main
+Go to 'Apps' menu:ph_show_menu Apps
 Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash
 Return to previous screen:return

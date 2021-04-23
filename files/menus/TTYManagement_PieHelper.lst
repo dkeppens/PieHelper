@@ -1,5 +1,5 @@
-Display TTY currently allocated to PieHelper:confapps_ph.sh -p tty -a PieHelper | more
-Go to Main menu:ph_show_menu Main
-Go to Apps menu:ph_show_menu Apps
+Show allocated TTY:confapps_ph.sh -p tty -a PieHelper | more
+Go to 'Main' menu:ph_show_menu Main
+Go to 'Apps' menu:ph_show_menu Apps
 Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash
 Return to previous screen:return

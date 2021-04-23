@@ -1,0 +1,10 @@
+./.git
+./.github
+./builds/PieHelper*
+./snapshots/PieHelper*
+./files/autologin_conf
+./files/stored_options
+./files/logind_conf
+./files/10-retropie_sh
+./tmp/*
+./mnt/*/*

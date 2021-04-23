@@ -1,12 +1,15 @@
-List all available options for PieHelper:confopts_ph.sh -p list -a PieHelper | more
-View the value of any PieHelper option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a PieHelper -g
-View the value of any PieHelper option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a PieHelper -g -r
-View/Change the value of read-write PieHelper option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a PieHelper -s
-View/Change the value of read-write PieHelper option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a PieHelper -s -r
-Set PieHelper options back to default:for i in PH_PIEH_PERSISTENT PH_PIEH_CMD_OPTS PH_PIEH_CIFS_SHARE PH_PIEH_CIFS_USER PH_PIEH_CIFS_PASS PH_PIEH_CIFS_SRV PH_PIEH_CIFS_DIR PH_PIEH_CIFS_SUBDIR PH_PIEH_CIFS_MPT PH_PIEH_PRE_CMD PH_PIEH_POST_CMD PH_PIEH_USE_CTRL PH_PIEH_NUM_CTRL;do; ph_set_option_to_default $i;done
-Display help for PieHelper option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a PieHelper -d
-Display help for PieHelper option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a PieHelper -d -r
-Go to Main menu:ph_show_menu Main
-Go to Apps menu:ph_show_menu Apps
+Show all options:confopts_ph.sh -p list -a PieHelper | more
+Show all 'read-write' options:confopts_ph.sh -p list -a PieHelper -t rw | more
+Show all 'read-only' options:confopts_ph.sh -p list -a PieHelper -t ro | more
+Show value of option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a PieHelper -g
+Show value of option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a PieHelper -g -r
+Show/Change value of 'read-write' option (Variable expansion disabled):confopts_ph.sh -p prompt -a PieHelper -s
+Show/Change value of 'read-write' option (Variable expansion enabled):confopts_ph.sh -p prompt -a PieHelper -s -r
+Change value of all 'read-write' option(s) (Variable expansion enabled):ph_configure_app_options PieHelper
+Change value of all 'read-write' options to default:for PH_k in PH_PIEH_PERSISTENT PH_PIEH_CMD_OPTS PH_PIEH_CIFS_SHARE PH_PIEH_CIFS_USER PH_PIEH_CIFS_PASS PH_PIEH_CIFS_SRV PH_PIEH_CIFS_DIR PH_PIEH_CIFS_SUBDIR PH_PIEH_CIFS_MPT PH_PIEH_PRE_CMD PH_PIEH_POST_CMD PH_PIEH_PKG_NAME;do;ph_set_option_to_default_value "$PH_k";PH_OPTIONS="";unset PH_k;done
+Show help for option(s) (Variable expansion disabled):confopts_ph.sh -p prompt -a PieHelper -d
+Show help for option(s) (Variable expansion enabled):confopts_ph.sh -p prompt -a PieHelper -d -r
+Go to 'Main' menu:ph_show_menu Main
+Go to 'Apps' menu:ph_show_menu Apps
 Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash
 Return to previous screen:return

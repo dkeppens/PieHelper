@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/bin/bash
 # Manage supplementary out-of-scope apps (by Davy Keppens on 11/11/2018)
 # Enable/Disable debug by running confpieh_ph.sh -p debug -m confsupp_ph.sh
 
@@ -6,24 +6,24 @@
 
 #set -x
 
-typeset PH_OPTION=""
-typeset PH_ACTION=""
-typeset PH_I_ACTION=""
-typeset PH_TMP=""
-typeset PH_APP=""
-typeset PH_APP2=""
-typeset PH_APP_USER=""
-typeset PH_APP_CMD=""
-typeset PH_APP_PKG=""
-typeset PH_j=""
-typeset PH_OLDOPTARG="$OPTARG"
-typeset -i PH_i=0
-typeset -i PH_COUNT=0
-typeset -i PH_APP_TTY=0
-typeset -i PH_OLDOPTIND=$OPTIND
-typeset -l PH_APPL=""
-typeset -l PH_APPL2=""
-typeset -u PH_APPU=""
+declare PH_OPTION=""
+declare PH_ACTION=""
+declare PH_I_ACTION=""
+declare PH_TMP=""
+declare PH_APP=""
+declare PH_APP2=""
+declare PH_APP_USER=""
+declare PH_APP_CMD=""
+declare PH_APP_PKG=""
+declare PH_j=""
+declare PH_OLDOPTARG="$OPTARG"
+declare -i PH_i=0
+declare -i PH_COUNT=0
+declare -i PH_APP_TTY=0
+declare -i PH_OLDOPTIND=$OPTIND
+declare -l PH_APPL=""
+declare -l PH_APPL2=""
+declare -u PH_APPU=""
 OPTIND=1
 
 while getopts p:a:c:u:b:irh PH_OPTION 2>/dev/null

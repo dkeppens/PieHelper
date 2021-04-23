@@ -1,0 +1,138 @@
+#!/bin/bash
+# Run '#PH_APP#' stop action (by Davy Keppens on 04/10/2018)
+# Enable/Disable debug by running 'confpieh_ph.sh -p debug -m stop#PH_APPL#.sh'
+
+. "$(dirname "$0")"/../main/main.sh || exit "$?" && set +x
+
+#set -x
+
+declare PH_STOPAPP="#PH_APP#"
+declare PH_STOPAPP_STATE=""
+declare PH_PARAM=""
+declare PH_OPTION=""
+declare PH_INST=""
+declare PH_MODE=""
+declare PH_i=""
+declare PH_OLDOPTARG="$OPTARG"
+declare -i PH_OLDOPTIND="$OPTIND"
+declare -i PH_RET_CODE="0"
+declare -i PH_STOPAPP_TTY="0"
+declare -l PH_STOPAPPL="${PH_STOPAPP:0:4}"
+
+OPTIND="1"
+
+while getopts pfh PH_OPTION 2>/dev/null
+do
+        case "$PH_OPTION" in p)
+		[[ -n "$PH_MODE" ]] && (! "stop$PH_STOPAPPL.sh" -h) && OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && exit 1
+		PH_MODE="pseudo" ;;
+                             f)
+		[[ -n "$PH_PARAM" ]] && (! "stop$PH_STOPAPPL.sh" -h) && OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && exit 1
+		PH_PARAM="force" ;;
+                             *)
+                >&2 printf "\n\033[36m%s%s%s\033[0m\n" "Usage : stop" "$PH_STOPAPPL.sh" " '-p' | -h"
+                >&2 printf "\n"
+                >&2 printf "%3s%s\n" "" "Where -h displays this usage"
+                >&2 printf "%9s%s\n" "" "- Running this script without parameters will stop an instance of '$PH_STOPAPP' running on it's allocated TTY"
+                >&2 printf "%12s%s\n" "" "- A TTY is only deallocated when an application is removed from PieHelper"
+                >&2 printf "%12s%s\n" "" "- Additionally, the following rules apply to the stop of '$PH_STOPAPP' :"
+                >&2 printf "%15s%s\n" "" "- If a '$PH_STOPAPP' instance is running on a pseudo-terminal, stop will fail"
+                >&2 printf "%15s%s\n" "" "- If no active instance of '$PH_STOPAPP' can be found on it's allocated TTY or"
+                >&2 printf "%15s%s\n" "" "  the TTY for '$PH_STOPAPP' cannot be determined, stop will be skipped but succeed with a warning"
+                >&2 printf "%9s%s\n" "" "-p allows setting the stop of '$PH_STOPAPP' to be executed on a pseudo-terminal instead of it's allocated TTY"
+                >&2 printf "%12s%s\n" "" "- Specifying -p is optional"
+                >&2 printf "%12s%s\n" "" "- The following rules replace these for a normal stop :"
+                >&2 printf "%15s%s\n" "" "- If a '$PH_STOPAPP' instance is running on it's allocated TTY, stop will fail"
+                >&2 printf "%15s%s\n" "" "- If no active instance of '$PH_STOPAPP' can be found on a pseudo-terminal, stop will be skipped but succeed with a warning"
+                >&2 printf "\n"
+                OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		exit 1 ;;
+        esac
+done
+OPTIND="$PH_OLDOPTIND"
+OPTARG="$PH_OLDOPTARG"
+
+[[ -z "$PH_MODE" ]] && PH_MODE="normal"
+
+printf "\n\033[36m%s\033[0m\n\n" "- Executing '$PH_STOPAPP' stop action prechecks"
+PH_STOPAPP_STATE="$(ph_get_app_state_from_app_name "$PH_STOPAPP")"
+printf "%8s%s\n" "" "--> Checking for '$PH_STOPAPP' integration"
+if [[ "$PH_STOPAPP_STATE" == @(Integrated|Halted|Running) ]]
+then
+	ph_set_result -r "$?"
+	printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_STOPAPP_STATE')"
+else
+	ph_set_result -r "$?" -m "Integration is mandatory for '$PH_STOPAPP' stop"
+	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid application state"
+	ph_show_result
+	exit "$?"
+fi
+printf "%8s%s\n" "" "--> Determining '$PH_STOPAPP' TTY"
+PH_STOPAPP_TTY="$(ph_get_app_tty_from_app_name "$PH_STOPAPP")"
+if [[ "$PH_STOPAPP_TTY" -le "1" || "$PH_STOPAPP_TTY" -gt "$PH_PIEH_MAX_TTYS" ]]
+then
+	printf "%10s\033[33m%s\033[0m\n\n" "" "Warning : Could not determine TTY"
+	ph_set_result -r 0 -w -m "A valid TTY allocation is mandatory for '$PH_STOPAPP' stop"
+	ph_show_result
+	exit "$?"
+else
+	printf "%10s\033[32m%s\033[0m\n" "" "OK ('TTY$PH_STOPAPP_TTY')"
+	ph_set_result -r 0
+fi
+printf "%8s%s\n" "" "--> Checking for '$PH_STOPAPP' presence"
+PH_INST="$(pgrep ^"start$PH_STOPAPPL.sh" 2>/dev/null | sed "s/^""$PPID""$//g" | paste -d" " -s)"
+if [[ -z "$PH_INST" ]]
+then
+	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found"
+	ph_set_result -r 0 -w -m "'TTY$PH_STOPAPP_TTY' allocated to '$PH_STOPAPP' already stopped"
+	ph_show_result
+	exit "$?"
+fi
+pgrep -t "tty$PH_STOPAPP_TTY" -f "start$PH_STOPAPPL.sh" >/dev/null 2>&1
+case "$?"_"$PH_MODE" in 0_normal)
+	printf "%10s\033[32m%s\033[0m\n" "" "OK (Found on a TTY)"
+	ph_set_result -r 0
+	ph_show_result
+	ph_set_result -t -r "$?"
+	printf "\033[36m%s\033[0m\n\n" "- Executing '$PH_STOPAPP' stop action on a TTY"
+        [[ -z "$1" && "$("$PH_SUDO" cat "/proc/$PPID/comm")" != @(start*sh|+(?)to+(?).sh|restart!("$PH_STOPAPPL").sh) ]] && \
+                        PH_PARAM="force"
+	ph_do_app_action stop "$PH_STOPAPP" $PH_PARAM ;;
+			1_normal)
+	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid mode"
+	ph_set_result -r 1 -m "Using option '-p' is mandatory for '$PH_STOPAPP' stop on a pseudo-terminal"
+	ph_show_result
+	exit "$?" ;;
+			0_pseudo)
+	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid mode"
+	ph_set_result -r 1 -m "Not using option '-p' is mandatory for '$PH_STOPAPP' stop on a TTY"
+	ph_show_result
+	exit "$?" ;;
+			1_pseudo)
+	printf "%10s\033[32m%s\033[0m\n" "" "OK (Found on a pseudo-terminal)"
+	ph_set_result -r 0
+	ph_show_result
+	ph_set_result -t -r "$?"
+	printf "\033[36m%s\033[0m\n\n" "- Executing '$PH_STOPAPP' stop action on a pseudo-terminal"
+	printf "%8s%s\n" "" "--> Stopping '$PH_STOPAPP' on a pseudo-terminal"
+	for PH_i in $(echo -n "$PH_INST")
+	do
+		"$PH_SUDO" kill "$PH_i" 2>/dev/null
+		[[ "$?" -ne "0" ]] && PH_RET_CODE="1"
+	done
+	if [[ "$PH_RET_CODE" -eq "0" ]]
+	then
+		printf "%10s\033[32m%s\033[0m\n" "" "OK"
+		ph_set_result -r 0
+	else
+		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not stop application"
+		ph_set_result -r 1 -m "An error occurred stopping '$PH_STOPAPP' on a pseudo-terminal"
+	fi ;;
+esac
+ph_show_result
+ph_set_result -t -r "$?"
+ph_show_result -t
+exit "$?"

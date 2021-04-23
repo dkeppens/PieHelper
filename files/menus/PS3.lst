@@ -1,7 +1,7 @@
-View help on how to configure a usb PS3 controller:confctrl_ph.sh -p help -c usb -t PS3 | more
-View help on how to configure a bluetooth PS3 controller:confctrl_ph.sh -p help -c bluetooth -t PS3 | more
-Interactively configure bluetooth PS3 controller(s):confctrl_ph.sh -p prompt -t PS3
-Go to Main menu:ph_show_menu Main
-Go to Controllers menu:ph_show_menu Controllers
+Show configuration help for 'usb PS3' controller:confctrl_ph.sh -p help -c usb -t PS3 | more
+Show configuration help for 'bluetooth PS3' controller:confctrl_ph.sh -p help -c bluetooth -t PS3 | more
+Configure 'bluetooth PS3' controller(s):confctrl_ph.sh -p prompt -t PS3
+Go to 'Main' menu:ph_show_menu Main
+Go to 'Controllers' menu:ph_show_menu Controllers
 Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash
 Return to previous screen:return

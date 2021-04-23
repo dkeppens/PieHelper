@@ -1,0 +1,113 @@
+# General Kodi configuration
+# Do NOT edit the configuration files manually. Always use PieHelper to make changes
+
+# Read-only variables
+
+[[ -z "$PH_KODI_PERSISTENT" ]] && declare -r PH_KODI_PERSISTENT='no'			# - This indicates whether Kodi, when active, should be kept running on it's allocated TTY
+											#   whenever any application other than Kodi starts
+											#   Persistent applications will only stop when a direct stop or restart is issued
+											# - Default is 'no'
+											# - This value is read-only
+											# - Important : * If an application does not render to the default frame buffer it can stay visible in foreground when switching to
+											#                 a TTY that is allocated to a persistent-marked application
+											#               * That behaviour can be avoided by setting persistence to 'no' for both applications
+[[ -z "$PH_KODI_NUM_CTRL" ]] && declare -ri PH_KODI_NUM_CTRL='1'			# - This is the number of controllers you want to use with Kodi
+											# - Changes to an option that sets the controller amount for an application will automatically be reflected to
+											#   the application's command line options if event-based input devices are present as command-line parameters
+											# - Default is '1'
+											# - Allowed values are '1', '2', '3' and '4'
+											# - This value is read-only
+
+# Read-write variables
+
+PH_KODI_PKG_NAME='kodi'									# - This is the package name for Kodi if available
+											# - Default is 'kodi'
+											# - Variables can be used as part of or instead of the normal value
+PH_KODI_USE_CTRL='no'									# - This indicates whether you want to use controllers with Kodi or not
+											#   Controller type to be used and the toggle for optional mapping with xboxdrv should be configured separately using 'confopts_ph.sh'
+											#   or the PieHelper menu
+											# - The amount of controllers to use can be set with option PH_KODI_NUM_CTRL
+											# - If this is set to 'yes' and the specified amount of controllers of the type configured can not be detected on Kodi startup,
+											#   startup will fail
+											# - Default is 'no'
+											# - Allowed values are 'yes' and 'no'
+PH_KODI_CMD_OPTS=''									# - These are the command line options you want to launch Kodi with
+											# - Amongst others, this can be used for passing event-based input devices when required as parameters by Kodi
+											#   When passing event-based input devices, replace the numeric id in the device reference with the string 'PH_CTRL%' where
+											#   where '%' is '1' for device 1, '2' for device 2, etc
+											# - Changes to an option holding an application's command line options where event-based input devices are present will automatically be reflected
+											#   to the application's option determining the controller amount unless all event device parameters are being removed
+											# - Default is ''
+PH_KODI_CIFS_SHARE='no'									# - This indicates whether you want to mount a CIFS share from a local network server PH_KODI_CIFS_SRV before Kodi starts and
+											#   umount it after Kodi shuts down
+											# - Default is 'no'
+											# - Allowed values are 'yes' and 'no'
+											# - Important : * Keep in mind that setting this to 'yes' requires you to enable CIFS sharing on PH_KODI_CIFS_SRV
+											#               * You should also make sure your PI has adequate permissions to access that share
+											#               * Enable UNIX permissions functionality on your CIFS server if available
+											#               * Lastly, a user account PH_KODI_CIFS_USER with a password PH_KODI_CIFS_PASS should be created on PH_KODI_CIFS_SRV
+											#               * Check PH_KODI_CIFS_USER help for more information on specific rules applicable to PH_KODI_CIFS_USER values
+PH_KODI_CIFS_USER=''									# - This is the user account on local network server PH_KODI_CIFS_SRV with password PH_KODI_CIFS_PASS
+											#   if PH_KODI_CIFS_SHARE is set to 'yes'
+											# - PH_KODI_CIFS_USER should always be created on PH_KODI_CIFS_SRV and granted read-write rights to the share
+											# - PieHelper's run account PH_RUN_USER should always be created on PH_KODI_CIFS_SRV and granted read-write rights to the share
+											# - Default is ''
+											# - Allowed values are locally existing accounts and an empty string
+PH_KODI_CIFS_PASS=''									# - This is the password for user PH_KODI_CIFS_USER on local network server PH_KODI_CIFS_SRV if PH_KODI_CIFS_SHARE is set to 'yes'
+											# - The password should not contain any single quote (') characters
+											# - Default is ''
+PH_KODI_CIFS_SRV=''									# - This is the ip address of your local network server where CIFS sharing is enabled if PH_KODI_CIFS_SHARE is set to 'yes'
+											# - Default is ''
+											# - Allowed values are valid ipv4 addresses and an empty string
+PH_KODI_CIFS_DIR=''									# - This is the pathname of the CIFS share on local network server PH_KODI_CIFS_SRV if PH_KODI_CIFS_SHARE is set to 'yes'
+											# - Default is ''
+											# - Allowed values are values starting with '/' and an empty string
+											# - Variables can be used as part of or instead of the normal value
+PH_KODI_CIFS_SUBDIR=''									# - This is the pathname relative to PH_KODI_CIFS_DIR on local network server PH_KODI_CIFS_SRV that will be mounted on PH_KODI_CIFS_MPT
+											#   if PH_KODI_CIFS_SHARE is set to 'yes'
+											# - Default is ''
+											# - Allowed values are values starting with '/' and an empty string
+											# - Variables can be used as part of or instead of the normal value
+PH_KODI_CIFS_MPT='${PH_MNT_DIR}/Kodi'							# - This is the full pathname of a directory on your PI where you want to mount PH_KODI_CIFS_SUBDIR if PH_KODI_CIFS_SHARE is set to 'yes'
+											# - A default directory 'mnt' with a subfolder named after the application is automatically created under the PieHelper root
+											#   directory but other values can be set if preferred
+											# - Non-existing pathnames will be recursively created
+											# - Existing pathnames should be empty directories
+											# - Default is '${PH_MNT_DIR}/Kodi'
+											# - Allowed values are values starting with '/' and an empty string
+											# - Variables can be used as part of or instead of the normal value
+PH_KODI_PRE_CMD='${PH_SCRIPTS_DIR}/../pre_cmds/Kodi-PRE.sh'				# - This is the full command to run before starting Kodi
+											# - PRE-commands are always executed as the run account for the application being started which should be granted adequate
+											#   permissions
+											# - PRE-commands that fail will only generate a warning and not block further Kodi startup
+											# - In case PH_KODI_PRE_CMD makes use of default Kodi CIFS configuration, Kodi's run account should be present on PH_KODI_CIFS_SRV with
+											#   share permissions required by PH_KODI_PRE_CMD
+											# - Default is '${PH_SCRIPTS_DIR}/../pre_cmds/Kodi-PRE.sh' which will restore a backup of Kodi's preferences directory for Kodi's run account from
+											#   an archive called 'Kodi-Prefs.tar' in PH_KODI_CIFS_SUBDIR on PH_KODI_CIFS_SRV if one is found, and CIFS for Kodi is correctly configured
+											#   with a user for Kodi's run account having read-write access to the share
+											#   Note that this will significantly delay Kodi startup
+											# - Allowed values are an empty string and valid pathnames of scripts, sourceable scripts or executables
+											# - Variables can be used as part of or instead of the normal value
+											#   Sourceable scripts can use variable names known to PieHelper
+PH_KODI_POST_CMD='${PH_SCRIPTS_DIR}/../post_cmds/Kodi-POST.sh'				# - This is the full command to run after stopping Kodi
+											# - POST-commands are always executed as the run account for PieHelper '${PH_RUN_USER}' which should be granted adequate
+											#   permissions
+											# - POST-commands that fail will only generate a warning
+											# - In case PH_KODI_POST_CMD makes use of default Kodi CIFS configuration, Kodi's run account should be present on PH_KODI_CIFS_SRV with
+											#   share permissions required by PH_KODI_POST_CMD
+											# - Default is '${PH_SCRIPTS_DIR}/../post_cmds/Kodi-POST.sh' which will backup the current Kodi preferences directory for Kodi's run account to
+											#   an archive called 'Kodi-Prefs.tar' in PH_KODI_CIFS_SUBDIR on PH_KODI_CIFS_SRV if CIFS for Kodi is correctly configured
+											#   with a user for Kodi's run account having read-write access to the share
+											#   'Kodi-Prefs.tar' will replace any identically named pre-existing archive
+											#   Note that this will slightly delay Kodi shutdown
+											# - Allowed values are an empty string and valid pathnames of scripts, sourceable scripts or executables
+											# - Variables can be used as part of or instead of the normal value
+											#   Sourceable scripts can use variable names known to PieHelper
+
+# Read-only exports
+
+export PH_KODI_PERSISTENT PH_KODI_NUM_CTRL
+
+# Read-write exports
+
+export PH_KODI_CIFS_MPT PH_KODI_CMD_OPTS PH_KODI_PRE_CMD PH_KODI_POST_CMD PH_KODI_PKG_NAME PH_KODI_USE_CTRL PH_KODI_CIFS_SHARE PH_KODI_CIFS_USER PH_KODI_CIFS_PASS PH_KODI_CIFS_SRV PH_KODI_CIFS_DIR PH_KODI_CIFS_SUBDIR

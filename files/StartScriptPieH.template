@@ -1,0 +1,376 @@
+#!/bin/bash
+# Run '#PH_APP#' start action (by Davy Keppens on 04/10/2018)
+# Enable/Disable debug by running 'confpieh_ph.sh -p debug -m start#PH_APPL#.sh'
+
+. "$(dirname "$0")"/../main/main.sh || exit "$?" && set +x
+
+#set -x
+
+declare PH_RUNAPP="#PH_APP#"
+declare PH_RUNAPP_STATE=""
+declare PH_APP_STATE=""
+declare PH_EXCEPTION=""
+declare PH_OPTION=""
+declare PH_INST=""
+declare PH_MODE=""
+declare PH_i=""
+declare PH_STOPAPPS="None"
+declare PH_OLDOPTARG="$OPTARG"
+declare -i PH_OLDOPTIND="$OPTIND"
+declare -i PH_RUNAPP_TTY="0"
+declare -i PH_FG_CONSOLE="0"
+declare -i PH_RECVD_FLAG="1"
+declare -i PH_RET_CODE="0"
+declare -l PH_RUNAPPL="${PH_RUNAPP:0:4}"
+declare -u PH_RUNAPPU="${PH_RUNAPP:0:4}"
+
+export PH_LAST_RETURN_GLOB="yes"
+OPTIND="1"
+
+while getopts phm: PH_OPTION 2>/dev/null
+do
+        case "$PH_OPTION" in p)
+		[[ -n "$PH_MODE" ]] && (! "start$PH_RUNAPPL.sh" -h) && OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && exit 1
+                if [[ "$(tty)" != /dev/pts/* ]]
+		then
+			OPTIND="$PH_OLDOPTIND" && OPTARG="$PH_OLDOPTARG"
+			printf "\n\033[36m%s\033[0m\n" "- Executing '$PH_RUNAPP' start action prechecks"
+			ph_set_result -r 1 -m "Running this command from a pseudo-terminal is mandatory for option '-p'"
+			ph_show_result
+			exit "$?"
+		fi
+		PH_MODE="pseudo" ;;
+			   m)
+		[[ "$PH_RECVD_FLAG" -eq "0" ]] && (! "start$PH_RUNAPPL.sh" -h) && OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && exit 1
+		PH_RECVD_FLAG="0"
+		if ! ph_screen_input "$OPTARG"
+		then
+			OPTIND="$PH_OLDOPTIND"
+			OPTARG="$PH_OLDOPTARG"
+			exit 1
+		fi
+		if [[ "$OPTARG" != @(Main|Controllers|Apps|Advanced|Settings|PS3|PS4|XBOX360|AppManagement|OptsManagement|TTYManagement|OS|OSdefaults|$(nawk 'BEGIN { ORS = "|" } { print $1 "|" "OptsManagement_" $1 "|" "TTYManagement_" $1 "|" "AppManagement_" $1 }' "$PH_CONF_DIR/supported_apps")|) ]]
+		then
+			if ! "start$PH_RUNAPPL.sh" -h
+			then
+				OPTIND="$PH_OLDOPTIND"
+				OPTARG="$PH_OLDOPTARG"
+				exit 1
+			fi
+		fi
+		if [[ -n "$OPTARG" && "$PH_PIEH_CMD_OPTS" != "$OPTARG" ]]
+		then
+			if ! confopts_ph.sh -p set -a "$PH_RUNAPP" -o PH_PIEH_CMD_OPTS="$OPTARG"
+			then
+				OPTIND="$PH_OLDOPTIND"
+				OPTARG="$PH_OLDOPTARG"
+				exit 1
+			fi
+			export PH_PIEH_CMD_OPTS="$OPTARG"
+		fi ;;
+                           *)
+                >&2 printf "\n\033[36m%s%s%s\033[0m\n" "Usage : start" "$PH_RUNAPPL.sh" " '-m ['menu']' '-p' | -h"
+                >&2 printf "\n"
+                >&2 printf "%3s%s\n" "" "Where -h displays this usage"
+                >&2 printf "%9s%s\n" "" "- Running this script without parameters will start a new instance of '$PH_RUNAPP' on it's allocated TTY and that TTY will become the active TTY"
+                >&2 printf "%12s%s\n" "" "- The first unallocated TTY will be automatically assigned to any application without a TTY that attempts to start"
+                >&2 printf "%12s%s\n" "" "- A TTY is only deallocated when an application is removed from PieHelper"
+                >&2 printf "%12s%s\n" "" "- If an application in need of a TTY attempts to start but all TTY's are already allocated, startup will fail"
+                >&2 printf "%12s%s\n" "" "- At any application start, all other running integrated applications will first be stopped"
+                >&2 printf "%12s%s\n" "" "  Two exceptions to this rule exist :"
+                >&2 printf "%15s%s\n" "" "- PieHelper starting on a pseudo-terminal will never stop running applications"
+                >&2 printf "%15s%s\n" "" "- Applications marked as persistent remain online"
+                >&2 printf "%12s%s\n" "" "- Additionally, the following rules apply to the start of '$PH_RUNAPP' :" 
+                >&2 printf "%15s%s\n" "" "- '$PH_RUNAPP' must be an integrated application or startup will fail"
+                >&2 printf "%15s%s\n" "" "- If a persistent '$PH_RUNAPP' instance is already running on that TTY, that TTY will become the active TTY"
+                >&2 printf "%15s%s\n" "" "- If a non-persistent '$PH_RUNAPP' instance is already running on that TTY, startup will fail"
+                >&2 printf "%15s%s\n" "" "- '$PH_RUNAPP' will always activate persistence for itself before starting on a TTY"
+                >&2 printf "%15s%s\n" "" "- '$PH_RUNAPP' will always terminate after any other application startup completes successfully"
+                >&2 printf "%15s%s\n" "" "- If a '$PH_RUNAPP' instance is already running on a pseudo-terminal, that instance will be replaced by the new instance on it's allocated TTY"
+                >&2 printf "%9s%s\n" "" "-p allows setting the start of '$PH_RUNAPP' to be executed on a pseudo-terminal instead of it's allocated TTY"
+                >&2 printf "%12s%s\n" "" "- Specifying -p is optional"
+                >&2 printf "%12s%s\n" "" "- The following rules replace these for a normal start :"
+                >&2 printf "%15s%s\n" "" "- '$PH_RUNAPP' must be an integrated application or startup will fail"
+                >&2 printf "%15s%s\n" "" "- PieHelper will not stop any other running integrated applications before starting in this mode" 
+                >&2 printf "%15s%s\n" "" "- If a persistent '$PH_RUNAPP' pseudo-terminal instance is already running, startup will be skipped but succeed with a warning" 
+                >&2 printf "%15s%s\n" "" "- If a non-persistent '$PH_RUNAPP' pseudo-terminal instance is already running, startup will fail"
+                >&2 printf "%15s%s\n" "" "- If a '$PH_RUNAPP' instance is already running on it's allocated TTY, that instance will be replaced by the new pseudo-terminal instance"
+                >&2 printf "%9s%s\n" "" "-m allows starting '$PH_RUNAPP' directly in menu [menu] instead of the default 'Main' menu"
+                >&2 printf "%12s%s\n" "" "- Specifying -m is optional"
+                >&2 printf "%12s%s\n" "" "- Allowed values for [menu] are 'Main', 'Controllers', 'Apps', 'Advanced', 'Settings', 'PS3', 'PS4', 'XBOX360', 'AppManagement',"
+                >&2 printf "%12s%s\n" "" "  'OptsManagement', 'AppManagement', 'TTYManagement', the name of any supported application, as well as one of 'OptsManagement', 'AppManagement' or 'TTYManagement' concatenated with '_' and"
+                >&2 printf "%12s%s\n" "" "  the name of any supported application, f.e. 'OptsManagement_Bash', 'AppManagement_PieHelper' or 'TTYManagement_Moonlight'"
+                >&2 printf "%15s%s\n" "" "- By default, the current value of option PH_PIEH_CMD_OPTS will be used"
+                >&2 printf "%18s%s\n" "" "- If PH_PIEH_CMD_OPTS has no value, it will be set to 'Main'"
+                >&2 printf "%15s%s\n" "" "- If an empty string is specified for [menu], the default will be used"
+                >&2 printf "%12s%s\n" "" "- This setting will be ignored if a persistent instance of '$PH_RUNAPP' is already active"
+                >&2 printf "\n"
+                OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		exit 1 ;;
+        esac
+done
+OPTIND="$PH_OLDOPTIND"
+OPTARG="$PH_OLDOPTARG"
+
+[[ -z "$PH_MODE" ]] && PH_MODE="normal"
+
+printf "\n\033[36m%s\033[0m\n\n" "- Executing '$PH_RUNAPP' start action prechecks" 
+PH_RUNAPP_STATE="$(ph_get_app_state_from_app_name "$PH_RUNAPP")"
+PH_FG_CONSOLE="$("$PH_SUDO" fgconsole 2>/dev/null)"
+if [[ "$("$PH_SUDO" cat "/proc/$PPID/comm")" != restart*sh ]]
+then
+	printf "%8s%s\n" "" "--> Checking for '$PH_RUNAPP' integration"
+	if [[ "$PH_RUNAPP_STATE" == @(Integrated|Halted|Running) ]]
+	then
+		ph_set_result -r "$?"
+		printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_RUNAPP_STATE')"
+	else
+		ph_set_result -r "$?" -m "Integration is mandatory for '$PH_RUNAPP' start"
+		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid application state"
+		ph_show_result
+		exit "$?"
+	fi
+fi
+if [[ -z "$PH_PIEH_CMD_OPTS" ]]
+then
+	if ! ph_set_option_to_value "$PH_RUNAPP" -r "PH_PIEH_CMD_OPTS'Main"
+	then
+		ph_show_result
+		exit "$?"
+	fi
+fi
+if [[ "$PH_MODE" == "normal" ]]
+then
+	printf "%8s%s\n" "" "--> Checking for running applications"
+	if [[ "$("$PH_SUDO" cat "/proc/$PPID/comm")" == +(?)to+(?).sh ]]
+	then
+		PH_EXCEPTION="$(nawk '$1 ~ /^stop.*\.sh$/ { print substr($1,5,length($1)-7) }' "$PH_SCRIPTS_DIR/$("$PH_SUDO" cat "/proc/$PPID/comm")" 2>/dev/null)"
+	fi
+	for PH_i in $(confapps_ph.sh -p list -k run | grep -v Skipping | tail -n +4 | tac | tail -n +4 | nawk -v runappl=^"$PH_RUNAPPL"$ -v except=^"$PH_EXCEPTION"$ 'BEGIN { FS = "\x27" ; ORS = " " }
+												$2 !~ /^None$/ && tolower(substr($2,1,4)) !~ except && tolower(substr($2,1,4)) !~ runappl { print $2 }')
+	do
+		if [[ "$PH_STOPAPPS" != "None" ]]
+		then
+			PH_STOPAPPS="$PH_STOPAPPS $PH_i"
+		else
+			PH_STOPAPPS="$PH_i"
+		fi
+	done
+	ph_set_result -r 0
+	if [[ "$PH_STOPAPPS" == "None" ]]
+	then
+		printf "%10s\033[32m%s\033[0m\n" "" "OK : ('$PH_STOPAPPS')"
+		PH_STOPAPPS=""
+	else
+		printf "%10s\033[33m%s\033[0m\n" "" "Warning : The following applications are running ('$PH_STOPAPPS') -> Stopping"
+	fi
+	for PH_i in $(echo -n "$PH_STOPAPPS")
+	do
+		if ! ph_do_app_action stop "$PH_i"
+		then
+			ph_show_result
+			exit "$?"
+		else
+			[[ "$(ph_get_app_state_from_app_name "$PH_i")" == "Running" ]] && PH_STOPAPPS="$(sed "s/^$PH_i //g;s/ $PH_i / /g;s/ $PH_i$//g" <<<"$PH_STOPAPPS" 2>/dev/null)"
+		fi
+	done
+	[[ -z "$PH_STOPAPPS" ]] && PH_STOPAPPS="None"
+	ph_set_result -m "The following applications were stopped ('$PH_STOPAPPS')"
+	ph_get_app_tty "$PH_RUNAPP"
+	PH_RUNAPP_TTY="$?"
+	if [[ "$PH_RUNAPP_TTY" -le "1" || "$PH_RUNAPP_TTY" -gt "$PH_PIEH_MAX_TTYS" ]]
+	then
+		ph_set_result -m "A valid TTY allocation is mandatory for '$PH_RUNAPP' start on a TTY"
+		ph_show_result
+		exit "$?"
+	fi
+else
+	printf "%8s%s\n" "" "--> Determining '$PH_RUNAPP' TTY"
+	PH_RUNAPP_TTY="$(ph_get_app_tty_from_app_name "$PH_RUNAPP")"
+	if [[ "$PH_RUNAPP_TTY" -ge "2" && "$PH_RUNAPP_TTY" -le "$PH_PIEH_MAX_TTYS" ]]
+	then
+		printf "%10s\033[32m%s\033[0m\n" "" "OK ('TTY$PH_RUNAPP_TTY')"
+	else
+		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not determine TTY"
+	fi
+	ph_set_result -r 0
+fi
+printf "%8s%s\n" "" "--> Checking for '$PH_RUNAPP' presence"
+PH_INST="$(pgrep ^"start$PH_RUNAPPL.sh" 2>/dev/null | sed "s/^""$$""$//g" | paste -d" " -s)"
+if [[ -n "$PH_INST" ]]
+then
+	if [[ "$PH_MODE" == "normal" ]]
+	then
+		if pgrep -t "tty$PH_RUNAPP_TTY" -f "start$PH_RUNAPPL.sh" >/dev/null 2>&1
+		then
+			if [[ "$(eval "echo -n \$PH_""$PH_RUNAPPU""_PERSISTENT")" == "no" ]]
+			then
+				printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Found on a TTY"
+				ph_set_result -r 1 -m "An error occurred starting '$PH_RUNAPP' on 'TTY$PH_RUNAPP_TTY' (Already non-persistently running)"
+				ph_show_result
+			else
+				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Found on a TTY"
+				ph_set_result -r 0 -w -m "'$PH_RUNAPP' already persistently running on 'TTY$PH_RUNAPP_TTY' -> Switching to instance"
+				ph_show_result
+				sleep 2 2>/dev/null
+				"$PH_SUDO" chvt "$PH_RUNAPP_TTY" 2>/dev/null
+			fi
+			exit "$?"
+		else
+        		printf "%10s\033[32m%s\033[0m\n" "" "OK (Found on a pseudo-terminal) -> Stopping"
+			ph_set_result -r 0
+			printf "%8s%s\n" "" "--> Stopping '$PH_RUNAPP' on a pseudo-terminal"
+			for PH_i in $(echo -n "$PH_INST")
+			do
+				"$PH_SUDO" kill "$PH_i" 2>/dev/null
+				[[ "$?" -ne "0" ]] && PH_RET_CODE="1"
+			done
+			if [[ "$PH_RET_CODE" -eq "0" ]]
+			then
+				printf "%10s\033[32m%s\033[0m\n" "" "OK"
+				ph_set_result -r 0
+			else
+				printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not stop application"
+				ph_set_result -r 1 -m "An error occurred stopping '$PH_RUNAPP' on a pseudo-terminal"
+				ph_show_result
+				exit "$?"
+			fi
+			ph_show_result
+			ph_set_result -t -r "$?"
+			printf "\033[36m%s\033[0m\n\n" "- Executing '$PH_RUNAPP' start action on a TTY"
+			"$PH_SUDO" rm "$PH_TMP_DIR/Start.report" 2>/dev/null
+			if ph_set_option_to_value "$PH_RUNAPP" -r "PH_PIEH_PERSISTENT'yes"
+			then
+				set -o pipefail
+				if ! ph_do_app_action start "$PH_RUNAPP" | tee -a "$PH_TMP_DIR/Start.report" 2>/dev/null
+				then
+					set +o pipefail
+					if [[ "$PH_FG_CONSOLE" -ne "$PH_RUNAPP_TTY" ]]
+					then
+						ph_show_result
+						ph_set_result -t -r "$?"
+						printf "\033[36m%s\033[0m\n\n" "- Displaying 'FAILED' status report for '$PH_RUNAPP' start"
+						if cat "$PH_TMP_DIR/Start.report" 2>/dev/null
+						then
+							ph_set_result -r 0
+						else
+							ph_set_result -r 1 -m "An error occurred displaying status report '$PH_TMP_DIR/Start.report' of '$PH_RUNAPP' start"
+						fi
+					else
+						"$PH_SUDO" rm "$PH_TMP_DIR/Start.report" 2>/dev/null
+						ph_show_result
+						ph_set_result -t -r "$?"
+						ph_show_result -t
+						"$PH_SUDO" chvt 1 2>/dev/null
+						"$PH_SUDO" systemctl stop "getty@tty$PH_RUNAPP_TTY" >/dev/null 2>&1
+						"$PH_SUDO" systemctl daemon-reload >/dev/null 2>&1
+						exit 1
+					fi
+				fi
+				"$PH_SUDO" rm "$PH_TMP_DIR/Start.report" 2>/dev/null
+				ph_show_result
+				ph_set_result -t -r "$?"
+			else
+				ph_show_result
+				ph_set_result -t "$?"
+				ph_show_result -t
+				exit "$?"
+			fi
+		fi
+	else
+		if pgrep -t "tty$PH_RUNAPP_TTY" -f "start$PH_RUNAPPL.sh" >/dev/null 2>&1
+		then
+        		printf "%10s\033[32m%s\033[0m\n" "" "OK (Found on a TTY) -> Stopping"
+			ph_set_result -r 0
+			if ! ph_do_app_action stop "$PH_RUNAPP" force
+			then
+				ph_show_result
+				exit "$?"
+			fi
+			ph_show_result
+			ph_set_result -t -r "$?"
+			printf "\033[36m%s\033[0m\n\n" "- Executing '$PH_RUNAPP' start action on a pseudo-terminal"
+			printf "%8s%s\n" "" "--> Starting '$PH_RUNAPP'"
+			printf "%10s\033[32m%s\033[0m\n" "" "OK"
+			ph_set_result -r 0
+			ph_show_result
+			ph_set_result -r "$?"
+			ph_show_result -t
+			ph_show_menu "$PH_PIEH_CMD_OPTS"
+			exit "$?"
+		else
+			if [[ "$(eval "echo -n \$PH_""$PH_RUNAPPU""_PERSISTENT")" == "no" ]]
+			then
+				printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Found on a pseudo-terminal"
+				ph_set_result -r 1 -m "An error occurred starting '$PH_RUNAPP' on a pseudo-terminal (Already non-persistently running)"
+			else
+				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Found on a pseudo-terminal -> Skipping"
+				ph_set_result -r 0 -w -m "'$PH_RUNAPP' already persistently running on a pseudo-terminal"
+			fi
+			ph_show_result
+			exit "$?"
+		fi
+	fi
+else
+        printf "%10s\033[32m%s\033[0m\n" "" "OK (Not found)"
+	ph_set_result -r 0
+	ph_show_result
+	ph_set_result -t -r "$?"
+	if [[ "$PH_MODE" == "normal" ]]
+	then
+		printf "\033[36m%s\033[0m\n\n" "- Executing '$PH_RUNAPP' start action on a TTY"
+		"$PH_SUDO" rm "$PH_TMP_DIR/Start.report" 2>/dev/null
+		if ph_set_option_to_value "$PH_RUNAPP" -r "PH_PIEH_PERSISTENT'yes"
+		then
+			set -o pipefail
+			if ! ph_do_app_action start "$PH_RUNAPP" | tee -a "$PH_TMP_DIR/Start.report" 2>/dev/null
+			then
+				set +o pipefail
+				if [[ "$PH_FG_CONSOLE" -ne "$PH_RUNAPP_TTY" ]]
+				then
+					ph_show_result
+					ph_set_result -t -r "$?"
+					printf "\033[36m%s\033[0m\n\n" "- Displaying 'FAILED' status report for '$PH_RUNAPP' start"
+					if cat "$PH_TMP_DIR/Start.report" 2>/dev/null
+					then
+						ph_set_result -r 0
+					else
+						ph_set_result -r 1 -m "An error occurred displaying status report '$PH_TMP_DIR/Start.report' of '$PH_RUNAPP' start"
+					fi
+				else
+					"$PH_SUDO" rm "$PH_TMP_DIR/Start.report" 2>/dev/null
+					ph_show_result
+					ph_set_result -t -r "$?"
+					ph_show_result -t
+					"$PH_SUDO" chvt 1 2>/dev/null
+					"$PH_SUDO" systemctl stop "getty@tty$PH_RUNAPP_TTY" >/dev/null 2>&1
+					"$PH_SUDO" systemctl daemon-reload >/dev/null 2>&1
+					exit 1
+				fi
+			fi
+			"$PH_SUDO" rm "$PH_TMP_DIR/Start.report" 2>/dev/null
+			ph_show_result
+			ph_set_result -t -r "$?"
+		else
+			ph_show_result
+			ph_set_result -t "$?"
+			ph_show_result -t
+			exit "$?"
+		fi
+	else
+		printf "\033[36m%s\033[0m\n\n" "- Executing '$PH_RUNAPP' start action on a pseudo-terminal"
+		printf "%8s%s\n" "" "--> Starting '$PH_RUNAPP'"
+		printf "%10s\033[32m%s\033[0m\n" "" "OK"
+		ph_set_result -r 0
+		ph_show_result
+		ph_set_result -t -r "$?"
+		ph_show_result -t
+		ph_show_menu "$PH_PIEH_CMD_OPTS"
+		exit "$?"
+	fi
+fi
+ph_show_result -t
+exit "$?"

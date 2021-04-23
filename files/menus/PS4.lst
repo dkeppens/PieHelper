@@ -1,8 +1,8 @@
-View help on how to configure a usb PS4 controller:confctrl_ph.sh -p help -c usb -t PS4 | more
-View help on how to configure a PS4 controller using the Sony Wireless Adapter:confctrl_ph.sh -p help -c sonywadapt -t PS4 | more
-View help on how to configure a bluetooth PS4 controller:confctrl_ph.sh -p help -c bluetooth -t PS4 | more
-Interactively configure bluetooth PS4 controller(s):confctrl_ph.sh -p prompt -t PS4
-Go to Main menu:ph_show_menu Main
-Go to Controllers menu:ph_show_menu Controllers
+Show configuration help for 'usb PS4' controller:confctrl_ph.sh -p help -c usb -t PS4 | more
+Show configuration help for 'Sony Wireless Adapter PS4' controller:confctrl_ph.sh -p help -c sonywadapt -t PS4 | more
+Show configuration help for 'bluetooth PS4' controller:confctrl_ph.sh -p help -c bluetooth -t PS4 | more
+Configure 'bluetooth PS4' controller(s):confctrl_ph.sh -p prompt -t PS4
+Go to 'Main' menu:ph_show_menu Main
+Go to 'Controllers' menu:ph_show_menu Controllers
 Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash
 Return to previous screen:return

@@ -1,10 +1,10 @@
-Check all current PieHelper TTY configurations and attempt a repair where needed:confpieh_ph.sh -r | more
-List OS-relevant PieHelper modules and their current debugstate:confpieh_ph.sh -p list -m prompt
-Switch the debug state for one or more relevant PieHelper modules:confpieh_ph.sh -p debug -m prompt
-Discover supported applications and integrate them into PieHelper:confapps_ph.sh -p disc
-Go to Main menu:ph_show_menu Main
-Go to Apps menu:ph_show_menu Apps
-Go to OS menu:ph_show_menu OS
-Go to Controllers menu:ph_show_menu Controllers
+Verify configurations:echo "Quit 'PieHelper' from the 'PieHelper' app menu and run '$PH_SUDO $PH_SCRIPTS_DIR/confpieh_ph.sh -v' to verify configurations"
+Show OS-relevant PieHelper modules and module debugstates:confpieh_ph.sh -p list -m prompt
+Switch debug state for relevant PieHelper modules:confpieh_ph.sh -p debug -m prompt
+Discover and integrate all supported applications:confapps_ph.sh -p disc
+Go to 'Main' menu:ph_show_menu Main
+Go to 'Apps' menu:ph_show_menu Apps
+Go to 'OS' menu:ph_show_menu OS
+Go to 'Controllers' menu:ph_show_menu Controllers
 Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash
 Return to previous screen:return

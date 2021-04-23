@@ -1,6 +1,0 @@
-Display TTY currently allocated to Bash:confapps_ph.sh -p tty -a Bash | more
-Move Bash to another TTY:confapps_ph.sh -p move -a Bash -t prompt
-Go to Main menu:ph_show_menu Main
-Go to Apps menu:ph_show_menu Apps
-Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash
-Return to previous screen:return

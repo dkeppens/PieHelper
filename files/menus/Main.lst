@@ -1,7 +1,10 @@
-Read PieHelper Manual (Press 'q' to quit):echo "Displaying Manual";less $PH_SCRIPTS_DIR/../HOWTO
-Go to Apps menu:ph_show_menu Apps
-Go to Controllers menu:ph_show_menu Controllers
-Go to Advanced menu:ph_show_menu Advanced
-Go to OS menu:ph_show_menu OS
+Read Manual (Press 'q' to quit):printf "\033[36m%s\033[0m\n" "- Displaying Manual";printf "%2s\033[32m%s\033[0m\n\n" "" "SUCCESS";less "$PH_SCRIPTS_DIR"/../HOWTO
+Go to 'Apps' menu:ph_show_menu Apps
+Go to 'Controllers' menu:ph_show_menu Controllers
+Go to 'Advanced' menu:ph_show_menu Advanced
+Go to 'OS' menu:ph_show_menu OS
 Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash
+Check for available updates:ph_update_app PieHelper
+Quit and move to CLI tools:break
+Reboot your system:"$PH_SUDO" init 6
 Return to previous screen:return

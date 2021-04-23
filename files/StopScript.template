@@ -1,25 +1,30 @@
-#!/bin/ksh
-# Stop #PH_APP# (by Davy Keppens on 04/10/2018)
+#!/bin/bash
+# Run '#PH_APP#' stop action (by Davy Keppens on 04/10/2018)
 # Enable/Disable debug by running 'confpieh_ph.sh -p debug -m stop#PH_APPL#.sh'
 
-. $(dirname "$0")/../main/main.sh || exit "$?" && set +x
+. "$(dirname "$0")"/../main/main.sh || exit "$?" && set +x
 
 #set -x
 
-typeset PH_STOPAPP="#PH_APP#"
-typeset PH_PARAM="$1"
-typeset PH_OPTION=""
-typeset PH_STOPAPP_CMD=""
-typeset PH_OLDOPTARG="$OPTARG"
-typeset -l PH_STOPAPPL=`echo "$PH_STOPAPP" | cut -c1-4`
-typeset -i PH_STOPAPP_TTY="0"
-typeset -i PH_OLDOPTIND="$OPTIND"
+declare PH_STOPAPP="#PH_APP#"
+declare PH_STOPAPP_STATE=""
+declare PH_PARAM=""
+declare PH_OPTION=""
+declare PH_OLDOPTARG="$OPTARG"
+declare -i PH_OLDOPTIND="$OPTIND"
+declare -i PH_STOPAPP_TTY="0"
+declare -l PH_STOPAPPL="${PH_STOPAPP:0:4}"
+
 OPTIND="1"
 
-while getopts h PH_OPTION 2>/dev/null
+while getopts fh PH_OPTION 2>/dev/null
 do
-        case "$PH_OPTION" in *)
-                >&2 printf "%s%s%s\n" "Usage : stop" "$PH_STOPAPPL" ".sh | -h"
+        case "$PH_OPTION" in f)
+		[[ -n "$PH_PARAM" ]] && (! "stop$PH_STOPAPPL.sh" -h) && OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && exit 1
+		PH_PARAM="force" ;;
+			     *)
+                >&2 printf "\n\033[36m%s%s%s\033[0m\n" "Usage : stop" "$PH_STOPAPPL" ".sh | -h"
                 >&2 printf "\n"
                 >&2 printf "%3s%s\n" "" "Where -h displays this usage"
                 >&2 printf "%9s%s\n" "" "- Running this script without parameters will stop an instance of '$PH_STOPAPP' running on it's allocated TTY"
@@ -28,41 +33,57 @@ do
                 >&2 printf "%15s%s\n" "" "- If no active instance of '$PH_STOPAPP' can be found on it's allocated TTY or"
                 >&2 printf "%15s%s\n" "" "  the TTY for '$PH_STOPAPP' cannot be determined, stop will be skipped but succeed with a warning"
                 >&2 printf "\n"
-                OPTIND="$PH_OLDOPTIND" ; OPTARG="$PH_OLDOPTARG" ; exit 1 ;;
+                OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		exit 1 ;;
         esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-if [[ `"$PH_SUDO" cat /proc/"$PPID"/comm 2>/dev/null` != "confsupp_ph.sh" ]]
+printf "\n\033[36m%s\033[0m\n\n" "- Executing '$PH_STOPAPP' stop action prechecks"
+PH_STOPAPP_STATE="$(ph_get_app_state_from_app_name "$PH_STOPAPP")"
+printf "%8s%s\n" "" "--> Checking for '$PH_STOPAPP' integration"
+if [[ "$PH_STOPAPP_STATE" == @(Integrated|Halted|Running) ]]
 then
-        ph_check_app_name -i -a "$PH_STOPAPP" || exit "$?"
-fi
-printf "\033[36m%s\033[0m\n" "- Disabling '$PH_STOPAPP'"
-printf "%8s%s\n" "" "--> Attempting to determine TTY for '$PH_STOPAPP'"
-PH_STOPAPP_TTY=`ph_get_tty_for_app "$PH_STOPAPP"`
-[[ "$?" -eq 1 && "$PH_STOPAPP_TTY" -ne 0 ]] && printf "%10s\033[32m%s\033[0m\n" "" "OK ('TTY$PH_STOPAPP_TTY')" || \
-		(printf "%10s%s\n" "" "Warning : Could not determine TTY for '$PH_STOPAPP'" ; printf "%2s\033[32m%s\033[0m\n\n" "" "SUCCESS" ; return 1) || \
-		 exit 0
-PH_STOPAPP_CMD=`nawk -v runapp=^"$PH_STOPAPP"$ 'BEGIN { ORS=" " } $1 ~ runapp { for (i=2;i<=NF;i++) { if (i==NF) { ORS="" ; print $i } else { print $i }}}' "$PH_CONF_DIR"/supported_apps 2>/dev/null`
-PH_STOPAPP_CMD=`sed "s/PH_TTY/$PH_STOPAPP_TTY/" <<<"$PH_STOPAPP_CMD"`
-printf "%8s%s\n" "" "--> Checking for '$PH_STOPAPP'"
-[[ "$PH_STOPAPP" == "Bash" ]] && PH_STOPAPP_CMD="bash"
-if pgrep -t tty"$PH_STOPAPP_TTY" -f "$PH_STOPAPP_CMD"  >/dev/null 2>&1
-then
-	printf "%10s\033[32m%s\033[0m\n" "" "OK (Found)"
-        [[ -z "$1" && `"$PH_SUDO" cat /proc/"$PPID"/comm` != @(start*sh|+(?)to+(?).sh|restart!("$PH_STOPAPPL").sh) ]] && \
-			PH_PARAM="force"
-	ph_run_app_action stop "$PH_STOPAPP" "$PH_PARAM"
-	case "$?" in 3)
-		printf "%2s\033[31m%s\033[0m\n\n" "" "PARTIALLY FAILED"
-		exit 1 ;;
-		     1)
-		printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED"
-		exit 1 ;;
-	esac
+	ph_set_result -r "$?"
+	printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_STOPAPP_STATE')"
 else
-	printf "%10s%s\n" "" "Warning : '$PH_STOPAPP' not running"
+	ph_set_result -r "$?" -m "Integration is mandatory for '$PH_STOPAPP' stop"
+	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid application state"
+	ph_show_result
+	exit "$?"
 fi
-printf "%2s\033[32m%s\033[0m\n\n" "" "SUCCESS"
-exit 0
+printf "%8s%s\n" "" "--> Determining '$PH_STOPAPP' TTY"
+PH_STOPAPP_TTY="$(ph_get_app_tty_from_app_name "$PH_STOPAPP")"
+if [[ "$PH_STOPAPP_TTY" -le "1" || "$PH_STOPAPP_TTY" -gt "$PH_PIEH_MAX_TTYS" ]]
+then
+	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not determine TTY"
+	ph_set_result -r 0 -w -m "A valid TTY allocation is mandatory for '$PH_STOPAPP' stop"
+	ph_show_result
+	exit "$?"
+else
+	printf "%10s\033[32m%s\033[0m\n" "" "OK ('TTY$PH_STOPAPP_TTY')"
+	ph_set_result -r 0
+fi
+printf "%8s%s\n" "" "--> Checking for '$PH_STOPAPP' presence"
+if [[ "$PH_STOPAPP_STATE" == "Running" ]]
+then
+	printf "%10s\033[32m%s\033[0m\n\n" "" "OK (Found) -> Stopping"
+	ph_set_result -r 0
+	ph_show_result
+	ph_set_result -t -r "$?"
+	printf "\033[36m%s\033[0m\n\n" "- Executing '$PH_STOPAPP' stop action"
+        [[ -z "$1" && "$("$PH_SUDO" cat "/proc/$PPID/comm")" != @(start*sh|+(?)to+(?).sh|restart!("$PH_STOPAPPL").sh) ]] && \
+			PH_PARAM="force"
+	ph_do_app_action stop "$PH_STOPAPP" $PH_PARAM
+	ph_show_result
+	ph_set_result -t -r "$?"
+else
+	printf "%10s\033[33m%s\033[0m\n\n" "" "Warning : Not found"
+	ph_set_result -r 0 -w -m "'TTY$PH_STOPAPP_TTY' allocated to '$PH_STOPAPP' already stopped"
+	ph_show_result
+	exit "$?"
+fi
+ph_show_result -t
+exit "$?"

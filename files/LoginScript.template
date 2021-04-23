@@ -3,11 +3,11 @@
 # By Davy Keppens on 08/10/18
 #
 
-PH_RUNAPP_USER=''							# The application to launch
-PH_RUNAPP_CMD=''							# The full path of the start script used to launch the application
-PH_RUNAPP_TTY=''							# The TTY the application will start on
+PH_APP_USER=''							# The application to launch
+PH_APP_CMD=''							# The full path of the start script used to launch the application
+PH_APP_TTY=''							# The TTY the application will start on
 
-if [[ "$USER" == "$PH_RUNAPP_USER" && `tty` == "/dev/$PH_RUNAPP_TTY" ]]
+if [[ "$USER" == "$PH_APP_USER" && "$(tty 2>/dev/null)" == "/dev/${PH_APP_TTY}" ]]
 then
-	$PH_RUNAPP_CMD
+	${PH_APP_CMD}
 fi

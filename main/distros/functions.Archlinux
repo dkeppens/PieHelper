@@ -1,0 +1,105 @@
+# Archlinux specific codebase functions
+
+function ph_install_pkg {
+
+declare PH_APP_PKG="$(eval echo -n "$1")"
+
+[[ -z "$PH_APP_PKG" ]] && \
+	return 1
+printf "%8s%s\n" "" "--> Installing '${PH_APP_PKG}' package (This may take a while)"
+if ! "$PH_SUDO" pacman -S "$PH_APP_PKG" --noconfirm >/dev/null 2>&1
+then
+	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not install package"
+	ph_run_with_rollback -c false || \
+		return 1
+fi
+ph_add_value_to_param -p PH_REMOVE_PKGS -v "$PH_APP_PKG"
+ph_run_with_rollback -c true && \
+	return "$?"
+}
+
+function ph_update_pkg {
+
+declare PH_APP_PKG="$(eval echo -n "$1")"
+
+[[ -z "$PH_APP_PKG" ]] && \
+	return 1
+printf "%8s%s\n" "" "--> Checking for '${PH_APP_PKG}' package"
+if ph_get_pkg_inst_state "$PH_APP_PKG"
+then
+	printf "%10s\033[32m%s\033[0m\n" "" "OK (Found)"
+	ph_set_result -r 0
+	ph_run_with_rollback -c "ph_install_pkg '${PH_APP_PKG}'"
+	return "$?"
+else
+	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Not found"
+	ph_run_with_rollback -c false || \
+		return 1
+fi
+}
+
+function ph_remove_pkg {
+
+declare PH_APP_PKG="$(eval echo -n "$1")"
+
+[[ -z "$PH_APP_PKG" ]] && \
+	return 1
+printf "%8s%s\n" "" "--> Checking for '${PH_APP_PKG}' package"
+if ph_get_pkg_inst_state "$PH_APP_PKG"
+then
+	printf "%10s\033[32m%s\033[0m\n" "" "OK (Found)"
+	ph_set_result -r 0
+	printf "%8s%s\n" "" "--> Uninstalling '${PH_APP_PKG}' (This may take a while)"
+	if ! "$PH_SUDO" pacman -Rs "$PH_APP_PKG" --noconfirm >/dev/null 2>&1
+	then
+		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not uninstall package"
+	else
+		if "$PH_SUDO" pacman -Rns "$(pacman -Qtdq)" --noconfirm >/dev/null 2>&1
+		then
+			ph_add_value_to_param -p PH_INSTALL_PKGS -v "$PH_APP_PKG"
+			ph_run_with_rollback -c true && \
+				return "$?"
+		else
+			printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not uninstall package"
+		fi
+	fi
+else
+	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Not found"
+fi
+ph_run_with_rollback -c false || \
+	return 1
+}
+
+function ph_check_pkg_validity {
+
+declare PH_APP_PKG="$(eval echo -n "$1")"
+
+[[ -z "$PH_APP_PKG" ]] && \
+	return 1
+"$PH_SUDO" pacman -Ss "$PH_APP_PKG" --noconfirm >/dev/null 2>&1
+return "$?"
+}
+
+function ph_get_pkg_inst_state {
+
+declare PH_APP_PKG="$(eval echo -n "$1")"
+
+[[ -z "$PH_APP_PKG" ]] && \
+	return 1
+"$PH_SUDO" pacman -Qs "$PH_APP_PKG" >/dev/null 2>&1
+return "$?"
+}
+
+function ph_update_system {
+
+printf "%8s%s\n" "" "--> Updating system (This may take a while)"
+if "$PH_SUDO" pacman -Syu --noconfirm >/dev/null 2>&1
+then
+	ph_run_with_rollback -c true && \
+		return "$?"
+else
+	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not update"
+	ph_run_with_rollback -c false || \
+		return 1
+fi
+}

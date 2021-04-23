@@ -1,59 +1,60 @@
-#!/bin/ksh
+#!/bin/bash
 # Display configuration steps for different combinations of controller types and connection methods
 # or interactively configure bluetooth controllers (by Davy Keppens on 25/11/2018)
-# Enable/Disable debug by running confpieh_ph.sh -p debug -m confctrl_ph.sh
+# Enable/Disable debug by running 'confpieh_ph.sh -p debug -m confctrl_ph.sh'
 
-. $(dirname $0)/../main/main.sh || exit $? && set +x
+. "$(dirname "$0")"/../main/main.sh || exit "$?" && set +x
 
 #set -x
 
-typeset PH_i=""
-typeset PH_ALL_CTRL=""
-typeset PH_NEW_CTRL=""
-typeset PH_PAIRED_CTRL=""
-typeset PH_CONN_CTRL=""
-typeset PH_NUM_CTRL=""
-typeset PH_ADAPTER=""
-typeset PH_ACTION=""
-typeset PH_TYPE=""
-typeset PH_CONN=""
-typeset PH_PAIRED="no"
-typeset PH_TRUSTED=""
-typeset PH_RESULT="SUCCESS"
-typeset PH_OLDOPTARG="$OPTARG"
-typeset -i PH_COUNT=0
-typeset -i PH_CONF_CTRL=0
-typeset -i PH_OLDOPTIND=$OPTIND
-OPTIND=1
+declare PH_i=""
+declare PH_ALL_CTRL=""
+declare PH_NEW_CTRL=""
+declare PH_PAIRED_CTRL=""
+declare PH_CONN_CTRL=""
+declare PH_NUM_CTRL=""
+declare PH_ADAPTER=""
+declare PH_ACTION=""
+declare PH_TYPE=""
+declare PH_CONN=""
+declare PH_PAIRED="no"
+declare PH_TRUSTED=""
+declare PH_OLDOPTARG="$OPTARG"
+declare -i PH_OLDOPTIND="$OPTIND"
+declare -i PH_COUNT="0"
+declare -i PH_CONF_CTRL="0"
+
+OPTIND="1"
 
 while getopts hp:t:c:n: PH_OPTION 2>/dev/null
 do
-	case $PH_OPTION in p)
-		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$OPTARG" != @(conf|help|prompt) ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ -n "$PH_ACTION" ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+	case "$PH_OPTION" in p)
+		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+		[[ "$OPTARG" != @(conf|help|prompt) ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+		[[ -n "$PH_ACTION" ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
 		PH_ACTION="$OPTARG" ;;
-			   t)
-		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$OPTARG" != @(PS3|PS4|XBOX360) ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ -n "$PH_TYPE" ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+			     t)
+		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+		[[ "$OPTARG" != @(PS3|PS4|XBOX360) ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+		[[ -n "$PH_TYPE" ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
 		PH_TYPE="$OPTARG" ;;
-			   c)
-		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$PH_ACTION" != @(help|) ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$OPTARG" != @(usb|bluetooth|xboxurecv|sonywadapt) ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ -n "$PH_CONN" ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+			     c)
+		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+		[[ "$PH_ACTION" != @(help|) ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+		[[ "$OPTARG" != @(usb|bluetooth|xboxurecv|sonywadapt) ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+		[[ -n "$PH_CONN" ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
 		PH_CONN="$OPTARG" ;;
-			   n)
-		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ "$PH_ACTION" != @(conf|) ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
-		[[ -n "$PH_NUM_CTRL" ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND=$PH_OLDOPTIND && exit 1
+			     n)
+		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+		[[ "$PH_ACTION" != @(conf|) ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+		[[ -n "$PH_NUM_CTRL" ]] && (! confctrl_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
 		PH_NUM_CTRL="$OPTARG" ;;
-			   *)
-		>&2 printf "%s\n" "Usage : confctrl_ph.sh -h |"
-		>&2 printf "%23s%s\n" "" "-p \"conf\" -t [\"PS3\" '-n [numctrl]'|\"PS4\" '-n [numctrl]'] |"
-		>&2 printf "%23s%s\n" "" "-p \"prompt\" -t [\"PS3\"|\"PS4\"] |"
-		>&2 printf "%23s%s\n" "" "-p \"help\" -t [\"PS3\"|\"PS4\"|\"XBOX360\"] -c [\"usb\"|\"bluetooth\"|\"xboxurecv\"|\"sonywadapt\"]" 
+			     *)
+		>&2 printf "\n"
+		>&2 printf "\033[36m%s\033[0m\n" "Usage : confctrl_ph.sh -h |"
+		>&2 printf "%23s\033[36m%s\033[0m\n" "" "-p \"conf\" -t [\"PS3\" '-n [numctrl]'|\"PS4\" '-n [numctrl]'] |"
+		>&2 printf "%23s\033[36m%s\033[0m\n" "" "-p \"prompt\" -t [\"PS3\"|\"PS4\"] |"
+		>&2 printf "%23s\033[36m%s\033[0m\n" "" "-p \"help\" -t [\"PS3\"|\"PS4\"|\"XBOX360\"] -c [\"usb\"|\"bluetooth\"|\"xboxurecv\"|\"sonywadapt\"]" 
 		>&2 printf "\n"
 		>&2 printf "%3s%s\n" "" "Where -h displays this usage"
 		>&2 printf "%9s%s\n" "" "-p specifies the action to take"
@@ -77,12 +78,12 @@ do
 		>&2 printf "%21s%s\n" "" "- connection method \"bluetooth\" is only valid for PS3 or PS4 controllers"
 		>&2 printf "%21s%s\n" "" "- connection method \"sonywadapt\" (Sony Wireless Adapter) is only valid for PS4 controllers"
 		>&2 printf "\n"
-		OPTIND=$PH_OLDOPTIND
+		OPTIND="$PH_OLDOPTIND"
 		OPTARG="$PH_OLDOPTARG"
 		exit 1 ;;
 	esac
 done
-OPTIND=$PH_OLDOPTIND
+OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
 [[ "$PH_ACTION" == @(conf|prompt) && -n "$PH_CONN" ]] && (! confctrl_ph.sh -h) && exit 1
@@ -90,15 +91,15 @@ OPTARG="$PH_OLDOPTARG"
 (([[ -z "$PH_CONN" || -z "$PH_TYPE" ]]) || ([[ -z "$PH_ACTION" ]])) && (! confctrl_ph.sh -h) && exit 1
 [[ -n "$PH_NUM_CTRL" && "$PH_ACTION" != "conf" ]] && (! confctrl_ph.sh -h) && exit 1
 [[ -z "$PH_NUM_CTRL" && "$PH_ACTION" != "prompt" ]] && PH_NUM_CTRL="1"
-[[ "$PH_NUM_CTRL" != @([1-9]|+([1-9])+([0-9])) && "$PH_ACTION" != "prompt" ]] && (printf "%s\n" "- Configuring a $PH_CONN $PH_TYPE controller" ; printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Not a numeric value" ; return 0) && exit 1
-[[ "$PH_TYPE" == "XBOX360" && "$PH_CONN" != @(usb|xboxurecv) ]] && (printf "%s\n" "- Displaying help for configuring $PH_CONN $PH_TYPE controllers" ; \
+[[ "$PH_NUM_CTRL" != @([1-9]|+([1-9])+([0-9])) && "$PH_ACTION" != "prompt" ]] && (printf "%s\n" "- Configuring a '$PH_CONN' '$PH_TYPE' controller" ; printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Not a numeric value" ; return 0) && exit 1
+[[ "$PH_TYPE" == "XBOX360" && "$PH_CONN" != @(usb|xboxurecv) ]] && (printf "%s\n" "- Displaying help for configuring '$PH_CONN' '$PH_TYPE' controllers" ; \
 			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Unsupported connection method") && exit 1 
-[[ "$PH_TYPE" == "PS3" && "$PH_CONN" == @(xboxurecv|sonywadapt) ]] && (printf "%s\n" "- Displaying help for configuring $PH_CONN $PH_TYPE controllers" ; \
+[[ "$PH_TYPE" == "PS3" && "$PH_CONN" == @(xboxurecv|sonywadapt) ]] && (printf "%s\n" "- Displaying help for configuring '$PH_CONN' '$PH_TYPE' controllers" ; \
 			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Unsupported connection method") && exit 1 
-[[ "$PH_TYPE" == "PS4" && "$PH_CONN" == "xboxurecv" ]] && (printf "%s\n" "- Displaying help for configuring $PH_CONN $PH_TYPE controllers" ; \
+[[ "$PH_TYPE" == "PS4" && "$PH_CONN" == "xboxurecv" ]] && (printf "%s\n" "- Displaying help for configuring '$PH_CONN' '$PH_TYPE' controllers" ; \
 			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Unsupported connection method") && exit 1 
-case $PH_ACTION in help)
-	printf "%s\n" "- Displaying configuration steps for $PH_CONN $PH_TYPE controllers"
+case "$PH_ACTION" in help)
+	printf "\033[36m%s\033[0m\n" "- Displaying configuration steps for '$PH_CONN' '$PH_TYPE' controllers"
 	[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 	ph_print_bannerline
 	printf "\n"
@@ -227,7 +228,7 @@ case $PH_ACTION in help)
                 [[ -z "$PH_ADAPTER" ]] && (printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Not found" ; \
                                                         printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 0) && exit 1
                 printf "%10s%s\n" "" "OK (Using first available : $PH_ADAPTER) -> Setting as default"
-                ph_set_option Ctrls -r PH_CTRL_BLUE_ADAPT="$PH_ADAPTER" || \
+                ph_set_option_to_value Ctrls -r "PH_CTRL_BLUE_ADAPT'$PH_ADAPTER" || \
                                 (printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 1) || exit $?
         else
                 printf "%10s%s\n" "" "OK (Using default : $PH_CTRL_BLUE_ADAPT)"
@@ -282,7 +283,7 @@ case $PH_ACTION in help)
                                                         $0 ~ /PLAYSTATION\(R\)3 Controller/ { print "PS3:" substr($NF,1,length($NF)-1) }
                                                         $0 ~ /Wireless Controller/ { print "PS4:" substr($NF,1,length($NF)-1) } { next }'`
 	[[ "$PH_ALL_CTRL" == "none" ]] && (printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Not found" ; printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 0) && exit 1 
-        for PH_i in $PH_ALL_CTRL
+        for PH_i in `echo -n "$PH_ALL_CTRL"`
         do
 		$PH_SUDO bt-device -a "$PH_CTRL_BLUE_ADAPT" -i "${PH_i#*:}" 2>/dev/null | nawk '$0 ~ /Paired:/ { exit $2 } { next }'
 		if [[ $? -ne 0 ]]
@@ -320,7 +321,7 @@ case $PH_ACTION in help)
 	PH_CONF_CTRL=$((PH_COUNT-`echo $PH_NUM_CTRL`))
 	while [[ $PH_COUNT -gt $PH_CONF_CTRL ]]
 	do
-		for PH_i in $PH_NEW_CTRL
+		for PH_i in `echo -n "$PH_NEW_CTRL"`
 		do
 			printf "%8s%s\n" "" "--> Checking for existing trust for controller ($PH_i)"
 			$PH_SUDO bt-device -a "$PH_CTRL_BLUE_ADAPT" -i "$PH_i" 2>/dev/null | nawk '$0 ~ /Trusted:/ { exit $2 } { next }'
@@ -334,7 +335,7 @@ case $PH_ACTION in help)
 			fi
 			echo "$PH_PAIRED_CTRL" | grep "$PH_i" >/dev/null 2>&1 && PH_PAIRED="yes" || PH_PAIRED="no"
 			printf "%8s%s\n" "" "--> Connecting to $PH_TYPE controller ($PH_i)"
-			typeset -n PH_CTRL_PIN=PH_CTRL_"$PH_TYPE"_PIN
+			declare -n PH_CTRL_PIN=PH_CTRL_"$PH_TYPE"_PIN
 			$PH_SUDO $PH_MAIN_DIR/confctrls.expect "$PH_CTRL_BLUE_ADAPT" "$PH_i" "$PH_PAIRED" "$PH_TRUSTED" `echo $PH_CTRL_PIN` >/dev/null 2>&1
 			if [[ $? -eq 0 ]]
 			then

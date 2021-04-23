@@ -65,8 +65,8 @@ ________________________
 * Additional checks implemented for Kodi post-command runs under special circumstances
 * Enhanced wording of help for POST and PRE variables
 * Verified functionality on Debian kernel 4.14.98-v7+
-* Additional checks implemented for confgenb_ph.sh
-* Clarified help for confgenb_ph.sh
+* Additional checks implemented for confgena_ph.sh
+* Clarified help for confgena_ph.sh
 * Clarified README.md
 * Improved menus
 
@@ -76,7 +76,7 @@ ________________________
 * Corrected some output typos
 * Interactive use of confoper_ph.sh OS configuration functions now present a list of all possible choices
 * Major improvements to confoper_ph.sh
-* Color coding and other formatting added to confopts_ph.sh and ph_configure_moon for added readability
+* Color coding and other formatting added to confopts_ph.sh and ph_configure_moon for improved readability
 * Miscellaneous bugfixes
 
 VERSION 1.08 - 19/06/2019
@@ -87,3 +87,8 @@ ________________________
 * Some general small code changes
 * Bugfix for unnecessary ACLs and sudo rules when running an integrated app as 'root'
 * ph_repair_pieh can now detect and fix additional possible configuration issues
+
+VERSION 1.10 - 29/10/2019
+________________________
+
+* complete rewrite part one complete
