@@ -560,17 +560,15 @@ function ph_run_with_rollback {
 declare PH_i=""
 declare PH_CMD=""
 declare PH_CMD_MSG=""
-declare PH_MOVE_SCRIPTS_REGEX=""
 declare PH_OPTION=""
 declare PH_OLDOPTARG="$OPTARG"
 declare -i PH_OLDOPTIND="$OPTIND"
-declare -i PH_RET_CODE="0"
 declare -i PH_ARRAY_INDEX="0"
-declare -i PH_LAST_FLAG="1"
+declare -i PH_RET_CODE="0"
 
 OPTIND="1"
 
-while getopts c:m:l PH_OPTION 2>/dev/null
+while getopts c:m: PH_OPTION 2>/dev/null
 do
 	case "$PH_OPTION" in c)
 		[[ -n "$PH_CMD" ]] && \
@@ -584,12 +582,6 @@ do
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
 		PH_CMD_MSG="$OPTARG" ;;
-			     l)
-		[[ "$PH_LAST_FLAG" -eq "0" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
-			return 1
-		PH_LAST_FLAG="0" ;;
 			     *)
 		OPTIND="$PH_OLDOPTIND"
 		OPTARG="$PH_OLDOPTARG"
@@ -599,30 +591,11 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_CMD" || ( "$PH_CMD" == "false" && ( -z "$PH_CMD_MSG" || "$#" -lt "4" )) || \
-	"$#" -lt "2" ]] && \
+[[ -z "$PH_CMD" || ( "$PH_CMD" == "false" && ( -z "$PH_CMD_MSG" || "$#" -ne "4" )) || \
+	|| "$PH_CMD" != @(ph_*|true|false) || "$#" -lt "2" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
-if [[ "$PH_CMD" == @(conf*_ph|list*_ph|start*|stop*|restart*${PH_MOVE_SCRIPTS_REGEX}).sh* ]]
-then
-	if [[ "$PH_SCRIPT_FLAG" -eq "1" ]]
-	then
-		if [[ "$PH_RESULT_COUNT" -gt "0" ]]
-		then
-			ph_show_result
-			ph_set_result -t -r "$?"
-		fi
-	else
-		ph_set_result -t -r 0
-	fi
-else
-	if [[ "$PH_SCRIPT_FLAG" -eq "0" ]]
-	then
-		ph_set_result -t -r 0
-	fi
-	((PH_ROLLBACK_DEPTH++))
-fi
+((PH_ROLLBACK_DEPTH++))
 eval "$PH_CMD"
 PH_RET_CODE="$?"
 if [[ "$PH_CMD" == @(true|false) ]]
@@ -639,43 +612,26 @@ then
 	else
 		>&2 printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "$PH_CMD_MSG"
 	fi
-fi
-PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
-[[ "$PH_RET_CODE" -ne "0" ]] && \
-	PH_LAST_FLAG="0"
-if [[ "$PH_LAST_FLAG" -eq "0" && "$PH_CMD" != "false" ]]
-then
-	[[ "$PH_SCRIPT_FLAG" -eq "1" ]] && \
-		ph_show_result
-	if [[ "$PH_TOTAL_RESULT_COUNT" -gt "0" ]]
-	then
-		ph_set_result -t -r "$PH_RET_CODE"
-		ph_show_result -t
-	fi
-fi
-if [[ "$PH_RET_CODE" -ne "0" ]]
-then
-	if [[ "$PH_ROLLBACK_DEPTH" -eq "1" ]]
-	then
-		for PH_ARRAY_INDEX in "${!PH_DEPTH[@]}"
-		do
-			PH_ROLLBACK_PARAMS+=("${PH_DEPTH_PARAMS["$PH_ARRAY_INDEX"]}")
-			unset PH_DEPTH["$PH_ARRAY_INDEX"]
-		done
-		for PH_ARRAY_INDEX in "${!PH_DEPTH_PARAMS[@]}"
-		do
-			unset PH_DEPTH_PARAMS["$PH_ARRAY_INDEX"]
-		done
-		printf "\033[36m%s\033[0m\n\n" "- Rolling back changes"
-		ph_rollback_changes
-		exit "$?"
-	fi
 else
-	if [[ "$PH_CMD" == @(conf*_ph|list*_ph|start*|stop*|restart*${PH_MOVE_SCRIPTS_REGEX}).sh* ]]
+	if [[ "$PH_RET_CODE" -ne "0" ]]
 	then
-		PH_SCRIPT_FLAG="0"
+		if [[ "$PH_ROLLBACK_DEPTH" -eq "1" ]]
+		then
+			ph_show_result
+			for PH_ARRAY_INDEX in "${!PH_DEPTH[@]}"
+			do
+				PH_ROLLBACK_PARAMS+=("${PH_DEPTH_PARAMS["$PH_ARRAY_INDEX"]}")
+				unset PH_DEPTH["$PH_ARRAY_INDEX"]
+			done
+			for PH_ARRAY_INDEX in "${!PH_DEPTH_PARAMS[@]}"
+			do
+				unset PH_DEPTH_PARAMS["$PH_ARRAY_INDEX"]
+			done
+			printf "\033[36m%s\033[0m\n\n" "- Rolling back changes"
+			ph_rollback_changes
+			exit "$?"
+		fi
 	else
-		PH_SCRIPT_FLAG="1"
 		for PH_ARRAY_INDEX in "${!PH_DEPTH[@]}"
 		do
 			[[ "${PH_DEPTH["$PH_ARRAY_INDEX"]}" -gt "$PH_ROLLBACK_DEPTH" ]] && \
@@ -683,8 +639,7 @@ else
 		done
 	fi
 fi
-[[ "$PH_CMD" != @(conf*_ph|list*_ph|start*|stop*|restart*${PH_MOVE_SCRIPTS_REGEX}).sh* ]] && \
-	((PH_ROLLBACK_DEPTH--))
+((PH_ROLLBACK_DEPTH++))
 return "$PH_RET_CODE"
 }
 
