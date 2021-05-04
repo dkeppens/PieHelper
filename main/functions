@@ -7357,7 +7357,7 @@ function ph_pieh_configured_path_conf {
 printf "%8s%s\n" "" "--> Creating PieHelper PATH extension"
 if [[ ! -f /etc/profile.d/PieHelper-path.sh ]]
 then
-	if ph_run_with_rollback -c "ph_create_empty_file -r -q -f '/etc/profile.d/PieHelper-path.sh'"
+	if ph_run_with_rollback -c "ph_create_empty_file -r -q -t file -d '/etc/profile.d/PieHelper-path.sh'"
 	then
 		if ph_run_with_rollback -c "ph_add_line_to_file -r -f '/etc/profile.d/PieHelper-path.sh' -l 'export \"LD_LIBRARY_PATH=/usr/local/lib:\${LD_LIBRARY_PATH}\"'"
 		then
