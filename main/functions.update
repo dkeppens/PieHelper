@@ -392,6 +392,7 @@ unset -n PH_RESULT_TYPE
 if [[ "$PH_RESULT" == "Abort" ]]
 then
 	ph_show_result
+	ph_clean_tmp_dir
 	exit "$?"
 fi
 return 0
@@ -557,7 +558,6 @@ return 0
 
 function ph_run_with_rollback {
 
-declare PH_i=""
 declare PH_CMD=""
 declare PH_CMD_MSG=""
 declare PH_OPTION=""
@@ -629,6 +629,7 @@ else
 			done
 			printf "\033[36m%s\033[0m\n\n" "- Rolling back changes"
 			ph_rollback_changes
+			ph_clean_tmp_dir
 			exit "$?"
 		fi
 	else
