@@ -3917,7 +3917,6 @@ do
 				then
 					[[ "$PH_i" == "ReserveVT" ]] && \
 						break
-					fi
 				fi
 			fi
 		fi
