@@ -4300,8 +4300,6 @@ OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 if [[ "$PH_APP" != "LoginScript" ]]
 then
-	ph_run_with_rollback -c "ph_secure_pieh -q -t delayed -f '${PH_CONF_DIR}/${PH_APP}.conf'" || \
-		return 1
 	if [[ "$PH_OLD_SET_FLAG" -eq "1" ]]
 	then
 		unset "OLD_${PH_OPTARG_VAR}" "OLD_PH_${PH_APPU}_NUM_CTRL" "OLD_PH_${PH_APPU}_USE_CTRL" "OLD_PH_${PH_APPU}_CMD_OPTS"
