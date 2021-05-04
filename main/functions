@@ -3695,57 +3695,13 @@ do
 	unset PH_ARRAY2["$PH_ARRAY2_INDEX"]
 	unset PH_ROLLBACK_PARAMS["$PH_ARRAY_INDEX"]
 	unset -n PH_ARRAY2
-	PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
-	if [[ "$PH_CMD" == @(conf*_ph|list*_ph|start*|stop*|restart*$PH_MOVE_SCRIPTS_REGEX).sh* ]]
-	then
-		if [[ "$PH_SCRIPT_FLAG" -eq "1" ]]
-		then
-			if [[ "$PH_RESULT_COUNT" -gt "0" ]]
-			then
-				ph_show_result
-				ph_set_result -t -r "$?"
-			fi
-		else
-			ph_set_result -t -r 0
-		fi
-	else
-		if [[ "$PH_SCRIPT_FLAG" -eq "0" && "$PH_CMD" != "continue" ]]
-		then
-			ph_set_result -t -r 0
-			printf "\033[36m%s\033[0m\n\n" "- Rolling back changes (Continued)"
-		fi
-	fi
 	eval "$PH_CMD"
 	PH_RET_CODE="$?"
-	if [[ "$PH_CMD" == @(conf*_ph|list*_ph|start*|stop*|restart*$PH_MOVE_SCRIPTS_REGEX).sh* ]]
-	then
-		PH_SCRIPT_FLAG="0"
-	else
-		PH_SCRIPT_FLAG="1"
-	fi
-	[[ "$PH_RET_CODE" -ne "0" ]] && break
+	[[ "$PH_RET_CODE" -ne "0" ]] && \
+		break
 done
-if [[ -z "$PH_RUN_ACLS" && -z "$PH_RUN_SECURE" && -z "$PH_RUN_GIT_ADD_LOCAL" && -z "$PH_RUN_GIT_TAG_LOCAL" && -z "$PH_RUN_GIT_COMMIT_LOCAL" && -z "$PH_RUN_GIT_COMMIT_MASTER" ]]
+if [[ -n "$PH_RUN_ACLS" || -n "$PH_RUN_SECURE" || -n "$PH_RUN_GIT_ADD_LOCAL" || -n "$PH_RUN_GIT_TAG_LOCAL" || -n "$PH_RUN_GIT_COMMIT_LOCAL" || -n "$PH_RUN_GIT_COMMIT_MASTER" ]]
 then
-	[[ "$PH_SCRIPT_FLAG" -eq "1" ]] && \
-		unset PH_RUN_ACLS && \
-		ph_show_result
-else
-	if [[ "$PH_SCRIPT_FLAG" -eq "0" ]]
-	then
-		ph_set_result -t -r "$PH_RET_CODE"
-		if [[ -z "$PH_RUN_SECURE" ]]
-		then
-			printf "\033[36m%s\033[0m\n\n" "- Restoring previous git state"
-		else
-			if [[ -z "$PH_RUN_GIT_ADD_LOCAL" && -z "$PH_RUN_GIT_TAG_LOCAL" && -z "$PH_RUN_GIT_COMMIT_LOCAL" && -z "$PH_RUN_GIT_COMMIT_MASTER" ]]
-			then
-				printf "\033[36m%s\033[0m\n\n" "- Restoring default permissions"
-			else
-				printf "\033[36m%s\033[0m\n\n" "- Restoring default permissions and previous git state"
-			fi
-		fi
-	fi
 	if [[ -n "$PH_RUN_SECURE" ]]
 	then
 		ph_secure_pieh
@@ -3758,19 +3714,17 @@ else
 			done
 		fi
 	fi
-	unset PH_RUN_ACLS
-	[[ "$PH_RUN_GIT_ADD_LOCAL" == "yes" ]] && ph_undo_git_add_local
-	[[ "$PH_RUN_GIT_TAG_LOCAL" == "yes" ]] && ph_undo_git_tag_local
-	[[ "$PH_RUN_GIT_COMMIT_LOCAL" == "yes" ]] && ph_undo_git_commit_local
-	[[ "$PH_RUN_GIT_COMMIT_MASTER" == "yes" ]] && ph_git_commit_remote -m "$PH_OLD_GIT_COMMIT_MSG" -v "$PH_OLD_VERSION"
-	ph_show_result
+	[[ "$PH_RUN_GIT_ADD_LOCAL" == "yes" ]] && \
+		ph_undo_git_add_local
+	[[ "$PH_RUN_GIT_TAG_LOCAL" == "yes" ]] && \
+		ph_undo_git_tag_local
+	[[ "$PH_RUN_GIT_COMMIT_LOCAL" == "yes" ]] && \
+		ph_undo_git_commit_local
+	[[ "$PH_RUN_GIT_COMMIT_MASTER" == "yes" ]] && \
+		ph_git_commit_master -m "$PH_OLD_GIT_COMMIT_MSG" -v "$PH_OLD_VERSION"
 fi
-if [[ "$PH_TOTAL_RESULT_COUNT" -gt "0" ]]
-then
-	ph_set_result -t -r "$PH_RET_CODE"
-	ph_show_result -t
-fi
-return "$PH_RET_CODE"
+ph_show_result
+return "$?"
 }
 
 function ph_disable_app_tty {

@@ -518,6 +518,11 @@ OPTARG="$PH_OLDOPTARG"
 eval "$PH_PARAM_USED"+=\(\"\$PH_VALUE\"\)
 PH_DEPTH_PARAMS+=("$PH_PARAM_USED")
 PH_DEPTH+=("$PH_ROLLBACK_DEPTH")
+echo "${PH_DEPTH[@]}"
+declare -n PH_TEMPIE="$PH_PARAM_USED"
+echo "${PH_TEMPIE[@]}"
+unset -n PH_TEMPIE
+echo "${PH_DEPTH_PARAMS[@]}"
 return 0
 }
 
@@ -621,6 +626,7 @@ then
 		if [[ "$PH_ROLLBACK_DEPTH" -eq "1" ]]
 		then
 			ph_show_result
+			echo "Final depth indexes are ${!PH_DEPTH[@]}"
 			for PH_ARRAY_INDEX in "${!PH_DEPTH[@]}"
 			do
 				PH_ROLLBACK_PARAMS+=("${PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]}")
@@ -641,6 +647,8 @@ then
 			[[ "${PH_DEPTH[${PH_ARRAY_INDEX}]}" -gt "$PH_ROLLBACK_DEPTH" ]] && \
 				unset PH_DEPTH[${PH_ARRAY_INDEX}]
 		done
+		echo "Current depth indexes are ${!PH_DEPTH[@]}"
+		echo "Current last added parameter is $(echo "${!PH_DEPTH[@]}" | nawk '{ printf $NF }') and equal to ${PH_DEPTH_PARAMS["$(echo "${!PH_DEPTH[@]}" | nawk '{ printf $NF }')"]}"
 	fi
 	((PH_ROLLBACK_DEPTH--))
 fi
