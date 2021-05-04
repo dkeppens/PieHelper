@@ -645,6 +645,7 @@ PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
 	PH_LAST_FLAG="0"
 if [[ "$PH_LAST_FLAG" -eq "0" && "$PH_CMD" != "false" ]]
 then
+set -x
 	[[ "$PH_SCRIPT_FLAG" -eq "1" ]] && \
 		ph_show_result
 	if [[ "$PH_TOTAL_RESULT_COUNT" -gt "0" ]]
@@ -652,6 +653,7 @@ then
 		ph_set_result -t -r "$PH_RET_CODE"
 		ph_show_result -t
 	fi
+set +x
 fi
 if [[ "$PH_RET_CODE" -ne "0" ]]
 then

@@ -3863,7 +3863,7 @@ OPTARG="$PH_OLDOPTARG"
 	PH_CMD="${PH_SUDO} ${PH_CMD}"
 [[ "$PH_QUIESCE" -eq "1" ]] && \
 	printf "%8s%s\n" "" "--> ${PH_MSG} '${PH_FILE_SOURCE}' to '${PH_FILE_DEST}'"
-if "$PH_CMD" "$PH_FILE_SOURCE" "$PH_FILE_DEST" 2>/dev/null
+if "${PH_CMD}" "$PH_FILE_SOURCE" "$PH_FILE_DEST" 2>/dev/null
 then
 	ph_add_value_to_param -p PH_COPY_FILES -v "${PH_FILE_SOURCE}'${PH_FILE_DEST}'${PH_PARAMS}"
 	[[ "$PH_QUIESCE" -eq "1" ]] && \
