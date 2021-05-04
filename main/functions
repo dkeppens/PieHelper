@@ -3842,62 +3842,50 @@ fi
 function ph_pieh_configured_logind_conf {
 
 declare PH_i=""
-declare -i PH_UNCHANGED_FLAG="1"
 declare -i PH_VALUE="0"
 
-printf "%8s%s\n" "" "--> Changing settings in system file '/etc/systemd/logind.conf'"
-if ph_run_with_rollback -c "ph_copy_file -q -r -s '/etc/systemd/logind.conf' -d '${PH_FILES_DIR}/logind_conf'"
+if [[ "$(grep -E "^NAutoVTs=${PH_PIEH_MAX_TTYS}$" /etc/systemd/logind.conf >/dev/null 2>&1 ; echo "$?")" -ne "0" && \
+	"$(grep -E "^ReserveVT=1$" /etc/systemd/logind.conf >/dev/null 2>&1 ; echo "$?")" -ne "0" ]]
 then
-	for PH_i in NAutoVTs ReserveVT
-	do
-		[[ "$PH_i" == "NAutoVTs" ]] && \
-			PH_VALUE="${PH_PIEH_MAX_TTYS}" || \
-			PH_VALUE="1"
-		if grep -E "^${PH_i}=" /etc/systemd/logind.conf >/dev/null 2>&1
-		then
-			if grep -E "^${PH_i}=${PH_VALUE}$" /etc/systemd/logind.conf >/dev/null 2>&1
+	printf "%8s%s\n" "" "--> Changing settings in system file '/etc/systemd/logind.conf'"
+	if ph_run_with_rollback -c "ph_copy_file -q -r -s '/etc/systemd/logind.conf' -d '${PH_FILES_DIR}/logind_conf'"
+	then
+		for PH_i in NAutoVTs ReserveVT
+		do
+			[[ "$PH_i" == "NAutoVTs" ]] && \
+				PH_VALUE="${PH_PIEH_MAX_TTYS}" || \
+				PH_VALUE="1"
+			if grep -E "^${PH_i}=" /etc/systemd/logind.conf >/dev/null 2>&1
 			then
-				if [[ "$PH_i" == "NAutoVTs" ]]
+				if grep -E "^${PH_i}=${PH_VALUE}$" /etc/systemd/logind.conf >/dev/null 2>&1
 				then
-					PH_UNCHANGED_FLAG="0"
+					continue
 				else
-					if [[ "$PH_UNCHANGED_FLAG" -eq "0" ]]
+					if ph_run_with_rollback -c "ph_remove_line_from_file -r -f '/etc/systemd/logind.conf' -l '${PH_i}=.*'"
 					then
-						ph_run_with_rollback -c true -m "Nothing to do" && \
-							return "$?"
+						if ph_run_with_rollback -c "ph_add_line_to_file -r -f '/etc/systemd/logind.conf' -l '${PH_i}=${PH_VALUE}'"
+						then
+							continue
+						fi
 					fi
 				fi
-			else
-				if ph_run_with_rollback -c "ph_remove_line_from_file -r -f '/etc/systemd/logind.conf' -l '${PH_i}=.*'"
+			fi
+			if grep -E "^#${PH_i}=" /etc/systemd/logind.conf >/dev/null 2>&1
+			then
+				if ph_run_with_rollback -c "ph_remove_line_from_file -r -f '/etc/systemd/logind.conf' -l '#${PH_i}=.*'"
 				then
 					if ph_run_with_rollback -c "ph_add_line_to_file -r -f '/etc/systemd/logind.conf' -l '${PH_i}=${PH_VALUE}'"
 					then
-						[[ "$PH_i" == "ReserveVT" ]] && \
-							break
+						continue
 					fi
 				fi
 			fi
-		fi
-		if grep -E "^#${PH_i}=" /etc/systemd/logind.conf >/dev/null 2>&1
-		then
-			if ph_run_with_rollback -c "ph_remove_line_from_file -r -f '/etc/systemd/logind.conf' -l '#${PH_i}=.*'"
-			then
-				if ph_run_with_rollback -c "ph_add_line_to_file -r -f '/etc/systemd/logind.conf' -l '${PH_i}=${PH_VALUE}'"
-				then
-					[[ "$PH_i" == "ReserveVT" ]] && \
-						break
-				fi
-			fi
-		fi
-		if [[ "$PH_i" == "ReserveVT" ]]
-		then
 			ph_run_with_rollback -c false -m "Could not change" || \
 				return 1
-		fi
-	done
+		done
 else
-	ph_run_with_rollback -c false || \
-		return 1
+	ph_run_with_rollback -c true -m "Nothing to do" || \
+		return "$?"
 fi
 ph_add_value_to_param -p PH_UNCONFIGURED_STATE -v "logind"
 ph_run_with_rollback -c true && \
