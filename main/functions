@@ -3883,6 +3883,10 @@ then
 			ph_run_with_rollback -c false -m "Could not change" || \
 				return 1
 		done
+	else
+		ph_run_with_rollback -c false -m "Could not change" || \
+			return 1
+	fi
 else
 	ph_run_with_rollback -c true -m "Nothing to do" || \
 		return "$?"
