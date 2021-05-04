@@ -592,7 +592,7 @@ OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
 [[ -z "$PH_CMD" || ( "$PH_CMD" == "false" && ( -z "$PH_CMD_MSG" || "$#" -ne "4" )) || \
-	|| "$PH_CMD" != @(ph_*|true|false) || "$#" -lt "2" ]] && \
+	"$PH_CMD" != @(ph_*|true|false) || "$#" -lt "2" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 ((PH_ROLLBACK_DEPTH++))
