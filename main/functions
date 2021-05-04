@@ -3777,7 +3777,7 @@ declare -i PH_APP_TTY="0"
 
 for PH_APP_TTY in ${PH_TTYS}
 do
-        printf "%8s%s\n" "" "--> Disabling 'TTY${PH_APP_TTY}'"
+        printf "%8s%s\n" "" "--> Disabling 'tty${PH_APP_TTY}'"
         if ! "$PH_SUDO" systemctl disable "getty@tty${PH_APP_TTY}" >/dev/null 2>&1
 	then
 		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not disable TTY"
@@ -7334,7 +7334,7 @@ declare -i PH_APP_TTY="0"
 
 for PH_APP_TTY in ${PH_TTYS}
 do
-	printf "%8s%s\n" "" "--> Enabling 'TTY${PH_APP_TTY}'"
+	printf "%8s%s\n" "" "--> Enabling 'tty${PH_APP_TTY}'"
 	if ! "$PH_SUDO" systemctl enable "getty@tty${PH_APP_TTY}" >/dev/null 2>&1
 	then
 		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not enable TTY"
