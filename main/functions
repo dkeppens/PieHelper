@@ -3885,65 +3885,71 @@ fi
 function ph_pieh_configured_logind_conf {
 
 declare PH_i=""
+declare -i PH_UNCHANGED_FLAG="1"
 declare -i PH_VALUE="0"
 
 ph_run_with_rollback -c "ph_copy_file -r -s '/etc/systemd/logind.conf' -d '${PH_FILES_DIR}/logind_conf'" || \
 	return 1
 for PH_i in NAutoVTs ReserveVT
 do
+	[[ "$PH_i" == "NAutoVTs" ]] && \
+		PH_VALUE="${PH_PIEH_MAX_TTYS}" || \
+		PH_VALUE="1"
 	if grep -E "^${PH_i}=" /etc/systemd/logind.conf >/dev/null 2>&1
 	then
-		printf "%8s%s\n" "" "--> Changing existing override value for '${PH_i}' in system file '/etc/systemd/logind.conf'"
-		if ! ph_run_with_rollback -c "ph_remove_line_from_file -r -f \"/etc/systemd/logind.conf\" -l \"${PH_i}=.*\""
+		if grep -E "^${PH_i}=${PH_VALUE}$" /etc/systemd/logind.conf >/dev/null 2>&1
 		then
-			printf "%10s\033[31m%s\33[0m\n" "" "ERROR : Could not change value"
-			ph_run_with_rollback -c false || \
-				return 1
-		else
-			[[ "$PH_i" == "NAutoVTs" ]] && \
-				PH_VALUE="12" || \
-				PH_VALUE="1"
-			if ! ph_run_with_rollback -c "ph_add_line_to_file -r -f \"/etc/systemd/logind.conf\" -l \"${PH_i}=${PH_VALUE}\""
+			if [[ "$PH_i" == "NAutoVTs" ]]
 			then
-				printf "%10s\033[31m%s\33[0m\n" "" "ERROR : Could not change value"
-				ph_run_with_rollback -c false || \
-					return 1
+				PH_UNCHANGED_FLAG="0"
 			else
-				ph_run_with_rollback -c true
+				if [[ "$PH_UNCHANGED_FLAG" -eq "0" ]]
+				then
+					ph_run_with_rollback -c true -m "Nothing to do" && \
+						return "$?"
+				fi
+			fi
+		else
+			printf "%8s%s\n" "" "--> Changing existing override value for '${PH_i}' in system file '/etc/systemd/logind.conf'"
+			if ph_run_with_rollback -c "ph_remove_line_from_file -r -f '/etc/systemd/logind.conf' -l '${PH_i}=.*'"
+			then
+				if ph_run_with_rollback -c "ph_add_line_to_file -r -f '/etc/systemd/logind.conf' -l '${PH_i}=${PH_VALUE}'"
+				then
+					[[ "$PH_i" == "ReserveVT" ]] && \
+						break
+					fi
+				fi
 			fi
 		fi
 	fi
 	if grep -E "^#${PH_i}=" /etc/systemd/logind.conf >/dev/null 2>&1
 	then
 		printf "%8s%s\n" "" "--> Overriding default value for '${PH_i}' in system file '/etc/systemd/logind.conf'"
-		if ! ph_run_with_rollback -c "ph_remove_line_from_file -r -f \"/etc/systemd/logind.conf\" -l \"#${PH_i}=.*\""
+		if ph_run_with_rollback -c "ph_remove_line_from_file -r -f '/etc/systemd/logind.conf' -l '#${PH_i}=.*'"
 		then
-			printf "%10s\033[31m%s\33[0m\n" "" "ERROR : Could not override value"
-			ph_run_with_rollback -c false || \
-				return 1
-		else
-			[[ "$PH_i" == "NAutoVTs" ]] && \
-				PH_VALUE="12" || \
-				PH_VALUE="1"
-			if ! ph_run_with_rollback -c "ph_add_line_to_file -r -f \"/etc/systemd/logind.conf\" -l \"${PH_i}=${PH_VALUE}\""
+			if ph_run_with_rollback -c "ph_add_line_to_file -r -f '/etc/systemd/logind.conf' -l '${PH_i}=${PH_VALUE}'"
 			then
-				printf "%10s\033[31m%s\33[0m\n" "" "ERROR : Could not override value"
-				ph_run_with_rollback -c false || \
-					return 1
-			else
-				ph_run_with_rollback -c true
+				[[ "$PH_i" == "ReserveVT" ]] && \
+					break
 			fi
 		fi
 	fi
+	if [[ "$PH_i" == "ReserveVT" ]]
+	then
+		ph_run_with_rollback -c false -m "Could not change" || \
+			return 1
+	fi
 done
 ph_add_value_to_param -p PH_UNCONFIGURED_STATE -v "logind"
-return 0
+ph_run_with_rollback -c true && \
+	return "$?"
 }
 
 function ph_pieh_unconfigured_logind_conf {
 
 [[ ! -f "${PH_FILES_DIR}/logind_conf" ]] && \
 	return 0
+
 ph_run_with_rollback -c "ph_copy_file -r -s '${PH_FILES_DIR}/logind_conf' -d '/etc/systemd/logind.conf'" || \
 	return 1
 ph_add_value_to_param -p PH_CONFIGURED_STATE -v logind
@@ -7349,36 +7355,27 @@ return 0
 
 function ph_pieh_configured_path_conf {
 
-declare -i PH_RET_CODE="0"
-
 printf "%8s%s\n" "" "--> Creating PieHelper PATH extension"
 if [[ ! -f /etc/profile.d/PieHelper-path.sh ]]
 then
-	"$PH_SUDO" echo "export PATH=/usr/local/bin:${PH_SCRIPTS_DIR}:\${PATH}" >/tmp/PieHelper-path.sh 2>/dev/null || \
-		PH_RET_CODE="1"
-	"$PH_SUDO" echo "export LD_LIBRARY_PATH=/usr/local/lib:\${LD_LIBRARY_PATH}" >>/tmp/PieHelper-path.sh 2>/dev/null || \
-		PH_RET_CODE="1"
-	"$PH_SUDO" mv /tmp/PieHelper-path.sh /etc/profile.d/PieHelper-path.sh >/dev/null 2>&1 || \
-		PH_RET_CODE="1"
-	[[ "$PH_RET_CODE" -ne "0" ]] && \
-		"$PH_SUDO" rm /tmp/PieHelper-path.sh >/dev/null 2>&1
-	"$PH_SUDO" chown root:root /etc/profile.d/PieHelper-path.sh >/dev/null 2>&1 || \
-		PH_RET_CODE="1"
-	[[ "$PH_RET_CODE" -ne "0" ]] && \
-		"$PH_SUDO" rm /etc/profile.d/PieHelper-path.sh >/dev/null 2>&1
-	if [[ "$PH_RET_CODE" -ne "0" ]]
+	if ph_run_with_rolback -c "ph_create_empty_file -r -q -f '/etc/profile.d/PieHelper-path.sh'"
 	then
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not install extension"
-		ph_run_with_rollback -c false || \
-			return 1
+		if ph_run_with_rollback -c "ph_add_line_to_file -r -f '/etc/profile.d/PieHelper-path.sh' -l 'export \"LD_LIBRARY_PATH=/usr/local/lib:\${LD_LIBRARY_PATH}\"'"
+		then
+			if ph_run_with_rollback -c "ph_add_line_to_file -r -f '/etc/profile.d/PieHelper-path.sh' -l 'export \"PATH=/usr/local/bin:${PH_SCRIPTS_DIR}:\${PATH}\"'"
+			then
+				ph_add_value_to_param -p PH_UNCONFIGURED_STATE -v "path"
+				ph_run_with_rollback -c true && \
+					return "$?"
+			fi
+		fi
 	fi
-	ph_add_value_to_param -p PH_UNCONFIGURED_STATE -v "path"
-	ph_run_with_rollback -c true && \
+else
+	ph_run_with_rolback -c true -m "Nothing to do" && \
 		return "$?"
 fi
-printf "%10s\033[32m%s\033[0m\n" "" "OK (Nothing to do)"
-ph_set_result -r "$PH_RET_CODE"
-return "$PH_RET_CODE"
+ph_run_with_rollback -c false -m "Could not create" || \
+	return 1
 }
 
 function ph_set_user_group_membership {
@@ -7444,25 +7441,22 @@ declare PH_MODULE="$1"
 
 [[ -z "$PH_MODULE" ]] && \
 	return 1
+
 printf "%8s%s\n" "" "--> Unblacklisting '${PH_MODULE}' kernel module"
 if "$PH_SUDO" grep -E "^blacklist ${PH_MODULE}$" /etc/modprobe.d/xboxdrv-blacklist.conf >/dev/null 2>&1
 then
-	if ! ph_run_with_rollback -c "ph_remove_line_from_file -r -f /etc/modprobe.d/xboxdrv-blacklist.conf -l 'blacklist ${PH_MODULE}'"
+	if ! ph_run_with_rollback -c "ph_remove_line_from_file -r -f '/etc/modprobe.d/xboxdrv-blacklist.conf' -l 'blacklist ${PH_MODULE}'"
 	then
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not unblacklist module"
-		ph_run_with_rollback -c false || \
+		ph_run_with_rollback -c false -m "Could not unblacklist" || \
 			return 1
 	else
-		[[ -s /etc/modprobe.d/xboxdrv-blacklist.conf ]] && \
-			"$PH_SUDO" rm /etc/modprobe.d/xboxdrv-blacklist.conf 2>/dev/null
 		ph_add_value_to_param -p PH_BLACKLIST_MODULES -v "$PH_MODULE"
 		ph_run_with_rollback -c true && \
 			return "$?"
 	fi
 else
-	printf "%10s\033[32m%s\033[0m\n" "" "OK (Nothing to do)"
-	ph_set_result -r 0
-	return 0
+	ph_run_with_rollback -c true -m "Nothing to do" && \
+		return "$?"
 fi
 }
 
@@ -7472,34 +7466,35 @@ declare PH_MODULE="$1"
 
 [[ -z "$PH_MODULE" ]] && \
 	return 1
+
 if grep -E "^${PH_MODULE}([[:space:]])+.*$" /proc/modules >/dev/null 2>&1
 then
-	ph_run_with_rollback -c "ph_unload_kernel_module \"$PH_MODULE\"" || \
+	ph_run_with_rollback -c "ph_unload_kernel_module '${PH_MODULE}'" || \
 		return 1
 fi
 printf "%8s%s\n" "" "--> Blacklisting '${PH_MODULE}' kernel module"
 if [[ ! -f /etc/modprobe.d/xboxdrv-blacklist.conf ]]
 then
-	ph_run_with_rollback -c "ph_create_empty_file -r -q -t file -d /etc/modprobe.d/xboxdrv-blacklist.conf" || \
-		return 1
+	if ! ph_run_with_rollback -c "ph_create_empty_file -r -q -t file -d '/etc/modprobe.d/xboxdrv-blacklist.conf'"
+	then
+		ph_run_with_rollback -c false -m "Could not blacklist" || \
+			return 1
+	fi
 fi
 if ! "$PH_SUDO" grep -E "^blacklist ${PH_MODULE}$" /etc/modprobe.d/xboxdrv-blacklist.conf >/dev/null 2>&1
 then
-	if ! ph_run_with_rollback -c "ph_add_line_to_file -r -f /etc/modprobe.d/xboxdrv-blacklist.conf -l 'blacklist ${PH_MODULE}'"
+	if ph_run_with_rollback -c "ph_add_line_to_file -r -f /etc/modprobe.d/xboxdrv-blacklist.conf -l 'blacklist ${PH_MODULE}'"
 	then
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not blacklist module"
-		ph_run_with_rollback -c false || \
-				return 1
-	else
 		ph_add_value_to_param -p PH_UNBLACKLIST_MODULES -v "$PH_MODULE"
 		ph_run_with_rollback -c true && \
 			return "$?"
 	fi
 else
-	printf "%10s\033[32m%s\033[0m\n" "" "OK (Nothing to do)"
-	ph_set_result -r 0
-	return 0
+	ph_run_with_rollback -c true -m "Nothing to do" && \
+		return 0
 fi
+ph_run_with_rollback -c false -m "Could not blacklist" || \
+	return 1
 }
 
 function ph_load_kernel_module {
@@ -7508,23 +7503,21 @@ declare PH_MODULE="$1"
 
 [[ -z "$PH_MODULE" ]] && \
 	return 1
+
 printf "%8s%s\n" "" "--> Loading '${PH_MODULE}' kernel module"
 if ! grep -E "^${PH_MODULE}([[:space:]])+.*$" /proc/modules >/dev/null 2>&1
 then
 	if ! "$PH_SUDO" modprobe "$PH_MODULE" >/dev/null 2>&1
 	then
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not load module"
-		ph_run_with_rollback -c false || \
+		ph_run_with_rollback -c false -m "Could not load" || \
 			 return 1
 	fi
 	ph_add_value_to_param -p PH_UNLOAD_MODULES -v "$PH_MODULE"
-	ph_run_with_rollback -c true && \
-		return "$?"
+	ph_run_with_rollback -c true
 else
-	printf "%10s\033[32m%s\033[0m\n" "" "OK (Nothing to do)"
-	ph_set_result -r 0
-	return 0
+	ph_run_with_rollback -c true -m "Nothing to do"
 fi
+return 0
 }
 
 function ph_unload_kernel_module {
@@ -7533,23 +7526,21 @@ declare PH_MODULE="$1"
 
 [[ -z "$PH_MODULE" ]] && \
 	return 1
+
 printf "%8s%s\n" "" "--> Unloading '${PH_MODULE}' kernel module"
 if grep -E "^${PH_MODULE}([[:space:]])+.*$" /proc/modules >/dev/null 2>&1
 then
 	if ! "$PH_SUDO" rmmod "$PH_MODULE" >/dev/null 2>&1
 	then
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not unload module"
-		ph_run_with_rollback -c false || \
+		ph_run_with_rollback -c false -m "Could not unload" || \
 			return 1
 	fi
 	ph_add_value_to_param -p PH_LOAD_MODULES -v "$PH_MODULE"
-	ph_run_with_rollback -c true && \
-		return "$?"
+	ph_run_with_rollback -c true
 else
-	printf "%10s\033[32m%s\033[0m\n" "" "OK (Nothing to do)"
-	ph_set_result -r 0
-	return 0
+	ph_run_with_rollback -c true -m "Nothing to do"
 fi
+return 0
 }
 
 function ph_configure_pieh {
@@ -7660,8 +7651,6 @@ then
 			ph_run_with_rollback -c true
 			ph_run_with_rollback -c "ph_set_user_group_membership -u '${PH_RUN_USER}' -g 'tty,audio,video,input'" || \
 				return 1
-			ph_run_with_rollback -c "ph_pieh_configured_logind_conf" || \
-				return 1
 			for PH_i in sudo acl xboxdrv git make bluez bluez-tools expect less ${PH_DISTRO_PKGS}
 			do
 				ph_run_with_rollback -c "ph_install_pkg '${PH_i}'" || \
@@ -7703,6 +7692,8 @@ then
 				ph_run_with_rollback -c false -m "Could not load" || \
 					return 1
 			fi
+			ph_run_with_rollback -c "ph_pieh_configured_logind_conf" || \
+				return 1
 			for ((PH_COUNT=2;PH_COUNT<="$PH_PIEH_MAX_TTYS";PH_COUNT++))
 			do
 				ph_run_with_rollback -c "ph_disable_app_tty '${PH_COUNT}'" || \
