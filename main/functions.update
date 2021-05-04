@@ -513,6 +513,8 @@ OPTARG="$PH_OLDOPTARG"
 [[ "$#" -ne "4" || -z "$PH_PARAM_USED" ]] && \
         ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
+[[ "$PH_PARAM_USED" == PH_REMOVE_APPS_ALLOWEDS" ]] && \
+	set -x
 [[ "$PH_ROLLBACK_USED" == "no" ]] && \
 	return 0
 eval "$PH_PARAM_USED"+=\(\"\$PH_VALUE\"\)
