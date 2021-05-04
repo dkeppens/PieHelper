@@ -7383,10 +7383,11 @@ return "$PH_RET_CODE"
 
 function ph_set_user_group_membership {
 
-declare PH_OPTION=""
+declare PH_i=""
 declare PH_APP_USER=""
 declare PH_APP_USER_GROUPS=""
 declare PH_APP_USER_CUR_GROUPS=""
+declare PH_OPTION=""
 declare PH_OLDOPTARG="$OPTARG"
 declare -i PH_OLDOPTIND="$OPTIND"
 
@@ -7403,7 +7404,7 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-printf "%8s%s\n" "" "--> Setting run account '${PH_APP_USER}' secondary groups"
+printf "%8s%s\n" "" "--> Setting secondary groups for user '${PH_APP_USER}'"
 PH_APP_USER_CUR_GROUPS="$(groups "$PH_APP_USER" 2>/dev/null | nawk 'BEGIN { \
 		OFS = "," \
 	} { \
@@ -7415,15 +7416,24 @@ PH_APP_USER_CUR_GROUPS="$(groups "$PH_APP_USER" 2>/dev/null | nawk 'BEGIN { \
 			} \
 		} \
 	}')"
-if "$PH_SUDO" usermod -G "$PH_APP_USER_GROUPS" "$PH_APP_USER" >/dev/null 2>&1
+if [[ "$((for PH_i in ${PH_APP_USER_CUR_GROUPS//,/ }; \
+do \
+	echo "$PH_i"; \
+done) | sort)" != "$((for PH_i in ${PH_APP_USER_GROUPS//,/ }; \
+	do \
+		echo "$PH_i"; \
+	done) | sort)" ]]
 then
-	printf "%10s\033[32m%s\033[0m\n" "" "OK ('${PH_APP_USER_GROUPS}')"
-	ph_set_result -r 0
-	ph_add_value_to_param -p PH_GROUPS -v "${PH_APP_USER}'${PH_APP_USER_CUR_GROUPS}"
+	if "$PH_SUDO" usermod -G "$PH_APP_USER_GROUPS" "$PH_APP_USER" >/dev/null 2>&1
+	then
+		ph_add_value_to_param -p PH_GROUPS -v "${PH_APP_USER}'${PH_APP_USER_CUR_GROUPS}"
+		ph_run_with_rollback -c true -m "${PH_APP_USER_GROUPS}"
+	else
+		ph_run_with_rollback -c false -m "Could not set" || \
+			return 1
+	fi
 else
-	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not set groups"
-	ph_run_with_rollback -c false || \
-		return 1
+	ph_run_with_rollback -c true -m "Nothing to do"
 fi
 return 0
 }
