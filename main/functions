@@ -7714,13 +7714,13 @@ then
 				return 1
 			ph_run_with_rollback -c "ph_integrate_app -a PieHelper" || \
 				return 1
-			ph_run_with_rollback -c "ph_remove_empty_file -t file -d '${PH_TMP_DIR}/.configure_in_progress'" || \
-				return 1
 			ph_run_with_rollback -c "ph_set_app_for_start PieHelper" || \
 				return 1
 			ph_run_with_rollback -c "ph_create_app_items -a Ctrls -t support" || \
 				return 1
 			ph_run_with_rollback -c "ph_set_bootenv multi-user.target" || \
+				return 1
+			ph_run_with_rollback -c "ph_remove_empty_file -t file -d '${PH_TMP_DIR}/.configure_in_progress'" || \
 				return 1
 			PH_ANSWER=""
 			PH_COUNT="0"
