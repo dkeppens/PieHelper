@@ -4982,7 +4982,8 @@ do
 	ph_set_option_to_default_value "$PH_i" || PH_RESULT="PARTIALLY FAILED"
 done
 [[ "$PH_APP_TTY" -ne "1" ]] && ph_undo_setup_tty -a "$PH_APP" -t "$PH_APP_TTY" -u "$PH_APP_USER"
-ph_remove_app_from_integration_file -a "$PH_APP" || PH_RESULT="PARTIALLY FAILED"
+ph_remove_app_from_integration_file -a "$PH_APP" || \
+	PH_RESULT="PARTIALLY FAILED"
 if [[ "$PH_APP" == "Moonlight" ]]
 then
 	printf "%8s%s\n" "" "--> Removing 'Moonlight' cache directory '`getent passwd \"$PH_APP_USER\" 2>/dev/null | cut -d':' -f6`/.cache'"
@@ -5165,7 +5166,7 @@ then
 	ph_run_with_rollback -c "ph_set_app_for_start none" || \
 		return 1
 fi
-ph_run_with_rollback -c "ph_remove_app_items -a \"$PH_APP\" -t unintegrate" || \
+ph_run_with_rollback -c "ph_remove_app_items -a '${PH_APP}' -t unintegrate" || \
 	return 1
 if [[ "$PH_APP_TTY" -gt "1" ]]
 then
@@ -5457,7 +5458,7 @@ OPTARG="$PH_OLDOPTARG"
 [[ -z "$PH_APP" || "$#" -lt "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Removing ${PH_APP} configuration from file '${PH_CONF_DIR}/supported_apps'"
+printf "%8s%s\n" "" "--> Removing ${PH_APP} from configuration file '${PH_CONF_DIR}/supported_apps'"
 PH_COUNT="$(nawk -v app="^${PH_APP}$" 'BEGIN { \
 		count = "0" \
 	} \
@@ -5470,7 +5471,7 @@ PH_COUNT="$(nawk -v app="^${PH_APP}$" 'BEGIN { \
 		print count \
 	}' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)"
 case "$PH_COUNT" in 0)
-	ph_set_result -m "Could not remove ${PH_APP} configuration since it is not a supported application"
+	ph_set_result -m "Could not remove ${PH_APP} from configuration file '${PH_CONF_DIR}/supported_apps' since it is not a supported application"
 	ph_run_with_rollback -c false -m "Invalid application" || \
 		return 1 ;;
                     1)
@@ -5483,7 +5484,7 @@ case "$PH_COUNT" in 0)
 esac
 if [[ "$PH_RET_CODE" -ne "0" ]]
 then
-	ph_set_result -m "An error occurred trying to remove ${PH_APP} configuration from file '${PH_CONF_DIR}/supported_apps'"
+	ph_set_result -m "An error occurred trying to remove ${PH_APP} from configuration file '${PH_CONF_DIR}/supported_apps'"
 	ph_run_with_rollback -c false -m "Could not remove"
 else
 	ph_add_value_to_param -p PH_ADD_APPS_TO_SUP_FILE -v "${PH_APP}'${PH_APP_INST_STATE}'${PH_APP_CMD}"
@@ -5917,11 +5918,11 @@ else
 	fi
 fi
 ph_set_result -r 0
-ph_run_with_rollback -c "ph_add_app_to_support_file -a \"${PH_APP}\" -c \"${PH_APP_CMD}\" -s \"${PH_APP_INST_STATE}\"" || \
+ph_run_with_rollback -c "ph_add_app_to_support_file -a '${PH_APP}' -c '${PH_APP_CMD}' -s '${PH_APP_INST_STATE}'" || \
 	return 1
-if ! cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E ^"${PH_APP}"$ >/dev/null
+if ! cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
 then
-	ph_run_with_rollback -c "ph_create_oos_app_code \"${PH_APP}\"" || \
+	ph_run_with_rollback -c "ph_create_oos_app_code '${PH_APP}'" || \
 		return 1
 fi
 if [[ "$PH_APP" == "PieHelper" && -f "${PH_FILES_DIR}/first_run" ]]
@@ -6026,8 +6027,9 @@ OPTARG="$PH_OLDOPTARG"
 	return 1
 [[ -z "$PH_APP_INST_STATE" ]] && \
 	return 1
-printf "%8s%s\n" "" "--> Adding application '${PH_APP}' to configuration file '${PH_CONF_DIR}/supported_apps'"
-PH_COUNT="$(nawk -v app=^"${PH_APP}"$ 'BEGIN { \
+
+printf "%8s%s\n" "" "--> Adding application ${PH_APP} to configuration file '${PH_CONF_DIR}/supported_apps'"
+PH_COUNT="$(nawk -v app="^${PH_APP}$" 'BEGIN { \
 		count = "0" \
 	} \
 	$1 ~ app { \
@@ -6041,18 +6043,18 @@ PH_COUNT="$(nawk -v app=^"${PH_APP}"$ 'BEGIN { \
 case "$PH_COUNT" in 0)
 		if [[ ! -f "${PH_CONF_DIR}/supported_apps" ]]
 		then
-			ph_run_with_rollback -c "ph_create_empty_file -q -t file -d \"${PH_CONF_DIR}/supported_apps\"" || \
+			ph_run_with_rollback -c "ph_create_empty_file -q -t file -d '${PH_CONF_DIR}/supported_apps'" || \
 				PH_RET_CODE="1"
 		fi
 		if [[ "$PH_RET_CODE" -eq "0" ]]
 		then
-			ph_run_with_rollback -c "ph_add_line_to_file -f \"${PH_CONF_DIR}/supported_apps\" -l \"${PH_APP}\\t${PH_APP_INST_STATE}\\t${PH_APP_CMD}\"" || \
+			ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\\t${PH_APP_INST_STATE}\\t${PH_APP_CMD}'" || \
 				PH_RET_CODE="1"
 		fi ;;
 		    1)
-		if ph_run_with_rollback -c "ph_remove_line_from_file -f \"${PH_CONF_DIR}/supported_apps\" -l \"${PH_APP}\t.*\""
+		if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\t.*'"
 		then
-			ph_run_with_rollback -c "ph_add_line_to_file -f \"${PH_CONF_DIR}/supported_apps\" -l \"${PH_APP}\\t${PH_APP_INST_STATE}\\t${PH_APP_CMD}\"" || \
+			ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\\t${PH_APP_INST_STATE}\\t${PH_APP_CMD}'" || \
 				PH_RET_CODE="1"
 		else
 			PH_RET_CODE="1"
@@ -6062,10 +6064,8 @@ case "$PH_COUNT" in 0)
 esac
 if [[ "$PH_RET_CODE" -ne "0" ]]
 then
-	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not add application"
-	ph_set_result -m "An error occurred adding '${PH_APP}' to configuration file '${PH_CONF_DIR}/supported_apps'"
-	ph_run_with_rollback -c false || \
-		return 1
+	ph_set_result -m "An error occurred trying to add ${PH_APP} to configuration file '${PH_CONF_DIR}/supported_apps'"
+	ph_run_with_rollback -c false -m "Could not add"
 else
 	ph_add_value_to_param -p PH_REMOVE_APPS_FROM_SUP_FILE -v "$PH_APP"
 	ph_run_with_rollback -c true
@@ -6103,41 +6103,47 @@ OPTARG="$PH_OLDOPTARG"
 [[ -z "$PH_APP" ]] && return 1
 [[ -z "$PH_APP_USER" ]] && return 1
 [[ "$PH_APP_TTY" -eq "1" || "$PH_APP_TTY" -gt "$PH_PIEH_MAX_TTYS" ]] && return 1
-[[ "$PH_APP_TTY" -eq "0" ]] && PH_APP_STR_TTY="-" || PH_APP_STR_TTY="$PH_APP_TTY"
-printf "%8s%s\n" "" "--> Adding application '$PH_APP' to configuration file '$PH_CONF_DIR/integrated_apps'"
-PH_COUNT="$(nawk -v app=^"$PH_APP"$ 'BEGIN { count = "0" } $1 ~ app { count++ ; next } { next } END { print count }' "$PH_CONF_DIR"/integrated_apps 2>/dev/null)"
+
+[[ "$PH_APP_TTY" -eq "0" ]] && \
+	PH_APP_STR_TTY="-" || \
+	PH_APP_STR_TTY="$PH_APP_TTY"
+printf "%8s%s\n" "" "--> Adding application ${PH_APP} to configuration file '${PH_CONF_DIR}/integrated_apps'"
+PH_COUNT="$(nawk -v app="^${PH_APP}$" 'BEGIN { count = "0" } $1 ~ app { count++ ; next } { next } END { print count }' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null)"
 case "$PH_COUNT" in 0)
-		if [[ ! -f "$PH_CONF_DIR"/integrated_apps ]]
+		if [[ ! -f "${PH_CONF_DIR}/integrated_apps" ]]
 		then
-			ph_run_with_rollback -c "ph_create_empty_file -q -t file -d \"$PH_CONF_DIR/integrated_apps\"" || PH_RET_CODE="1"
+			ph_run_with_rollback -c "ph_create_empty_file -q -t file -d '${PH_CONF_DIR}/integrated_apps'" || \
+				PH_RET_CODE="1"
 		fi
 		if [[ "$PH_RET_CODE" -eq "0" ]]
 		then
-			ph_run_with_rollback -c "ph_add_line_to_file -f \"$PH_CONF_DIR/integrated_apps\" -l \"$PH_APP\\t$PH_APP_USER\\t$PH_APP_STR_TTY\""
+			ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/integrated_apps' -l '${PH_APP}\\t${PH_APP_USER}\\t${PH_APP_STR_TTY}'" || \
+				PH_RET_CODE="1"
 		fi ;;
 		   1)
-		if ph_run_with_rollback -c "ph_remove_line_from_file -f \"$PH_CONF_DIR/integrated_apps\" -l \"$PH_APP\t.*\""
+		if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/integrated_apps' -l '${PH_APP}\t.*'"
 		then
-			ph_run_with_rollback -c "ph_add_line_to_file -f \"$PH_CONF_DIR/integrated_apps\" -l \"$PH_APP\\t$PH_APP_USER\\t$PH_APP_STR_TTY\"" || PH_RET_CODE="1"
+			ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/integrated_apps' -l '${PH_APP}\\t${PH_APP_USER}\\t${PH_APP_STR_TTY}'" || \
+				PH_RET_CODE="1"
 		else
 			PH_RET_CODE="1"
 		fi ;;
 		    2)
-		ph_set_result -a -m "'Unique' configuration file '$PH_CONF_DIR/integrated_apps' is 'Corrupted' -> Multiple instances of '$PH_APP'" ;;
+		ph_set_result -a -m "Configuration file '${PH_CONF_DIR}/integrated_apps' is 'Corrupted' -> Multiple instances of '${PH_APP}'" ;;
 esac
 if [[ "$PH_RET_CODE" -ne "0" ]]
 then
-	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not add application"
-	ph_set_result -m "An error occurred adding '$PH_APP' to configuration file '$PH_CONF_DIR/integrated_apps'"
-	ph_run_with_rollback -c "false" || return 1
+	ph_set_result -m "An error occurred adding ${PH_APP} to configuration file '${PH_CONF_DIR}/integrated_apps'"
+	ph_run_with_rollback -c "false" -m "Could not add" || \
+		return 1
 else
-	ph_add_value_to_param -p PH_REMOVE_APPS_FROM_INT_FILE -v "$PH_APP"
-	ph_run_with_rollback -c "true"
 	if [[ "$PH_APP" != @(PieHelper|Emulationstation) && "$PH_COUNT" -eq "0" ]]
 	then
 		ph_run_with_rollback -c "ph_grant_pieh_access -u '${PH_APP_USER}'" || \
 			return 1
 	fi
+	ph_add_value_to_param -p PH_REMOVE_APPS_FROM_INT_FILE -v "$PH_APP"
+	ph_run_with_rollback -c true
 fi
 return "$PH_RET_CODE"
 }
