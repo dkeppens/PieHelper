@@ -668,7 +668,7 @@ then
 		done
 		printf "\033[36m%s\033[0m\n\n" "- Rolling back changes"
 		ph_rollback_changes
-		PH_RET_CODE="$?"
+		exit "$?"
 	fi
 else
 	if [[ "$PH_CMD" == @(conf*_ph|list*_ph|start*|stop*|restart*${PH_MOVE_SCRIPTS_REGEX}).sh* ]]
