@@ -1,6 +1,7 @@
 # Kodi PRE-command script which runs before Kodi startup
 #
 # - Will check if a valid tar archive called 'Kodi-Prefs.tar' exists in the CIFS-mounted directory defined by option PH_KODI_CIFS_MPT
+#   The user for Kodi will require priorly configured read/write permissions for the remote share
 # - Will attempt to restore its contents to the home directory of the Kodi user as Kodi preferences directory '.kodi'
 # - Will attempt to change ownership of the new Kodi preferences directory if the user for Kodi has changed
 # - Will replace previous directory contents on success for all or restore them in case of failure for any
@@ -14,7 +15,7 @@ declare PH_KODI_GROUP=""
 declare PH_KODI_LOC_DIR=""
 declare PH_KODI_REM_DIR=""
 
-PH_KODI_GROUP="$("$PH_SUDO" id -gn "${PH_APP_USER}" 2>/dev/null)"
+PH_KODI_GROUP="$(id -gn 2>/dev/null)"
 PH_KODI_LOC_DIR="$(ph_get_app_cifs_mpt -a Kodi -r)"
 PH_KODI_REM_DIR="$(eval "echo -n ${PH_KODI_CIFS_DIR}${PH_KODI_CIFS_SUBDIR}")"
 printf "%8s%s\n" "" "--> Checking for Kodi PRE-command prerequisite : CIFS configured"

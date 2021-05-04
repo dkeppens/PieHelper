@@ -8295,6 +8295,7 @@ function ph_do_app_action {
 declare PH_ACTION="$1"
 declare PH_APP="$2"
 declare PH_APP_USER=""
+declare PH_PIEH_USER=""
 declare PH_APP_CMD=""
 declare PH_APP_CMD_OPTS=""
 declare PH_i=""
@@ -8325,6 +8326,7 @@ PH_MOON_PATH="$(nawk '$1 ~ /^Moonlight$/ { printf $3 }' "$PH_CONF_DIR/supported_
 PH_APP_USER="$(ph_get_app_user_from_app_name "$PH_APP")"
 PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
 PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
+PH_PIEH_USER="$(ph_get_app_user_from_app_name PieHelper)"
 PH_PIEH_TTY="$(ph_get_app_tty_from_app_name PieHelper)"
 PH_FG_CONSOLE="$("$PH_SUDO" fgconsole 2>/dev/null)"
 case "$PH_ACTION" in start)
@@ -8477,22 +8479,21 @@ case "$PH_ACTION" in start)
 				printf "%10s\033[32m%s\033[0m\n" "" "OK (Not found)"
 			fi
 		fi
-	fi
-	if [[ "$PH_FG_CONSOLE" -eq "$PH_APP_TTY" ]]
-	then
-		printf "%8s%s\n" "" "--> Starting '$PH_APP'"
+		printf "%8s%s\n" "" "--> Starting ${PH_APP}"
 	else
-		printf "%8s%s\n" "" "--> Starting 'TTY$PH_APP_TTY' allocated to '$PH_APP'"
+		printf "%8s%s\n" "" "--> Starting the tty allocated to ${PH_APP} : 'tty${PH_APP_TTY}'"
 ### is this still needed and replace with correct check tty active if so, then continue from here
 		if systemctl list-units -t service 2>/dev/null | nawk '$4 ~ /^running$/ { print $1 }' | grep -E ^"getty@tty$PH_APP_TTY.service"$ >/dev/null
 		then
-			[[ "$PH_APP" == "Bash" ]] && PH_APP_CMD="bash"
-			if ! pgrep -t "tty$PH_APP_TTY" -f "$PH_APP_CMD" >/dev/null 2>&1
+			[[ "$PH_APP" == "Bash" ]] && \
+				PH_APP_CMD="bash"
+			if ! pgrep -t "tty${PH_APP_TTY}" -f "${PH_APP_CMD}" >/dev/null 2>&1
 			then
-				"$PH_SUDO" systemctl stop "getty@tty$PH_APP_TTY" >/dev/null 2>&1
+				"$PH_SUDO" systemctl stop "getty@tty${PH_APP_TTY}" >/dev/null 2>&1
 				"$PH_SUDO" systemctl daemon-reload >/dev/null 2>&1
 			fi
-			[[ "$PH_APP" == "Bash" ]] && PH_APP_CMD="/bin/bash"
+			[[ "$PH_APP" == "Bash" ]] && \
+				PH_APP_CMD="/bin/bash"
 		fi
 		unset -n PH_APPU_CMD_OPTS PH_APPU_USE_CTRL PH_APPU_NUM_CTRL PH_APPU_PRE_CMD PH_APPU_POST_CMD
 		unset -n PH_APPU_CIFS_SHARE PH_APPU_CIFS_DIR PH_APPU_CIFS_SUBDIR PH_APPU_CIFS_SRV PH_APPU_PERSISTENT
@@ -8503,7 +8504,7 @@ case "$PH_ACTION" in start)
 			return 0
 		else
 			printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not start TTY"
-			ph_set_result -r 1 -m "Could not start 'TTY$PH_APP_TTY' allocated to '$PH_APP'"
+			ph_set_result -r 1 -m "Could not start 'tty${PH_APP_TTY}' allocated to '${PH_APP}'"
 			return 1
 		fi
 	fi
@@ -8554,7 +8555,7 @@ case "$PH_ACTION" in start)
 		ph_show_result
 		ph_set_result -t -r "$?"
 		ph_show_result -t
-		"$PH_SUDO" rm "$PH_TMP_DIR"/Start.report 2>/dev/null
+		"$PH_SUDO" rm "${PH_TMP_DIR}/Start.report" 2>/dev/null
 		clear
 	fi ;;
 		     stop)
@@ -8571,20 +8572,20 @@ case "$PH_ACTION" in start)
 	then
 		while pgrep moonlight >/dev/null
 		do
-			"$PH_SUDO" -E su "$PH_APP_USER" -c "LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib $PH_MOON_PATH quit" >/dev/null 2>&1
+			"$PH_SUDO" -E su "$PH_APP_USER" -c "LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib ${PH_MOON_PATH} quit" >/dev/null 2>&1
 			sleep 3
 		done
 	fi
 	if [[ "$PH_FG_CONSOLE" -eq "$PH_APP_TTY" ]]
 	then
-		if [[ "$PH_APP" != "PieHelper" ]] && [[ "$PH_PIEH_TTY" -gt "1" && "$PH_PIEH_TTY" -le "$PH_PIEH_MAX_TTYS" ]]
+		if [[ ( "$PH_APP" != "PieHelper" ) && ( "$PH_PIEH_TTY" -gt "1" && "$PH_PIEH_TTY" -le "$PH_PIEH_MAX_TTYS" ) ]]
 		then
 			"$PH_SUDO" chvt "$PH_PIEH_TTY" 2>/dev/null
 		else
 			"$PH_SUDO" chvt 1 2>/dev/null
 		fi
 	fi
-	if ! "$PH_SUDO" systemctl stop "getty@tty$PH_APP_TTY" >/dev/null 2>&1
+	if ! "$PH_SUDO" systemctl stop "getty@tty${PH_APP_TTY}" >/dev/null 2>&1
 	then
 		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not stop TTY"
 		ph_set_result -r 1 -m "An error occurred stopping 'TTY$PH_APP_TTY' allocated to '$PH_APP'"
