@@ -98,9 +98,9 @@ export LD_LIBRARY_PATH PATH
 
 # Load all relevant module declarations
 
-for PH_i in functions functions.user functions.update "distros/functions.${PH_DISTRO}"
+for PH_i in unctions functions.user functions.update "distros/functions.${PH_DISTRO}"
 do
-	if [[ -f "$PH_i" && -r "$PH_i" ]]
+	if [[ -f "${PH_MAIN_DIR}/${PH_i}" && -r "${PH_MAIN_DIR}/${PH_i}" ]]
 	then
 		if ! source "${PH_MAIN_DIR}/${PH_i}" >/dev/null 2>&1
 		then
