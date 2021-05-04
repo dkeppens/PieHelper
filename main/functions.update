@@ -620,12 +620,12 @@ else
 			ph_show_result
 			for PH_ARRAY_INDEX in "${!PH_DEPTH[@]}"
 			do
-				PH_ROLLBACK_PARAMS+=("${PH_DEPTH_PARAMS["$PH_ARRAY_INDEX"]}")
-				unset PH_DEPTH["$PH_ARRAY_INDEX"]
+				PH_ROLLBACK_PARAMS+=("${PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]}")
+				unset PH_DEPTH[${PH_ARRAY_INDEX}]
 			done
 			for PH_ARRAY_INDEX in "${!PH_DEPTH_PARAMS[@]}"
 			do
-				unset PH_DEPTH_PARAMS["$PH_ARRAY_INDEX"]
+				unset PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]
 			done
 			printf "\033[36m%s\033[0m\n\n" "- Rolling back changes"
 			ph_rollback_changes
@@ -635,8 +635,8 @@ else
 	else
 		for PH_ARRAY_INDEX in "${!PH_DEPTH[@]}"
 		do
-			[[ "${PH_DEPTH["$PH_ARRAY_INDEX"]}" -gt "$PH_ROLLBACK_DEPTH" ]] && \
-				unset PH_DEPTH["$PH_ARRAY_INDEX"]
+			[[ "${PH_DEPTH[${PH_ARRAY_INDEX}]}" -gt "$PH_ROLLBACK_DEPTH" ]] && \
+				unset PH_DEPTH[${PH_ARRAY_INDEX}]
 		done
 	fi
 fi
