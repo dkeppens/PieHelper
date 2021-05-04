@@ -1432,7 +1432,7 @@ case $PH_ACTION in all)
 		else
 			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not Found -> Creating"
 			printf "%8s%s\n" "" "--> Creating sudo rules for user '$PH_USER'"
-			echo "$PH_USER ALL=(ALL) NOPASSWD:SETENV: ALL" >/tmp/010_"$PH_USER"-nopasswd_tmp 2>/dev/null
+			echo "$PH_USER ALL=(ALL) NOPASSWD: ALL" >/tmp/010_"$PH_USER"-nopasswd_tmp 2>/dev/null
 			if ! mv /tmp/010_"$PH_USER"-nopasswd_tmp /etc/sudoers.d/010_"$PH_USER"-nopasswd 2>/dev/null
 			then
 				printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not create sudo rules"

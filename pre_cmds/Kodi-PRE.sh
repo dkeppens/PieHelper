@@ -1,56 +1,104 @@
-# Kodi PRE-command script to run before Kodi startup
-# by Davy Keppens on 04/10/2018
+# Kodi PRE-command script which runs before Kodi startup
+#
+# - Will check if a valid tar archive called 'Kodi-Prefs.tar' exists in the CIFS-mounted directory defined by option PH_KODI_CIFS_MPT
+# - Will attempt to restore its contents to the home directory of the Kodi user as Kodi preferences directory '.kodi'
+# - Will attempt to change ownership of the new Kodi preferences directory if the user for Kodi has changed
+# - Will replace previous directory contents on success for all or restore them in case of failure for any
+#
+# @Davy Keppens on 04/10/2018
 #
 
 #set -x
 
-declare PH_KODI_USER=""
-declare PH_KODI_HOME=""
-declare PH_FAILED="no"
+declare PH_KODI_GROUP=""
+declare PH_KODI_LOC_DIR=""
+declare PH_KODI_REM_DIR=""
 
-PH_KODI_USER="$(ph_get_app_user_from_app_name Kodi)"
-PH_KODI_HOME="$(getent passwd "$PH_KODI_USER" 2>/dev/null | cut -d':' -f6)"
-printf "%8s%s\n" "" "--> Checking for 'Kodi' PRE-command CIFS mount requirement"
-ph_set_result -r 0
+PH_KODI_GROUP="$("$PH_SUDO" id -gn "${PH_APP_USER}" 2>/dev/null)"
+PH_KODI_LOC_DIR="$(ph_get_app_cifs_mpt -a Kodi -r)"
+PH_KODI_REM_DIR="$(eval "echo -n ${PH_KODI_CIFS_DIR}${PH_KODI_CIFS_SUBDIR}")"
+printf "%8s%s\n" "" "--> Checking for Kodi PRE-command prerequisite : CIFS configured"
 if [[ "$PH_KODI_CIFS_SHARE" == "yes" ]]
 then
-	printf "%10s\033[32m%s\033[0m\n" "" "OK (Yes)"
-        printf "%8s%s\n" "" "--> Checking for 'Kodi' PRE-command CIFS mount presence"
-	ph_set_result -r 0
-        mount 2>/dev/null | nawk -v rempath=^"//$PH_KODI_CIFS_SRV$(eval echo -n "$PH_KODI_CIFS_DIR""$PH_KODI_CIFS_SUBDIR")"$ -F' on ' '$1 ~ rempath { exit 1 }'
-        if [[ "$?" -eq "1" ]]
-        then
-                printf "%10s\033[32m%s\033[0m\n" "" "OK (Found) -> Restoring 'Kodi' preferences"
-		printf "%8s%s\n" "" "--> Restoring CIFS backup of '.kodi' directory backup for run account '$PH_KODI_USER' (This may take a while)"
-		ph_set_result -r 0
-		cd "$PH_KODI_HOME" >/dev/null 2>&1
-		if [[ -f "$(eval echo -n "$PH_KODI_CIFS_MPT")"/Kodi-Prefs.tar ]]
+	ph_run_with_rollback -c true -m Yes
+	printf "%8s%s\n" "" "--> Checking for Kodi PRE-command prerequisite : CIFS mounted"
+       	if [[ "$(mount 2>/dev/null | nawk -v rempath="^//${PH_KODI_CIFS_SRV}${PH_KODI_REM_DIR}$" -F' on ' '$1 ~ rempath { \
+			printf "%s", "yes" ; \
+			exit \
+		} { \
+			next \
+		}')" == "yes" ]]
+       	then
+		ph_run_with_rollback -c true -m Yes
+		printf "%8s%s\n" "" "--> Checking for Kodi PRE-command prerequisite : Accessible backup"
+		if [[ -r "${PH_KODI_LOC_DIR}/Kodi-Prefs.tar" ]]
 		then
-			mv "$(eval echo -n "$PH_KODI_CIFS_MPT")"/Kodi-Prefs.tar "$PH_TMP_DIR"/Kodi-Prefs.tar 2>/dev/null
-			[[ -d "$PH_KODI_HOME"/.kodi ]] && "$PH_SUDO" -E rm -r "$PH_KODI_HOME"/.kodi 2>/dev/null
-			"$PH_SUDO" -E tar -xf "$PH_TMP_DIR"/Kodi-Prefs.tar 2>/dev/null
-			if [[ "$?" -ne "0" ]]
+			ph_run_with_rollback -c true -m Yes
+			printf "%8s%s\n" "" "--> Checking for Kodi PRE-command prerequisite : Valid backup"
+			if [[ "$(tar --test-label -f "${PH_KODI_LOC_DIR}/Kodi-Prefs.tar" >/dev/null 2>&1 ; echo "$?")" -eq "0" && \
+				-s "${PH_KODI_LOC_DIR}/Kodi-Prefs.tar" ]]
 			then
-				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not create valid restore -> Removing"
-				printf "%8s%s\n" "" "--> Removing invalid restore"
-				"$PH_SUDO" -E rm -r "$PH_KODI_HOME"/.kodi 2>/dev/null
-				printf "%10s\033[32m%s\033[0m\n" "" "OK ('Kodi' preferences will need to be reconfigured)"
-				ph_set_result -r 0
-				PH_FAILED="yes"
+				ph_run_with_rollback -c true -m Yes
+				printf "%8s%s\n" "" "--> Restoring CIFS backup '${PH_KODI_LOC_DIR}/Kodi-Prefs.tar' to '${HOME}/' (This may take a while)"
+				if cp "${PH_KODI_LOC_DIR}/Kodi-Prefs.tar" "${PH_TMP_DIR}/" 2>/dev/null
+				then
+					if [[ -d "${HOME}/.kodi" ]]
+					then
+						if ! "$PH_SUDO" mv "${HOME}/.kodi" "${PH_TMP_DIR}/.kodi_tmp" 2>/dev/null
+						then
+							"$PH_SUDO" rm "${PH_TMP_DIR}/Kodi-Prefs.tar" 2>/dev/null
+							printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not store '${HOME}/.kodi' as '${PH_TMP_DIR}/.kodi_tmp' -> Skipping"
+							ph_set_result -r 0
+							unset PH_KODI_GROUP PH_KODI_LOC_DIR PH_KODI_REM_DIR
+							return 1
+						fi
+					fi
+					if ( cd "$HOME" ; "$PH_SUDO" tar -xf "${PH_TMP_DIR}/Kodi-Prefs.tar" 2>/dev/null )
+					then
+						ph_run_with_rollback -c true -m "${HOME}/.kodi"
+						printf "%8s%s\n" "" "--> Checking if the user for Kodi has changed"
+						if [[ "$("$PH_SUDO" ls -ld "${HOME}/.kodi" 2>/dev/null | nawk '{ \
+								print $3 \
+							}')" != "${PH_APP_USER}" ]]
+						then
+							printf "%10s\033[33m%s\033[0m\n" "" "Warning : Used to be '${PH_APP_USER}' -> Changing ownership"
+							ph_set_result -r 0
+							printf "%8s%s\n" "" "--> Recursively setting ownership of '${HOME}/.kodi' to '${PH_APP_USER}:${PH_KODI_GROUP}'"
+							if "$PH_SUDO" chown -R "${PH_APP_USER}:${PH_KODI_GROUP}" "${HOME}/.kodi" 2>/dev/null
+							then
+								"$PH_SUDO" rm -r "${PH_TMP_DIR}/Kodi-Prefs.tar" "${PH_TMP_DIR}/.kodi_tmp" 2>/dev/null
+								unset PH_KODI_GROUP PH_KODI_LOC_DIR PH_KODI_REM_DIR
+								ph_run_with_rollback -c true && \
+									return "$?"
+							else
+								printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not recursively set ownership of '${HOME}/.kodi' to '${PH_APP_USER}:${PH_KODI_GROUP}' -> Skipping"
+							fi
+						else
+							"$PH_SUDO" rm -r "${PH_TMP_DIR}/Kodi-Prefs.tar" "${PH_TMP_DIR}/.kodi_tmp" 2>/dev/null
+							unset PH_KODI_GROUP PH_KODI_LOC_DIR PH_KODI_REM_DIR
+							ph_run_with_rollback -c true -m No && \
+								return "$?"
+						fi
+					else
+						printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not restore '${PH_KODI_LOC_DIR}/Kodi-Prefs.tar' to '${HOME}/' -> Skipping"
+					fi
+					"$PH_SUDO" rm -r "${PH_TMP_DIR}/Kodi-Prefs.tar" "${HOME}/.kodi" 2>/dev/null
+					"$PH_SUDO" mv "${PH_TMP_DIR}/.kodi_tmp" "${HOME}/.kodi" 2>/dev/null
+				else
+					printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not copy '${PH_KODI_LOC_DIR}/Kodi-Prefs.tar' to '${PH_TMP_DIR}/' -> Skipping"
+				fi
 			else
-				[[ "$(ls -ld "$PH_KODI_HOME"/.kodi 2>/dev/null | nawk '{ print $3 }')" != "$PH_KODI_USER" ]] && \
-					"$PH_SUDO" -E chown -R "$PH_KODI_USER":"$("$PH_SUDO" -E id -gn "$PH_KODI_USER" 2>/dev/null)" ./.kodi 2>/dev/null
-				printf "%10s\033[32m%s\033[0m\n" "" "OK"
+				printf "%10s\033[33m%s\033[0m\n" "" "Warning : '${PH_KODI_LOC_DIR}/Kodi-Prefs.tar' is not a valid tar archive -> Skipping" 
 			fi
-			mv "$PH_TMP_DIR"/Kodi-Prefs.tar "$(eval echo -n "$PH_KODI_CIFS_MPT")"/Kodi-Prefs.tar 2>/dev/null
 		else
-			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Backup not found -> Skipping"
+			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not access '${PH_KODI_LOC_DIR}/Kodi-Prefs.tar' -> Skipping" 
 		fi
-		cd - >/dev/null 2>&1
 	else
-		printf "%10s\033[33m%s\033[0m\n" "" "Warning : CIFS mount '//$PH_KODI_CIFS_SRV$(eval echo -n "$PH_KODI_CIFS_DIR""$PH_KODI_CIFS_SUBDIR")' presence on mountpoint '$(eval echo -n "$PH_KODI_CIFS_MPT")' is mandatory for 'Kodi' PRE-command -> Skipping"
+		printf "%10s\033[33m%s\033[0m\n" "" "Warning : No -> Skipping" 
 	fi
 else
-	printf "%10s\033[33m%s\033[0m\n" "" "Warning : CIFS is mandatory for 'Kodi' PRE-command -> Skipping"
+	printf "%10s\033[33m%s\033[0m\n" "" "Warning : No -> Skipping" 
 fi
-[[ "$PH_FAILED" == "yes" ]] && return 1 || return 0
+ph_set_result -r 0
+unset PH_KODI_GROUP PH_KODI_LOC_DIR PH_KODI_REM_DIR
+return 1

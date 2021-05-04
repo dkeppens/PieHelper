@@ -205,7 +205,7 @@ case "$PH_ACTION" in repair)
 		ph_repair_pieh
 		exit "$?" ;;
 		   getstate)  
-		printf "\033[36m%s\033[0m\n" "- Displaying 'PieHelper' version and configuration state"
+		printf "\033[36m%s\033[0m\n" "- Displaying PieHelper info"
 		ph_get_pieh_conf_state
 		ph_show_result
 		exit "$?" ;;

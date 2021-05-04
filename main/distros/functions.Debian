@@ -2,16 +2,25 @@
 
 function ph_install_pkg {
 
-declare PH_APP_PKG="$(eval echo -n "$1")"
+declare PH_APP_PKG=""
+
+PH_APP_PKG="$(eval echo -n "$1")"
 
 [[ -z "$PH_APP_PKG" ]] && \
 	return 1
+
 printf "%8s%s\n" "" "--> Installing '${PH_APP_PKG}' package (This may take a while)"
-if ! "$PH_SUDO" apt-get -qq install "$PH_APP_PKG" >/dev/null 2>&1
+if ! ph_get_pkg_inst_state "$PH_APP_PKG"
 then
-        printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not install package"
-	ph_run_with_rollback -c false || \
-		return 1
+	if ! "$PH_SUDO" apt-get -qq install "$PH_APP_PKG" >/dev/null 2>&1
+	then
+		ph_set_result -m "An error occurred trying to install package '${PH_APP_PKG}'"
+		ph_run_with_rollback -c false -m "Could not install" || \
+			return 1
+	fi
+else
+	ph_run_with_rollback -c true -m "Nothing to do" && \
+		return "$?"
 fi
 ph_add_value_to_param -p PH_REMOVE_PKGS -v "$PH_APP_PKG"
 ph_run_with_rollback -c true && \
@@ -20,11 +29,11 @@ ph_run_with_rollback -c true && \
 
 function ph_update_pkg_index {
 
-printf "%8s%s\n" "" "--> Updating package index"
+printf "%8s%s\n" "" "--> Updating package database index"
 if ! "$PH_SUDO" apt-get -qq update >/dev/null 2>&1
 then
-	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not update index"
-	ph_run_with_rollback -c false || \
+	ph_set_result -m "An error occurred updating the index of the package database"
+	ph_run_with_rollback -c false -m "Could not update" || \
 		return 1
 else
 	ph_run_with_rollback -c true && \
@@ -34,37 +43,40 @@ fi
 
 function ph_update_pkg {
 
-declare PH_APP_PKG="$(eval echo -n "$1")"
+declare PH_APP_PKG=""
+
+PH_APP_PKG="$(eval echo -n "$1")"
 
 [[ -z "$PH_APP_PKG" ]] && \
 	return 1
-printf "%8s%s\n" "" "--> Checking for '${PH_APP_PKG}' package"
+
+ph_update_pkg_index || \
+	return 1
 if ph_get_pkg_inst_state "$PH_APP_PKG"
 then
-	ph_set_result -r 0
-        printf "%10s\033[32m%s\033[0m\n" "" "OK (Found)"
-	ph_update_pkg_index || \
-		return 1
+	ph_run_with_rollback -c true -m "Found"
 	ph_run_with_rollback -c "ph_install_pkg '${PH_APP_PKG}'"
 	return "$?"
 else
-        printf "%10s\033[32m%s\033[0m\n" "" "OK (Not found)"
-	ph_run_with_rollback -c false || \
+	ph_set_result -m "Could not update package '${PH_APP_PKG}' since it is not installed"
+	ph_run_with_rollback -c false -m "Not found" || \
 		return 1
 fi
 }
 
 function ph_remove_pkg {
 
-declare PH_APP_PKG="$(eval echo -n "$1")"
+declare PH_APP_PKG=""
+
+PH_APP_PKG="$(eval echo -n "$1")"
 
 [[ -z "$PH_APP_PKG" ]] && \
 	return 1
+
 printf "%8s%s\n" "" "--> Checking for '${PH_APP_PKG}' package"
 if ph_get_pkg_inst_state "$PH_APP_PKG"
 then
-        printf "%10s\033[32m%s\033[0m\n" "" "OK (Found)"
-        ph_set_result -r 0
+	ph_run_with_rollback -c true -m "Found"
 	printf "%8s%s\n" "" "--> Uninstalling '${PH_APP_PKG}' (This may take a while)"
 	if "$PH_SUDO" apt-get -qq --auto-remove --purge remove "$PH_APP_PKG" >/dev/null 2>&1
 	then
@@ -72,31 +84,41 @@ then
 		ph_run_with_rollback -c true && \
 			return "$?"
 	else
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not uninstall package"
+		ph_set_result -m "An error occurred trying to uninstall package '${PH_APP_PKG}'"
+		ph_run_with_rollback -c false -m "Could not uninstall" || \
+			return 1
 	fi
 else
-	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Not found"
+	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not uninstall package '${PH_APP_PKG}' since it is not installed"
+	ph_set_result -r 0
+	return 0
 fi
-ph_run_with_rollback -c false || \
+ph_run_with_rollback -c false -m "Not found" || \
 	return 1
 }
 
 function ph_get_pkg_inst_state {
 
-declare PH_APP_PKG="$(eval echo -n "$1")"
+declare PH_APP_PKG=""
+
+PH_APP_PKG="$(eval echo -n "$1")"
 
 [[ -z "$PH_APP_PKG" ]] && \
 	return 1
+
 "$PH_SUDO" dpkg-query -s "$PH_APP_PKG" >/dev/null 2>&1
 return "$?"
 }
 
 function ph_check_pkg_validity {
 
-declare PH_APP_PKG="$(eval echo -n "$1")"
+declare PH_APP_PKG=""
+
+PH_APP_PKG="$(eval echo -n "$1")"
 
 [[ -z "$PH_APP_PKG" ]] && \
 	return 1
+
 "$PH_SUDO" apt-cache show "$PH_APP_PKG" >/dev/null 2>&1
 return "$?"
 }
@@ -105,14 +127,13 @@ function ph_update_system {
 
 ph_update_pkg_index || \
 	return 1
-printf "%8s%s\n" "" "--> Updating system"
+printf "%8s%s\n" "" "--> Updating your system (This may take a while)"
 if "$PH_SUDO" apt-get -qq upgrade >/dev/null 2>&1
 then
-	ph_run_with_rollback -c true && \
-		return "$?"
+	ph_run_with_rollback -c true
 else
-	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not update"
+	ph_set_result -m "At least one of the attempted package upgrades failed"
+	ph_run_with_rollback -c false -m "Could not update"
 fi
-ph_run_with_rollback -c false || \
-	return 1
+return "$?"
 }

@@ -1,7 +1,7 @@
-Go to 'OptsManagement for PieHelper' submenu:ph_show_menu OptsManagement_PieHelper
-Go to 'TTYManagement for PieHelper' submenu:ph_show_menu TTYManagement_PieHelper
-Go to 'AppManagement for PieHelper' submenu:ph_show_menu AppManagement_PieHelper
-Go to 'Main' menu:ph_show_menu Main
-Go to 'Apps' menu:ph_show_menu Apps
-Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash
+Go to PieHelper submenu "OptsManagement":ph_show_menu OptsManagement_PieHelper
+Go to PieHelper submenu "TTYManagement":ph_show_menu TTYManagement_PieHelper
+Go to PieHelper submenu "AppManagement":ph_show_menu AppManagement_PieHelper
+Go to menu "Main":ph_show_menu Main
+Go to menu "Apps":ph_show_menu Apps
+Open Shell to home directory (Type "CTRL-D" to return):cd;/bin/bash
 Return to previous screen:return

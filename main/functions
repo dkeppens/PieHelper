@@ -1,26 +1,43 @@
-# PieHelper module declarations (By Davy Keppens on 06/10/18)
-# Toggle debugstate of a specific module between Enable/Disable by running confpieh_ph.sh -p debug -m 'module_name'
+# PieHelper module declarations not required by the update process (By Davy Keppens on 06/10/18)
+# Toggle debugstate of a specific module between Enable/Disable by running 'confpieh_ph.sh -p debug -m module_name'
 
 function ph_check_password_validity {
 
 declare PH_PASSWD="$1"
 
-echo "$PH_PASSWD" | grep "'" >/dev/null && return 1
-return 0
+[[ "$#" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+if [[ -z "$PH_PASSWD" ]]
+then
+	ph_set_result -m "Passwords cannot be empty"
+else
+	if echo "$PH_PASSWD" 2>/dev/null | grep -E "'|[[:space:]]" >/dev/null
+	then
+		ph_set_result -m "Passwords may not contain single quote (') or space characters"
+	else
+		return 0
+	fi
+fi
+return 1
 }
 
 function ph_create_oos_app_code {
 
 declare PH_APP="$1"
-[[ -z "$PH_APP" ]] && \
-	return 1
-declare -l PH_APPL="${PH_APP:0:3}"
-if cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E ^"${PH_APP}"$ >/dev/null
-then
-	return 1
-fi
+declare -l PH_APPL=""
 
-printf "%8s%s\n" "" "--> Adding configure function for 'Out-of-scope' application '${PH_APP}' to codebase file '${PH_MAIN_DIR}/functions.user'"
+[[ "$#" -ne "1" || -z "$PH_APP" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+PH_APPL="${PH_APP:0:3}"
+printf "%8s%s\n" "" "--> Adding configure function for out-of-scope application '${PH_APP}' to codebase file '${PH_MAIN_DIR}/functions.user'"
+if cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
+then
+	ph_set_result -m "${PH_APP} is not an out-of-scope application"
+	ph_run_with_rollback -c false -m "Could not add" || \
+		return 1
+fi
 cat >>"${PH_MAIN_DIR}/functions.user" 2>/dev/null <<EOF
 
 function ph_configure_${PH_APPL} {
@@ -31,42 +48,59 @@ return 0
 EOF
 if [[ "$?" -eq "0" ]]
 then
-	printf "%10s\033[32m%s\033[0m\n" "" "OK (Configuration code for '${PH_APP}' can now be added to '${PH_MAIN_DIR}/functions.user')"
-	ph_set_result -r 0
 	ph_add_value_to_param -p PH_REMOVE_OOS_APPS_CODE -v "$PH_APP"
-	return 0
+	ph_run_with_rollback -c true -m "Configuration code for ${PH_APP} can now be added to '${PH_MAIN_DIR}/functions.user'"
 else
-	ph_set_result -m "An error occurred creating configuration code for '${PH_APP}' in codebase file '${PH_MAIN_DIR}/functions.user'"
-	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not add code"
-	ph_run_with_rollback -c false || \
-		return 1
+	ph_set_result -m "An error occurred trying to add function 'ph_configure_${PH_APPL}' to codebase file '${PH_MAIN_DIR}/functions.user'"
+	ph_run_with_rollback -c false -c "Could not add"
 fi
+return "$?"
 }
 
 function ph_remove_oos_app_code {
 
 declare PH_APP="$1"
-[[ -z "$PH_APP" ]] && return 1
-declare -l PH_APPL="${PH_APP:0:3}"
-if cut -f1 "$PH_CONF_DIR/default_apps$PH_FILE_SUFFIX" 2>/dev/null | grep -E ^"$PH_APP"$ >/dev/null
-then
-	return 1
-fi
+declare -l PH_APPL=""
 
-printf "%8s%s\n" "" "--> Removing configure function for 'Out-of-scope' application '$PH_APP' from codebase file '$PH_MAIN_DIR/functions.user'"
-if nawk -v app="_$PH_APPL"$ 'BEGIN { FLAG=0 } $1 ~ /^function$/ && $2 ~ app { FLAG=1 ; while ($1!~/^}$/) { getline } ; getline ; FLAG=0 ; next } \
-	{ if (FLAG==0) { print $0 }}' "$PH_MAIN_DIR/functions.user" >"$PH_TMP_DIR/functions_user_tmp" 2>/dev/null
+[[ "$#" -ne "1" || -z "$PH_APP" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+PH_APPL="${PH_APP:0:3}"
+printf "%8s%s\n" "" "--> Removing configure function for out-of-scope application '${PH_APP}' from codebase file '${PH_MAIN_DIR}/functions.user'"
+if cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
 then
-	if mv "$PH_TMP_DIR/functions_user_tmp" "$PH_MAIN_DIR/functions.user" 2>/dev/null
+	ph_set_result -m "${PH_APP} is not an out-of-scope application"
+	ph_run_with_rollback -c false -m "Could not remove" || \
+		return 1
+fi
+if nawk -v app="_${PH_APPL}$" 'BEGIN {
+		flag = "0" 
+	}
+	$1 ~ /^function$/ && $2 ~ app {
+		flag = "1" ;
+		while ($1 !~ /^}$/) {
+			getline
+		} ;
+		getline ;
+		flag = "0" ;
+		next
+	} {
+		if (flag == 0) {
+			print $0
+		}
+	}' "${PH_MAIN_DIR}/functions.user" >"${PH_TMP_DIR}/functions_user_tmp" 2>/dev/null
+then
+	if mv "${PH_TMP_DIR}/functions_user_tmp" "${PH_MAIN_DIR}/functions.user" 2>/dev/null
 	then
 		ph_add_value_to_param -p PH_CREATE_OOS_APPS_CODE -v "$PH_APP"
-		ph_run_with_rollback -c "true" && return "$?"
+		ph_run_with_rollback -c true && \
+			return "$?"
 	fi
 fi
-"$PH_SUDO" rm "$PH_TMP_DIR/functions_user_tmp" 2>/dev/null
-ph_set_result -m "An error occurred removing configuration code for '$PH_APP' from codebase file '$PH_MAIN_DIR/functions.user'"
-printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not remove code"
-ph_run_with_rollback -c "false" || return 1
+"$PH_SUDO" rm "${PH_TMP_DIR}/functions_user_tmp" 2>/dev/null
+ph_set_result -m "An error occurred trying to remove function 'ph_configure_${PH_APPL}' from codebase file '${PH_MAIN_DIR}/functions.user'"
+ph_run_with_rollback -c false -m "Could not remove" || \
+	return 1
 }
 
 function ph_add_line_to_file {
@@ -84,36 +118,52 @@ OPTIND="1"
 while getopts l:f:r PH_OPTION 2>/dev/null
 do
 	case "$PH_OPTION" in l)
-			PH_LINE="$OPTARG" ;;
+		[[ -n "$PH_LINE" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_LINE="$OPTARG" ;;
 			     f)
-			PH_FILE="$OPTARG" ;;
+		[[ -n "$PH_FILE" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_FILE="$OPTARG" ;;
 			     r)
-			PH_PARAMS="-r"
-			PH_ADD_AS_ROOT="0" ;;
+		[[ -n "$PH_PARAMS" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_PARAMS="-r"
+		PH_ADD_AS_ROOT="0" ;;
+			     *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ ( -z "$PH_FILE" ) || ( ! -f "$PH_FILE" && ! -L "$PH_FILE" ) ]] && \
-	return 1
+[[ -z "$PH_FILE" || "$#" -lt "4" || ( ! -f "$PH_FILE" && ! -L "$PH_FILE" ) ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
 if [[ "$PH_ADD_AS_ROOT" -eq "0" ]]
 then
-	if echo -e "$PH_LINE" | "$PH_SUDO" tee -a "$PH_FILE" >/dev/null 2>&1
+	if echo -e "$PH_LINE" 2>/dev/null | "$PH_SUDO" tee -a "$PH_FILE" >/dev/null 2>&1
 	then
 		ph_add_value_to_param -p PH_REMOVE_LINES -v "${PH_FILE}'${PH_PARAMS}'$(echo -e "$PH_LINE")"
-	else
-		return 1
+		return 0
 	fi
 else
 	if echo -e "$PH_LINE" >>"$PH_FILE" 2>/dev/null
 	then
 		ph_add_value_to_param -p PH_REMOVE_LINES -v "${PH_FILE}'${PH_PARAMS}'$(echo -e "$PH_LINE")"
-	else
-		return 1
+		return 0
 	fi
 fi
-return 0
+ph_set_result -m "An error occurred trying to add line '${PH_LINE}' to file '${PH_FILE}'"
+return 1
 }
 
 function ph_remove_line_from_file {
@@ -122,6 +172,7 @@ declare PH_LINE_REGEX=""
 declare PH_LINE=""
 declare PH_PARAMS=""
 declare PH_FILE=""
+declare PH_LINK_TARGET=""
 declare PH_TMP_FILE=""
 declare PH_OPTION=""
 declare PH_OLDOPTARG=""
@@ -134,79 +185,127 @@ OPTIND="1"
 while getopts l:f:r PH_OPTION 2>/dev/null
 do
 	case "$PH_OPTION" in l)
-			PH_LINE_REGEX="$OPTARG" ;;
-			     f)
-			PH_FILE="$OPTARG"
-			PH_TMP_FILE="${PH_TMP_DIR}/$(echo -n "${PH_FILE##*/}" | sed 's/\./_/g')_tmp.$(date +'%s%N')" ;;
-			     r)
-			PH_PARAMS="-r"
-			PH_REMOVE_AS_ROOT="0" ;;
+		[[ -n "$PH_LINE_REGEX" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_LINE_REGEX="$OPTARG" ;;
+		     f)
+		[[ -n "$PH_FILE" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_FILE="$OPTARG"
+		PH_TMP_FILE="${PH_TMP_DIR}/$(echo -n "${PH_FILE##*/}" | sed 's/\./_/g')_tmp.$(date +'%s%N')" ;;
+		     r)
+		[[ -n "$PH_PARAMS" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_PARAMS="-r"
+		PH_REMOVE_AS_ROOT="0" ;;
+		     *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_FILE" || ! -f "$PH_FILE" ]] && \
-	return 1
-[[ -z "$PH_LINE_REGEX" ]] && \
-	return 1
-PH_COUNT="$(grep -P ^"${PH_LINE_REGEX}"$ "$PH_FILE" 2>/dev/null | wc -l)"
-PH_LINE="$(nawk -v comp="$PH_COUNT" -v line=^"${PH_LINE_REGEX}"$ 'BEGIN { \
-		count = "0" \
-	} \
-	$0 ~ line { \
-		count++ ; \
-		if (count!=comp) { \
-			next \
-		} else { \
-			print ; \
-			exit \
-		} \
-	}' "$PH_FILE" 2>/dev/null)"
-if nawk -v comp="$PH_COUNT" -v line=^"${PH_LINE_REGEX}"$ 'BEGIN { \
-		count = "0" \
-	} \
-	$0 ~ line { \
-		count++ ; \
-		if (count!=comp) { \
-			print ; \
-			next \
-		} else { \
-			next \
-		} \
-	} { \
-		print \
-	}' "$PH_FILE" >"$PH_TMP_FILE" 2>/dev/null
+[[ -z "$PH_FILE" || -z "$PH_LINE_REGEX" || "$#" -lt "2" || ( ! -f "$PH_FILE" && ! -L "$PH_FILE" ) ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+if PH_COUNT="$("$PH_SUDO" grep -P "^${PH_LINE_REGEX}$" "$PH_FILE" 2>/dev/null | wc -l)"
 then
-	if [[ "$PH_REMOVE_AS_ROOT" -eq "0" ]]
+	if PH_LINE="$("$PH_SUDO" nawk -v comp="$PH_COUNT" -v line="^${PH_LINE_REGEX}$" 'BEGIN { \
+			count = "0" \
+		} \
+		$0 ~ line { \
+			count++ ; \
+			if (count != comp) { \
+				next \
+			} else { \
+				print ; \
+				exit \
+			} \
+		}' "$PH_FILE" 2>/dev/null)"
 	then
-		if "$PH_SUDO" mv "$PH_TMP_FILE" "$PH_FILE" 2>/dev/null
+		if "$PH_SUDO" nawk -v comp="$PH_COUNT" -v line="^${PH_LINE_REGEX}$" 'BEGIN { \
+				count = "0" \
+			} \
+			$0 ~ line { \
+				count++ ; \
+				if (count != comp) { \
+					print ; \
+					next \
+				} else { \
+					next \
+				} \
+			} { \
+				print \
+			}' "$PH_FILE" >"$PH_TMP_FILE" 2>/dev/null
 		then
-			ph_add_value_to_param -p PH_ADD_LINES -v "${PH_FILE}'${PH_PARAMS}'$(sed 's/\t/\\t/g' <<<"$PH_LINE")"
-		else
-			"$PH_SUDO" rm "$PH_TMP_FILE" 2>/dev/null
-			return 1
-		fi
-	else
-		if mv "$PH_TMP_FILE" "$PH_FILE" 2>/dev/null
-		then
-			ph_add_value_to_param -p PH_ADD_LINES -v "${PH_FILE}'${PH_PARAMS}'$(sed 's/\t/\\t/g' <<<"$PH_LINE")"
-		else
-			"$PH_SUDO" rm "$PH_TMP_FILE" 2>/dev/null
-			return 1
+			if [[ "$PH_REMOVE_AS_ROOT" -eq "0" ]]
+			then
+				if [[ -f "$PH_FILE" ]]
+				then
+					if "$PH_SUDO" cp --no-preserve=mode,ownership "$PH_TMP_FILE" "$PH_FILE" 2>/dev/null
+					then
+						if "$PH_SUDO" rm "$PH_TMP_FILE" 2>/dev/null
+						then
+							ph_add_value_to_param -p PH_ADD_LINES -v "${PH_FILE}'${PH_PARAMS}'$(sed 's/\t/\\t/g' <<<"$PH_LINE")"
+							return 0
+						fi
+					fi
+				else
+					if PH_LINK_TARGET="$(ph_get_link_target "$PH_FILE")"
+					then
+						if "$PH_SUDO" cp --no-preserve=mode,ownership "$PH_TMP_FILE" "$PH_LINK_TARGET" 2>/dev/null
+						then
+							if "$PH_SUDO" rm "$PH_TMP_FILE" 2>/dev/null
+							then
+								ph_add_value_to_param -p PH_ADD_LINES -v "${PH_FILE}'${PH_PARAMS}'$(sed 's/\t/\\t/g' <<<"$PH_LINE")"
+								return 0
+							fi
+						fi
+					else
+						return 1
+					fi
+				fi
+			else
+				if [[ -f "$PH_FILE" ]]
+				then
+					if mv "$PH_TMP_FILE" "$PH_FILE" 2>/dev/null
+					then
+						ph_add_value_to_param -p PH_ADD_LINES -v "${PH_FILE}'${PH_PARAMS}'$(sed 's/\t/\\t/g' <<<"$PH_LINE")"
+						return 0
+					fi
+				else
+					if PH_LINK_TARGET="$(ph_get_link_target "$PH_FILE")"
+					then
+						if mv "$PH_TMP_FILE" "$PH_LINK_TARGET" 2>/dev/null
+						then
+							ph_add_value_to_param -p PH_ADD_LINES -v "${PH_FILE}'${PH_PARAMS}'$(sed 's/\t/\\t/g' <<<"$PH_LINE")"
+							return 0
+						fi
+					else
+						return 1
+					fi
+				fi
+			fi
 		fi
 	fi
-else
-	"$PH_SUDO" rm "$PH_TMP_FILE" 2>/dev/null
-	return 1
 fi
-return 0
+ph_set_result -m "An error occurred trying to remove line '${PH_LINE}' from file '${PH_FILE}'"
+"$PH_SUDO" rm "$PH_TMP_FILE" 2>/dev/null
+return 1
 }
 
 function ph_git_add_local {
 
-declare PH_OPTION=""
 declare PH_GIT_COMMIT_MSG=""
+declare PH_OPTION=""
 declare PH_OLDOPTARG="$OPTARG"
 declare -i PH_OLDOPTIND="$OPTIND"
 
@@ -215,11 +314,22 @@ OPTIND="1"
 while getopts m: PH_OPTION 2>/dev/null
 do
 	case "$PH_OPTION" in m)
-			PH_GIT_COMMIT_MSG="$OPTARG" ;;
+		[[ -n "$PH_GIT_COMMIT_MSG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_GIT_COMMIT_MSG="$OPTARG" ;;
+			     *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
+
+[[ -z "$PH_GIT_COMMIT_MSG" || "$#" -ne "2" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 cd "$PH_BASE_DIR" >/dev/null 2>&1
 printf "%8s%s\n" "" "--> Adding modified files to local git"
@@ -528,14 +638,14 @@ else
 	then
 		if [[ "$("$PH_SUDO" find /etc/profile.d/PieHelper-path.sh -exec ls -l {} \; 2>/dev/null | nawk '{ print $3 }')" != "root" ]]
 		then
-			printf "%4s%s\n" "" "- PATH extension has a 'Corrupted' value for ownership -> Should be 'root'" >>"$PH_TMP_DIR/reported_issues"
+			printf "%4s%s\n" "" "- PATH extension has a 'Corrupted' value for ownership -> Fix by running '${PH_SUDO} chown root:root /etc/profile.d/PieHelper-path.sh'" >>"$PH_TMP_DIR/reported_issues"
 			PH_RET_CODE="1"
 		fi
 	fi
 fi
-if [[ ! -L "$PH_CONF_DIR/distros/$PH_DISTRO.conf" && "$PH_DISTRO" == "Debian" ]]
+if [[ ! -L "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" && "$PH_DISTRO" == "Debian" ]]
 then
-        printf "%4s%s\n" "" "- Debian release symbolic link is 'Missing'" >>"$PH_TMP_DIR/reported_issues"
+        printf "%4s%s\n" "" "- Debian release symbolic link is 'Missing'" >>"${PH_TMP_DIR}/reported_issues"
 	PH_RET_CODE="1"
 fi
 if [[ -f "$PH_FILES_DIR/auto_update_denied" ]]
@@ -818,7 +928,7 @@ then
         printf "%4s%s\n" "" "- Configuration file 'Ctrls.conf' is 'Present'" >>"$PH_TMP_DIR/reported_issues"
 	PH_RET_CODE="1"
 fi
-for PH_i in $(ls "$PH_MENUS_DIR/"!(@(Advanced|AppManagement|*_PieHelper|PieHelper|OptsManagement|XBOX*|TTYManagement|PS*|OS*|Settings|Controllers|Main).lst) 2>/dev/null | nawk 'BEGIN { ORS =  " " } { print $1 }')
+for PH_i in $(ls "${PH_MENUS_DIR}/"!(@(Advanced|AppManagement|*_PieHelper|PieHelper|OptsManagement|XBOX*|TTYManagement|PS*|OS*|Settings|Controllers|Main).lst) 2>/dev/null | nawk 'BEGIN { ORS =  " " } { print $1 }')
 do
        	printf "%4s%s\n" "" "- Menu item '${PH_i##*/} is 'Present'" >>"$PH_TMP_DIR/reported_issues"
 	PH_RET_CODE="1"
@@ -829,7 +939,7 @@ do
        	printf "%4s%s\n" "" "- Default CIFS mountpoint '$PH_MNT_DIR/$PH_APP' is 'Present'" >>"$PH_TMP_DIR/reported_issues"
 	PH_RET_CODE="1"
 done
-for PH_i in $(ls "$PH_SCRIPTS_DIR/"!(*_ph.sh) 2>/dev/null | nawk 'BEGIN { ORS =  " " } { print $1 }')
+for PH_i in $(ls "${PH_SCRIPTS_DIR}/"!(*_ph.sh) 2>/dev/null | nawk 'BEGIN { ORS =  " " } { print $1 }')
 do
        	printf "%4s%s\n" "" "- Management script '${PH_i##*/}' is 'Present'" >>"$PH_TMP_DIR/reported_issues"
 	PH_RET_CODE="1"
@@ -928,17 +1038,19 @@ function ph_allocate_new_tty {
 declare PH_APP="$1"
 declare -i PH_APP_TTY="0"
 
-[[ -z "$PH_APP" ]] && echo -n "1" && return 1
-printf "%8s%s\n" "" "--> Allocating first available TTY to '$PH_APP'"
+[[ -z "$PH_APP" ]] && \
+	echo -n "1" && \
+	return 1
+
+printf "%8s%s\n" "" "--> Allocating first available TTY to ${PH_APP}"
 if [[ "$PH_APP" == "PieHelper" ]]
 then
 	PH_APP_TTY="2"
-	printf "%10s\033[32m%s\033[0m\n" "" "OK ('TTY$PH_APP_TTY')"
-	ph_set_result -r 0
+	ph_run_with_rollback -c true -m "TTY${PH_APP_TTY}"
 else
 	for ((PH_APP_TTY=3;PH_APP_TTY<="$((PH_PIEH_MAX_TTYS+1))";PH_APP_TTY++))
 	do
-		if cut -f3 "$PH_CONF_DIR/integrated_apps" 2>/dev/null | grep -E ^"$PH_APP_TTY"$ >/dev/null
+		if cut -f3 "${PH_CONF_DIR}/integrated_apps" 2>/dev/null | grep -E "^${PH_APP_TTY}$" >/dev/null
 		then
 			continue
 		fi
@@ -946,12 +1058,11 @@ else
 	done
 	if [[ "$PH_APP_TTY" -eq "$(("$PH_PIEH_MAX_TTYS"+1))" ]]
 	then
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : All TTYs already allocated"
-		ph_set_result -r 1 -m "An available TTY is mandatory for TTY allocation"
-		PH_APP_TTY="1"
+		ph_set_result -m "Could not allocate a TTY to ${PH_APP} since all TTYs have already been allocated"
+		ph_run_with_rollback -c false -m "Could not allocate" || \
+			return 1
 	else
-		printf "%10s\033[32m%s\033[0m\n" "" "OK ('TTY$PH_APP_TTY')"
-		ph_set_result -r 0
+		ph_run_with_rollback -c true -m "TTY${PH_APP_TTY}"
 	fi
 fi
 return "$PH_APP_TTY"
@@ -1133,40 +1244,142 @@ return 0
 
 function ph_git_clone_master {
 
-declare PH_UPDATE_DIR="$1"
-declare PH_GIT_MASTER_REPO="https://github.com/dkeppens/PieHelper.git"
+declare PH_GIT_REPO_DIR=""
+declare PH_GIT_REPO_NAME=""
+declare PH_GIT_REPO_ARGS=""
+declare PH_GIT_REPO=""
+declare PH_OPTION=""
+declare PH_OLDOPTARG="$OPTARG"
+declare -i PH_OLDOPTIND="$OPTIND"
 
-if [[ ! -d "$PH_UPDATE_DIR" ]]
+OPTIND="1"
+
+while getopts d:r:n:a: PH_OPTION 2>/dev/null
+do
+	case "$PH_OPTION" in d)
+			[[ -n "$PH_GIT_REPO_DIR" ]] && \
+				OPTIND="$PH_OLDOPTIND" && \
+				OPTARG="$PH_OLDOPTARG" && \
+				return 1
+			PH_GIT_REPO_DIR="$OPTARG" ;;
+			     n)
+			[[ -n "$PH_GIT_REPO_NAME" ]] && \
+				OPTIND="$PH_OLDOPTIND" && \
+				OPTARG="$PH_OLDOPTARG" && \
+				return 1
+			PH_GIT_REPO_NAME="$OPTARG" ;;
+			     a)
+			PH_GIT_REPO_ARGS="$OPTARG" ;;
+			     r)
+			[[ -n "$PH_GIT_REPO" ]] && \
+				OPTIND="$PH_OLDOPTIND" && \
+				OPTARG="$PH_OLDOPTARG" && \
+				return 1
+			PH_GIT_REPO="$OPTARG" ;;
+			     *)
+			OPTIND="$PH_OLDOPTIND"
+			OPTARG="$PH_OLDOPTARG"
+			ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+	esac
+done
+OPTIND="$PH_OLDOPTIND"
+OPTARG="$PH_OLDOPTARG"
+
+[[ -z "$PH_GIT_REPO_DIR" || -z "$PH_GIT_REPO" || -z "$PH_GIT_REPO_NAME" ]] && \
+	return 1
+
+if [[ ! -d "$PH_GIT_REPO_DIR" ]]
 then
-	ph_run_with_rollback -c "ph_create_empty_file -t directory -d \"$PH_UPDATE_DIR\"" || return 1
+	ph_run_with_rollback -c "ph_create_empty_file -t directory -d '${PH_GIT_REPO_DIR}'" || \
+		return 1
 fi
-cd "$PH_UPDATE_DIR" >/dev/null 2>&1
-printf "%8s%s\n" "" "--> Cloning github master"
-if git clone "$PH_GIT_MASTER_REPO" >/dev/null 2>&1
+printf "%8s%s\n" "" "--> Cloning github repository '${PH_GIT_REPO}'"
+if cd "$PH_GIT_REPO_DIR" >/dev/null 2>&1
 then
-	ph_add_value_to_param -p PH_GIT_UNDO_CLONE_MASTER -v "$PH_UPDATE_DIR"
-	ph_run_with_rollback -c "true"
+	if git clone ${PH_GIT_REPO_ARGS} "$PH_GIT_REPO" >/dev/null 2>&1
+	then
+		cd - >/dev/null 2>&1
+		ph_add_value_to_param -p PH_GIT_UNDO_CLONE_MASTER -v "${PH_GIT_REPO_DIR}'${PH_GIT_REPO}'${PH_GIT_REPO_NAME}'${PH_GIT_REPO_ARGS}"
+		ph_run_with_rollback -c true && \
+			return 0
+	else
+		ph_set_result -m "Could not clone git repository '${PH_GIT_REPO}'"
+	fi
 else
-	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not clone"
-	ph_set_result -m "Could not create clone of master repository '$PH_REPO'"
-	ph_run_with_rollback -c "false" || return 1
+	ph_set_result -m "Could not change working directory to '${GIT_REPO_DIR}'"
 fi
-return 0
+cd - >/dev/null 2>&1
+printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Could not clone"
+ph_run_with_rollback -c false || \
+	return 1
 }
 
 function ph_git_undo_clone_master {
 
-declare PH_UPDATE_DIR="$1"
+declare PH_GIT_REPO=""
+declare PH_GIT_REPO_ARGS=""
+declare PH_GIT_REPO_DIR=""
+declare PH_GIT_REPO_NAME=""
+declare PH_OPTION=""
+declare PH_OLDOPTARG="$OPTARG"
+declare -i PH_OLDOPTIND="$OPTIND"
 
-[[ ! -d "$PH_UPDATE_DIR"/PieHelper ]] && return 0
-if "$PH_SUDO" rm -r "$PH_UPDATE_DIR"/PieHelper 2>/dev/null
+OPTIND="1"
+
+while getopts d:n:r:a: PH_OPTION 2>/dev/null
+do
+	case "$PH_OPTION" in d)
+			[[ -n "$PH_GIT_REPO_DIR" ]] && \
+				OPTIND="$PH_OLDOPTIND" && \
+				OPTARG="$PH_OLDOPTARG" && \
+				return 1
+			PH_GIT_REPO_DIR="$OPTARG" ;;
+			     r)
+			[[ -n "$PH_GIT_REPO" ]] && \
+				OPTIND="$PH_OLDOPTIND" && \
+				OPTARG="$PH_OLDOPTARG" && \
+				return 1
+			PH_GIT_REPO="$OPTARG" ;;
+			     a)
+			PH_GIT_REPO_ARGS="$OPTARG" ;;
+			     n)
+			[[ -n "$PH_GIT_REPO_NAME" ]] && \
+				OPTIND="$PH_OLDOPTIND" && \
+				OPTARG="$PH_OLDOPTARG" && \
+				return 1
+			PH_GIT_REPO_NAME="$OPTARG" ;;
+			     *)
+			OPTIND="$PH_OLDOPTIND"
+			OPTARG="$PH_OLDOPTARG"
+			ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+	esac
+done
+OPTIND="$PH_OLDOPTIND"
+OPTARG="$PH_OLDOPTARG"
+
+[[ -z "$PH_GIT_REPO_DIR" || -z "$PH_GIT_REPO" || -z "$PH_GIT_REPO_NAME" || \
+	( -e "${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}" && ! -d "${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}" ) ]] && \
+	return 1
+
+printf "%8s%s\n" "" "--> Removing cloned repository '${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}'"
+if [[ ! -e "${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}" ]]
 then
-	cd - >/dev/null 2>&1
-	ph_add_value_to_param -p PH_GIT_CLONE_MASTER -v "$PH_UPDATE_DIR"
+	printf "%10s\033[32m%s\033[0m%s\n" "" "OK : " "Nothing to do"
+	ph_set_result -r 0
+	return 0
 else
-	cd - >/dev/null 2>&1
+	if "$PH_SUDO" rm -r "${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}" 2>/dev/null
+	then
+		ph_add_value_to_param -p PH_GIT_CLONE_MASTER -v "${PH_GIT_REPO_DIR}'${PH_GIT_REPO}'${PH_GIT_REPO_NAME}'${PH_GIT_REPO_ARGS}"
+		ph_run_with_rollback -c true && \
+			return "$?"
+	else
+		ph_set_result -m "Could not remove directory '${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}'"
+	fi
 fi
-return 0
+printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Could not remove"
+ph_run_with_rollback -c false || \
+	return 1
 }
 
 function ph_update_app {
@@ -1175,7 +1388,7 @@ declare PH_APP=""
 declare PH_APP_PKG=""
 declare PH_APP_STATE=""
 declare PH_OPTION=""
-declare PH_UPDATE_DIR="/tmp/Update"
+declare PH_UPDATE_DIR="/tmp/update"
 declare PH_NEW_DIRS=""
 declare PH_NEW_VERSION=""
 declare PH_i=""
@@ -1202,16 +1415,19 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_APP" ]] && return 1
+[[ -z "$PH_APP" ]] && \
+	return 1
+
 if [[ "$PH_APP" == "PieHelper" ]]
 then
-	ph_run_with_rollback -c "ph_git_clone_master \"$PH_UPDATE_DIR\"" || return 1
+	ph_run_with_rollback -c "ph_git_clone_master -d '${PH_UPDATE_DIR}' -n PieHelper -r 'https://github.com/dkeppens/PieHelper.git'" || \
+		return 1
 	printf "%8s%s\n" "" "--> Checking for available PieHelper updates"
 	PH_NEW_VERSION="$(cat "$PH_UPDATE_DIR"/PieHelper/conf/VERSION 2>/dev/null)"
 	if [[ "$PH_VERSION" == "$PH_NEW_VERSION" ]]
 	then
 		printf "%10s\033[32m%s\033[0m\n" "" "OK (No available updates)"
-		ph_run_with_rollback -l -c "ph_undo_git_clone_master \"$PH_UPDATE_DIR\""
+		ph_run_with_rollback -l -c "ph_undo_git_clone_master -d '${PH_UPDATE_DIR}' -n PieHelper -r 'https://github.com/dkeppens/PieHelper.git'"
 		return "$?"
 	else
 		printf "%10s\033[32m%s\033[0m\n" "" "OK (Found update '$PH_NEW_VERSION')"
@@ -1276,28 +1492,28 @@ then
 	printf "%8s%s\n" "" "--> Updating directory structure"
 	for PH_i in $(find "$PH_UPDATE_DIR" -type d 2>/dev/null)
 	do
-		if [[ ! -d "$PH_BASE_DIR/${PH_i##*/Update}" && "$PH_BASE_DIR/${PH_i##*/Update}" != "$PH_BASE_DIR/PieHelper/mnt/"* ]]
+		if [[ ! -d "$PH_BASE_DIR/${PH_i##*/update}" && "$PH_BASE_DIR/${PH_i##*/update}" != "$PH_BASE_DIR/PieHelper/mnt/"* ]]
 		then
-			mkdir -p "$PH_BASE_DIR/${PH_i##*/Update}" 2>/dev/null
-			[[ -z "$PH_NEW_DIRS" ]] && PH_NEW_DIRS="${PH_i##*/Update}/" || PH_NEW_DIRS="$PH_NEW_DIRS ${PH_i##*/Update}/"
+			mkdir -p "$PH_BASE_DIR/${PH_i##*/update}" 2>/dev/null
+			[[ -z "$PH_NEW_DIRS" ]] && PH_NEW_DIRS="${PH_i##*/update}/" || PH_NEW_DIRS="$PH_NEW_DIRS ${PH_i##*/update}/"
 		fi
 	done
 	printf "%10s\033[32m%s\033[0m\n" "" "OK"
 	printf "%8s%s\n" "" "--> Updating 'Unique' and optional non-codebase files"
 	for PH_i in /PieHelper/ /PieHelper/mnt/ /PieHelper/tmp/ /PieHelper/builds/ /PieHelper/conf/ /PieHelper/conf/distros/ /PieHelper/files/ /PieHelper/files/menus/ /PieHelper/snapshots/
 	do
-		for PH_j in $(ls "$PH_UPDATE_DIR$PH_i" 2>/dev/null)
+		for PH_j in $(ls "${PH_UPDATE_DIR}${PH_i}" 2>/dev/null)
 		do
-			[[ -d "$PH_UPDATE_DIR$PH_i$PH_j" || "$PH_j" == @(*!(PieHelper).lst|*.conf|+(integrated|supported)_apps|OS.defaults|controller_cli_ids|options.alloweds|options.defaults) ]] && continue
-			cp -p "$PH_UPDATE_DIR$PH_i$PH_j" "$PH_BASE_DIR$PH_i${PH_j##*/}" 2>/dev/null
+			[[ -d "${PH_UPDATE_DIR}${PH_i}${PH_j}" || "${PH_j}" == @(*!(PieHelper).lst|*.conf|+(integrated|supported)_apps|OS.defaults|controller_cli_ids|options.alloweds|options.defaults) ]] && continue
+			cp -p "${PH_UPDATE_DIR}${PH_i}${PH_j}" "${PH_BASE_DIR}${PH_i}${PH_j##*/}" 2>/dev/null
 		done
 	done
 	for PH_i in $(echo -n "$PH_NEW_DIRS")
 	do
-		for PH_j in $(ls "$PH_UPDATE_DIR$PH_i" 2>/dev/null)
+		for PH_j in $(ls "${PH_UPDATE_DIR}${PH_i}" 2>/dev/null)
 		do
-			[[ -d "$PH_BASE_DIR$PH_i$PH_j" ]] && continue
-			cp -p "$PH_UPDATE_DIR$PH_i$PH_j" "$PH_BASE_DIR$PH_i$PH_j" 2>/dev/null
+			[[ -d "${PH_BASE_DIR}${PH_i}${PH_j}" ]] && continue
+			cp -p "${PH_UPDATE_DIR}${PH_i}${PH_j}" "${PH_BASE_DIR}${PH_i}${PH_j}" 2>/dev/null
 		done
 	done
 	printf "%10s\033[32m%s\033[0m\n" "" "OK"
@@ -1428,21 +1644,47 @@ declare -i PH_RESTORE_AS_ROOT="1"
 
 OPTIND="1"
 
-while getopts f:r PH_OPTION 2>/dev/null
+while getopts f:rc PH_OPTION 2>/dev/null
 do
 	case "$PH_OPTION" in f)
-			PH_FILE="$OPTARG"
-			PH_TMP_FILE="$("$PH_SUDO" find "$PH_TMP_DIR/$(echo -n "${PH_FILE##*/}" | sed 's/\./_/g')_tmp*" -exec ls -t {} \; 2>/dev/null | nawk '{ print ; exit }')" ;;
+		[[ -n "$PH_FILE" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_FILE="$OPTARG"
+		PH_TMP_FILE="$("$PH_SUDO" ls -lAt "${PH_TMP_DIR}/$(echo -n "${PH_FILE##*/}" | sed 's/\./_/g')_tmp"* 2>/dev/null | nawk '{ \
+				print ; \
+				exit \
+			}')" ;;
 			     r)
-			PH_PARAMS="-r"
-			PH_RESTORE_AS_ROOT="0" ;;
+		[[ "$PH_RESTORE_AS_ROOT" -eq "0" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		[[ -z "$PH_PARAMS" ]] && \
+			PH_PARAMS="-r" || \
+			PH_PARAMS="${PH_PARAMS} -r"
+		PH_RESTORE_AS_ROOT="0" ;;
+			     c)
+		echo "$PH_PARAMS" 2>/dev/null | grep -E "([[:space:]])*-c" >/dev/null && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		[[ -z "$PH_PARAMS" ]] && \
+			PH_PARAMS="-c" || \
+			PH_PARAMS="${PH_PARAMS} -c" ;;
+			     *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ ! -f "$PH_TMP_FILE" && ! -L "$PH_TMP_FILE" ]] && return 1
-"$PH_SUDO" rm "$PH_FILE" 2>/dev/null
+[[ -z "$PH_FILE" || "$#" -lt "2" || ( ! -f "$PH_FILE" && ! -L "$PH_FILE" ) ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
 if [[ "$PH_RESTORE_AS_ROOT" -eq "0" ]]
 then
 	"$PH_SUDO" mv "$PH_TMP_FILE" "$PH_FILE" 2>/dev/null
@@ -1451,9 +1693,10 @@ else
 fi
 if [[ "$?" -eq "0" ]]
 then
-	ph_add_value_to_param -p PH_STORE_FILES -v "$PH_FILE'$PH_PARAMS"
+	ph_add_value_to_param -p PH_STORE_FILES -v "${PH_FILE}'${PH_PARAMS}"
 	return 0
 fi
+ph_set_result -m "An error occurred trying to restore '${PH_TMP_FILE}' as '${PH_FILE}'"
 return 1
 }
 
@@ -1463,39 +1706,55 @@ function ph_store_file {
 declare PH_FILE=""
 declare PH_PARAMS=""
 declare PH_TMP_FILE=""
-declare PH_COMMAND="cp -p"
+declare PH_COMMAND=""
 declare PH_OPTION=""
 declare PH_OLDOPTARG="$OPTARG"
 declare -i PH_OLDOPTIND="$OPTIND"
 declare -i PH_STORE_AS_ROOT="1"
-declare -i PH_STORE_COPIED="1"
 
 OPTIND="1"
 
 while getopts f:rc PH_OPTION 2>/dev/null
 do
 	case "$PH_OPTION" in f)
-			PH_FILE="$OPTARG"
-			PH_TMP_FILE="${PH_TMP_DIR}/$(echo -n "${PH_FILE##*/}" | sed 's/\./_/g')_tmp.$(date +'%s%N')" ;;
-			     i)
-			[[ -z "$PH_PARAMS" ]] && \
-				PH_PARAMS="-c" || \
-				PH_PARAMS="${PH_PARAMS} -c"
-			PH_COMMAND="mv"
-			PH_STORE_COPIED="0" ;;
+		[[ -n "$PH_FILE" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_FILE="$OPTARG"
+		PH_TMP_FILE="${PH_TMP_DIR}/$(echo -n "${PH_FILE##*/}" | sed 's/\./_/g')_tmp.$(date +'%s%N')" ;;
+			     c)
+		[[ -n "$PH_COMMAND" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		[[ -z "$PH_PARAMS" ]] && \
+			PH_PARAMS="-c" || \
+			PH_PARAMS="${PH_PARAMS} -c"
+		PH_COMMAND="cp -p" ;;
 			     r)
-			[[ -z "$PH_PARAMS" ]] && \
-				PH_PARAMS="-r" || \
-				PH_PARAMS="${PH_PARAMS} -r"
-			PH_STORE_AS_ROOT="0" ;;
+		[[ "$PH_STORE_AS_ROOT" -eq "0" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		[[ -z "$PH_PARAMS" ]] && \
+			PH_PARAMS="-r" || \
+			PH_PARAMS="${PH_PARAMS} -r"
+		PH_STORE_AS_ROOT="0" ;;
+			     *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ ! -f "$PH_FILE" && ! -L "$PH_FILE" ]] && \
-	return 1
-"$PH_SUDO" rm "$PH_TMP_FILE" 2>/dev/null
+[[ -z "$PH_FILE" || "$#" -lt "2" || ( ! -f "$PH_FILE" && ! -L "$PH_FILE" ) ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+[[ -z "$PH_COMMAND" ]] && \
+	PH_COMMAND="mv"
 if [[ "$PH_STORE_AS_ROOT" -eq "0" ]]
 then
 	"$PH_SUDO" ${PH_COMMAND} "$PH_FILE" "$PH_TMP_FILE" 2>/dev/null
@@ -1504,9 +1763,10 @@ else
 fi
 if [[ "$?" -eq "0" ]]
 then
-	ph_add_value_to_param -p PH_RESTORE_FILES -v "$PH_FILE'$PH_PARAMS"
+	ph_add_value_to_param -p PH_RESTORE_FILES -v "${PH_FILE}'${PH_PARAMS}"
 	return 0
 fi
+ph_set_result -m "An error occurred trying to store '${PH_FILE}' as '${PH_TMP_FILE}'"
 return 1
 }
 
@@ -1518,10 +1778,10 @@ declare PH_FILE=""
 PH_FILE="$(ph_get_filename_from_shortname "$PH_i")"
 if [[ -f "${PH_CONF_DIR}/${PH_FILE}" ]]
 then
-	ph_run_with_rollback -c "ph_store_file -f \"${PH_CONF_DIR}/${PH_FILE}\"" || \
+	ph_run_with_rollback -c "ph_store_file -f '${PH_CONF_DIR}/${PH_FILE}'" || \
 		return 1
 fi
-ph_run_with_rollback -c "ph_create_empty_file -q -t file -d \"${PH_CONF_DIR}/${PH_FILE}\"" || \
+ph_run_with_rollback -c "ph_create_empty_file -q -t file -d '${PH_CONF_DIR}/${PH_FILE}'" || \
 	return 1
 return 0
 }
@@ -1730,18 +1990,44 @@ return 0
 function ph_get_pieh_conf_state {
 
 declare PH_CONF_STATE=""
-declare -i PH_RET_CODE="0"
+declare PH_OPTION=""
+declare PH_OLDOPTARG="$OPTARG"
+declare -i PH_OLDOPTIND="$OPTIND"
+declare -i PH_QUIESCE="1"
 
-if [[ -f "$PH_FILES_DIR"/first_run ]]
+OPTIND="1"
+
+while getopts q PH_OPTION 2>/dev/null
+do
+        case "$PH_OPTION" in q)
+		[[ "$PH_QUIESCE" -eq "0" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+                PH_QUIESCE="0" ;;
+			     *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+        esac
+done
+OPTIND="$PH_OLDOPTIND"
+OPTARG="$PH_OLDOPTARG"
+
+if [[ -f "${PH_FILES_DIR}/first_run" ]]
 then
 	PH_CONF_STATE="Unconfigured"
 else
 	PH_CONF_STATE="Configured"
 fi
-printf "\n%4s%8s%-20s%s\033[32m%s\033[0m\n" "" "Current " "PieHelper version " ": " "'$PH_VERSION'" || PH_RET_CODE="1"
-printf "%12s%-20s%s\033[32m%s\033[0m\n" "" "configuration state " ": " "'$PH_CONF_STATE'" || PH_RET_CODE="1"
-ph_set_result -r "$PH_RET_CODE"
-return "$PH_RET_CODE"
+if [[ "$PH_QUIESCE" -ne "0" ]]
+then
+	printf "\n%4s%8s%-20s%s\033[32m%s\033[0m\n" "" "Current " "PieHelper version " ": " "'${PH_VERSION}'"
+	printf "%12s%-20s%s\033[32m%s\033[0m\n" "" "configuration state " ": " "'${PH_CONF_STATE}'"
+else
+	echo -n "$PH_CONF_STATE"
+fi
+return 0
 }
 
 function ph_print_bannerline {
@@ -2181,10 +2467,10 @@ declare -i PH_RET_CODE="0"
 
 if [[ "$1" == @(reset|full) ]]
 then
-	if [[ "$(cat "$PH_CONF_DIR"/controller_cli_ids 2>/dev/null | wc -l)" -gt "0" ]]
+	if [[ "$(cat "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null | wc -l)" -gt "0" ]]
 	then
 		printf "%8s%s\n" "" "--> Resetting controller CLI ids"
-		>"$PH_CONF_DIR"/controller_cli_ids 2>/dev/null
+		>"${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null
 		printf "%10s\033[32m%s\033[0m\n" "" "OK"
 	fi
 fi
@@ -2200,7 +2486,7 @@ then
 			printf "%10s\033[32m%s\033[0m\n" "" "OK"
 			sleep 1
 		else
-			printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not stop instance(s) -> A reboot is required"
+			printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Could not stop instance(s) -> A reboot is required"
 			PH_RET_CODE="1"
 		fi
 	fi
@@ -2212,10 +2498,12 @@ function ph_get_app_pkg_from_app_name {
 
 declare PH_APP="$1"
 declare -u PH_APPU="${PH_APP:0:4}"
-declare -n PH_APP_PKG=PH_"$PH_APPU"_PKG_NAME
+declare -n PH_APP_PKG="PH_${PH_APPU}_PKG_NAME"
 
-[[ -z "$PH_APP_PKG" ]] && unset -n PH_APP_PKG && return 1
-eval echo -n \"$PH_APP_PKG\"
+[[ -z "$PH_APP_PKG" ]] && \
+	unset -n PH_APP_PKG && \
+	return 1
+eval echo -n \""$PH_APP_PKG\""
 unset -n PH_APP_PKG
 return 0
 }
@@ -2365,25 +2653,40 @@ OPTIND="1"
 while getopts t:a: PH_OPTION 2>/dev/null
 do
         case "$PH_OPTION" in a)
+		[[ -n "$PH_APP" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_APP="$OPTARG" ;;
                              t)
+		[[ "$PH_APP_NEW_TTY" -gt "0" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_APP_NEW_TTY="$OPTARG" ;;
+                             *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
         esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
+[[ -z "$PH_APP" || "$PH_APP_NEW_TTY" -eq "0" || "$#" -ne "4" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
 PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
 PH_APP_USER="$(ph_get_app_user_from_app_name "$PH_APP")"
 [[ "$PH_PIEH_STARTAPP" == "$PH_APP" ]] && \
 	PH_BOOT_TTY_FLAG="0"
-ph_run_with_rollback -c "ph_undo_setup_tty -a \"$PH_APP\" -t \"$PH_APP_TTY\" -u \"$PH_APP_USER\"" || \
+ph_run_with_rollback -c "ph_undo_setup_tty -a '${PH_APP}' -t '${PH_APP_TTY}' -u '${PH_APP_USER}'" || \
 	return 1
-ph_run_with_rollback -c "ph_setup_tty -a \"$PH_APP\" -t \"$PH_APP_NEW_TTY\" -u \"$PH_APP_USER\"" || \
+ph_run_with_rollback -c "ph_setup_tty -a '${PH_APP}' -t '${PH_APP_NEW_TTY}' -u '${PH_APP_USER}'" || \
 	return 1
 if [[ "$PH_BOOT_TTY_FLAG" -eq "0" ]]
 then
-	ph_run_with_rollback -c "ph_set_tty_for_boot \"$PH_APP_NEW_TTY\"" || \
+	ph_run_with_rollback -c "ph_set_tty_for_boot '${PH_APP_NEW_TTY}'" || \
 		return 1
 fi
 return 0
@@ -2391,64 +2694,77 @@ return 0
 
 function ph_set_tty_for_boot {
 
+declare PH_i=""
 declare -i PH_APP_TTY="$1"
 declare -i PH_CUR_TTY="0"
 declare -i PH_RET_CODE="0"
 
-[[ "$PH_APP_TTY" -eq "1" ]] && return 1
+[[ "$PH_APP_TTY" -eq "1" || "$#" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
 if [[ ! -f /etc/systemd/system/getty@tty1.service.d/autostart.conf ]]
 then
-	[[ "$PH_APP_TTY" -eq "0" ]] && return 0
-	printf "%8s%s\n" "" "--> Creating 'TTY$PH_APP_TTY' 'StartApp' configuration"
-	if ! ph_run_with_rollback -c "ph_create_empty_file -r -q -t directory -d \"/etc/systemd/system/getty@tty1.service.d\""
+	[[ "$PH_APP_TTY" -eq "0" ]] && \
+		return 0
+	printf "%8s%s\n" "" "--> Creating StartApp configuration for 'TTY${PH_APP_TTY}'"
+	if ph_run_with_rollback -c "ph_create_empty_file -r -q -t directory -d '/etc/systemd/system/getty@tty1.service.d'"
 	then
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not create configuration"
-		ph_set_result -r 1 -m "An error occurred creating 'StartApp' configuration for 'TTY$PH_APP_TTY'"
-		return 1
+		if ph_run_with_rollback -c "ph_create_empty_file -r -q -t file -d '/etc/systemd/system/getty@tty1.service.d/autostart.conf'"
+		then
+			for PH_i in '[Service]' 'ExecStart=' 'ExecStart=-/sbin/agetty --noclear tty1 $TERM' "ExecStartPost=+/bin/chvt ${PH_APP_TTY}" 'TTYVTDisallocate=no' 'TTYReset=no' 'TTYVHangup=no'
+			do
+				if ! ph_run_with_rollback -c "ph_add_line_to_file -r -l '${PH_i}' -f '/etc/systemd/system/getty@tty1.service.d/autostart.conf'"
+				then
+					ph_run_with_rollback -c false -m "Could not create" || \
+						return 1
+				fi
+			done
+        		if "$PH_SUDO" chmod 644 /etc/systemd/system/getty@tty1.service.d/autostart.conf 2>/dev/null
+			then
+        			if "$PH_SUDO" chown root:root /etc/systemd/system/getty@tty1.service.d/autostart.conf 2>/dev/null
+				then
+					if "$PH_SUDO" systemctl daemon-reload >/dev/null 2>&1
+					then
+						ph_add_value_to_param -p PH_SET_BOOT_TTYS -v "$PH_APP_TTY"
+						ph_run_with_rollback -c true && \
+							return "$?"
+					else
+						ph_set_result -m "Could not reload systemd configuration"
+					fi
+				else
+					ph_set_result -m "Could not set ownership of file '/etc/systemd/system/getty@tty1.service.d/autostart.conf' to 'root:root'"
+				fi
+			else
+				ph_set_result -m "Could not set permissions of file '/etc/systemd/system/getty@tty1.service.d/autostart.conf' to '644'"
+			fi
+		fi
 	fi
-	cat >"$PH_TMP_DIR"/autostart_conf_tmp <<EOF
-[Service]
-ExecStart=
-ExecStart=-/sbin/agetty --noclear tty1 \$TERM
-ExecStartPost=+/bin/chvt $(echo -n "$PH_APP_TTY")
-TTYVTDisallocate=no
-TTYReset=no
-TTYVHangup=no
-EOF
-	[[ "$?" -ne "0" ]] && PH_RET_CODE="1"
-         "$PH_SUDO" mv "$PH_TMP_DIR"/autostart_conf_tmp /etc/systemd/system/getty@tty1.service.d/autostart.conf 2>/dev/null || PH_RET_CODE="1"
-        "$PH_SUDO" chmod 644 /etc/systemd/system/getty@tty1.service.d/autostart.conf 2>/dev/null || PH_RET_CODE="1"
-        "$PH_SUDO" chown root:root /etc/systemd/system/getty@tty1.service.d/autostart.conf 2>/dev/null || PH_RET_CODE="1"
-	"$PH_SUDO" systemctl daemon-reload >/dev/null 2>&1 || PH_RET_CODE="1"
-	if [[ "$PH_RET_CODE" -eq "0" ]]
-	then
-		ph_run_with_rollback -c "true"
-	else
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not create configuration"
-		"$PH_SUDO" rm "$PH_TMP_DIR"/autostart_conf_tmp 2>/dev/null
-		"$PH_SUDO" rm /etc/systemd/system/getty@tty1.service.d/autostart.conf 2>/dev/null
-		ph_set_result -r "$PH_RET_CODE" -m "An error occurred creating 'StartApp' configuration for 'TTY$PH_APP_TTY'"
-		return "$PH_RET_CODE"
-	fi
+	ph_run_with_rollback -c false -m "Could not create"
 else
-	PH_CUR_TTY="$(nawk '$1 ~ /^ExecStartPost=/ { print $2 }' /etc/systemd/system/getty@tty1.service.d/autostart.conf 2>/dev/null)"
-	[[ "$PH_CUR_TTY" -eq "$PH_APP_TTY" ]] && return 0
-	printf "%8s%s\n" "" "--> Removing 'TTY$PH_CUR_TTY' 'StartApp' configuration"
-	ph_run_with_rollback -c "ph_remove_empty_file -r -q -t directory -d \"/etc/systemd/system/getty@tty1.service.d\"" || PH_RET_CODE="1"
-	"$PH_SUDO" systemctl daemon-reload >/dev/null 2>&1 || PH_RET_CODE="1"
-	if [[ "$PH_RET_CODE" -eq "0" ]]
+	PH_CUR_TTY="$(nawk '$1 ~ /^ExecStartPost=/ { \
+			print $2 \
+		}' /etc/systemd/system/getty@tty1.service.d/autostart.conf 2>/dev/null)"
+	[[ "$PH_CUR_TTY" -eq "$PH_APP_TTY" ]] && \
+		return 0
+	printf "%8s%s\n" "" "--> Removing StartApp configuration for 'TTY${PH_CUR_TTY}'"
+	if ph_run_with_rollback -c "ph_store_file -r -f '/etc/systemd/system/getty@tty1.service.d/autostart.conf'"
 	then
-		ph_run_with_rollback -c "true"
-	else
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not remove configuration"
-		ph_set_result -r "$PH_RET_CODE" -m "An error occurred removing 'StartApp' configuration for 'TTY$PH_CUR_TTY'"
-		return "$PH_RET_CODE"
+		if "$PH_SUDO" systemctl daemon-reload >/dev/null 2>&1
+		then
+			ph_run_with_rollback -c true
+			ph_run_with_rollback -c "ph_disable_app_tty '${PH_CUR_TTY}'" || \
+				return 1
+			ph_run_with_rollback -c "ph_set_tty_for_boot '${PH_APP_TTY}'" || \
+				return 1
+			ph_add_value_to_param -p PH_SET_BOOT_TTYS -v "$PH_APP_TTY"
+			return 0
+		else
+			ph_set_result -m "An error occurred trying to reload systemd configuration"
+		fi
 	fi
-	ph_run_with_rollback -c "ph_disable_app_tty \"$PH_CUR_TTY\"" || return 1
-	ph_run_with_rollback -c "ph_set_tty_for_boot \"$PH_APP_TTY\"" || return 1
+	ph_run_with_rollback -c false -m "Could not remove"
 fi
-ph_add_value_to_param -p PH_SET_BOOT_TTYS -v "$PH_APP_TTY"
-return "$PH_RET_CODE"
+return 1
 }
 
 function ph_get_app_name_from_option {
@@ -2707,7 +3023,7 @@ declare PH_VALUE="$(eval "echo -n \"\$${PH_OPT}\"")"
 declare PH_DEF_VALUE="$(grep -E "^${PH_OPT}:" "${PH_CONF_DIR}/options.defaults" 2>/dev/null | cut -d":" -f2-)"
 
 export "OLD_${PH_OPT}"="$PH_VALUE"
-ph_run_with_rollback -c "ph_set_option_to_value \"${PH_APP}\" -r \"${PH_OPT}'${PH_DEF_VALUE}\"" || \
+ph_run_with_rollback -c "ph_set_option_to_value '${PH_APP}' -r \"${PH_OPT}'${PH_DEF_VALUE}\"" || \
 	return 1
 unset "OLD_${PH_OPT}"
 return 0
@@ -2783,9 +3099,9 @@ while true
 do
 	if [[ "$PH_MENU" == @(OptsManagement_*|TTYManagement_*|AppManagement_*) ]]
 	then
-		ph_do_link_to_menu "${PH_MENU##*_}"
+		ph_link_app_to_menu "${PH_MENU##*_}"
 	else
-		[[ "$PH_MENU" != @(Main|PS3|PS4|XBOX|Advanced|Settings|OS|OSdefaults|OptsManagement|Apps|Controllers|TTYManagement|AppManagement) ]] && ph_do_link_to_menu "$PH_MENU"
+		[[ "$PH_MENU" != @(Main|PS3|PS4|XBOX|Advanced|Settings|OS|OSdefaults|OptsManagement|Apps|Controllers|TTYManagement|AppManagement) ]] && ph_link_app_to_menu "$PH_MENU"
 	fi
 	PH_ANSWER="0"
 	PH_COUNT="0"
@@ -2904,8 +3220,8 @@ declare PH_i=""
 declare PH_ANSWER=""
 declare PH_CONF_STATE=""
 declare PH_ACTION=""
+declare PH_MODE=""
 declare PH_OPTION=""
-declare PH_MODE="normal"
 declare PH_OLDOPTARG="$OPTARG"
 declare -i PH_OLDOPTIND="$OPTIND"
 declare -i PH_COUNT="0"
@@ -2915,25 +3231,45 @@ OPTIND="1"
 while getopts urb PH_OPTION 2>/dev/null
 do
         case "$PH_OPTION" in r)
+		[[ -n "$PH_ACTION" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_ACTION="remove" ;;
 			     u)
+		[[ -n "$PH_ACTION" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_ACTION="unconfigure" ;;
 			     b)
+		[[ -n "$PH_MODE" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_MODE="batch" ;;
+			     *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
+[[ -z "$PH_ACTION" ]] && \
+	return 1
+
 PH_ROLLBACK_USED="yes"
-PH_CONF_STATE="$(ph_get_pieh_conf_state | nawk 'BEGIN { FS = "\x27" } $0 ~ /configuration state : / { printf $2 ; exit 0 } { next }')"
+[[ -z "$PH_MODE" ]] && \
+	PH_MODE="normal"
+PH_CONF_STATE="$(ph_get_pieh_conf_state -q)"
 if [[ "$PH_MODE" == "normal" ]]
 then
 	if [[ "$PH_CONF_STATE" == "Unconfigured" && "$PH_ACTION" == "unconfigure" ]]
 	then
-		ph_set_result -r 0 -w -m "'PieHelper' already in state 'Unconfigured'"
-		ph_show_result
-		return "$?"
+		ph_set_result -r 0 -w -m "PieHelper is already unconfigured"
+		return 0
 	fi
 fi
 if [[ "$PH_CONF_STATE" == "Configured" ]]
@@ -2941,33 +3277,33 @@ then
 	if [[ "$PH_MODE" == "normal" ]]
 	then
 		printf "%2s%s\n\n" "" "This will :"
-		printf "%4s%s\n" "" "- Stop all integrated applications currently 'Running'"
-		printf "%4s%s\n" "" "- Unconfigure the current 'StartApp' if one is set"
-		printf "%4s%s\n" "" "- Reset all application options and controller settings back to default"
+		printf "%4s%s\n" "" "- Stop all integrated applications that are currently running"
+		printf "%4s%s\n" "" "- Unconfigure the current StartApp if one is set"
+		printf "%4s%s\n" "" "- Reset all application options and the controller settings to default values"
 		printf "%4s%s\n" "" "- Remove the controller settings"
 		printf "%4s%s\n" "" "- Unintegrate all integrated applications"
 		printf "%4s%s\n" "" "- Unsupport all supported applications"
 		printf "%4s%s\n" "" "- Remove all base configuration files"
-		printf "%4s%s\n" "" "- Change a few system related settings and scripts back to their original versions"
+		printf "%4s%s\n" "" "- Restore any system related settings and scripts modified by PieHelper to their original state"
 		printf "%4s%s\n" "" "- Enable the graphical environment"
-		[[ "$PH_ACTION" == "remove" ]] && printf "%4s%s\n" "" "- Remove all PieHelper files (third-party packages remain installed)"
-		printf "%4s%s\n" "" "- Reboot your system"
-		printf "\n"
-		while [[ "$PH_ANSWER" != @(y|n) ]]
+		[[ "$PH_ACTION" == "remove" ]] && \
+			printf "%4s%s\n" "" "- Remove all files related to PieHelper (third-party packages installed by PieHelper remain installed)"
+		printf "%4s%s\n\n" "" "- Reboot your system"
+		while [[ "$PH_ANSWER" != @(y@(es|)|n@(o|)) ]]
 		do
-			[[ "$PH_COUNT" -gt "0" ]] && printf "\n%10s\033[31m%s\033[0m\n\n" "" "ERROR : Invalid response"
+			[[ "$PH_COUNT" -gt "0" ]] && \
+				printf "\n%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid response"
 			if [[ "$PH_ACTION" == "unconfigure" ]]
 			then
 				printf "%8s%s%s" "" "--> Continue with PieHelper unconfiguration (y/n) ? "
 			else
 				printf "%8s%s%s" "" "--> Continue with PieHelper removal (y/n) ? "
 			fi
-			read PH_ANSWER 2>/dev/null
-			ph_screen_input "$PH_ANSWER" || return 1
+			read -r PH_ANSWER 2>/dev/null
+			ph_screen_input "$PH_ANSWER"
 			((PH_COUNT++))
 		done
-		printf "%10s\033[32m%s\033[0m\n" "" "OK"
-		ph_set_result -r 0
+		ph_run_with_rollback -c true
 		if [[ "$PH_ANSWER" == "n" ]]
 		then
 			ph_set_result -w -m "Quit at user request"
@@ -2975,41 +3311,55 @@ then
 			return "$?"
 		fi
 	fi
-	ph_run_with_rollback -c "ph_create_empty_file -t file -d \"$PH_TMP_DIR/unconfigure_in_progress\"" || return 1
-	if [[ -f "$PH_FILES_DIR"/10-retropie_sh ]]
+	ph_run_with_rollback -c "ph_create_empty_file -t file -d '${PH_TMP_DIR}/.unconfigure_in_progress'" || \
+		return 1
+	if [[ -f "${PH_FILES_DIR}/10-retropie_sh" ]]
 	then
-		ph_run_with_rollback -c "ph_pieh_unconfigured_emul_conf" || return 1
+		ph_run_with_rollback -c "ph_pieh_unconfigured_emul_conf" || \
+			return 1
 	fi
-	ph_run_with_rollback -c "ph_set_app_for_start none" || return 1
-	ph_stop_all_running_apps || return 1
-	ph_set_all_options_to_default_value || return 1
-	ph_run_with_rollback -c "ph_remove_app_items -a Ctrls -t unsupport" || return 1
-	ph_run_with_rollback -c "ph_unintegrate_app -a integrated" || return 1
-	ph_run_with_rollback -c "ph_unsupport_app -a supported" || return 1
+	ph_run_with_rollback -c "ph_set_app_for_start none" || \
+		return 1
+	ph_stop_all_running_apps || \
+		return 1
+	ph_set_all_options_to_default_value || \
+		return 1
+	ph_run_with_rollback -c "ph_remove_app_items -a Ctrls -t unsupport" || \
+		return 1
+	ph_run_with_rollback -c "ph_unintegrate_app -a integrated" || \
+		return 1
+	ph_run_with_rollback -c "ph_unsupport_app -a supported" || \
+		return 1
 	for PH_i in cont os int sup defaults alloweds
 	do
-		ph_run_with_rollback -c "ph_store_file -f \"$PH_CONF_DIR/$(ph_get_filename_from_shortname "$PH_i")\"" || return 1
+		ph_run_with_rollback -c "ph_store_file -f '${PH_CONF_DIR}/$(ph_get_filename_from_shortname "$PH_i")'" || \
+			return 1
 	done
 	for PH_i in path logind
 	do
-		ph_run_with_rollback -c "ph_pieh_unconfigured_\"$PH_i\"_conf" || return 1
+		ph_run_with_rollback -c "ph_pieh_unconfigured_${PH_i}_conf" || \
+			return 1
 	done
-	ph_run_with_rollback -c "ph_remove_empty_file -t link -d \"$PH_CONF_DIR/distros/$PH_DISTRO.conf\"" || return 1
-	ph_run_with_rollback -c "ph_set_bootenv graphical.target" || return 1
+	ph_run_with_rollback -c "ph_remove_empty_file -t link -d '${PH_CONF_DIR}/distros/${PH_DISTRO.conf}'" || \
+		return 1
+	ph_run_with_rollback -c "ph_set_bootenv graphical.target" || \
+		return 1
 	if [[ "$PH_MODE" == "batch" ]]
 	then
-		ph_run_with_rollback -c "ph_remove_empty_file -t file -d \"$PH_TMP_DIR/unconfigure_in_progress\"" || return 1
+		ph_run_with_rollback -c "ph_remove_empty_file -t file -d '${PH_TMP_DIR}/.unconfigure_in_progress'" || \
+			return 1
 	else
-		ph_run_with_rollback -l -c "ph_remove_empty_file -t file -d \"$PH_TMP_DIR/unconfigure_in_progress\"" || return 1
+		ph_run_with_rollback -l -c "ph_remove_empty_file -t file -d '${PH_TMP_DIR}/.unconfigure_in_progress'" || \
+			return 1
 	fi
 fi
 if [[ "$PH_ACTION" != "remove" && "$PH_BATCH" == "no" ]]
 then
-	printf "%s\n\n" "" "PieHelper can be reconfigured by running '$PH_SCRIPTS_DIR/confpieh_ph.sh -c'"
+	printf "%s\n\n" "" "PieHelper can be reconfigured by running '${PH_SCRIPTS_DIR}/confpieh_ph.sh -c'"
 	printf "%s" "Press Enter to reboot into the graphical environment"
-	read 2>/dev/null
-	"$PH_SUDO" chvt 1
-	"$PH_SUDO" init 6
+	read -r 2>/dev/null
+	"$PH_SUDO" chvt 1 2>/dev/null
+	"$PH_SUDO" init 6 2>/dev/null
 else
 	return 0
 fi
@@ -3019,22 +3369,20 @@ function ph_pieh_unconfigured_path_conf {
 
 if [[ -f /etc/profile.d/PieHelper-path.sh ]]
 then
-	printf "%8s%s\n" "" "--> Removing PieHelper PATH extension"
+	printf "%8s%s\n" "" "--> Removing the PATH extension for PieHelper"
 	if "$PH_SUDO" rm /etc/profile.d/PieHelper-path.sh 2>/dev/null
 	then
-		ph_add_value_to_param -p PH_CONFIGURED_STATE -v "path"
-		ph_run_with_rollback -c "true"
+		ph_add_value_to_param -p PH_CONFIGURED_STATE -v path
+		ph_run_with_rollback -c true
 	else
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not remove extension"
-		ph_run_with_rollback -c "false" || return 1
+		ph_run_with_rollback -c false -m "Could not remove" || \
+			return 1
 	fi
 fi
 return 0
 }
 
 function ph_rollback_changes {
-
-exit 0
 
 declare PH_CMD=""
 declare PH_OPT=""
@@ -3047,15 +3395,18 @@ declare PH_MOVE_SCRIPTS_REGEX=""
 declare PH_FILE_TYPE=""
 declare PH_FILE_SOURCE=""
 declare PH_FILE_DEST=""
-declare PH_RUN_SECURE=""
-declare PH_RUN_ACLS=""
 declare PH_RUN_GIT_COMMIT_LOCAL=""
 declare PH_RUN_GIT_COMMIT_MASTER=""
 declare PH_RUN_GIT_ADD_LOCAL=""
 declare PH_RUN_GIT_TAG_LOCAL=""
+declare PH_GIT_REPO_DIR=""
+declare PH_GIT_REPO_NAME=""
+declare PH_GIT_REPO_ARGS=""
+declare PH_GIT_REPO=""
 declare PH_FILE=""
 declare PH_LINE=""
 declare PH_APP=""
+declare PH_RUN_SECURE=""
 declare PH_APP_USER=""
 declare PH_APP_USER_GROUPS=""
 declare PH_APP_CMD=""
@@ -3067,6 +3418,7 @@ declare -i PH_APP_TTY="0"
 declare -i PH_ARRAY_INDEX="0"
 declare -i PH_ARRAY2_INDEX="0"
 declare -i PH_RET_CODE="0"
+declare -a PH_RUN_ACLS
 
 PH_ROLLBACK_USED="no"
 for PH_ARRAY_INDEX in $(echo -n "${!PH_ROLLBACK_PARAMS[*]} " | tac -s " ")
@@ -3077,26 +3429,35 @@ do
 	PH_ARRAY2_INDEX="$(("${#PH_ARRAY2[@]}"-1))"
 	PH_VALUE="${PH_ARRAY2["$PH_ARRAY2_INDEX"]}"
 	case "$PH_OPT" in PH_START_APPS)
-		PH_CMD="ph_do_app_action start \"$PH_VALUE\"" ;;
+		PH_CMD="ph_do_app_action start '${PH_VALUE}'" ;;
 			  PH_STOP_APPS)
 		PH_APP="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_PARAMS="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
-		PH_CMD="ph_do_app_action stop \"$PH_APP\" $PH_PARAMS" ;;
+		PH_CMD="ph_do_app_action stop '${PH_APP}' ${PH_PARAMS}" ;;
 			  PH_UNBLACKLIST_MODULES)
-		PH_CMD="ph_unblacklist_kernel_module \"$PH_VALUE\"" ;;
+		PH_CMD="ph_unblacklist_kernel_module '${PH_VALUE}'" ;;
 			  PH_BLACKLIST_MODULES)
-		PH_CMD="ph_blacklist_kernel_module \"$PH_VALUE\"" ;;
+		PH_CMD="ph_blacklist_kernel_module '${PH_VALUE}'" ;;
 			  PH_REMOVE_RIGHTS_USERS)
-		PH_CMD="ph_remove_user_sudo_rights $PH_VALUE" ;;
+		PH_PARAMS="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
+		PH_APP_USER="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
+		PH_CMD="ph_remove_user_sudo_rights -u '${PH_APP_USER}' ${PH_PARAMS}" ;;
 			  PH_CREATE_RIGHTS_USERS)
-		PH_CMD="ph_create_user_sudo_rights $PH_VALUE" ;;
+		PH_PARAMS="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
+		PH_APP_USER="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
+		PH_CMD="ph_create_user_sudo_rights -u '${PH_APP_USER}' ${PH_PARAMS}" ;;
 			  PH_REMOVE_ACLS_USERS)
 		PH_ROLLBACK_TIME="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_PARAMS="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
+		PH_APP_USER="$(echo -n "$PH_VALUE" | cut -f3 -d\')"
+		PH_FILE="$(echo -n "$PH_VALUE" | cut -f4 -d\')"
+		PH_PARAMS="${PH_PARAMS} -u '${PH_APP_USER}'"
 		case "$PH_ROLLBACK_TIME" in immediate)
-			PH_CMD="ph_do_user_acls_action -p remove $PH_PARAMS" ;;
+			[[ -n "$PH_FILE" ]] && \
+				PH_PARAMS="${PH_PARAMS} -f '${PH_FILE}'"
+			PH_CMD="ph_user_acls -p remove ${PH_PARAMS}" ;;
 				   delayed)
-			PH_RUN_ACLS="remove'$PH_PARAMS"
+			PH_RUN_ACLS+=("remove'${PH_APP_USER}")
 			PH_CMD="continue" ;;
 				   never)
 			PH_CMD="continue" ;;
@@ -3104,10 +3465,15 @@ do
 			  PH_CREATE_ACLS_USERS)
 		PH_ROLLBACK_TIME="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_PARAMS="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
+		PH_APP_USER="$(echo -n "$PH_VALUE" | cut -f3 -d\')"
+		PH_FILE="$(echo -n "$PH_VALUE" | cut -f4 -d\')"
+		PH_PARAMS="${PH_PARAMS} -u '${PH_APP_USER}'"
 		case "$PH_ROLLBACK_TIME" in immediate)
-			PH_CMD="ph_do_user_acls_action -p create $PH_PARAMS" ;;
+			[[ -n "$PH_FILE" ]] && \
+				PH_PARAMS="${PH_PARAMS} -f '${PH_FILE}'"
+			PH_CMD="ph_user_acls -p create ${PH_PARAMS}" ;;
 				   delayed)
-			PH_RUN_ACLS="create'$PH_PARAMS"
+			PH_RUN_ACLS+=("create'${PH_APP_USER}")
 			PH_CMD="continue" ;;
 				   never)
 			PH_CMD="continue" ;;
@@ -3116,11 +3482,11 @@ do
 		PH_RUN_GIT_COMMIT_LOCAL="$PH_VALUE"
 		PH_CMD="continue" ;;
 			  PH_SET_BOOT_TTYS)
-		PH_CMD="ph_set_tty_for_boot \"$PH_VALUE\"" ;;
+		PH_CMD="ph_set_tty_for_boot '${PH_VALUE}'" ;;
 			  PH_MODIFY_APPS_SCRIPT)
 		PH_APP="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_APP_TTY="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
-		PH_CMD="ph_modify_app_script -a \"$PH_APP\" -t \"$PH_APP_TTY\"" ;;
+		PH_CMD="ph_modify_app_script -a '${PH_APP}' -t '${PH_APP_TTY}'" ;;
 			  PH_GIT_COMMIT_MASTER)
 		PH_RUN_GIT_COMMIT_MASTER="$PH_VALUE"
 		PH_CMD="continue" ;;
@@ -3128,185 +3494,200 @@ do
 		PH_RUN_GIT_ADD_LOCAL="$PH_VALUE"
 		PH_CMD="continue" ;;
 			  PH_GRANT_APPS_ACCESS)
-		PH_APP="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
-		PH_APP_USER="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
-		PH_CMD="ph_grant_pieh_access -a \"$PH_APP\" -u \"$PH_APP_USER\"" ;;
+		PH_APP_USER="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
+		PH_PARAMS="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
+		PH_CMD="ph_grant_pieh_access -u '${PH_APP_USER}' ${PH_PARAMS}" ;;
 			  PH_REVOKE_APPS_ACCESS)
-		PH_APP="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
-		PH_APP_USER="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
-		PH_CMD="ph_revoke_pieh_access -a \"$PH_APP\" -u \"$PH_APP_USER\"" ;;
+		PH_APP_USER="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
+		PH_PARAMS="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
+		PH_CMD="ph_revoke_pieh_access -u '${PH_APP_USER}' ${PH_PARAMS}" ;;
 			  PH_REMOVE_APPS_FROM_SUP_FILE)
-		PH_CMD="ph_remove_app_from_support_file -a \"$PH_VALUE\"" ;;
+		PH_CMD="ph_remove_app_from_support_file -a '${PH_VALUE}'" ;;
 			  PH_ADD_APPS_TO_SUP_FILE)
 		PH_APP="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_APP_INST_STATE="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
 		PH_APP_CMD="$(echo -n "$PH_VALUE" | cut -f3 -d\')"
-		PH_CMD="ph_add_app_to_support_file -a \"$PH_APP\" -s \"$PH_APP_INST_STATE\" -c \"$PH_APP_CMD\"" ;;
+		PH_CMD="ph_add_app_to_support_file -a '${PH_APP}' -s '${PH_APP_INST_STATE}' -c '${PH_APP_CMD}'" ;;
 			  PH_ADD_APPS_TO_INT_FILE)
 		PH_APP="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_APP_USER="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
 		PH_APP_TTY="$(echo -n "$PH_VALUE" | cut -f3 -d\')"
-		PH_CMD="ph_add_app_to_integration_file -a \"$PH_APP\" -u \"$PH_APP_USER\" -t \"$PH_APP_TTY\"" ;;
+		PH_CMD="ph_add_app_to_integration_file -a '${PH_APP}' -u '${PH_APP_USER}' -t '${PH_APP_TTY}'" ;;
 			  PH_REMOVE_APPS_FROM_INT_FILE)
-		PH_CMD="ph_remove_app_from_integration_file -a \"$PH_VALUE\"" ;;
+		PH_CMD="ph_remove_app_from_integration_file -a '${PH_VALUE}'" ;;
 			  PH_ADD_LINES)
 		PH_FILE="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_PARAMS="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
 		PH_LINE="$(echo -n "$PH_VALUE" | cut -f3- -d\')"
-		PH_CMD="ph_add_line_to_file $PH_PARAMS -f \"$PH_FILE\" -l \"$PH_LINE\"" ;;
+		PH_CMD="ph_add_line_to_file $PH_PARAMS -f '${PH_FILE}' -l '${PH_LINE}'" ;;
 			  PH_REMOVE_LINES)
 		PH_FILE="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_PARAMS="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
 		PH_LINE="$(echo -n "$PH_VALUE" | cut -f3- -d\')"
-		PH_CMD="ph_remove_line_from_file $PH_PARAMS -f \"$PH_FILE\" -l \"$PH_LINE\"" ;;
+		PH_CMD="ph_remove_line_from_file $PH_PARAMS -f '${PH_FILE}' -l '${PH_LINE}'" ;;
 			  PH_GIT_TAG_LOCAL)
 		PH_RUN_GIT_TAG_LOCAL="$PH_VALUE"
 		PH_CMD="continue" ;;
 			  PH_REMOVE_OOS_APPS_CODE)
-		PH_CMD="ph_remove_oos_app_code \"$PH_VALUE\"" ;;
+		PH_CMD="ph_remove_oos_app_code '${PH_VALUE}'" ;;
 			  PH_CREATE_OOS_APPS_CODE)
-		PH_CMD="ph_create_oos_app_code \"$PH_VALUE\"" ;;
+		PH_CMD="ph_create_oos_app_code '${PH_VALUE}'" ;;
 			  PH_SECURE)
 		PH_ROLLBACK_TIME="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_PARAMS="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
+		PH_FILE="$(echo -n "$PH_VALUE" | cut -f3 -d\')"
 		case "$PH_ROLLBACK_TIME" in immediate)
-			PH_CMD="ph_secure_pieh $PH_PARAMS" ;;
+			[[ -n "$PH_FILE" ]] && \
+				PH_PARAMS="${PH_PARAMS} -f '${PH_FILE}'"
+			PH_CMD="ph_secure_pieh ${PH_PARAMS}" ;;
 				   delayed)
-			PH_RUN_SECURE="yes'$PH_PARAMS"
+			PH_RUN_SECURE="yes"
 			PH_CMD="continue" ;;
 				   never)
 			PH_CMD="continue" ;;
 		esac ;;
+			  PH_INSTALL_APPS)
+		PH_CMD="ph_install_app -a '${PH_VALUE}'" ;;
+			  PH_UNINSTALL_APPS)
+		PH_CMD="ph_uninstall_app -a '${PH_VALUE}'" ;;
 			  PH_LINK_MENUS)
-		PH_CMD="ph_do_link_to_menu \"$PH_VALUE\"" ;;
+		PH_CMD="ph_link_app_to_menu '${PH_VALUE}'" ;;
 			  PH_UNDO_LINK_MENUS)
-		PH_CMD="ph_undo_link_to_menu \"$PH_VALUE\"" ;;
+		PH_CMD="ph_unlink_app_from_menu '${PH_VALUE}'" ;;
 			  PH_UNDO_SETUP_TTYS)
 		PH_APP="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_APP_USER="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
 		PH_APP_TTY="$(echo -n "$PH_VALUE" | cut -f3 -d\')"
-		PH_CMD="ph_undo_setup_tty -a \"$PH_APP\" -u \"$PH_APP_USER\" -t \"$PH_APP_TTY\"" ;;
+		PH_CMD="ph_undo_setup_tty -a '${PH_APP}' -u '${PH_APP_USER}' -t '${PH_APP_TTY}'" ;;
 			  PH_SETUP_TTYS)
 		PH_APP="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_APP_USER="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
 		PH_APP_TTY="$(echo -n "$PH_VALUE" | cut -f3 -d\')"
-		PH_CMD="ph_setup_tty -a \"$PH_APP\" -u \"$PH_APP_USER\" -t \"$PH_APP_TTY\"" ;;
+		PH_CMD="ph_setup_tty -a '${PH_APP}' -u '${PH_APP_USER}' -t '${PH_APP_TTY}'" ;;
 			  PH_ENABLE_TTYS)
-		PH_CMD="ph_enable_app_tty \"$PH_VALUE\"" ;;
+		PH_CMD="ph_enable_app_tty '${PH_VALUE}'" ;;
 			  PH_DISABLE_TTYS)
-		PH_CMD="ph_disable_app_tty \"$PH_VALUE\"" ;;
+		PH_CMD="ph_disable_app_tty '${PH_VALUE}'" ;;
 			  PH_COPY_FILES)
 		PH_FILE_DEST="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_FILE_SOURCE="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
 		PH_PARAMS="$(echo -n "$PH_VALUE" | cut -f3 -d\')"
-		PH_CMD="ph_copy_file $PH_PARAMS -s \"$PH_FILE_SOURCE\" -d \"$PH_FILE_DEST\"" ;;
+		PH_CMD="ph_copy_file $PH_PARAMS -s '${PH_FILE_SOURCE}' -d '${PH_FILE_DEST}'" ;;
 			  PH_GIT_CLONE_MASTER)
-		PH_CMD="ph_git_clone_master \"$PH_VALUE\"" ;;
+		PH_GIT_REPO_DIR="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
+		PH_GIT_REPO="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
+		PH_GIT_REPO_NAME="$(echo -n "$PH_VALUE" | cut -f3 -d\')"
+		PH_GIT_REPO_ARGS="$(echo -n "$PH_VALUE" | cut -f4 -d\')"
+		PH_CMD="ph_git_clone_master -d '${PH_GIT_REPO_DIR}' -n '${PH_GIT_REPO_NAME}' -r '${PH_GIT_REPO}' -a '${PH_GIT_REPO_ARGS}'" ;;
 			  PH_GIT_UNDO_CLONE_MASTER)
-		PH_CMD="ph_git_undo_clone_master \"$PH_VALUE\"" ;;
+		PH_GIT_REPO_DIR="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
+		PH_GIT_REPO="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
+		PH_GIT_REPO_NAME="$(echo -n "$PH_VALUE" | cut -f3 -d\')"
+		PH_GIT_REPO_ARGS="$(echo -n "$PH_VALUE" | cut -f4 -d\')"
+		PH_CMD="ph_git_undo_clone_master -d '${PH_GIT_REPO_DIR}' -n '${PH_GIT_REPO_NAME}' -r '${PH_GIT_REPO}' -a '${PH_GIT_REPO_ARGS}'" ;;
 			  PH_CREATE_APPS_CONF_FILE)
-		PH_CMD="ph_create_app_conf_file \"$PH_VALUE\"" ;;
+		PH_CMD="ph_create_app_conf_file '${PH_VALUE}'" ;;
 			  PH_REMOVE_APPS_CONF_FILE)
-		PH_CMD="ph_remove_app_conf_file \"$PH_VALUE\"" ;;
+		PH_CMD="ph_remove_app_conf_file '${PH_VALUE}'" ;;
 			  PH_CREATE_APPS_SCRIPTS)
-		PH_CMD="ph_create_app_scripts \"$PH_VALUE\"" ;;
+		PH_CMD="ph_create_app_scripts '${PH_VALUE}'" ;;
 			  PH_REMOVE_APPS_SCRIPTS)
-		PH_CMD="ph_remove_app_scripts \"$PH_VALUE\"" ;;
+		PH_CMD="ph_remove_app_scripts '${PH_VALUE}'" ;;
 			  PH_CREATE_APPS_MENUS)
-		PH_CMD="ph_create_app_menus \"$PH_VALUE\"" ;;
+		PH_CMD="ph_create_app_menus '${PH_VALUE}'" ;;
 			  PH_REMOVE_APPS_MENUS)
-		PH_CMD="ph_remove_app_menus \"$PH_VALUE\"" ;;
+		PH_CMD="ph_remove_app_menus '${PH_VALUE}'" ;;
 			  PH_CREATE_APPS_ALLOWEDS)
-		PH_CMD="ph_create_app_alloweds \"$PH_VALUE\"" ;;
+		PH_CMD="ph_create_app_alloweds '${PH_VALUE}'" ;;
 			  PH_REMOVE_APPS_ALLOWEDS)
-		PH_CMD="ph_remove_app_alloweds \"$PH_VALUE\"" ;;
+		PH_CMD="ph_remove_app_alloweds '${PH_VALUE}'" ;;
 			  PH_CREATE_APPS_DEFAULTS)
-		PH_CMD="ph_create_app_defaults \"$PH_VALUE\"" ;;
+		PH_CMD="ph_create_app_defaults '${PH_VALUE}'" ;;
 			  PH_REMOVE_APPS_DEFAULTS)
-		PH_CMD="ph_remove_app_defaults \"$PH_VALUE\"" ;;
+		PH_CMD="ph_remove_app_defaults '${PH_VALUE}'" ;;
 			  PH_CREATE_APPS_DIR)
-		PH_CMD="ph_create_app_dir \"$PH_VALUE\"" ;;
+		PH_CMD="ph_create_app_dir '${PH_VALUE}'" ;;
 			  PH_REMOVE_APPS_DIR)
-		PH_CMD="ph_remove_app_dir \"$PH_VALUE\"" ;;
+		PH_CMD="ph_remove_app_dir '${PH_VALUE}'" ;;
 			  PH_CREATE_APPS_ITEMS)
 		PH_APP="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_PARAMS="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
-		PH_CMD="ph_create_app_items -a \"$PH_APP\" $PH_PARAMS" ;;
+		PH_CMD="ph_create_app_items -a '${PH_APP}' ${PH_PARAMS}" ;;
 			  PH_REMOVE_APPS_ITEMS)
 		PH_APP="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_PARAMS="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
-		PH_CMD="ph_remove_app_items -a \"$PH_APP\" $PH_PARAMS" ;;
+		PH_CMD="ph_remove_app_items -a '${PH_APP}' ${PH_PARAMS}" ;;
 			  PH_INSTALL_PKGS)
-		PH_CMD="ph_install_pkg \"$PH_VALUE\"" ;;
+		PH_CMD="ph_install_pkg '${PH_VALUE}'" ;;
 			  PH_REMOVE_PKGS)
-		PH_CMD="ph_remove_pkg \"$PH_VALUE\"" ;;
+		PH_CMD="ph_remove_pkg '${PH_VALUE}'" ;;
 			  PH_LOAD_MODULES)
-		PH_CMD="ph_load_kernel_module \"$PH_VALUE\"" ;;
+		PH_CMD="ph_load_kernel_module '${PH_VALUE}'" ;;
 			  PH_UNLOAD_MODULES)
-		PH_CMD="ph_unload_kernel_module \"$PH_VALUE\"" ;;
+		PH_CMD="ph_unload_kernel_module '${PH_VALUE}'" ;;
 			  PH_BOOTENV)
-		PH_CMD="ph_set_bootenv \"$PH_VALUE\"" ;;
+		PH_CMD="ph_set_bootenv '${PH_VALUE}'" ;;
 			  PH_GROUPS)
 		PH_APP_USER="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_APP_USER_GROUPS="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
-		PH_CMD="ph_set_user_group_membership -u \"$PH_APP_USER\" -g \"$PH_APP_USER_GROUPS\"" ;;
+		PH_CMD="ph_set_user_group_membership -u '${PH_APP_USER}' -g '${PH_APP_USER_GROUPS}'" ;;
 			PH_PIEH_VERSION)
-		PH_CMD="ph_update_pieh_version \"$PH_VALUE\"" ;;
+		PH_CMD="ph_update_pieh_version '${PH_VALUE}'" ;;
 			PH_STARTAPP)
-		PH_CMD="ph_set_app_for_start \"$PH_VALUE\"" ;;
+		PH_CMD="ph_set_app_for_start '${PH_VALUE}'" ;;
 			PH_CREATE_EMPTY_FILES)
 		PH_FILE_DEST="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_FILE_TYPE="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
 		PH_FILE_SOURCE="$(echo -n "$PH_VALUE" | cut -f3 -d\')"
 		PH_PARAMS="$(echo -n "$PH_VALUE" | cut -f4 -d\')"
-		PH_CMD="ph_create_empty_file $PH_PARAMS -t \"$PH_FILE_TYPE\" -d \"$PH_FILE_DEST\" -s \"$PH_FILE_SOURCE\"" ;;
+		PH_CMD="ph_create_empty_file -t '${PH_FILE_TYPE}' -d '${PH_FILE_DEST}' -s '${PH_FILE_SOURCE}' ${PH_PARAMS}" ;;
 			PH_REMOVE_EMPTY_FILES)
 		PH_FILE_DEST="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_FILE_TYPE="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
 		PH_PARAMS="$(echo -n "$PH_VALUE" | cut -f3 -d\')"
-		PH_CMD="ph_remove_empty_file $PH_PARAMS -t \"$PH_FILE_TYPE\" -d \"$PH_FILE_DEST\"" ;;
+		PH_CMD="ph_remove_empty_file -t '${PH_FILE_TYPE}' -d '${PH_FILE_DEST}' ${PH_PARAMS}" ;;
 			PH_UNSUP_APPS)
 		PH_APP="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_APP_PKG="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
-		PH_CMD="ph_unsupport_app -a \"$PH_APP\" -p \"$PH_APP_PKG\"" ;;
+		PH_CMD="ph_unsupport_app -a '${PH_APP}' -p '${PH_APP_PKG}'" ;;
 			PH_UNINT_APPS)
-		PH_CMD="ph_unintegrate_app -a \"$PH_VALUE\"" ;;
+		PH_CMD="ph_unintegrate_app -a '${PH_VALUE}'" ;;
 			PH_INT_APPS)
 		PH_APP="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_APP_USER="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
 		PH_APP_TTY="$(echo -n "$PH_VALUE" | cut -f3 -d\')"
-		PH_CMD="ph_integrate_app -a \"$PH_APP\" -u \"$PH_APP_USER\" -t \"$PH_APP_TTY\"" ;;
+		PH_CMD="ph_integrate_app -a '${PH_APP}' -u '${PH_APP_USER}' -t '${PH_APP_TTY}'" ;;
 			PH_SUP_APPS)
 		PH_APP="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_APP_INST_STATE="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
 		PH_APP_CMD="$(echo -n "$PH_VALUE" | cut -f3 -d\')"
 		PH_APP_PKG="$(echo -n "$PH_VALUE" | cut -f4 -d\')"
-		PH_CMD="ph_support_app -a \"$PH_APP\" -s \"$PH_APP_INST_STATE\" -c \"$PH_APP_CMD\" -p \"$PH_APP_PKG\"" ;;
+		PH_CMD="ph_support_app -a '${PH_APP}' -s '${PH_APP_INST_STATE}' -c '${PH_APP_CMD}' -p '${PH_APP_PKG}'" ;;
 			PH_RESTORE_FILES)
 		PH_FILE_SOURCE="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_PARAMS="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
-		PH_CMD="ph_restore_file $PH_PARAMS -f \"$PH_FILE_SOURCE\"" ;;
+		PH_CMD="ph_restore_file -f '${PH_FILE_SOURCE}' ${PH_PARAMS}" ;;
 			PH_STORE_FILES)
 		PH_FILE_SOURCE="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_PARAMS="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
-		PH_CMD="ph_store_file $PH_PARAMS -f \"$PH_FILE_SOURCE\"" ;;
+		PH_CMD="ph_store_file -f '${PH_FILE_SOURCE}' ${PH_PARAMS}" ;;
 			PH_STORE_OPTION)
-		PH_CMD="ph_store_option '$PH_VALUE'" ;;
+		PH_CMD="ph_store_option '${PH_VALUE}'" ;;
 			PH_RETRIEVE_STORED_OPTION)
-		PH_CMD="ph_retrieve_stored_option '$PH_VALUE'" ;;
+		PH_CMD="ph_retrieve_stored_option '${PH_VALUE}'" ;;
 			PH_VARIABLES)
 		PH_VAR_NAME="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_VAR_VALUE="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
-		PH_CMD="ph_set_variable -n \"$PH_VAR_NAME\" -v \"$PH_VAR_VALUE\"" ;;
+		PH_CMD="ph_set_variable -n '${PH_VAR_NAME}' -v '${PH_VAR_VALUE}'" ;;
 			PH_OPTIONS)
 		PH_APP="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 		PH_OPTION="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
 		PH_OPTION_VALUE="$(echo -n "$PH_VALUE" | cut -f3 -d\')"
-		PH_CMD="ph_set_option_to_value \"$PH_APP\" -r \"$PH_OPTION'$PH_OPTION_VALUE\"" ;;
+		PH_CMD="ph_set_option_to_value '${PH_APP}' -r \"${PH_OPTION}'${PH_OPTION_VALUE}\"" ;;
 			PH_CONFIGURED_STATE)
-		PH_CMD="ph_pieh_configured_\"$PH_VALUE\"_conf" ;;
+		PH_CMD="ph_pieh_configured_${PH_VALUE}_conf" ;;
 			PH_UNCONFIGURED_STATE)
-		PH_CMD="ph_pieh_unconfigured_\"$PH_VALUE\"_conf" ;;
+		PH_CMD="ph_pieh_unconfigured_${PH_VALUE}_conf" ;;
 	esac
 	unset PH_ARRAY2["$PH_ARRAY2_INDEX"]
 	unset PH_ROLLBACK_PARAMS["$PH_ARRAY_INDEX"]
@@ -3331,7 +3712,7 @@ do
 			printf "\033[36m%s\033[0m\n\n" "- Rolling back changes (Continued)"
 		fi
 	fi
-	eval $PH_CMD
+	eval "$PH_CMD"
 	PH_RET_CODE="$?"
 	if [[ "$PH_CMD" == @(conf*_ph|list*_ph|start*|stop*|restart*$PH_MOVE_SCRIPTS_REGEX).sh* ]]
 	then
@@ -3343,7 +3724,9 @@ do
 done
 if [[ -z "$PH_RUN_ACLS" && -z "$PH_RUN_SECURE" && -z "$PH_RUN_GIT_ADD_LOCAL" && -z "$PH_RUN_GIT_TAG_LOCAL" && -z "$PH_RUN_GIT_COMMIT_LOCAL" && -z "$PH_RUN_GIT_COMMIT_MASTER" ]]
 then
-	[[ "$PH_SCRIPT_FLAG" -eq "1" ]] && ph_show_result
+	[[ "$PH_SCRIPT_FLAG" -eq "1" ]] && \
+		unset PH_RUN_ACLS && \
+		ph_show_result
 else
 	if [[ "$PH_SCRIPT_FLAG" -eq "0" ]]
 	then
@@ -3362,13 +3745,17 @@ else
 	fi
 	if [[ -n "$PH_RUN_SECURE" ]]
 	then
-		ph_secure_pieh $(echo -n "$PH_RUN_SECURE" | cut -d\' -f2)
+		ph_secure_pieh
 	else
-		if [[ -n "$PH_RUN_ACLS" ]]
+		if [[ "${#PH_RUN_ACLS[@]}" -gt "0" ]]
 		then
-			ph_do_user_acls_action -p $(echo -n "$PH_RUN_ACLS" | cut -d\' -f1) $(echo -n "$PH_RUN_ACLS" | cut -d\' -f2)
+			for PH_i in $(echo -n "${PH_RUN_ACLS[@]}" | tac -s " ")
+			do
+				ph_user_acls -q -p "$(echo -n "$PH_i" | cut -d\' -f1)" -u $(echo -n "$PH_RUN_ACLS" | cut -d\' -f2)
+			done
 		fi
 	fi
+	unset PH_RUN_ACLS
 	[[ "$PH_RUN_GIT_ADD_LOCAL" == "yes" ]] && ph_undo_git_add_local
 	[[ "$PH_RUN_GIT_TAG_LOCAL" == "yes" ]] && ph_undo_git_tag_local
 	[[ "$PH_RUN_GIT_COMMIT_LOCAL" == "yes" ]] && ph_undo_git_commit_local
@@ -3405,12 +3792,12 @@ return 0
 
 function ph_copy_file {
 
-declare PH_OPTION=""
 declare PH_CMD=""
 declare PH_MSG=""
 declare PH_PARAMS=""
 declare PH_FILE_SOURCE=""
 declare PH_FILE_DEST=""
+declare PH_OPTION=""
 declare PH_OLDOPTARG="$OPTARG"
 declare -i PH_OLDOPTIND="$OPTIND"
 declare -i PH_QUIESCE="1"
@@ -3421,29 +3808,53 @@ OPTIND="1"
 while getopts s:d:mrq PH_OPTION 2>/dev/null
 do
 	case "$PH_OPTION" in s)
-			PH_FILE_SOURCE="$OPTARG" ;;
+		[[ -n "$PH_FILE_SOURCE" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_FILE_SOURCE="$OPTARG" ;;
 			     d)
-			PH_FILE_DEST="$OPTARG" ;;
+		[[ -n "$PH_FILE_DEST" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_FILE_DEST="$OPTARG" ;;
 			     r)
-			[[ -z "$PH_PARAMS" ]] && \
-				PH_PARAMS="-r" || \
-				PH_PARAMS="${PH_PARAMS} -r"
-			PH_COPY_AS_ROOT="0" ;;
+		echo "$PH_PARAMS" 2>/dev/null | grep -E "([[:space:]])*-r" >/dev/null && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		[[ -z "$PH_PARAMS" ]] && \
+			PH_PARAMS="-r" || \
+			PH_PARAMS="${PH_PARAMS} -r"
+		PH_COPY_AS_ROOT="0" ;;
 			     q)
-			[[ -z "$PH_PARAMS" ]] && \
-				PH_PARAMS="-q" || \
-				PH_PARAMS="${PH_PARAMS} -q"
-			PH_QUIESCE="0" ;;
+		echo "$PH_PARAMS" 2>/dev/null | grep -E "([[:space:]])*-q" >/dev/null && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		[[ -z "$PH_PARAMS" ]] && \
+			PH_PARAMS="-q" || \
+			PH_PARAMS="${PH_PARAMS} -q"
+		PH_QUIESCE="0" ;;
 			     m)
-			[[ -z "$PH_PARAMS" ]] && \
-				PH_PARAMS="-m" || \
-				PH_PARAMS="${PH_PARAMS} -m"
-			PH_MSG="Moving"
-			PH_CMD="mv" ;;
-	esac
+		[[ -n "$PH_MSG" ]] && \
+		[[ -z "$PH_PARAMS" ]] && \
+			PH_PARAMS="-m" || \
+			PH_PARAMS="${PH_PARAMS} -m"
+		PH_MSG="Moving"
+		PH_CMD="mv" ;;
+			     *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+        esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
+
+[[ -z "$PH_FILE_SOURCE" || -z "$PH_FILE_DEST" || "$#" -lt "4" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 [[ -z "$PH_CMD" ]] && \
 	PH_CMD="cp -p" && \
@@ -3451,22 +3862,23 @@ OPTARG="$PH_OLDOPTARG"
 [[ "$PH_COPY_AS_ROOT" -eq "0" ]] && \
 	PH_CMD="${PH_SUDO} ${PH_CMD}"
 [[ "$PH_QUIESCE" -eq "1" ]] && \
-	printf "%8s%s\n" "" "--> ${PH_MSG} file '${PH_FILE_SOURCE}' to '${PH_FILE_DEST}'"
-if $PH_CMD "$PH_FILE_SOURCE" "$PH_FILE_DEST" 2>/dev/null
+	printf "%8s%s\n" "" "--> ${PH_MSG} '${PH_FILE_SOURCE}' to '${PH_FILE_DEST}'"
+if "$PH_CMD" "$PH_FILE_SOURCE" "$PH_FILE_DEST" 2>/dev/null
 then
 	ph_add_value_to_param -p PH_COPY_FILES -v "${PH_FILE_SOURCE}'${PH_FILE_DEST}'${PH_PARAMS}"
 	[[ "$PH_QUIESCE" -eq "1" ]] && \
 		ph_run_with_rollback -c true
 	return 0
 else
+	[[ "$PH_MSG" == "Moving" ]] && \
+		PH_MSG="move" || \
+		PH_MSG="copy"
+	ph_set_result -m "An error occurred trying to ${PH_MSG} '${PH_FILE_SOURCE}' to '${PH_FILE_DEST}'"
 	if [[ "$PH_QUIESCE" -eq "1" ]]
 	then
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not $([[ "$PH_MSG" == "Moving" ]] && echo -n move || echo -n copy) file"
-		ph_run_with_rollback -c false || \
-			return 1
-	else
-		return 1
+		ph_run_with_rollback -c false -m "Could not ${PH_MSG}"
 	fi
+	return 1
 fi
 }
 
@@ -3475,11 +3887,11 @@ function ph_pieh_configured_logind_conf {
 declare PH_i=""
 declare -i PH_VALUE="0"
 
-ph_run_with_rollback -c "ph_copy_file -r -s \"/etc/systemd/logind.conf\" -d \"${PH_FILES_DIR}/logind_conf\"" || \
+ph_run_with_rollback -c "ph_copy_file -r -s '/etc/systemd/logind.conf' -d '${PH_FILES_DIR}/logind_conf'" || \
 	return 1
 for PH_i in NAutoVTs ReserveVT
 do
-	if grep ^"${PH_i}" /etc/systemd/logind.conf >/dev/null 2>&1
+	if grep -E "^${PH_i}=" /etc/systemd/logind.conf >/dev/null 2>&1
 	then
 		printf "%8s%s\n" "" "--> Changing existing override value for '${PH_i}' in system file '/etc/systemd/logind.conf'"
 		if ! ph_run_with_rollback -c "ph_remove_line_from_file -r -f \"/etc/systemd/logind.conf\" -l \"${PH_i}=.*\""
@@ -3501,7 +3913,7 @@ do
 			fi
 		fi
 	fi
-	if grep ^"#${PH_i}" /etc/systemd/logind.conf >/dev/null 2>&1
+	if grep -E "^#${PH_i}=" /etc/systemd/logind.conf >/dev/null 2>&1
 	then
 		printf "%8s%s\n" "" "--> Overriding default value for '${PH_i}' in system file '/etc/systemd/logind.conf'"
 		if ! ph_run_with_rollback -c "ph_remove_line_from_file -r -f \"/etc/systemd/logind.conf\" -l \"#${PH_i}=.*\""
@@ -3532,9 +3944,9 @@ function ph_pieh_unconfigured_logind_conf {
 
 [[ ! -f "${PH_FILES_DIR}/logind_conf" ]] && \
 	return 0
-ph_run_with_rollback -c "ph_copy_file -r -s \"${PH_FILES_DIR}/logind_conf\" -d \"/etc/systemd/logind.conf\"" || \
+ph_run_with_rollback -c "ph_copy_file -r -s '${PH_FILES_DIR}/logind_conf' -d '/etc/systemd/logind.conf'" || \
 	return 1
-ph_add_value_to_param -p PH_CONFIGURED_STATE -v "logind"
+ph_add_value_to_param -p PH_CONFIGURED_STATE -v logind
 return 0
 }
 
@@ -3564,6 +3976,7 @@ OPTIND="2"
 
 [[ -z "$PH_APP" ]] && \
 	return 1
+
 ([[ -f "${PH_CONF_DIR}/${PH_APP}.conf" && "$#" -gt "1" ]] ; return "$?") || \
 	ph_set_option_to_value PieHelper -h && \
 	while getopts o:r:h PH_OPTION 2>/dev/null
@@ -3573,9 +3986,13 @@ do
 			     r)
 			export PH_MSG_TYPE="ERROR" ;;
 			     *)
-			((PH_RET_CODE++))
-			break ;;
+			((PH_RET_CODE++)) ;;
 	esac
+	if [[ "$PH_RET_CODE" -ne "0" ]]
+	then
+		ph_run_with_rollback -c false -m "Could not set"
+		break
+	fi
 	PH_OLD_SET_FLAG="1"
 	PH_OPTARG_VAR="$(echo -n "$OPTARG" | nawk 'BEGIN { \
 			FS = "\x27" \
@@ -3591,13 +4008,14 @@ do
 	then
 		if ! grep -E "^${PH_OPTARG_VAR}=" "${PH_CONF_DIR}/${PH_APP}.conf" >/dev/null
 		then
-			printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Setting 'read-only' option '${PH_OPTARG_VAR}' to value " "'${PH_OPTARG_VAL}'" " in '${PH_CONF_DIR}/${PH_APP}.conf'"
+			printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Setting option '${PH_OPTARG_VAR}' to " "'${PH_OPTARG_VAL}'" " in '${PH_CONF_DIR}/${PH_APP}.conf'"
 			if [[ "$PH_MSG_TYPE" == "ERROR" ]]
 			then
 				((PH_RET_CODE++))
-				printf "%10s\033[31m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set 'read-only' option"
+				ph_set_result -m "Variable '${PH_OPTARG_VAR}' is a read-only variable (Value cannot be changed)"
 			else
-				printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set 'read-only' option -> Skipping"
+				printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set ('${PH_OPTARG_VAR}' is read-only) -> Skipping"
+				ph_set_result -r 0
 			fi
 			continue
 		fi
@@ -3610,10 +4028,7 @@ do
 		do
 			if [[ "$(declare -p "OLD_${PH_j}${PH_i}" 2>/dev/null)" != "declare -x "* ]]
 			then
-				export "OLD_${PH_j}${PH_i}"
-				! ph_run_with_rollback -c "ph_set_variable -n 'OLD_${PH_j}${PH_i}' -v '$(eval "echo -n \"\$${PH_j}${PH_i}\"")'" && \
-					((PH_RET_CODE++)) && \
-					break 2
+				export "OLD_${PH_j}${PH_i}"="$(eval "echo -n \"\$${PH_j}${PH_i}\"")"
 			else
 				[[ "$PH_OPTARG_VAR" == *"${PH_i}" ]] && \
 					PH_OLD_SET_FLAG="0"
@@ -3636,39 +4051,39 @@ do
 		done
 		if [[ "$PH_OPTARG_VAL" == "$PH_CURVALUE" ]]
 		then
-			printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Setting 'read-write' option '${PH_OPTARG_VAR}' to value " "'${PH_OPTARG_VAL}'" " in '${PH_CONF_DIR}/${PH_APP}.conf'"
-			printf "%10s\033[32m%s\033[0m\n" "" "OK (Nothing to do)"
+			printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Setting option '${PH_OPTARG_VAR}' to " "'${PH_OPTARG_VAL}'" " in '${PH_CONF_DIR}/${PH_APP}.conf'"
+			ph_run_with_rollback -c true -m "Nothing to do"
 			continue
 		fi
 		if [[ "$PH_OPTARG_VAR" == "PH_MOON_USE_CTRL" && "$PH_OPTARG_VAL" == "no" ]]
 		then
-			printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Setting 'read-write' option '${PH_OPTARG_VAR}' to value " "'${PH_OPTARG_VAL}'" " in '${PH_CONF_DIR}/${PH_APP}.conf'"
+			printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Setting option '${PH_OPTARG_VAR}' to " "'${PH_OPTARG_VAL}'" " in '${PH_CONF_DIR}/${PH_APP}.conf'"
 			if [[ "$PH_MSG_TYPE" == "ERROR" ]]
 			then
-				printf "%10s\033[31m%s\033[0m\n" "" "${PH_MSG_TYPE} : '${PH_APP}' Requires controller usage"
 				((PH_RET_CODE++))
-				break
+				ph_set_result -m "The new value '${PH_OPTARG_VAL}' for option '${PH_OPTARG_VAR}' is invalid since '${PH_APP}' requires at least one controller"
 			else
-				printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : '${PH_APP}' Requires controller usage -> Skipping"
+				printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set ('${PH_APP}' requires at least one controller) -> Skipping"
+				ph_set_result -r 0
 			fi
 			continue
 		fi
-		if [[ "$PH_OPTARG_VAR" == "PH_MOON_CMD_OPTS" && "$(echo -n "$PH_OPTARG_VAL" | grep -E " /dev/input/eventPH_CTRL[1-4]" >/dev/null ; echo "$?")" -ne "0" ]]
+		if [[ "$PH_OPTARG_VAR" == "PH_MOON_CMD_OPTS" && "$(echo -n "$PH_OPTARG_VAL" | grep -E "+([[:space:]])/dev/input/eventPH_CTRL[1-4]" >/dev/null ; echo "$?")" -ne "0" ]]
 		then
-			printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Setting 'read-write' option '${PH_OPTARG_VAR}' to value " "'${PH_OPTARG_VAL}'" " in '${PH_CONF_DIR}/${PH_APP}.conf'"
+			printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Setting option '${PH_OPTARG_VAR}' to " "'${PH_OPTARG_VAL}'" " in '${PH_CONF_DIR}/${PH_APP}.conf'"
 			if [[ "$PH_MSG_TYPE" == "ERROR" ]]
 			then
-				printf "%10s\033[31m%s\033[0m\n" "" "${PH_MSG_TYPE} : '${PH_OPTARG_VAR}' Requires Controller CLI IDs"
 				((PH_RET_CODE++))
-				break
+				ph_set_result -m "New value '${PH_OPTARG_VAL}' for option '${PH_OPTARG_VAR}' is invalid since no controller ID arguments were found"
 			else
-				printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : '${PH_OPTARG_VAR}' Requires Controller CLI IDs -> Skipping"
+				printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set (The value must contain controller ID arguments) -> Skipping"
+				ph_set_result -r 0
 			fi
 			continue
 		fi
 		if grep -E "^${PH_OPTARG_VAR}:" "${PH_CONF_DIR}/options.alloweds" >/dev/null 2>&1
 		then
-			printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Checking '${PH_OPTARG_VAR}' value " "'${PH_OPTARG_VAL}'" " against allowed values"
+			printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Checking if the new value " "'${PH_OPTARG_VAL}'" " for option '${PH_OPTARG_VAR}' is allowed"
 			PH_OPT_DEFS="$(grep -E "^${PH_OPTARG_VAR}:" "${PH_CONF_DIR}/options.alloweds" 2>/dev/null | cut -d":" -f2)"
 			PH_OPT_REGEX="$(grep -E "^${PH_OPTARG_VAR}:" "${PH_CONF_DIR}/options.alloweds" 2>/dev/null | cut -d":" -f3-)"
 			if [[ ${PH_OPT_REGEX} ]]
@@ -3681,126 +4096,129 @@ do
 				then
 					if [[ "$PH_MSG_TYPE" == "ERROR" ]]
 					then
-						printf "%10s\033[31m%s\033[0m\n" "" "${PH_MSG_TYPE} : Invalid value (Not '${PH_OPT_DEFS}')"
 						((PH_RET_CODE++))
-						break
+						ph_set_result -m "New value '${PH_OPTARG_VAL}' for option '${PH_OPTARG_VAR}' is invalid since not '${PH_OPT_DEFS}')"
 					else
-						printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Invalid value (Not '${PH_OPT_DEFS}') -> Skipping"
+						printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set (Invalid value since not '${PH_OPT_DEFS}') -> Skipping"
+						ph_set_result -r 0
 					fi
 					continue
 				else
-       					printf "%10s\033[32m%s\033[0m\n" "" "OK"
+					ph_run_with_rollback -c true
 				fi
 		fi
-		if [[ "$PH_OPTARG_VAR" == "PH_${PH_APPU}_CIFS_MPT" && ! -d "$(eval echo -n \""${PH_OPTARG_VAL}\"")" ]]
+		if [[ "$PH_OPTARG_VAR" == "PH_${PH_APPU}_CIFS_MPT" && -n "$(ph_get_app_cifs_mpt -a '${PH_APP}' -r)" ]]
 		then
+			printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Setting option '${PH_OPTARG_VAR}' to " "'${PH_OPTARG_VAL}'" " in '${PH_CONF_DIR}/${PH_APP}.conf'"
 			if [[ "$(mount 2>/dev/null | nawk -v mstring="^$(ph_get_app_cifs_mpt -a "$PH_APP" -r)$" '$3 ~ mstring { \
 					print \
 				} { \
 					next \
 				}' | wc -l)" -gt "0" ]]
 			then
-				printf "%8s%s\n" "" "--> Creating non-default CIFS mountpoint '$(eval echo -n \""${PH_OPTARG_VAL}\"")' for '${PH_APP}'"
 				if [[ "$PH_MSG_TYPE" == "ERROR" ]]
 				then
-					printf "%10s\033[31m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not create directory (Refusing to unmount previous mountpoint while active)"
 					((PH_RET_CODE++))
-					break
+					ph_set_result -m "The current mountpoint '$(ph_get_app_cifs_mpt -a "$PH_APP" -r)' cannot be active when changing mountpoints for '${PH_APP}'"
 				else
-					printf "%10s\033[31m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not create directory (Previous mountpoint still active) -> Skipping"
+					printf "%10s\033[31m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set (The old mountpoint is still active) -> Skipping"
+					ph_set_result -r 0
 				fi
 				continue
-			else
-				if ph_run_with_rollback -c "ph_create_app_dir -a '$PH_APP'"
-				then
-					printf "%8s%s\n" "" "--> Removing old '${PH_APP}' mountpoint '$(ph_get_app_cifs_mpt -a "$PH_APP" -r)'"
-					if ph_run_with_rollback -c "ph_remove_empty_file -r -q -t directory -d '$(ph_get_app_cifs_mpt -a "$PH_APP" -r)'"
-					then
-       						printf "%10s\033[32m%s\033[0m\n" "" "OK"
-						ph_set_result -r 0
-					else
-						if [[ "$PH_MSG_TYPE" == "ERROR" ]]
-						then
-							printf "%10s\033[31m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not remove directory"
-							((PH_RET_CODE++))
-							break
-						else
-							printf "%10s\033[31m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not remove directory -> Skipping"
-						fi
-					fi	
-				else
-					printf "%8s%s\n" "" "--> Creating non-default CIFS mountpoint '${PH_OPTARG_VAL}' for '${PH_APP}'"
-					if [[ "$PH_MSG_TYPE" == "ERROR" ]]
-					then
-						printf "%10s\033[31m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not create directory"
-						((PH_RET_CODE++))
-						break
-					else
-						printf "%10s\033[31m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not create directory -> Skipping"
-					fi
-					continue
-				fi
 			fi
 		fi
 	fi
-	printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Setting 'read-write' option '${PH_OPTARG_VAR}' to value " "'${PH_OPTARG_VAL}'" " in '${PH_CONF_DIR}/${PH_APP}.conf'"
-	if ph_run_with_rollback -c "ph_store_file -c -f '${PH_CONF_DIR}/${PH_APP}.conf'"
+	printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Setting option '${PH_OPTARG_VAR}' to " "'${PH_OPTARG_VAL}'" " in '${PH_CONF_DIR}/${PH_APP}.conf'"
+	PH_OPTARG_VAL="$(ph_do_escape_paths "$PH_OPTARG_VAL")"
+	if ! sed -i 's/^\('"${PH_OPTARG_VAR}"'=\)\([^\t]*\)\(\t*#.*\)/\1'\'"${PH_OPTARG_VAL}"\''\3/' "${PH_CONF_DIR}/${PH_APP}.conf" 2>/dev/null
 	then
-		PH_OPTARG_VAL="$(ph_do_escape_paths "$PH_OPTARG_VAL")"
-		if ! sed -i 's/^\('"${PH_OPTARG_VAR}"'=\)\([^\t]*\)\(\t*#.*\)/\1'\'"${PH_OPTARG_VAL}"\''\3/' "${PH_CONF_DIR}/${PH_APP}.conf" 2>/dev/null
-		then
-			PH_OPTARG_VAL="$(ph_undo_escape_paths "$PH_OPTARG_VAL")"
-			if [[ "$PH_MSG_TYPE" == "ERROR" ]]
-			then
-				printf "%10s\033[31m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set value"
-				((PH_RET_CODE++))
-				break
-			else
-				printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set value"
-			fi
-			continue
-		fi
 		PH_OPTARG_VAL="$(ph_undo_escape_paths "$PH_OPTARG_VAL")"
-		if [[ "$PH_APP" != "LoginScript" ]]
+		if [[ "$PH_MSG_TYPE" == "ERROR" ]]
 		then
-			if ! ph_run_with_rollback -c "ph_set_variable -n '${PH_OPTARG_VAR}' -v '${PH_OPTARG_VAL}'"
+			((PH_RET_CODE++))
+			ph_set_result -m "An error occurred trying to change the value of option '${PH_OPTARG_VAR}' in '${PH_CONF_DIR}/${PH_APP}.conf' to '${PH_OPTARG_VAL}'"
+		else
+			printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set"
+			ph_set_result -r 0
+		fi
+		continue
+	fi
+	PH_OPTARG_VAL="$(ph_undo_escape_paths "$PH_OPTARG_VAL")"
+	if [[ "$PH_APP" != "LoginScript" ]]
+	then
+		PH_CURVALUE="$PH_OPTARG_VAL"
+		ph_add_value_to_param -p PH_OPTIONS -v "${PH_APP}'${PH_OPTARG_VAR}'${PH_OLDVALUE}"
+		ph_run_with_rollback -c true
+		if [[ "$PH_OPTARG_VAR" == "PH_${PH_APPU}_CIFS_MPT" ]]
+		then
+			if [[ -n "$(eval "echo -n \"${PH_OPTARG_VAL}\"")" && ! -d "$(eval "echo -n \"${PH_OPTARG_VAL}\"")" ]]
 			then
-				if [[ "$PH_MSG_TYPE" == "ERROR" ]]
+				if ! ph_run_with_rollback -c "ph_create_app_dir '${PH_APP}'"
 				then
-					printf "%10s\033[31m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set value"
 					((PH_RET_CODE++))
 					break
-				else
-					printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set value"
 				fi
-				continue
 			fi
-			printf "%10s\033[32m%s\033[0m\n" "" "OK"
-			ph_add_value_to_param -p PH_OPTIONS -v "${PH_APP}'${PH_OPTARG_VAR}'$(eval "echo -n \"\$OLD_${PH_OPTARG_VAR}\"")"
-			if [[ "$PH_OPTARG_VAR" == "PH_${PH_APPU}_NUM_CTRL" && "$(echo -n "$PH_CURVALUE_CMD_OPTS" | grep -E " /dev/input/eventPH_CTRL[1-4]" >/dev/null ; echo "$?")" -eq "0" ]]
+			if [[ -n "$(eval "echo -n \"${PH_OLDVALUE}\"")" && -d "$(eval "echo -n \"${PH_OLDVALUE}\"")" && \
+				"$("$PH_SUDO" find "$(eval "echo -n \"${PH_OLDVALUE}\"")" -maxdepth 1 ! -wholename "$(eval "echo -n \"${PH_OLDVALUE}\"")" 2>/dev/null | wc -l)" -eq "0" ]]
 			then
-				PH_END="$PH_OPTARG_VAL"
-				PH_NOW="$(echo -n "$PH_CURVALUE_CMD_OPTS" | nawk 'BEGIN { \
-						count=0 \
-					} { \
-						for (i=1;i<=NF;i++) { \
-							if ($i ~ "/dev/input/eventPH_CTRL.") { \
-								count++ \
-							} \
-						} \
-					} END { \
-						print count \
-					}' 2>/dev/null)"
-				if [[ "$PH_END" -ne "$PH_NOW" ]]
+				if ! ph_run_with_rollback -c "ph_remove_empty_file -r -t directory -d '$(eval "echo -n \"${PH_OLDVALUE}\"")'"
 				then
-					if [[ "$PH_NOW" -gt "$PH_END" ]]
-					then
-						PH_NEWVALUE="$(echo -n "$PH_CURVALUE_CMD_OPTS" | nawk -v curval="$PH_NOW" 'BEGIN { \
-								ORS = \"\" ; \
-								compare = "/dev/input/eventPH_CTRL"curval \
+					((PH_RET_CODE++))
+					break
+				fi
+			fi
+		fi
+		if [[ "$PH_OPTARG_VAR" == "PH_${PH_APPU}_NUM_CTRL" && "$(echo -n "$PH_CURVALUE_CMD_OPTS" | grep -E "+([[:space:]])/dev/input/eventPH_CTRL[1-4]" >/dev/null ; echo "$?")" -eq "0" ]]
+		then
+			PH_END="$PH_OPTARG_VAL"
+			PH_NOW="$(echo -n "$PH_CURVALUE_CMD_OPTS" | nawk 'BEGIN { \
+					count=0 \
+				} { \
+					for (i=1;i<=NF;i++) { \
+						if ($i ~ /\/dev\/input\/eventPH_CTRL(1|2|3|4)/) { \
+							count++ \
+						} \
+					} \
+				} END { \
+					print count \
+				}' 2>/dev/null)"
+			if [[ "$PH_END" -ne "$PH_NOW" ]]
+			then
+				if [[ "$PH_NOW" -gt "$PH_END" ]]
+				then
+					PH_NEWVALUE="$(echo -n "$PH_CURVALUE_CMD_OPTS" | nawk -v curval="$PH_NOW" 'BEGIN { \
+							ORS = \"\" ; \
+							compare = "/dev/input/eventPH_CTRL"curval \
+						} { \
+							for (i=1;i<=NF;i++) { \
+								if ($(i+1) !~ compare && $i !~ compare) { \
+									print $i ; \
+									if (i<(NF-2)) { \
+										print \" \" \
+									} \
+								} \
+							} \
+						}' 2>/dev/null)"
+					while [[ "$((PH_NOW-1))" -gt "$PH_END" ]]
+					do
+						PH_NOW="$(echo -n "$PH_NEWVALUE" | nawk 'BEGIN { \
+								count=0 \
 							} { \
 								for (i=1;i<=NF;i++) { \
-									if ($(i+1) !~ compare && $i !~ compare) { \
+									if ($i ~ /\/dev\/input\/eventPH_CTRL(1|2|3|4)/) { \
+										count++ \
+									} \
+								} \
+							} END { \
+								print count \
+							}' 2>/dev/null)"
+						PH_NEWVALUE="$(echo -n "$PH_NEWVALUE" | nawk -v curval="$PH_NOW" 'BEGIN { \
+								ORS = \"\" ; \
+								compval = "/dev/input/eventPH_CTRL"curval \
+							} { \
+								for (i=1;i<=NF;i++) { \
+									if ($(i+1) !~ compval && $i !~ compval) { \
 										print $i ; \
 										if (i<(NF-2)) { \
 											print \" \" \
@@ -3808,35 +4226,50 @@ do
 									} \
 								} \
 							}' 2>/dev/null)"
-						while [[ "$((PH_NOW-1))" -gt "$PH_END" ]]
-						do
-							PH_NOW="$(echo -n "$PH_NEWVALUE" | nawk 'BEGIN { \
-									count=0 \
-								} { \
-									for (i=1;i<=NF;i++) { \
-										if ($i ~ "/dev/input/eventPH_CTRL.") { \
-											count++ \
+					done
+				else
+					PH_NEWVALUE="$(echo -n "$PH_CURVALUE_CMD_OPTS" | nawk -v curval="$PH_NOW" 'BEGIN { \
+							ORS = \"\" ; \
+							ind = 0 ; \
+							compval = "/dev/input/eventPH_CTRL"curval ; \
+							printval = "/dev/input/eventPH_CTRL"(curval+1) \
+						} { \
+							for (i=1;i<=NF;i++) { \
+								if ($(i+1) ~ compval) { \
+									param = $i ; \
+									ind = i ; \
+									print $i \" \" \
+								} else { \
+									if (i==NF) { \
+										if (i==(ind+1)) { \
+											print $i \" \" param \" \" printval \
+										} else { \
+											print $i \
+										} \
+									} else { \
+										if (i==(ind+1) && ind>0) { \
+											print $i \" \" param \" \" printval \" \" \
+										} else { \
+											print $i \" \" \
 										} \
 									} \
-								} END { \
-									print count \
-								}' 2>/dev/null)"
-							PH_NEWVALUE="$(echo -n "$PH_NEWVALUE" | nawk -v curval="$PH_NOW" 'BEGIN { \
-									ORS = \"\" ; \
-									compval = "/dev/input/eventPH_CTRL"curval \
-								} { \
-									for (i=1;i<=NF;i++) { \
-										if ($(i+1) !~ compval && $i !~ compval) { \
-											print $i ; \
-											if (i<(NF-2)) { \
-												print \" \" \
-											} \
-										} \
+								} \
+							} \
+						}' 2>/dev/null)"
+					while [[ "$((PH_NOW+1))" -lt "$PH_END" ]]
+					do
+						PH_NOW="$(echo -n "$PH_NEWVALUE" | nawk 'BEGIN { \
+								count=0 \
+							} { \
+								for (i=1;i<=NF;i++) { \
+									if ($i ~ /\/dev\/input\/eventPH_CTRL(1|2|3|4)/) { \
+										count++ \
 									} \
-								}' 2>/dev/null)"
-						done
-					else
-						PH_NEWVALUE="$(echo -n "$PH_CURVALUE_CMD_OPTS" | nawk -v curval="$PH_NOW" 'BEGIN { \
+								} \
+							} END { \
+								print count \
+							}' 2>/dev/null)"
+						PH_NEWVALUE="$(echo -n "$PH_NEWVALUE" | nawk -v curval="$PH_NOW" 'BEGIN { \
 								ORS = \"\" ; \
 								ind = 0 ; \
 								compval = "/dev/input/eventPH_CTRL"curval ; \
@@ -3864,104 +4297,54 @@ do
 									} \
 								} \
 							}' 2>/dev/null)"
-						while [[ "$((PH_NOW+1))" -lt "$PH_END" ]]
-						do
-							PH_NOW="$(echo -n "$PH_NEWVALUE" | nawk 'BEGIN { \
-									count=0 \
-								} { \
-									for (i=1;i<=NF;i++) { \
-										if ($i ~ "/dev/input/eventPH_CTRL.") { \
-											count++ \
-										} \
-									} \
-								} END { \
-									print count \
-								}' 2>/dev/null)"
-							PH_NEWVALUE="$(echo -n "$PH_NEWVALUE" | nawk -v curval="$PH_NOW" 'BEGIN { \
-									ORS = \"\" ; \
-									ind = 0 ; \
-									compval = "/dev/input/eventPH_CTRL"curval ; \
-									printval = "/dev/input/eventPH_CTRL"(curval+1) \
-								} { \
-									for (i=1;i<=NF;i++) { \
-										if ($(i+1) ~ compval) { \
-											param = $i ; \
-											ind = i ; \
-											print $i \" \" \
-										} else { \
-											if (i==NF) { \
-												if (i==(ind+1)) { \
-													print $i \" \" param \" \" printval \
-												} else { \
-													print $i \
-												} \
-											} else { \
-												if (i==(ind+1) && ind>0) { \
-													print $i \" \" param \" \" printval \" \" \
-												} else { \
-													print $i \" \" \
-												} \
-											} \
-										} \
-									} \
-								}' 2>/dev/null)"
-						done
-					fi
-					if ! ph_run_with_rollback -c "ph_set_option_to_value '${PH_APP}' -r 'PH_${PH_APPU}_CMD_OPTS\'${PH_NEWVALUE}'"
-					then
-						((PH_RET_CODE++))
-						break
-					fi
+					done
 				fi
-			fi
-			if [[ "$PH_OPTARG_VAR" == "PH_${PH_APPU}_CMD_OPTS" && "$(echo -n "$PH_OPTARG_VAL" | grep -E " /dev/input/eventPH_CTRL[1-4]" >/dev/null ; echo "$?")" -eq "0" ]]
-			then
-				PH_NEWVALUE="$(echo -n "$PH_OPTARG_VAL" | nawk 'BEGIN { \
-						count=0 \
-					} { \
-						for (i=1;i<=NF;i++) { \
-							if ($i ~ "/dev/input/eventPH_CTRL.") { \
-								count++ \
-							} \
-						} \
-					} END { \
-						print count \
-					}' 2>/dev/null)"
-				if [[ "$PH_CURVALUE_NUM_CTRL" != "$PH_NEWVALUE" ]]
+				if ! ph_run_with_rollback -c "ph_set_option_to_value '${PH_APP}' -r \"PH_${PH_APPU}_CMD_OPTS'${PH_NEWVALUE}\""
 				then
-					if ! ph_run_with_rollback -c "ph_set_option_to_value '${PH_APP}' -r 'PH_${PH_APPU}_NUM_CTRL\'${PH_NEWVALUE}'"
-					then
-						((PH_RET_CODE++))
-						break
-					fi
+					((PH_RET_CODE++))
+					break
 				fi
 			fi
-			[[ "$PH_OLD_SET_FLAG" -eq "1" ]] && \
-				export "OLD_${PH_OPTARG_VAR}"="${PH_OPTARG_VAL}"
-		else
-			ph_add_value_to_param -p PH_OPTIONS -v "${PH_APP}'${PH_OPTARG_VAR}'"
-			ph_run_with_rollback -c true
+		fi
+		if [[ "$PH_OPTARG_VAR" == "PH_${PH_APPU}_CMD_OPTS" && "$(echo -n "$PH_OPTARG_VAL" | grep -E "+([[:space:]])/dev/input/eventPH_CTRL[1-4]" >/dev/null ; echo "$?")" -eq "0" ]]
+		then
+			PH_NEWVALUE="$(echo -n "$PH_OPTARG_VAL" | nawk 'BEGIN { \
+					count=0 \
+				} { \
+					for (i=1;i<=NF;i++) { \
+						if ($i ~ /\/dev\/input\/eventPH_CTRL(1|2|3|4)/) { \
+							count++ \
+						} \
+					} \
+				} END { \
+					print count \
+				}' 2>/dev/null)"
+			if [[ "$PH_CURVALUE_NUM_CTRL" != "$PH_NEWVALUE" ]]
+			then
+				if ! ph_run_with_rollback -c "ph_set_option_to_value '${PH_APP}' -r \"PH_${PH_APPU}_NUM_CTRL'${PH_NEWVALUE}\""
+				then
+					((PH_RET_CODE++))
+					break
+				fi
+			fi
+		fi
+		if [[ "$PH_OLD_SET_FLAG" -eq "1" ]]
+		then
+			export "OLD_${PH_OPTARG_VAR}"="$PH_OPTARG_VAL"
 		fi
 	else
-		if [[ "$PH_MSG_TYPE" == "ERROR" ]]
-		then
-			printf "%10s\033[31m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set value"
-			((PH_RET_CODE++))
-			break
-		else
-			printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set value"
-		fi
-		continue
+		ph_add_value_to_param -p PH_OPTIONS -v "${PH_APP}'${PH_OPTARG_VAR}'"
+		ph_run_with_rollback -c true
 	fi
 done
 [[ "$OPTIND" -eq "2" ]] && \
 	PH_RET_CODE="1"
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
-
 if [[ "$PH_APP" != "LoginScript" ]]
 then
-	ph_secure_pieh -q -t delayed -f "${PH_CONF_DIR}/${PH_APP}.conf"
+	ph_run_with_rollback -c "ph_secure_pieh -q -t delayed -f '${PH_CONF_DIR}/${PH_APP}.conf'" || \
+		return 1
 	if [[ "$PH_OLD_SET_FLAG" -eq "1" ]]
 	then
 		unset "OLD_${PH_OPTARG_VAR}" "OLD_PH_${PH_APPU}_NUM_CTRL" "OLD_PH_${PH_APPU}_USE_CTRL" "OLD_PH_${PH_APPU}_CMD_OPTS"
@@ -4041,7 +4424,7 @@ return "$PH_RET_CODE"
 
 function ph_screen_input {
 
-if [[ "$(echo "$*" | sed 's/[ ,/.]//g')" == *+([![:word:]])* ]] 2>/dev/null
+if [[ "$(echo "$*" | sed 's/[ ,/.]//g')" == *+([![:word:]])* ]]
 then
 	ph_set_result -a -m "Invalid input characters detected"
 fi
@@ -4053,42 +4436,45 @@ function ph_pieh_unconfigured_emul_conf {
 declare PH_i=""
 declare PH_MSG="configuration"
 
-[[ ! -f "$PH_FILES_DIR"/10-retropie_sh && ! -f "$PH_FILES_DIR"/autologin_conf ]] && return 0
-[[ -f "$PH_FILES_DIR"/10-retropie_sh && ! -f "$PH_FILES_DIR"/autologin_conf ]] && return 1
-[[ ! -f "$PH_FILES_DIR"/10-retropie_sh && -f "$PH_FILES_DIR"/autologin_conf ]] && return 1
+[[ ! -f "${PH_FILES_DIR}/10-retropie_sh" && ! -f "${PH_FILES_DIR}/autologin_conf" ]] && \
+	return 0
+[[ ( -f "${PH_FILES_DIR}/10-retropie_sh" && ! -f "${PH_FILES_DIR}/autologin_conf" ) || \
+	( ! -f "${PH_FILES_DIR}/10-retropie_sh" && -f "${PH_FILES_DIR}/autologin_conf" ) ]] && \
+	return 1
 for PH_i in 10-retropie_sh autologin_conf
 do
 	if [[ "$PH_i" == "autologin_conf" ]]
 	then
-		PH_MSG="TTY $PH_MSG"
-		printf "%8s%s\n" "" "--> Restoring 'Emulationstation' 'StartApp' $PH_MSG"
+		PH_MSG="TTY ${PH_MSG}"
+		printf "%8s%s\n" "" "--> Restoring Emulationstation StartApp ${PH_MSG}"
 		if ph_run_with_rollback -c "ph_create_empty_file -r -q -t directory -d \"/etc/systemd/system/getty@tty1.service.d\""
 		then
-			if ph_run_with_rollback -c "ph_copy_file -r -m -q -s \"$PH_FILES_DIR/$PH_i\" -d \"/etc/systemd/system/getty@tty1.service.d/$(sed 's/_/\./g' <<<"$PH_i")\""
+			if ph_run_with_rollback -c "ph_copy_file -r -m -q -s '${PH_FILES_DIR}/${PH_i}' -d '/etc/systemd/system/getty@tty1.service.d/$(sed 's/_/\./g' <<<"$PH_i")'"
 			then
 				if systemctl is-disabled getty@tty1 >/dev/null 2>&1
 				then
 					if ph_run_with_rollback -c "ph_enable_app_tty 1"
 					then
-						ph_run_with_rollback -c "true"
+						ph_run_with_rollback -c true
 						continue
 					fi
 				fi
 			fi
 		fi
 	else
-		PH_MSG="LoginScript $PH_MSG"
-		printf "%8s%s\n" "" "--> Restoring 'Emulationstation' 'StartApp' $PH_MSG"
-		if ph_run_with_rollback -c "ph_copy_file -r -m -q -s \"$PH_FILES_DIR/$PH_i\" -d \"/etc/profile.d/$(sed 's/_/\./g' <<<"$PH_i")\""
+		PH_MSG="LoginScript ${PH_MSG}"
+		printf "%8s%s\n" "" "--> Restoring Emulationstation StartApp ${PH_MSG}"
+		if ph_run_with_rollback -c "ph_copy_file -r -m -q -s '${PH_FILES_DIR}/${PH_i}' -d '/etc/profile.d/$(sed 's/_/\./g' <<<"$PH_i")'"
 		then
-			ph_run_with_rollback -c "true"
+			ph_run_with_rollback -c true
 			continue
 		fi
 	fi
-	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not restore configuration"
-	ph_run_with_rollback -c "false" || return 1
+	printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Could not restore"
+	ph_run_with_rollback -c false || \
+		return 1
 done
-ph_add_value_to_param -p PH_CONFIGURED_STATE -v "emul"
+ph_add_value_to_param -p PH_CONFIGURED_STATE -v emul
 return 0
 }
 
@@ -4097,69 +4483,77 @@ function ph_pieh_configured_emul_conf {
 declare PH_i=""
 declare PH_MSG="configuration"
 
-[[ ! -f /etc/profile.d/10-retropie.sh && ! -f /etc/systemd/system/getty@tty1.service.d/autologin.conf ]] && return 0
-[[ -f /etc/profile.d/10-retropie.sh && ! -f /etc/systemd/system/getty@tty1.service.d/autologin.conf ]] && return 1
-[[ ! -f /etc/profile.d/10-retropie.sh && -f /etc/systemd/system/getty@tty1.service.d/autologin.conf ]] && return 1
+[[ ! -f /etc/profile.d/10-retropie.sh && ! -f /etc/systemd/system/getty@tty1.service.d/autologin.conf ]] && \
+	return 0
+[[ ( -f /etc/profile.d/10-retropie.sh && ! -f /etc/systemd/system/getty@tty1.service.d/autologin.conf ) || \
+	( ! -f /etc/profile.d/10-retropie.sh && -f /etc/systemd/system/getty@tty1.service.d/autologin.conf ) ]] && \
+	return 1
 for PH_i in 10-retropie.sh autologin.conf
 do
 	if [[ "$PH_i" == "autologin.conf" ]]
 	then
-		PH_MSG="TTY $PH_MSG"
-		printf "%8s%s\n" "" "--> Backing up 'Emulationstation' 'StartApp' $PH_MSG"
-		if ph_run_with_rollback -c "ph_copy_file -r -q -m -s \"/etc/systemd/system/getty@tty1.service.d/$PH_i\" -d \"$PH_FILES_DIR/$(sed 's/\./_/g' <<<"$PH_i")\""
+		PH_MSG="TTY ${PH_MSG}"
+		printf "%8s%s\n" "" "--> Backing up Emulationstation StartApp ${PH_MSG}"
+		if ph_run_with_rollback -c "ph_copy_file -r -q -m -s '/etc/systemd/system/getty@tty1.service.d/${PH_i}' -d '${PH_FILES_DIR}/$(sed 's/\./_/g' <<<"$PH_i")'"
 		then
-			if ph_run_with_rollback -c "ph_remove_empty_file -r -q -t directory -d \"/etc/systemd/system/getty@tty1.service.d\""
+			if ph_run_with_rollback -c "ph_remove_empty_file -r -q -t directory -d '/etc/systemd/system/getty@tty1.service.d'"
 			then
 				if systemctl is-enabled getty@tty1 >/dev/null 2>&1
 				then
 					if ph_run_with_rollback -c "ph_disable_app_tty 1"
 					then
-						ph_run_with_rollback -c "true"
+						ph_run_with_rollback -c true
 						continue
 					fi
 				fi
 			fi
 		fi
 	else
-		PH_MSG="LoginScript $PH_MSG"
-		printf "%8s%s\n" "" "--> Backing up 'Emulationstation' 'StartApp' $PH_MSG"
-		if ph_run_with_rollback -c "ph_copy_file -r -m -q -s \"/etc/profile.d/$PH_i\" -d \"$PH_FILES_DIR/$(sed 's/\./_/g' <<<"$PH_i")\""
+		PH_MSG="LoginScript ${PH_MSG}"
+		printf "%8s%s\n" "" "--> Backing up Emulationstation StartApp ${PH_MSG}"
+		if ph_run_with_rollback -c "ph_copy_file -r -m -q -s '/etc/profile.d/${PH_i}' -d '${PH_FILES_DIR}/$(sed 's/\./_/g' <<<"$PH_i")'"
 		then
-			ph_run_with_rollback -c "true"
+			ph_run_with_rollback -c true
 			continue
 		fi
 	fi
-	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not backup configuration"
-	ph_run_with_rollback -c "false" || return 1
+	printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Could not backup configuration"
+	ph_run_with_rollback -c false || \
+		return 1
 done
-ph_add_value_to_param -p PH_UNCONFIGURED_STATE -v "emul"
+ph_add_value_to_param -p PH_UNCONFIGURED_STATE -v emul
 return 0
 }
 
 function ph_show_emul_info {
 
-printf "%8s%s\n\n" "" "--> Displaying 'Emulationstation' ROMS info"
-printf "%10s%s\n\n" "" "Game ROMS can either :"
-printf "%12s%s\n" "" "- be copied locally under '$PH_EMUL_SETUP_DIR/roms'"
-printf "%12s%s\n" "" "- be provided over CIFS by configuring the appropriate options for 'Emulationstation'"
-printf "%14s%s\n\n" "" "using either 'confopts_ph.sh' or the PieHelper menu"
-printf "%10s\033[32m%s\033[0m\n" "" "OK"
-return 0
+declare PH_APP_USER="$1"
+
+[[ -z "$PH_APP_USER" || "$#" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+printf "%8s%s\n\n" "" "--> Displaying info for Emulationstation (RetroPie)"
+printf "%12s%s\n\n" "" "Game ROMS can either :"
+printf "%14s%s\n" "" "- be copied locally under the directory '$(ph_get_cifs_mpt -a Emulationstation -r)'"
+printf "%14s%s\n" "" "- be provided over CIFS by configuring the appropriate Emulationstation options"
+printf "%12s%s\n\n" "" "Make sure to be logged in as user '${PH_APP_USER}' whenever you want to run proprietary Emulationstation tools !"
+printf "%14s%s\n" "" "- Any tools delivered by Emulationstation are considered proprietary"
+printf "%14s%s\n\n" "" "- Failure to do so could lead to permission issues requiring you to uninstall and reinstall Emulationstation"
+ph_run_with_rollback -c true && \
+	return $?
 }
 
 function ph_install_app {
 
+declare PH_i=""
 declare PH_APP=""
+declare PH_APP_STATE=""
 declare PH_OPTION=""
 declare PH_APP_USER=""
 declare PH_APP_PKG=""
 declare PH_EMUL_HOME=""
-declare PH_EMUL_SETUP_DIR_INIT=""
-declare PH_EMUL_DIR_INIT=""
 declare PH_OLDOPTARG="$OPTARG"
 declare -i PH_OLDOPTIND="$OPTIND"
-declare -i PH_COUNT="0"
-declare -i PH_COUNT2="0"
 declare -u PH_APPU=""
 
 OPTIND="1"
@@ -4175,164 +4569,243 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
+[[ -z "$PH_APP" ]] && \
+	return 1
+
+PH_APP_STATE="$(ph_get_app_state_from_app_name "$PH_APP")"
 if ph_check_app_state_validity -a "$PH_APP" -s -q
 then
-	printf "%8s%s\n" "" "--> Checking '$PH_APP' application state"
-	printf "%10s\033[33m%s\033[0m\n" "" "Warning : '$PH_APP' already 'Supported'"
-	return 0
+	printf "%8s%s\n" "" "--> Checking application state of '${PH_APP}'"
+	ph_run_with_rollback -c true -m "${PH_APP_STATE} (Nothing to do)" && \
+		return 0
 fi
-printf "%8s%s\n" "" "--> Checking '$PH_APP' package"
-[[ -z "$PH_APP_PKG" ]] && PH_APP_PKG="$(ph_get_app_pkg_from_app_name "$PH_APP")"
+printf "%8s%s\n" "" "--> Determining '${PH_APP}' package"
+[[ -z "$PH_APP_PKG" ]] && \
+	PH_APP_PKG="$(ph_get_app_pkg_from_app_name "$PH_APP")"
 if [[ -n "$PH_APP_PKG" ]]
 then
-	printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_APP_PKG')"
-	printf "%8s%s\n" "" "--> Checking '$PH_APP_PKG' install state"
-	if ph_get_pkg_inst_state "$PH_APP_PKG"
-	then
-		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Already 'Installed'"
-		return 0
-	else
-		printf "%10s\033[32m%s\033[0m\n" "" "OK (Not found) -> Installing"
-		printf "%8s%s\n" "" "--> Installing '$PH_APP_PKG' package"
-		if ph_install_pkg "$PH_APP_PKG" >/dev/null
-		then
-			printf "%10s\033[32m%s\033[0m\n" "" "OK"
-			return 0
-		else
-			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not install package"
-		fi
-	fi
+	ph_run_with_rollback -c true -m "$PH_APP_PKG"
+	ph_run_with_rollback -c "ph_install_pkg '${PH_APP_PKG}'" || \
+		return 1
+	ph_add_value_to_param -p PH_UNINSTALL_APPS -v "$PH_APP"
+	return 0
 else
-	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not determine name"
+	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not determine"
+	ph_set_result -r 0
 fi
-printf "%8s%s\n" "" "--> Attempting 'Packageless' installation"
+printf "%8s%s\n" "" "--> Attempting packageless installation"
 case "$PH_APP" in Moonlight)
-		printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_APP')"
-		cd >/dev/null 2>&1
+		ph_run_with_rollback -c true -m "$PH_APP"
+		cd ~ >/dev/null 2>&1
 		"$PH_SUDO" rm -r moonlight-embedded >/dev/null 2>&1
-		"$PH_SUDO" rm /tmp/"$PH_APP".compile /tmp/"$PH_APP".generate >/dev/null 2>&1
-		printf "%8s%s\n" "" "--> Downloading '$PH_APP' source"
-		git clone https://github.com/irtimmer/moonlight-embedded.git >/dev/null 2>&1
-		if [[ "$?" -ne "0" ]]
-		then
-			printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not download source"
-			cd - >/dev/null 2>&1
+		"$PH_SUDO" rm "/var/tmp/${PH_APP}.compile" "/var/tmp/${PH_APP}.build" >/dev/null 2>&1
+		ph_run_with_rollback -c "ph_git_clone_master -n 'moonlight-embedded' -d '${HOME}' -r 'https://github.com/irtimmer/moonlight-embedded.git'" || \
 			return 1
-		fi
-		cd - >/dev/null 2>&1
-		cd ~/moonlight-embedded >/dev/null 2>&1
-		if git submodule update --init >/dev/null 2>&1
+		printf "%8s%s\n" "" "--> Configuring source"
+		if cd ~/moonlight-embedded >/dev/null 2>&1
 		then
-			printf "%10s\033[32m%s\033[0m\n" "" "OK"
+			if git submodule update --init >/dev/null 2>&1
+			then
+				if mkdir build >/dev/null 2>&1
+				then
+					if cd build >/dev/null 2>&1
+					then
+						ph_run_with_rollback -c true
+						printf "%8s%s\n" "" "--> Generating '${PH_APP}' build (This may take a while)"
+						if ! cmake ../ >"/var/tmp/${PH_APP}.build" >/dev/null 2>&1
+						then
+							ph_set_result -m "Could not generate a build for '${PH_APP}' (Logfile is '/var/tmp/${PH_APP}.build')"
+							ph_run_with_rollback -c false -m "Could not generate"
+							printf "%8s%s\n" "" "--> Displaying build log (Press 'q' to quit)"
+							sleep 2
+							if less "/var/tmp/${PH_APP}.build" 2>/dev/null
+							then
+								ph_run_with_rollback -c true
+							else
+								ph_run_with_rollback -c false -m "Could not display"
+							fi
+							cd ~ >/dev/null 2>&1
+							return 1
+						fi
+						ph_run_with_rollback -c true -m "Built in '${HOME}/moonlight-embedded/build'"
+						printf "%8s%s\n" "" "--> Compiling '${PH_APP}' (This may take a while)"
+						if ! make >"/var/tmp/${PH_APP}.compile" >/dev/null 2>&1
+						then
+							ph_set_result -m "Could not compile '${PH_APP}' (Logfile is '/var/tmp/${PH_APP}.compile')"
+							ph_run_with_rollback -c false -m "Could not compile"
+							printf "%8s%s\n" "" "--> Displaying compilation log (Press 'q' to quit)"
+							sleep 2
+							if less "/var/tmp/${PH_APP}.compile" 2>/dev/null
+							then
+								ph_run_with_rollback -c true
+							else
+								ph_run_with_rollback -c false -m "Could not display"
+							fi
+							cd ~ >/dev/null 2>&1
+							return 1
+						fi
+						ph_run_with_rollback -c true -m "Build log is '/var/tmp/${PH_APP}.generate' and compilation log is '/var/tmp/${PH_APP}.compile'"
+						printf "%8s%s\n" "" "--> Installing files"
+						if "$PH_SUDO" make install >/dev/null 2>&1
+						then
+							ph_add_value_to_param -p PH_UNINSTALL_APPS -v "$PH_APP"
+							ph_run_with_rollback -c true && \
+								return "$?"
+					
+						else
+							ph_set_result -m "Could not deploy compiled version of '${PH_APP}'"
+						fi
+					else
+						ph_set_result -m "Could not change directory to '${HOME}/moonlight-embedded/build'"
+					fi
+				else
+					ph_set_result -m "Could not create build directory '${HOME}/moonlight-embedded/build'"
+				fi
+			else
+				ph_set_result -m "Could not clone submodule(s) for repository 'moonlight-embedded'"
+			fi
 		else
-			printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not download source"
-			cd - >/dev/null 2>&1
-			return 1
-		fi
-		mkdir build >/dev/null 2>&1
-		printf "%8s%s\n" "" "--> Generating '$PH_APP' build (This may take a while)"
-		cmake ../ >/tmp/"$PH_APP".generate >/dev/null 2>&1
-		if [[ "$?" -ne "0" ]]
-		then
-			printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not generate build (Logfile '/tmp/$PH_APP.generate')"
-			printf "%8s%s\n" "" "--> Displaying build log (Press 'q' to quit)"
-			less /tmp/"$PH_APP".generate 2>/dev/null
-			printf "%10s\033[32m%s\033[0m\n" "" "OK"
-			cd - >/dev/null 2>&1
-			return 1
-		fi
-		printf "%10s\033[32m%s\033[0m\n" "" "OK (Build location is '$HOME/moonlight-embedded')"
-		printf "%8s%s\n" "" "--> Compiling '$PH_APP' source (This may take a while)"
-		make >/tmp/"$PH_APP".compile >/dev/null 2>&1
-		if [[ "$?" -ne "0" ]]
-		then
-			printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not compile source (Logfile '/tmp/$PH_APP.compile')"
-			printf "%8s%s\n" "" "--> Displaying compilation log (Press 'q' to quit)"
-			less /tmp/"$PH_APP".compile 2>/dev/null
-			printf "%10s\033[32m%s\033[0m\n" "" "OK"
-			cd - >/dev/null 2>&1
-			return 1
-		fi
-		printf "%10s\033[32m%s\033[0m\n" "" "OK"
-		"$PH_SUDO" rm /tmp/"$PH_APP".compile /tmp/"$PH_APP".generate >/dev/null 2>&1
-		printf "%8s%s\n" "" "--> Copying files to final locations"
-		"$PH_SUDO" make install >/dev/null 2>&1
-		cd - >/dev/null 2>&1
-		printf "%10s\033[32m%s\033[0m\n" "" "OK" ;;
+			ph_set_result -m "Could not change directory to '${HOME}/moonlight-embedded'"
+		fi ;;
 	 Emulationstation)
-		printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_APP')"
+		ph_run_with_rollback -c true -m "$PH_APP"
 		export PH_PASS_APP_USER=""
-		ph_get_app_user_from_input -a "$PH_APP"
+		ph_get_app_user_from_input -a "$PH_APP" || \
+			return 1
 		PH_APP_USER="$PH_PASS_APP_USER"
 		unset PH_PASS_APP_USER
-		ph_grant_pieh_access -u "$PH_APP_USER" -a "$PH_APP"
-		PH_EMUL_HOME="$(getent passwd "$PH_APP_USER" 2>/dev/null | cut -d':' -f6)"
-		cd "$PH_EMUL_HOME" >/dev/null 2>&1
-		"$PH_SUDO" rm -r RetroPie-Setup >/dev/null 2>&1
-		printf "%8s%s\n" "" "--> Downloading '$PH_APP' setup script"
-		"$PH_SUDO" -E su "$PH_APP_USER" -c "git clone --depth=1 https://github.com/RetroPie/RetroPie-Setup.git" >/dev/null 2>&1
-		if [[ "$?" -eq "0" ]]
-		then
-			printf "%10s\033[32m%s\033[0m\n" "" "OK"
-		else
-			printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not download script"
-			cd - >/dev/null 2>&1
-			return 1
-		fi
-		cd - >/dev/null 2>&1
-		cd "$PH_EMUL_HOME" >/dev/null 2>&1
-		"$PH_SUDO" -E chmod +x retropie_setup.sh >/dev/null 2>&1
-		printf "%8s%s\n\n" "" "--> Executing '$PH_APP' setup script"
-		printf "%10s%s\n" "" "- Use the script to do a 'basic install' of '$PH_APP'"
-		printf "%10s%s\n" "" "- Note that running 'basic install' could take up to 30 minutes depending on your system specs"
-		printf "%10s%s\n" "" "- PieHelper configurations for an application to automatically start on system boot will override this script's equivalent setting"
-		printf "%10s%s\n" "" "- Exit the script normally after finishing 'basic install' and '$PH_APP' installation will resume"
-		printf "%10s%s" "" "- Press Enter to continue"
-		read -r 2>/dev/null
-		printf "\n\n%10s\033[32m%s\033[0m\n" "" "OK"
-		clear
-		"$PH_SUDO" -E -u "$PH_APP_USER" sh -c "$PH_SUDO ./retropie_setup.sh"
-		printf "%8s%s\n" "" "--> Determining '$PH_APP' base directory"
-		if [[ -f "/etc/profile.d/10-retropie.sh" ]]
-		then
-			PH_EMUL_DIR_INIT="$(nawk -F'"' '$1 ~ /bash/ { print $2 }' /etc/profile.d/10-retropie.sh 2>/dev/null)"
-			if [[ -n "$PH_EMUL_DIR_INIT" ]]
+		printf "%8s%s\n" "" "--> Checking required '${PH_APP}' info"
+		for PH_i in APP_USER EMUL_HOME
+		do
+			if [[ -z "$(eval "echo -n \"\$PH_${PH_i}\"")" ]]
 			then
-				PH_EMUL_DIR_INIT="${PH_EMUL_DIR_INIT%%/configs*}"
-				printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_EMUL_DIR_INIT')"
-			fi
-		else
-			if [[ -d /opt/retropie ]]
-			then
-				PH_EMUL_DIR_INIT="/opt/retropie"
-				printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_EMUL_DIR_INIT')"
+				case "$PH_i" in APP_USER)
+					ph_set_result -m "Could not determine user account for '${PH_APP}'" ;;
+						EMUL_HOME)
+					ph_set_result -m "Could not determine home directory of user '${PH_APP_USER}'" ;;
+				esac
+				ph_run_with_rollback -c false -m "Could not determine" || \
+					return 1
 			else
-				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not determine directory"
-				printf "%20s%s\n" "" "Try manually setting 'PH_EMUL_DIR' to the correct value using 'confopts_ph.sh' or the PieHelper menu"
+				if [[ "$PH_i" == "APP_USER" ]]
+				then
+					PH_EMUL_HOME="$(getent passwd "$PH_APP_USER" 2>/dev/null | cut -d':' -f6)"
+				fi
 			fi
-		fi
-		PH_EMUL_SETUP_DIR_INIT="$PH_EMUL_HOME"/RetroPie
-		if [[ -n "$PH_EMUL_DIR_INIT" ]]
-		then
-			if ! ph_set_option_to_value "$PH_APP" -r PH_EMUL_DIR"'$PH_EMUL_DIR_INIT"
-			then
-				ph_uninstall_app -a "$PH_APP"
-				return 1	
-			fi
-		fi
-		if ! ph_set_option_to_value "$PH_APP" -r PH_EMUL_SETUP_DIR"'$PH_EMUL_SETUP_DIR_INIT"
-		then
-			ph_set_option_to_value "$PH_APP" -r PH_EMUL_DIR"'"
-			ph_uninstall_app -a "$PH_APP"
+		done
+		ph_run_with_rollback -c true
+		ph_run_with_rollback -c "ph_grant_pieh_access -u '${PH_APP_USER}'" || \
 			return 1
-		fi
-		[[ -f "/etc/profile.d/10-retropie.sh" ]] && ph_pieh_configured_emul_conf
-		ph_show_emul_info ;;
-			*)
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : 'Packageless' installation for '$PH_APP' is unsupported"
-		printf "%18s\033[31m%s%s%s\033[0m\n" "" "Try manually setting 'PH_" "$PH_APPU" "_PKG_NAME' to the correct value using 'confopts_ph.sh' or the PieHelper menu"
-		return 1 ;;
+		if cd "$PH_EMUL_HOME" >/dev/null 2>&1
+		then
+			"$PH_SUDO" rm -r RetroPie-Setup >/dev/null 2>&1
+			ph_run_with_rollback -c "ph_git_clone_master -r 'https://github.com/RetroPie/RetroPie-Setup.git' -d '${PH_EMUL_HOME}' -n 'RetroPie-Setup' -a '--depth=1'" || \
+				return 1
+			printf "%8s%s\n\n" "" "--> Configuring '${PH_APP}' setup script"
+			if "$PH_SUDO" chown -R "${PH_APP_USER}:$("$PH_SUDO" id -gn "$PH_APP_USER" 2>/dev/null)" "${PH_EMUL_HOME}/RetroPie-Setup" 2>/dev/null
+			then
+				if "$PH_SUDO" chmod +x "${PH_EMUL_HOME}/RetroPie-Setup/retropie_setup.sh" >/dev/null 2>&1
+				then
+					ph_run_with_rollback -c true
+					printf "%8s%s\n\n" "" "--> Executing '${PH_APP}' setup script"
+					printf "%10s%s\n" "" "- The setup script will do a basic installation of '${PH_APP}'"
+					printf "%10s%s\n" "" "- Note that running basic installation could take up to 30 minutes depending on system specs"
+					printf "%10s%s\n" "" "- StartApp configuration from this script will be replaced by StartApp configuration from PieHelper"
+					printf "%10s%s\n" "" "- Exit the script normally after basic installation completes and '${PH_APP}' installation will resume"
+					printf "%10s%s" "" "- Press Enter to continue"
+					read -r 2>/dev/null
+					clear
+					if "$PH_SUDO" -E -u "$PH_APP_USER" sh -c "${PH_SUDO} ./retropie_setup.sh"
+					then
+						clear
+						printf "%8s%s\n\n" "" "--> Executing '${PH_APP}' setup script"
+						ph_run_with_rollback -c true -m "Success"
+						if [[ -f "${PH_CONF_DIR}/${PH_APP}.conf" ]]
+						then
+							ph_autoconf_emul_base || \
+								return 1
+						fi
+						if [[ -f /etc/profile.d/10-retropie.sh ]]
+						then
+							ph_run_with_rollback -c "ph_pieh_configured_emul_conf" || \
+								return 1
+						fi
+						ph_show_emul_info "$PH_APP_USER"
+						ph_add_value_to_param -p PH_UNINSTALL_APPS -v "$PH_APP"
+						cd ~ >/dev/null 2>&1
+						return 0
+					else
+						ph_set_result -m "An error occured running setup script '${PH_EMUL_HOME}/RetroPie-Setup/retropie_setup.sh' as '${PH_APP_USER}'"
+					fi
+				else
+					ph_set_result -m "Could not set execute permission on '${PH_EMUL_HOME}/RetroPie-Setup/retropie_setup.sh'"
+				fi
+			else
+				ph_set_result -m "Could not recursively set ownership of '${PH_EMUL_HOME}/RetroPie-Setup' to '${PH_APP_USER}:$("$PH_SUDO" id -gn "$PH_APP_USER" 2>/dev/null)'"
+			fi
+		else
+			ph_set_result -m "Could not change directory to '${PH_EMUL_HOME}'"
+		fi ;;
+	*)
+		ph_set_result -m "Packageless installation is not supported for '${PH_APP}' (Set '${PH_APP}' option 'PH_${PH_APPU}_PKG_NAME' to the correct package name and try again)" ;;
 esac
+cd ~ >/dev/null 2>&1
+ph_run_with_rollback -c false -m "Could not complete installation" || \
+	return 1
+}
+
+function ph_autoconf_emul_base {
+
+declare PH_APP="Emulationstation"
+declare PH_APP_USER="$(ph_get_app_user_from_app_name "$PH_APP")"
+declare PH_EMUL_HOME="$(getent passwd "$PH_APP_USER" 2>/dev/null | cut -d':' -f6)"
+declare PH_EMUL_DIR_INIT=""
+declare PH_EMUL_SETUP_DIR_INIT=""
+
+printf "%8s%s\n" "" "--> Determining '${PH_APP}' base directory"
+if [[ -f /etc/profile.d/10-retropie.sh ]]
+then
+	PH_EMUL_DIR_INIT="$(nawk -F'"' '$1 ~ /bash/ { \
+			print $2 }' /etc/profile.d/10-retropie.sh 2>/dev/null)"
+	if [[ -n "$PH_EMUL_DIR_INIT" ]]
+	then
+		PH_EMUL_DIR_INIT="${PH_EMUL_DIR_INIT%%/configs*}"
+		printf "%10s\033[32m%s\033[0m%s\n" "" "OK : " "'${PH_EMUL_DIR_INIT}'"
+	fi
+else
+	if [[ -d /opt/retropie ]]
+	then
+		PH_EMUL_DIR_INIT="/opt/retropie"
+		printf "%10s\033[32m%s\033[0m%s\n" "" "OK : " "'${PH_EMUL_DIR_INIT}'"
+	else
+		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not determine (Set '${PH_APP}' option 'PH_EMUL_DIR' manually using 'confopts_ph.sh' or the PieHelper menu"
+	fi
+	ph_set_result -r 0
+fi
+printf "%8s%s\n" "" "--> Determining '${PH_APP}' setup directory (This may take a while)"
+if [[ -d "${PH_EMUL_HOME}/RetroPie" ]]
+then
+	PH_EMUL_SETUP_DIR_INIT="${PH_EMUL_HOME}/RetroPie"
+else
+	PH_EMUL_SETUP_DIR_INIT="$("$PH_SUDO" find / -type d ! -fstype nfs -name RetroPie 2>/dev/null)"
+fi
+if [[ -n "$PH_EMUL_SETUP_DIR_INIT" ]]
+then
+	printf "%10s\033[32m%s\033[0m%s\n" "" "OK : " "'${PH_EMUL_SETUP_DIR_INIT}'"
+else
+	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not determine (Set '${PH_APP}' option 'PH_EMUL_SETUP_DIR' manually using 'confopts_ph.sh' or the PieHelper menu"
+fi
+ph_set_result -r 0
+if [[ -n "$PH_EMUL_DIR_INIT" ]]
+then
+	ph_run_with_rollback -c "ph_set_option_to_value ${PH_APP} -r \"PH_EMUL_DIR'${PH_EMUL_DIR_INIT}\"" || \
+		return 1
+fi
+if [[ -n "$PH_EMUL_SETUP_DIR_INIT" ]]
+then
+	ph_run_with_rollback -c "ph_set_option_to_value ${PH_APP} -r \"PH_EMUL_SETUP_DIR'${PH_EMUL_SETUP_DIR_INIT}\"" || \
+		return 1
+fi
 return 0
 }
 
@@ -4451,7 +4924,7 @@ then
 			fi
 			cd "$PH_PATH"/build
 			printf "%8s%s\n" "" "--> Removing files from final location"
-			cat install_manifest.txt | "$PH_SUDO" xargs rm >/dev/null 2>&1
+			cat install_manifest.txt 2>/dev/null | xargs -I '{}' "$PH_SUDO" rm {} >/dev/null 2>&1
 			printf "%10s%s\n" "" "OK"
 			cd "$HOME"
 			printf "%8s%s\n" "" "--> Removing build repository"
@@ -4472,7 +4945,7 @@ then
 				printf "%10s\033[32m%s\033[0m\n" "" "OK (Found)"
 				PH_PATH="$PH_EMUL_SETUP_DIR"-Setup
 			fi
-			ph_set_option_to_value "$PH_APP" -r PH_EMUL_DIR"'" -r PH_EMUL_SETUP_DIR"'" || (printf "%2s%s\n" "" "FAILED" ; return 1) || return 1
+			ph_set_option_to_value "$PH_APP" -r "PH_EMUL_DIR'" -r "PH_EMUL_SETUP_DIR'" || (printf "%2s%s\n" "" "FAILED" ; return 1) || return 1
 			printf "%8s%s\033[32m\n\n" "" "--> Executing $PH_APP setup script"
 			printf "%12s%s\n" "" "- Use this setup script to do an uninstall of $PH_APP"
 			printf "%12s%s\n\n" "" "- Exit the script normally after it finishes and removal from PieHelper will resume"
@@ -4529,49 +5002,91 @@ OPTIND="1"
 while getopts a:u:s:t:c: PH_OPTION 2>/dev/null
 do
         case "$PH_OPTION" in a)
+		[[ -n "$PH_APP" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1 
                 PH_APP="$OPTARG" ;;
                              u)
+		[[ -n "$PH_APP_USER" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1 
                 PH_APP_USER="$OPTARG" ;;
                              t)
+		[[ "$PH_APP_TTY" -gt "0" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1 
                 PH_APP_TTY="$OPTARG"
-		[[ "$PH_APP_TTY" -eq "0" ]] && PH_APP_STR_TTY="-" || PH_APP_STR_TTY="$PH_APP_TTY" ;;
+		[[ "$PH_APP_TTY" -eq "0" ]] && \
+			PH_APP_STR_TTY="-" || \
+			PH_APP_STR_TTY="$PH_APP_TTY" ;;
                              s)
+		[[ -n "$PH_APP_INST_STATE" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1 
                 PH_APP_INST_STATE="$OPTARG" ;;
                              c)
+		[[ -n "$PH_APP_CMD" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1 
                 PH_APP_CMD="$OPTARG" ;;
+                             *)
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
         esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
+[[ -z "$PH_APP" || "$#" -lt "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
 if [[ "$PH_APP" == "integrated" ]]
 then
-	for PH_APP in $(nawk 'BEGIN { ORS = " " } { print $1 }' "$PH_CONF_DIR"/integrated_apps 2>/dev/null)
+	for PH_APP in $(nawk 'BEGIN { \
+			ORS = " " \
+		} { \
+			print $1 \
+		}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null)
 	do
-		ph_unintegrate_app -a "$PH_APP" || return 1
+		ph_run_with_rollback -c "ph_unintegrate_app -a '${PH_APP}'" || \
+			return 1
 	done
+	ph_add_value_to_param -p PH_INT_APPS -v "${PH_APP}''"
 	return 0
 else
 	if [[ -z "$PH_APP" ]]
 	then
 		for PH_i in PH_APP_USER PH_APP_TTY PH_APP_CMD PH_APP_INST_STATE
 		do
-			declare -n PH_VAR="$PH_i"
+			declare -n PH_VAR="$PH_i" 2>/dev/null
 			if [[ "$PH_i" != "PH_APP_TY" && -n "$PH_VAR" ]]
 			then
 				case "$PH_i" in PH_APP_USER)
-					[[ -z "$PH_PARAMS" ]] && PH_PARAMS="-u \"$PH_VAR\"" || PH_PARAMS="$PH_PARAMS -u \"$PH_VAR\"" ;;
+					[[ -z "$PH_PARAMS" ]] && \
+						PH_PARAMS="-u '${PH_VAR}'" || \
+						PH_PARAMS="${PH_PARAMS} -u '${PH_VAR}'" ;;
 						PH_APP_INST_STATE)
-					[[ -z "$PH_PARAMS" ]] && PH_PARAMS="-s \"$PH_VAR\"" || PH_PARAMS="$PH_PARAMS -s \"$PH_VAR\"" ;;
+					[[ -z "$PH_PARAMS" ]] && \
+						PH_PARAMS="-s '${PH_VAR}'" || \
+						PH_PARAMS="${PH_PARAMS} -s '${PH_VAR}'" ;;
 						PH_APP_CMD)
-					[[ -z "$PH_PARAMS" ]] && PH_PARAMS="-c \"$PH_VAR\"" || PH_PARAMS="$PH_PARAMS -c \"$PH_VAR\"" ;;
+					[[ -z "$PH_PARAMS" ]] && \
+						PH_PARAMS="-c '${PH_VAR}'" || \
+						PH_PARAMS="${PH_PARAMS} -c '${PH_VAR}'" ;;
 						PH_APP_TTY)
-					[[ -z "$PH_PARAMS" ]] && PH_PARAMS="-t \"$PH_VAR\"" || PH_PARAMS="$PH_PARAMS -t \"$PH_VAR\"" ;;
+					[[ -z "$PH_PARAMS" ]] && \
+						PH_PARAMS="-t '${PH_VAR}'" || \
+						PH_PARAMS="${PH_PARAMS} -t '${PH_VAR}'" ;;
 				esac
 			fi
-			unset -n PH_VAR
+			unset -n PH_VAR 2>/dev/null
 		done
-		[[ -n "$PH_PARAMS" ]] && PH_APP="$(ph_get_app_name_from_base_conf_file $PH_PARAMS)"
+		[[ -n "$PH_PARAMS" ]] && \
+			PH_APP="$(ph_get_app_name_from_base_conf_file ${PH_PARAMS})"
 	fi
 fi
 printf "%8s%s\n" "" "--> Checking application name parameter"
@@ -4593,8 +5108,8 @@ else
 fi
 if [[ "$PH_APP" == "PieHelper" ]]
 then
-	printf "%8s%s\n" "" "--> Checking for running 'Unconfigure' action for PieHelper unintegration"
-	if [[ -f "$PH_TMP_DIR"/unconfigure_in_progress ]]
+	printf "%8s%s\n" "" "--> Checking if PieHelper is being (un)configured"
+	if [[ -f "${PH_TMP_DIR}/.unconfigure_in_progress" || -f "${PH_TMP_DIR}/.configure_in_progress" ]]
 	then
 		printf "%10s\033[32m%s\033[0m\n" "" "OK : 'Unconfigure' action in progress"
 		ph_set_result -r 0
@@ -4612,9 +5127,9 @@ else
 	if [[ "$PH_APP" != "$(ph_get_app_name_from_app_tty "$PH_APP_TTY")" ]]
 	then
 		PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
-		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid TTY -> Setting to 'TTY$PH_APP_TTY'"
+		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid TTY -> Setting to 'TTY${PH_APP_TTY}'"
 	else
-		printf "%10s\033[32m%s\033[0m\n" "" "OK ('TTY$PH_APP_TTY')"
+		printf "%10s\033[32m%s\033[0m\n" "" "OK ('TTY${PH_APP_TTY}')"
 	fi
 	ph_set_result -r 0
 fi
@@ -4632,18 +5147,23 @@ else
 	fi
 	ph_set_result -r 0
 fi
-ph_stop_all_running_apps "$PH_APP" || return 1
+ph_stop_all_running_apps "$PH_APP" || \
+	return 1
 if [[ "$PH_PIEH_STARTAPP" == "$PH_APP" ]]
 then
-	ph_run_with_rollback -c "ph_set_app_for_start none" || return 1
+	ph_run_with_rollback -c "ph_set_app_for_start none" || \
+		return 1
 fi
-ph_run_with_rollback -c "ph_remove_app_items -a \"$PH_APP\" -t unintegrate" || return 1
+ph_run_with_rollback -c "ph_remove_app_items -a \"$PH_APP\" -t unintegrate" || \
+	return 1
 if [[ "$PH_APP_TTY" -gt "1" ]]
 then
-	ph_run_with_rollback -c "ph_undo_setup_tty -a \"$PH_APP\" -t \"$PH_APP_TTY\" -u \"$PH_APP_USER\"" || return 1
+	ph_run_with_rollback -c "ph_undo_setup_tty -a '${PH_APP}' -t '${PH_APP_TTY}' -u '${PH_APP_USER}'" || \
+		return 1
 fi
-ph_run_with_rollback -c "ph_remove_app_from_integration_file -a \"$PH_APP\"" || return 1
-ph_add_value_to_param -p PH_INT_APPS -v "$PH_APP'$PH_APP_USER'$PH_APP_TTY"
+ph_run_with_rollback -c "ph_remove_app_from_integration_file -a '${PH_APP}'" || \
+	return 1
+ph_add_value_to_param -p PH_INT_APPS -v "${PH_APP}'${PH_APP_USER}'${PH_APP_TTY}"
 return 0
 }
 
@@ -4668,32 +5188,64 @@ OPTIND="1"
 while getopts a:c:s:p: PH_OPTION 2>/dev/null
 do
         case "$PH_OPTION" in a)
+		[[ -n "$PH_APP" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_APP="$OPTARG" ;;
                              c)
+		[[ -n "$PH_APP_CMD" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_APP_CMD="$OPTARG" ;;
                              s)
+		[[ -n "$PH_APP_INST_STATE" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_APP_INST_STATE="$OPTARG" ;;
                              p)
+		[[ -n "$PH_APP_PKG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_APP_PKG="$OPTARG" ;;
+                             *)
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
         esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
+[[ -z "$PH_APP" || "$#" -lt "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
 if [[ "$PH_APP" == @(default|supported) ]]
 then
 	if [[ "$PH_APP" == "default" ]]
 	then
-		for PH_APP in $(nawk 'BEGIN { ORS = " " } { print $1 }' "$PH_CONF_DIR/default_apps$PH_FILE_SUFFIX" 2>/dev/null)
+		for PH_APP in $(nawk 'BEGIN { \
+				ORS = " " \
+			} { \
+				print $1 \
+			}' "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null)
 		do
-			ph_unsupport_app -a "$PH_APP" || return 1
+			ph_run_with_rollback -c "ph_unsupport_app -a '${PH_APP}'" || \
+				return 1
 		done
 	else
-		for PH_APP in $(nawk 'BEGIN { ORS = " " } { print $1 }' "$PH_CONF_DIR/$PH_APP""_apps" 2>/dev/null)
+		for PH_APP in $(nawk 'BEGIN { \
+				ORS = " " \
+			} { \
+				print $1 \
+			}' "${PH_CONF_DIR}/${PH_APP}_apps" 2>/dev/null)
 		do
-			ph_unsupport_app -a "$PH_APP" || return 1
+			ph_run_with_rollback -c "ph_unsupport_app -a '${PH_APP}'" || \
+				return 1
 		done
 	fi
+	ph_add_value_to_param -p PH_SUP_APPS -v "${PH_APP}'''"
 	return 0
 else
 	if [[ -z "$PH_APP" ]]
@@ -4704,135 +5256,163 @@ else
 			if [[ -n "$PH_VAR" ]]
 			then
 				case "$PH_i" in PH_APP_CMD)
-					[[ -z "$PH_PARAMS" ]] && PH_PARAMS="-c \"$PH_VAR\"" || PH_PARAMS="$PH_PARAMS -c \"$PH_VAR\"" ;;
+					[[ -z "$PH_PARAMS" ]] && \
+						PH_PARAMS="-c '${PH_VAR}'" || \
+						PH_PARAMS="${PH_PARAMS} -c '${PH_VAR}'" ;;
 						PH_APP_INST_STATE)
-					[[ -z "$PH_PARAMS" ]] && PH_PARAMS="-s \"$PH_VAR\"" || PH_PARAMS="$PH_PARAMS -s \"$PH_VAR\"" ;;
+					[[ -z "$PH_PARAMS" ]] && \
+						PH_PARAMS="-s '${PH_VAR}'" || \
+						PH_PARAMS="${PH_PARAMS} -s '${PH_VAR}'" ;;
 				esac
 			fi
 			unset -n PH_VAR
 		done
-		[[ -n "$PH_PARAMS" ]] && PH_APP="$(ph_get_app_name_from_base_conf_file $PH_PARAMS)"
+		[[ -n "$PH_PARAMS" ]] && \
+			PH_APP="$(ph_get_app_name_from_base_conf_file ${PH_PARAMS})"
 	fi
 fi
 printf "%8s%s\n" "" "--> Checking application name parameter"
-if [[ -z "$PH_APP" ]]
+if [[ -n "$PH_APP" ]]
 then
-	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid application name"
-	ph_set_result -r 1 -m "A valid name is mandatory for unsupporting '$PH_APP'"
-	return 1
-else
 	PH_APP_STATE="$(ph_get_app_state_from_app_name "$PH_APP")"
 	case "$PH_APP_STATE" in Unknown|Unused|Reserved)
-		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid application name"
-		ph_set_result -r 0 -w -m "Application already unsupported"
+		printf "%10s\033[33m%s\033[0m\n" "" "Warning : '${PH_APP}' is not a supported application"
+		ph_set_result -r 0
 		return 0 ;;
 				Integrated|Halted|Running)
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid application name"
-		ph_set_result -r 1 -m "Prior unintegration is mandatory for unsupporting '$PH_APP'"
-		return 1 ;;
-				Supported)	
-		printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_APP')" ;;
+		ph_set_result -m "'${PH_APP}' should be unintegrated before attempting to unsupport it" ;;
+				Supported)
+		ph_run_with_rollback -c true -m "$PH_APP"
+		if [[ "$PH_APP" == "PieHelper" ]]
+		then
+			printf "%8s%s\n" "" "--> Checking if PieHelper is being (un)configured"
+			if [[ -f "${PH_TMP_DIR}/.unconfigure_in_progress" || -f "${PH_TMP_DIR}/.configure_in_progress" ]]
+			then
+				ph_run_with_rollback -c true -m "yes"
+			else
+				ph_set_result -m "PieHelper should be unsupported by running 'confpieh_ph.sh -u'"
+				ph_run_with_rollback -c false -m "no" || \
+					return 1
+			fi
+		fi
+		if [[ -z "$PH_APP_CMD" ]]
+		then
+			PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
+		else
+			printf "%8s%s\n" "" "--> Checking start command parameter"
+			if [[ "$PH_APP" != "$(ph_get_app_name_from_app_cmd "$PH_APP_CMD")" ]]
+			then
+				PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
+				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid start command -> Setting to '${PH_APP_CMD}'"
+				ph_set_result -r 0
+			else
+				ph_run_with_rollback -c true -m "$PH_APP_CMD"
+			fi
+		fi
+		PH_APP_GRAPH="$(echo -n "$PH_APP_CMD" | nawk -v app="$PH_APP" 'BEGIN { \
+				graph = "no" \
+			} { \
+				if (app == "X11") { \
+					graph = "yes" \
+				} else { \
+					if ($1 ~ /^\/usr\/bin\/xinit$/ || $1 ~ /^\/usr\/bin\/startx$/) { \
+						graph = "yes" \
+					} \
+				} \
+			} END { \
+				printf "%s", graph \
+			}')"
+		PH_APP_EXEC="$(echo -n "$PH_APP_CMD" | nawk -v app="$PH_APP" -v appgraph="$PH_APP_GRAPH" '{ \
+				if (appgraph == "yes") { \
+					if (app == "X11") { \
+						printf $1 \
+					} else { \
+						printf $2 \
+					} \
+				} else { \
+					printf $1 \
+				} \
+			}')"
+		PH_APPU="${PH_APP:0:4}"
+		if [[ -z "$PH_APP_PKG" ]]
+		then
+			PH_APP_PKG="$(eval "echo -n \"\$PH_${PH_APPU}_PKG_NAME\"")"
+		else
+			printf "%8s%s\n" "" "--> Checking package parameter"
+			if [[ "$PH_APP_PKG" != "$(eval "echo -n \"\$PH_${PH_APPU}_PKG_NAME\"")" ]]
+			then
+				PH_APP_PKG="$(eval "echo -n \"\$PH_${PH_APPU}_PKG_NAME\"")"
+				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid package -> Setting to '${PH_APP_PKG}'"
+				ph_set_result -r 0
+			else
+				ph_run_with_rollback -c true -m "$PH_APP_PKG"
+			fi
+		fi
+		if [[ -z "$PH_APP_INST_STATE" ]]
+		then
+			PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_name "$PH_APP")"
+		else
+			printf "%8s%s\n" "" "--> Checking install state parameter"
+			if ph_get_pkg_inst_state "$PH_APP_PKG"
+			then
+				if [[ "$PH_APP_INST_STATE" != "Packaged" ]]
+				then
+					PH_APP_INST_STATE="Packaged"
+					printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid install state -> Setting to '${PH_APP_INST_STATE}'"
+					ph_set_result -r 0
+				else
+					ph_run_with_rollback -c true -m "$PH_APP_INST_STATE"
+				fi
+			else
+				if [[ "$PH_APP_INST_STATE" != "Packageless" ]]
+				then
+					PH_APP_INST_STATE="Packageless"
+					printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid install state -> Setting to '$PH_APP_INST_STATE'"
+					ph_set_result -r 0
+				else
+					ph_run_with_rollback -c true -m "$PH_APP_INST_STATE"
+				fi
+			fi
+		fi
+		ph_run_with_rollback -c "ph_remove_app_items -a '${PH_APP}' -t unsupport" || \
+			return 1
+		if [[ "$(ph_get_linked_menu_app)" == "$PH_APP" ]]
+		then
+			if [[ "$PH_APP" != "PieHelper" ]]
+			then
+				ph_run_with_rollback -c "ph_link_app_to_menu PieHelper" || \
+					return 1
+			else
+				ph_run_with_rollback -c "ph_unlink_app_from_menu PieHelper" || \
+					return 1
+			fi
+		fi
+		if [[ "$PH_APP" != "PieHelper" ]]
+		then
+			:
+			##### prompt whether to and possibly ph_uninstall_app
+			##### plus add getopts param for passing it, also in confapps_ph.sh
+		fi
+		if ! cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
+		then
+			ph_run_with_rollback -c "ph_remove_oos_app_code '${PH_APP}'" || \
+				return 1
+		fi
+		ph_run_with_rollback -c "ph_remove_app_from_support_file -a '${PH_APP}'" || \
+			return 1
+		if [[ "$PH_APP" == "PieHelper" && ! -f "${PH_FILES_DIR}/first_run" ]]
+		then
+			ph_run_with_rollback -c "ph_create_empty_file -t file -d '${PH_FILES_DIR}/first_run'" || \
+				return 1
+		fi
+		ph_add_value_to_param -p PH_SUP_APPS -v "${PH_APP}'${PH_APP_INST_STATE}'${PH_APP_CMD}'${PH_APP_PKG}"
+		return 0
 	esac
-	ph_set_result -r 0
-fi
-if [[ "$PH_APP" == "PieHelper" ]]
-then
-	printf "%8s%s\n" "" "--> Checking for running 'Unconfigure' action for unsupporting 'PieHelper'"
-	if [[ -f "$PH_TMP_DIR"/unconfigure_in_progress ]]
-	then
-		printf "%10s\033[32m%s\033[0m\n" "" "OK : 'Unconfigure' action in progress"
-		ph_set_result -r 0
-	else
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : 'Unconfigure' action not in progress"
-		ph_set_result -r 1 -m "'PieHelper' support is mandatory while configuration state remains 'Configured'"
-		return 1
-	fi
-fi
-if [[ -z "$PH_APP_CMD" ]]
-then
-	PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
 else
-	printf "%8s%s\n" "" "--> Checking start command parameter"
-	if [[ "$PH_APP" != "$(ph_get_app_name_from_app_cmd "$PH_APP_CMD")" ]]
-	then
-		PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
-		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid start command -> Setting to '$PH_APP_CMD'"
-	else
-		printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_APP_CMD')"
-	fi
-	ph_set_result -r 0
+	ph_set_result -m "No application name specified to unsupport"
 fi
-PH_APP_GRAPH="$(echo -n "$PH_APP_CMD" | nawk -v app="$PH_APP" 'BEGIN { graph = "no" } { if (app=="X11") { graph = "yes" } else { if ($1~/^\/usr\/bin\/xinit$/ || $1~/^\/usr\/bin\/startx$/) { graph = "yes" }}} END { printf "%s", graph }')"
-PH_APP_EXEC="$(echo -n "$PH_APP_CMD" | nawk -v app="$PH_APP" -v appgraph="$PH_APP_GRAPH" '{ if (appgraph=="yes") { if (app=="X11") { printf $1 } else { printf $2 }} else { printf $1 }}')"
-PH_APPU="${PH_APP:0:4}"
-if [[ -z "$PH_APP_PKG" ]]
-then
-	PH_APP_PKG="$(eval "echo -n \$PH_"$PH_APPU"_PKG_NAME")"
-else
-	printf "%8s%s\n" "" "--> Checking package parameter"
-	if [[ "$PH_APP_PKG" != "$(eval "echo -n \$PH_"$PH_APPU"_PKG_NAME")" ]]
-	then
-		PH_APP_PKG="$(eval "echo -n \$PH_"$PH_APPU"_PKG_NAME")"
-		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid package -> Setting to '$PH_APP_PKG'"
-	else
-		printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_APP_PKG')"
-	fi
-	ph_set_result -r 0
-fi
-if [[ -z "$PH_APP_INST_STATE" ]]
-then
-	PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_name "$PH_APP")"
-else
-	printf "%8s%s\n" "" "--> Checking install state parameter"
-	if ph_get_pkg_inst_state "$PH_APP_PKG"
-	then
-		if [[ "$PH_APP_INST_STATE" != "Packaged" ]]
-		then
-			PH_APP_INST_STATE="Packaged"
-			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid install state -> Setting to '$PH_APP_INST_STATE'"
-		else
-			printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_APP_INST_STATE')"
-		fi
-	else
-		if [[ "$PH_APP_INST_STATE" != "Packageless" ]]
-		then
-			PH_APP_INST_STATE="Packageless"
-			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid install state -> Setting to '$PH_APP_INST_STATE'"
-		else
-			printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_APP_INST_STATE')"
-		fi
-	fi
-	ph_set_result -r 0
-fi
-ph_run_with_rollback -c "ph_remove_app_items -a \"$PH_APP\" -t unsupport" || return 1
-if [[ "$(ph_get_linked_menu)" == "$PH_APP" ]]
-then
-	if [[ "$PH_APP" != "PieHelper" ]]
-	then
-		ph_run_with_rollback -c "ph_do_link_to_menu PieHelper" || return 1
-	else
-		ph_run_with_rollback -c "ph_undo_link_to_menu PieHelper" || return 1
-	fi
-fi
-if [[ "$PH_APP" != "PieHelper" ]]
-then
-:
-
-##### prompt whether to and possibly ph_uninstall_app || return 1
-##### plus add getopts param for passing it, also in confapps_ph.sh
-
-fi
-if cut -f1 "$PH_CONF_DIR/default_apps$PH_FILE_SUFFIX" 2>/dev/null | grep -E ^"$PH_APP"$ >/dev/null
-then
-	ph_run_with_rollback -c "ph_remove_oos_app_code \"$PH_APP\"" || return 1
-fi
-ph_run_with_rollback -c "ph_remove_app_from_support_file -a \"$PH_APP\"" || return 1
-ph_add_value_to_param -p PH_SUP_APPS -v "$PH_APP'$PH_APP_INST_STATE'$PH_APP_CMD'$PH_APP_PKG"
-if [[ "$PH_APP" == "PieHelper" && ! -f "$PH_FILES_DIR"/first_run ]]
-then
-	ph_run_with_rollback -c "ph_create_empty_file -t file -d \"$PH_FILES_DIR/first_run\"" || return 1
-fi
-return 0
+ph_run_with_rollback -c false -m "Invalid application" || \
+	return 1
 }
 
 function ph_remove_app_from_support_file {
@@ -4851,36 +5431,54 @@ OPTIND="1"
 while getopts a: PH_OPTION 2>/dev/null
 do
         case "$PH_OPTION" in a)
+		[[ -n "$PH_APP" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_APP="$OPTARG" ;;
+			     *)
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
         esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_APP" ]] && return 1
-printf "%8s%s\n" "" "--> Removing '$PH_APP' from configuration file '$PH_CONF_DIR/supported_apps'"
-PH_COUNT="$(nawk -v app=^"$PH_APP"$ 'BEGIN { count = "0" } $1 ~ app { count++ ; next } { next } END { print count }' "$PH_CONF_DIR/supported_apps" 2>/dev/null)"
+[[ -z "$PH_APP" || "$#" -lt "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+printf "%8s%s\n" "" "--> Removing ${PH_APP} configuration from file '${PH_CONF_DIR}/supported_apps'"
+PH_COUNT="$(nawk -v app="^${PH_APP}$" 'BEGIN { \
+		count = "0" \
+	} \
+	$1 ~ app { \
+		count++ ; \
+		next \
+	} { \
+		next \
+	} END { \
+		print count \
+	}' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)"
 case "$PH_COUNT" in 0)
-        printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid application name"
-	ph_set_result -m "A valid name is mandatory for removal from configuration file '$PH_CONF_DIR/supported_apps'"
-	ph_run_with_rollback -c "false" || return 1 ;;
+	ph_set_result -m "Could not remove ${PH_APP} configuration since it is not a supported application"
+	ph_run_with_rollback -c false -m "Invalid application" || \
+		return 1 ;;
                     1)
 	PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_name "$PH_APP")"
 	PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
-	ph_run_with_rollback -c "ph_remove_line_from_file -f \"$PH_CONF_DIR/supported_apps\" -l \"$PH_APP\t.*\"" || PH_RET_CODE="1" ;;
+	ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\t.*'" || \
+		PH_RET_CODE="1" ;;
                     *)
-	ph_set_result -a -m "'Unique' configuration file '$PH_CONF_DIR/supported_apps' is 'Corrupted' -> Multiple instances of '$PH_APP'" ;;
+	ph_set_result -a -m "Configuration file '${PH_CONF_DIR}/supported_apps' is corrupted' -> Found multiple instances of '${PH_APP}'" ;;
 esac
 if [[ "$PH_RET_CODE" -ne "0" ]]
 then
-	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not remove application"
-	ph_set_result -m "An error occurred removing '$PH_APP' from configuration file '$PH_CONF_DIR/supported_apps'"
-	ph_run_with_rollback -c "false" || return 1
+	ph_set_result -m "An error occurred trying to remove ${PH_APP} configuration from file '${PH_CONF_DIR}/supported_apps'"
+	ph_run_with_rollback -c false -m "Could not remove"
 else
-	ph_add_value_to_param -p PH_ADD_APPS_TO_SUP_FILE -v "$PH_APP'$PH_APP_INST_STATE'$PH_APP_CMD"
-	ph_run_with_rollback -c "true"
+	ph_add_value_to_param -p PH_ADD_APPS_TO_SUP_FILE -v "${PH_APP}'${PH_APP_INST_STATE}'${PH_APP_CMD}"
+	ph_run_with_rollback -c true
 fi
-return "$PH_RET_CODE"
+return "$?"
 }
 
 function ph_remove_app_from_integration_file {
@@ -4899,40 +5497,59 @@ OPTIND="1"
 while getopts a: PH_OPTION 2>/dev/null
 do
         case "$PH_OPTION" in a)
+		[[ -n "$PH_APP" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_APP="$OPTARG" ;;
+			     *)
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
         esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_APP" ]] && return 1
+[[ -z "$PH_APP" || "$#" -lt "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
 PH_APP_USER="$(ph_get_app_user_from_app_name "$PH_APP")"
 PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
 if [[ "$PH_APP" != "PieHelper" ]]
 then
-	ph_run_with_rollback -c "ph_revoke_pieh_access -u \"$PH_APP_USER\" -a \"$PH_APP\"" || return 1
+	ph_run_with_rollback -c "ph_revoke_pieh_access -u '${PH_APP_USER}'" || \
+		return 1
 fi
-printf "%8s%s\n" "" "--> Removing application '$PH_APP' from configuration file '$PH_CONF_DIR/integrated_apps'"
-PH_COUNT="$(nawk -v app=^"$PH_APP"$ 'BEGIN { count = "0" } $1 ~ app { count++ ; next } { next } END { print count }' "$PH_CONF_DIR"/integrated_apps 2>/dev/null)"
+printf "%8s%s\n" "" "--> Removing application ${PH_APP} configuration from file '${PH_CONF_DIR}/integrated_apps'"
+PH_COUNT="$(nawk -v app="^${PH_APP}$" 'BEGIN { \
+		count = "0" \
+	} \
+	$1 ~ app { \
+		count++ ; \
+		next \
+	} { \
+		next \
+	} END { \
+		print count \
+	}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null)"
 case "$PH_COUNT" in 0)
-	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid application name"
-	ph_set_result -m "A valid name is mandatory for removal from configuration file '$PH_CONF_DIR/integrated_apps'"
-	ph_run_with_rollback -c "false" || return 1 ;;
+	ph_set_result -m "Could not remove ${PH_APP} configuration from '${PH_CONF_DIR}/integrated_apps' since it is not an integrated application"
+	ph_run_with_rollback -c false -m "Invalid application" || \
+		return 1 ;;
 		    1)
-	ph_run_with_rollback -c "ph_remove_line_from_file -f \"$PH_CONF_DIR\"/integrated_apps -l \"$PH_APP\t.*\"" || PH_RET_CODE="1" ;;
+	ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/integrated_apps' -l '${PH_APP}\t.*'" || \
+		PH_RET_CODE="1" ;;
 		    *)
-	ph_set_result -a -m "'Unique' configuration file '$PH_CONF_DIR/integrated_apps' is 'Corrupted' -> Multiple instances of '$PH_APP'" ;;
+	ph_set_result -a -m "Configuration file '${PH_CONF_DIR}/integrated_apps' is corrupted -> Found multiple instances of '${PH_APP}'" ;;
 esac
 if [[ "$PH_RET_CODE" -ne "0" ]]
 then
-	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not remove application"
-	ph_set_result -m "An error occurred removing '$PH_APP' from configuration file '$PH_CONF_DIR/integrated_apps'"
-	ph_run_with_rollback -c "false" || return 1
+	ph_set_result -m "An error occurred trying to remove ${PH_APP} configuration from file '$PH_CONF_DIR/integrated_apps'"
+	ph_run_with_rollback -c false -m "Could not remove"
 else
-	ph_add_value_to_param -p PH_ADD_APPS_TO_INT_FILE -v "$PH_APP'$PH_APP_USER'$PH_APP_TTY"
-	ph_run_with_rollback -c "true"
+	ph_add_value_to_param -p PH_ADD_APPS_TO_INT_FILE -v "${PH_APP}'${PH_APP_USER}'${PH_APP_TTY}"
+	ph_run_with_rollback -c true
 fi
-return "$PH_RET_CODE"
+return "$?"
 }
 
 function ph_support_app {
@@ -4958,19 +5575,38 @@ OPTIND="1"
 while getopts a:c:s:p: PH_OPTION 2>/dev/null
 do
         case "$PH_OPTION" in a)
+		[[ -n "$PH_APP" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_APP="$OPTARG" ;;
                              c)
+		[[ -n "$PH_APP_CMD" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_APP_CMD="$OPTARG" ;;
                              s)
+		[[ -n "$PH_APP_INST_STATE" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_APP_INST_STATE="$OPTARG" ;;
                              p)
+		[[ -n "$PH_APP_PKG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_APP_PKG="$OPTARG" ;;
-			     *)
-		return 1 ;;
+                             *)
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
         esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
+
+[[ -z "$PH_APP" || "$#" -lt "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 if [[ "$PH_APP" == "default" ]]
 then
@@ -4980,16 +5616,17 @@ then
 			print $1 \
 		}' "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null)
 	do
-		ph_support_app -a "$PH_APP" || \
+		ph_run_with_rollback -c "ph_support_app -a '${PH_APP}'" || \
 			return 1
 	done
+	ph_add_value_to_param -p PH_UNSUP_APPS -v "${PH_APP}'"
 	return 0
 fi
 printf "%8s%s\n" "" "--> Checking application name parameter"
 if [[ -z "$PH_APP" ]]
 then
 	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid name"
-	ph_set_result -r 1 -m "A valid name is mandatory for supporting an application"
+	ph_set_result -m "A valid name is mandatory for supporting an application"
 	return 1
 else
 	PH_APP_STATE="$(ph_get_app_state_from_app_name "$PH_APP")"
@@ -5001,20 +5638,20 @@ else
 			printf "%10s\033[32m%s\033[0m\n" "" "OK ('${PH_APP}')" ;;
 				*)
 			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid name"
-			ph_set_result -r 0 -w -m "'${PH_APP}' already supported"
+			ph_set_result -r 0
 			return 0 ;;
 	esac
 	ph_set_result -r 0
 fi
 if [[ "$PH_APP" == "PieHelper" ]]
 then
-	if ! ph_run_with_rollback -c "ph_create_empty_file -q -t file -d \"${PH_SCRIPTS_DIR}/startpieh.sh\""
+	if ! ph_run_with_rollback -c "ph_create_empty_file -q -t file -d '${PH_SCRIPTS_DIR}/startpieh.sh'"
 	then
 		ph_set_result -m "An error occurred creating temporary startscript '${PH_SCRIPTS_DIR}/startpieh.sh'"
 		return 1
 	fi
 fi
-if ! cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E ^"${PH_APP}"$ >/dev/null
+if ! cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
 then
 	printf "%8s%s\n" "" "--> Checking start command parameter for 'Out-of-scope' application"
 	if [[ -z "$PH_APP_CMD" ]]
@@ -5023,7 +5660,7 @@ then
 		ph_set_result -r 1 -m "A valid start command is mandatory for supporting 'Out-of-scope' application '${PH_APP}'"
 		return 1
 	else
-		printf "%10s\033[32m%s\033[0m\n" "" "OK ('${PH_APP_CMD}')"
+		printf "%10s\033[32m%s\033[0m%s\n" "" "OK : " "$PH_APP_CMD"
 		ph_set_result -r 0
 	fi
 else
@@ -5035,7 +5672,7 @@ else
 			PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
 			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid start command -> Setting to '${PH_APP_CMD}'"
 		else
-			printf "%10s\033[32m%s\033[0m\n" "" "OK ('${PH_APP_CMD}')"
+			printf "%10s\033[32m%s\033[0m%s\n" "" "OK : " "$PH_APP_CMD"
 		fi
 		ph_set_result -r 0
 	else
@@ -5045,17 +5682,19 @@ fi
 PH_APP_GRAPH="$(echo -n "$PH_APP_CMD" | nawk -v app="$PH_APP" 'BEGIN { \
 		graph = "no" \
 	} { \
-		if (app=="X11") { \
+		if (app == "X11") { \
 			graph = "yes" \
 		} else { \
-			if ($1~/^\/usr\/bin\/xinit$/ || $1~/^\/usr\/bin\/startx$/) { \
+			if ($1 ~ /^\/usr\/bin\/xinit$/ || $1 ~ /^\/usr\/bin\/startx$/) { \
 				graph = "yes" \
 			} \
 		} \
-	} END { printf "%s", graph }')"
+	} END { \
+		printf "%s", graph \
+	}')"
 PH_APP_EXEC="$(echo -n "$PH_APP_CMD" | nawk -v app="$PH_APP" -v appgraph="$PH_APP_GRAPH" '{ \
-		if (appgraph=="yes") { \
-			if (app=="X11") { \
+		if (appgraph == "yes") { \
+			if (app == "X11") { \
 				printf $1 \
 			} else { \
 				printf $2 \
@@ -5274,12 +5913,12 @@ then
 	ph_run_with_rollback -c "ph_create_oos_app_code \"${PH_APP}\"" || \
 		return 1
 fi
-ph_add_value_to_param -p PH_UNSUP_APPS -v "${PH_APP}'${PH_APP_PKG}"
 if [[ "$PH_APP" == "PieHelper" && -f "${PH_FILES_DIR}/first_run" ]]
 then
-	ph_run_with_rollback -c "ph_remove_empty_file -t file -d \"${PH_FILES_DIR}/first_run\"" || \
+	ph_run_with_rollback -c "ph_remove_empty_file -t file -d '${PH_FILES_DIR}/first_run'" || \
 		return 1
 fi
+ph_add_value_to_param -p PH_UNSUP_APPS -v "${PH_APP}'${PH_APP_PKG}"
 return 0
 }
 
@@ -5485,7 +6124,8 @@ else
 	ph_run_with_rollback -c "true"
 	if [[ "$PH_APP" != @(PieHelper|Emulationstation) && "$PH_COUNT" -eq "0" ]]
 	then
-		ph_run_with_rollback -c "ph_grant_pieh_access -u \"$PH_APP_USER\" -a \"$PH_APP\"" || return 1
+		ph_run_with_rollback -c "ph_grant_pieh_access -u '${PH_APP_USER}'" || \
+			return 1
 	fi
 fi
 return "$PH_RET_CODE"
@@ -5496,9 +6136,16 @@ function ph_get_app_inst_state_from_app_name {
 declare PH_APP="$1"
 declare PH_APP_INST_STATE=""
 
-PH_APP_INST_STATE="$(nawk -v app=^"$PH_APP"$ '$1 ~ app { print $2 ; exit 0 } { next }' "$PH_CONF_DIR/supported_apps" 2>/dev/null)"
-[[ "$PH_APP_INST_STATE" == "-" ]] && PH_APP_INST_STATE=""
-[[ -z "$PH_APP_INST_STATE" ]] && return 1
+PH_APP_INST_STATE="$(nawk -v app="^${PH_APP}$" '$1 ~ app { \
+		print $2 ; \
+		exit 0 \
+	} { \
+		next \
+	}' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)"
+[[ "$PH_APP_INST_STATE" == "-" ]] && \
+	PH_APP_INST_STATE=""
+[[ -z "$PH_APP_INST_STATE" ]] && \
+	return 1
 echo -n "$PH_APP_INST_STATE"
 return 0
 }
@@ -5557,7 +6204,7 @@ else
 			then
 				[[ -z "$PH_RUN_USER" ]] && continue || PH_APP_USER="$PH_RUN_USER"
 			fi
-			ph_screen_input "$PH_APP_USER" >/dev/null || continue
+			ph_screen_input "$PH_APP_USER"
 			if ! ph_check_user_validity "$PH_APP_USER"
 			then
 				printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : '$PH_APP_USER' Not found -> Creating"
@@ -5590,105 +6237,104 @@ return 0
 
 function ph_revoke_pieh_access {
 
-declare PH_APP=""
 declare PH_APP_USER=""
+declare PH_PARAMS=""
 declare PH_OPTION=""
 declare PH_OLDOPTARG="$OPTARG"
 declare -i PH_OLDOPTIND="$OPTIND"
-declare -i PH_COUNT="0"
 
 OPTIND="1"
 
-while getopts u:a: PH_OPTION 2>/dev/null
+while getopts u:q PH_OPTION 2>/dev/null
 do
-        case "$PH_OPTION" in a)
-                        PH_APP="$OPTARG" ;;
-                             u)
-                        PH_APP_USER="$OPTARG" ;;
+        case "$PH_OPTION" in u)
+		[[ -n "$PH_APP_USER" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_APP_USER="$OPTARG" ;;
+                             q)
+		[[ -n "$PH_PARAMS" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_PARAMS="-q" ;;
+                             *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
         esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_APP" || -z "$PH_APP_USER" ]] && return 1
-if [[ "$PH_APP" != "PieHelper" ]]
+[[ -z "$PH_APP_USER" || "$#" -lt "2" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+if [[ "$PH_APP_USER" != @(root|${PH_RUN_USER}) ]]
 then
-	PH_COUNT="$(nawk -v appuser=^"$PH_APP_USER"$ 'BEGIN { rc = "0" } $2 ~ appuser { rc = $rc + 1 ; next } { next } END { printf $rc }' "$PH_CONF_DIR/integrated_apps" 2>/dev/null)"
-	case "$PH_COUNT" in 0)
-		printf "%8s%s\n" "" "--> Removing ACLs for run account '$PH_APP_USER'"
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid run account"
-		ph_set_result -m "A valid run account is mandatory for revoking PieHelper access"
-		ph_run_with_rollback -c "false" || return 1 ;;
-			    1)
-		if [[ "$PH_APP_USER" != @(root|$PH_RUN_USER) ]]
-		then
-			ph_run_with_rollback -c "ph_do_user_acls_action -p remove -u \"$PH_APP_USER\" -t immediate" || return 1
-			ph_run_with_rollback -c "ph_remove_user_sudo_rights -u \"$PH_APP_USER\"" || return 1
-		fi
-		ph_add_value_to_param -p PH_GRANT_APPS_ACCESS -v "$PH_APP'$PH_APP_USER"
-		if [[ "$PH_APP_USER" != "root" ]]
-		then
-			printf "%8s%s\n\n" "" "--> Displaying multiple accounts reminder"
-			printf "%12s\033[33m%s\033[0m\n" "" "- System removal for run account '$PH_APP_USER' can be done from the PieHelper menu or by running '$PH_SUDO userdel -r $PH_APP_USER'"
-			printf "%12s\033[33m%s\033[0m\n" "" "  (Note that system removal will permanently remove the '$PH_APP_USER' home directory and it's contents)"
-			ph_run_with_rollback -c "true"
-		fi ;;
-	esac
+	ph_run_with_rollback -c "ph_user_acls -p remove -u '${PH_APP_USER}' -t immediate ${PH_PARAMS}" || \
+		return 1
+	ph_run_with_rollback -c "ph_remove_user_sudo_rights -u '${PH_APP_USER}' ${PH_PARAMS}" || \
+		return 1
+	if [[ -z "$PH_PARAMS" ]]
+	then
+		printf "%8s%s\n\n" "" "--> Displaying reminder"
+		printf "%12s\033[33m%s\033[0m\n" "" "PieHelper access for user '${PH_APP_USER}' is revoked but the user might still have system access"
+		printf "%12s\033[33m%s\033[0m\n" "" "Additionally removing the system account : "
+		printf "%14s\033[33m%s\033[0m\n" "" "- Can be done by running '${PH_SUDO} userdel -r ${PH_APP_USER}' from the command line"
+		printf "%14s\033[33m%s\033[0m\n" "" "- Should not be done if user '${PH_APP_USER}' is still required for other reasons"
+		printf "%14s\033[33m%s\033[0m\n\n" "" "- Keep in mind that doing so will also remove the home directory of '${PH_APP_USER}' and its contents"
+		ph_run_with_rollback -c true
+	fi
+	ph_add_value_to_param -p PH_GRANT_APPS_ACCESS -v "${PH_APP_USER}'${PH_PARAMS}"
 fi
 return 0
 }
 
 function ph_grant_pieh_access {
 
-declare PH_APP=""
 declare PH_APP_USER=""
 declare PH_OPTION=""
+declare PH_PARAMS=""
 declare PH_OLDOPTARG="$OPTARG"
-declare -u PH_APPU=""
 declare -i PH_OLDOPTIND="$OPTIND"
-declare -i PH_COUNT="0"
 
 OPTIND="1"
 
-while getopts u:a: PH_OPTION 2>/dev/null
+while getopts u:q PH_OPTION 2>/dev/null
 do
-        case "$PH_OPTION" in a)
-                        PH_APP="$OPTARG" ;;
-                             u)
-                        PH_APP_USER="$OPTARG" ;;
+        case "$PH_OPTION" in u)
+		[[ -n "$PH_APP_USER" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_APP_USER="$OPTARG" ;;
+                             q)
+		[[ -n "$PH_PARAMS" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_PARAMS="-q" ;;
+                             *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
         esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_APP" || -z "$PH_APP_USER" ]] && return 1
-if [[ "$PH_APP" != "PieHelper" ]]
+[[ -z "$PH_APP_USER" || "$#" -lt "2" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+if [[ "$PH_APP_USER" != @(root|${PH_RUN_USER}) ]]
 then
-	PH_COUNT="$(nawk -v appuser=^"$PH_APP_USER"$ 'BEGIN { rc = "0" } $2 ~ appuser { rc = $rc + 1 ; next } { next } END { printf $rc }' "$PH_CONF_DIR/integrated_apps" 2>/dev/null)"
-	if [[ "$PH_COUNT" -eq "0" ]]
-	then
-		if [[ "$PH_APP_USER" != @(root|$PH_RUN_USER) ]]
-		then
-			ph_run_with_rollback -c "ph_do_user_acls_action -p create -u \"$PH_APP_USER\" -t immediate" || return 1
-			ph_run_with_rollback -c "ph_create_user_sudo_rights -u \"$PH_APP_USER\"" || return 1
-		fi
-		ph_add_value_to_param -p PH_REVOKE_APPS_ACCESS -v "$PH_APP'$PH_APP_USER"
-		if [[ "$PH_APP_USER" != @(root|$PH_RUN_USER) ]] || [[ "$PH_APP" == "Emulationstation" && "$PH_APP_USER" != "$PH_RUN_USER" ]]
-		then
-			printf "%8s%s\n\n" "" "--> Displaying multiple accounts reminder"
-			if [[ "$PH_APP_USER" != "root" ]]
-			then
-				PH_APPU="${PH_APP:0:4}"
-				printf "%12s\033[33m%s%s%s%s%s\033[0m\n" "" "- Create run account '$PH_APP_USER' on CIFS server 'PH_" "$PH_APPU" "_CIFS_SRV' and grant the account 'read-write' rights to share 'PH_" "$PH_APPU" "_CIFS_DIR' to be able use the default PRE-commands for '$PH_APP'"
-			fi
-			[[ "$PH_APP" == "Emulationstation" ]] && printf "%12s\033[33m%s\033[0m\n" "" "- Make sure being logged in as '$PH_APP_USER' when running proprietary '$PH_APP' tools to avoid breaking '$PH_APP' configuration"
-			ph_run_with_rollback -c "true"
-		fi
-	else
-		printf "%8s%s\n" "" "--> Adding ACLs for run account '$PH_APP_USER'"
-		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Integrated run account -> Skipping"
-		ph_set_result -r 0 -w -m "PieHelper access for run account '$PH_APP_USER' was previously granted"
-	fi
+	ph_run_with_rollback -c "ph_user_acls -p create -u '${PH_APP_USER}' -t immediate ${PH_PARAMS}" || \
+		return 1
+	ph_run_with_rollback -c "ph_create_user_sudo_rights -u '${PH_APP_USER}' ${PH_PARAMS}" || \
+		return 1
+	ph_add_value_to_param -p PH_REVOKE_APPS_ACCESS -v "${PH_APP_USER}'${PH_PARAMS}"
 fi
 return 0
 }
@@ -5713,22 +6359,47 @@ OPTIND="1"
 while getopts a:t:u:c:s: PH_OPTION 2>/dev/null
 do
         case "$PH_OPTION" in a)
+		[[ -n "$PH_APP" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_APP="$OPTARG" ;;
                              t)
+		[[ "$PH_APP_TTY" -gt "0" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_APP_TTY="$OPTARG"
 		[[ "$PH_APP_TTY" -eq "0" ]] && \
 			PH_APP_STR_TTY="-" || \
 			PH_APP_STR_TTY="$PH_APP_TTY" ;;
                              u)
+		[[ -n "$PH_APP_USER" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_APP_USER="$OPTARG" ;;
                              c)
+		[[ -n "$PH_APP_CMD" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_APP_CMD="$OPTARG" ;;
                              s)
+		[[ -n "$PH_APP_INST_STATE" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_APP_INST_STATE="$OPTARG" ;;
+                             *)
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
         esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
+
+[[ -z "$PH_APP" || "$#" -lt "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 if [[ "$PH_APP" == "supported" ]]
 then
@@ -5738,9 +6409,10 @@ then
 			print $1 \
 		}' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)
 	do
-		ph_integrate_app -a "$PH_APP" || \
+		ph_run_with_rollback -c "ph_integrate_app -a '${PH_APP}'" || \
 			return 1
 	done
+	ph_add_value_to_param -p PH_UNINT_APPS -v "$PH_APP"
 	return 0
 else
 	if [[ -z "$PH_APP" ]]
@@ -5750,12 +6422,12 @@ else
 			declare -n PH_VAR="$PH_i"
 			case "$PH_i" in PH_APP_INST_STATE)
 				[[ -z "$PH_PARAMS" ]] && \
-					PH_PARAMS="-s \"$PH_VAR\"" || \
-					PH_PARAMS="${PH_PARAMS} -s \"$PH_VAR\"" ;;
+					PH_PARAMS="-s '${PH_VAR}'" || \
+					PH_PARAMS="${PH_PARAMS} -s '${PH_VAR}'" ;;
 					PH_APP_CMD)
 				[[ -z "$PH_PARAMS" ]] && \
-					PH_PARAMS="-c \"$PH_VAR\"" || \
-					PH_PARAMS="${PH_PARAMS} -c \"$PH_VAR\"" ;;
+					PH_PARAMS="-c '${PH_VAR}'" || \
+					PH_PARAMS="${PH_PARAMS} -c '${PH_VAR}'" ;;
 			esac
 			unset -n PH_VAR
 		done
@@ -5818,7 +6490,7 @@ then
 			[[ "$PH_APP_TTY" -eq "1" ]] && \
 				return 1
 		else
-			if cut -f3 "${PH_CONF_DIR}/integrated_apps" 2>/dev/null | grep -E ^"${PH_APP_TTY}"$ >/dev/null
+			if cut -f3 "${PH_CONF_DIR}/integrated_apps" 2>/dev/null | grep -E "^${PH_APP_TTY}$" >/dev/null
 			then
 				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid TTY -> Allocating new TTY"
 				ph_allocate_new_tty "$PH_APP"
@@ -5841,45 +6513,50 @@ then
 	PH_APP_USER="$PH_PASS_APP_USER"
 	unset PH_PASS_APP_USER
 fi
-ph_run_with_rollback -c "ph_create_app_items -a \"$PH_APP\" -t integrate" || \
+ph_run_with_rollback -c "ph_create_app_items -a '${PH_APP}' -t integrate" || \
 	return 1
 if [[ "$PH_APP_TTY" -ne "0" ]]
 then
-	ph_run_with_rollback -c "ph_setup_tty -a \"$PH_APP\" -u \"$PH_APP_USER\" -t \"$PH_APP_TTY\"" || \
+	ph_run_with_rollback -c "ph_setup_tty -a '${PH_APP}' -u '${PH_APP_USER}' -t '${PH_APP_TTY}'" || \
 		return 1
 else
-	ph_run_with_rollback -c "ph_add_app_to_integration_file -a \"$PH_APP\" -u \"$PH_APP_USER\" -t \"$PH_APP_TTY\"" || \
+	ph_run_with_rollback -c "ph_add_app_to_integration_file -a '${PH_APP}' -u '${PH_APP_USER}' -t '${PH_APP_TTY}'" || \
 		return 1
 fi
-ph_add_value_to_param -p PH_UNINT_APPS -v "$PH_APP"
 [[ "$PH_APP" == "PieHelper" ]] && \
 	PH_RUN_USER="$PH_APP_USER"
 ph_run_with_rollback -c "ph_secure_pieh -t delayed" || \
 	return 1
+ph_add_value_to_param -p PH_UNINT_APPS -v "$PH_APP"
 return 0
 }
 
 function ph_get_app_tty {
 
 declare PH_APP="$1"
-[[ -z "$PH_APP" ]] && \
-	echo -n "1" && \
-	return 1
 declare PH_APP_USER=""
 declare -i PH_APP_TTY="0"
 
-printf "%8s%s\n" "" "--> Checking '${PH_APP}' TTY"
+[[ -z "$PH_APP" ]] && \
+	echo -n "1" && \
+	return 1
+
+printf "%8s%s\n" "" "--> Checking TTY of '${PH_APP}'"
 PH_APP_USER="$(ph_get_app_user_from_app_name "$PH_APP")"
 PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
 if [[ "$PH_APP_TTY" -eq "0" ]]
 then 
 	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not determine TTY -> Allocating new TTY"
+	ph_set_result -r 0
 	ph_allocate_new_tty "$PH_APP"
 	PH_APP_TTY="$?"
-	[[ "$PH_APP_TTY" -ne "1" ]] && \
-		ph_setup_tty -a "$PH_APP" -t "$PH_APP_TTY" -u "$PH_APP_USER"
+	if [[ "$PH_APP_TTY" -ne "1" ]]
+	then
+		ph_run_with_rollback -c "ph_setup_tty -a '${PH_APP}' -t '${PH_APP_TTY}' -u '${PH_APP_USER}'" || \
+			return 1
+	fi
 else
-	printf "%10s\033[32m%s\033[0m\n" "" "OK ('TTY${PH_APP_TTY}')"
+	ph_run_with_rollback -c true "TTY${PH_APP_TTY}"
 fi
 return "$PH_APP_TTY"
 }
@@ -5929,13 +6606,13 @@ then
 else
 	printf "%10s\033[32m%s\033[0m\n" "" "OK"
 	ph_set_result -r "$PH_RET_CODE"
-	printf "%8s%s\n" "" "--> Removing '$PH_APP' LoginScript '/etc/profile.d/PieHelper_tty$PH_APP_TTY.sh'"
-	if ph_run_with_rollback -c "ph_store_file -r -f \"/etc/profile.d/PieHelper_tty$PH_APP_TTY.sh\""
+	printf "%8s%s\n" "" "--> Removing ${PH_APP} LoginScript '/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh'"
+	if ph_run_with_rollback -c "ph_store_file -r -f '/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh'"
 	then
 		printf "%10s\033[32m%s\033[0m\n" "" "OK"
 		ph_set_result -r "$PH_RET_CODE"
-		printf "%8s%s\n" "" "--> Removing '$PH_APP' autologin configuration '/etc/systemd/system/getty@tty$PH_APP_TTY.service.d'"
-		if ph_run_with_rollback -c "ph_store_file -r -f \"/etc/systemd/system/getty@tty$PH_APP_TTY.service.d/autologin.conf\""
+		printf "%8s%s\n" "" "--> Removing ${PH_APP} autologin configuration '/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d'"
+		if ph_run_with_rollback -c "ph_store_file -r -f '/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/autologin.conf'"
 		then
 			ph_run_with_rollback -c "ph_remove_empty_file -r -q -t directory -d \"/etc/systemd/system/getty@tty$PH_APP_TTY.service.d\"" || PH_RET_CODE="1"
 		else
@@ -5998,12 +6675,12 @@ PH_APPL="${PH_APP:0:4}"
 PH_APP_CMD="${PH_SCRIPTS_DIR}/start${PH_APPL}.sh"
 ph_run_with_rollback -c "ph_create_empty_file -q -r -t directory -d \"/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d\"" || \
 	return 1
-printf "%8s%s\n" "" "--> Installing '${PH_APP}' autologin configuration as '/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/autologin.conf'"
+printf "%8s%s\n" "" "--> Installing ${PH_APP} autologin configuration as '/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/autologin.conf'"
 if ph_run_with_rollback -c "ph_create_empty_file -q -r -t file -d '/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/autologin.conf'"
 then
 	for PH_i in "[Service]" "ExecStart=" "ExecStart=-/sbin/agetty --autologin ${PH_APP_USER} --noclear tty${PH_APP_TTY} \$TERM"
 	do
-		! ph_run_with_rollback -c "ph_add_line_to_file -q -r -f '/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/autologin.conf' -l '${PH_i}'" && \
+		! ph_run_with_rollback -c "ph_add_line_to_file -r -f '/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/autologin.conf' -l '${PH_i}'" && \
 			PH_RET_CODE="1" && \
 			break
 	done
@@ -6018,18 +6695,18 @@ then
 		then
 			printf "%10s\033[32m%s\033[0m\n" "" "OK"
 			ph_set_result -r 0
-			ph_run_with_rollback -c "ph_add_app_to_integration_file -a \"$PH_APP\" -u \"$PH_APP_USER\" -t \"$PH_APP_TTY\"" || \
+			ph_run_with_rollback -c "ph_add_app_to_integration_file -a '${PH_APP}' -u '${PH_APP_USER}' -t '${PH_APP_TTY}'" || \
 				return 1
 			if [[ "$PH_FILE_SUFFIX" == "_GL" && "$PH_APP" == "Kodi" ]]
 			then
-				ph_run_with_rollback -c "ph_modify_app_script -a \"$PH_APP\" -t \"$PH_APP_TTY\"" || \
+				ph_run_with_rollback -c "ph_modify_app_script -a '${PH_APP}' -t '${PH_APP_TTY}'" || \
 					return 1
 			fi
 			ph_run_with_rollback -c "ph_copy_file -q -s '${PH_FILES_DIR}/LoginScript.template' -d '${PH_CONF_DIR}/LoginScript.conf'" || \
 				return 1
 			ph_run_with_rollback -c "ph_set_option_to_value LoginScript -r \"PH_APP_TTY'tty${PH_APP_TTY}\" -r \"PH_APP_USER'${PH_APP_USER}\" -r \"PH_APP_CMD'${PH_APP_CMD}\"" || \
 				return 1
-			printf "%8s%s\n" "" "--> Installing '${PH_APP}' LoginScript as '/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh'"
+			printf "%8s%s\n" "" "--> Installing ${PH_APP} LoginScript as '/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh'"
 			if ph_run_with_rollback -c "ph_copy_file -q -r -m -s '${PH_CONF_DIR}/LoginScript.conf' -d '/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh'"
 			then
 				if "$PH_SUDO" chown "${PH_APP_USER}:$("$PH_SUDO" id -gn "$PH_APP_USER" 2>/dev/null)" "/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh" 2>/dev/null
@@ -6040,7 +6717,7 @@ then
 				fi
 			fi
 			printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not install"
-			ph_set_result -m "An error occurred installing '${PH_APP}' LoginScript as '/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh'"
+			ph_set_result -m "An error occurred installing ${PH_APP} LoginScript as '/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh'"
 		else
 			PH_RET_CODE="1"
 		fi
@@ -6051,7 +6728,7 @@ fi
 if [[ "$PH_RET_CODE" -eq "0" ]]
 then
 	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not install"
-	ph_set_result -m "An error occurred installing '${PH_APP}' autologin configuration as '/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/autologin.conf'"
+	ph_set_result -m "An error occurred installing ${PH_APP} autologin configuration as '/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/autologin.conf'"
 fi
 ph_run_with_rollback -c false || \
 	return 1
@@ -6060,68 +6737,80 @@ ph_run_with_rollback -c false || \
 function ph_set_app_for_start {
 
 declare PH_APP="$1"
-[[ -z "$PH_APP" ]] && return 1
 declare PH_OLD_STARTAPP=""
 declare -i PH_COLUMNS="$(tput cols 2>/dev/null)"
 declare -i PH_APP_TTY="0"
 declare -i PH_COUNT="0"
 
-printf "%8s%s\n" "" "--> Checking current 'StartApp'"
-printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_PIEH_STARTAPP')"
+[[ -z "$PH_APP" || "$#" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+printf "%8s%s\n" "" "--> Checking current StartApp"
+ph_run_with_rollback -c true -m "$PH_PIEH_STARTAPP"
 PH_OLD_STARTAPP="$PH_PIEH_STARTAPP"
 if [[ "$PH_APP" == "prompt" ]]
 then
-	printf "%8s%s\n" "" "--> Please choose the value to configure as 'StartApp'"
-	printf "%12s\033[32m%s\033[0m\n\n" "" "- This choice overrides equivalent settings made by the RetroPie setup script"
-	declare -a PH_APP_READ=($(nawk 'BEGIN { ORS = " " } { print $1 }' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null))
+	printf "%8s%s\n" "" "--> Please choose the application to start on system boot"
+	declare -a PH_APP_READ=($(nawk 'BEGIN { \
+			ORS = " " \
+		} { \
+			print $1 \
+		}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null))
 	while true
 	do
-		[[ "$PH_COUNT" -gt "0" ]] && printf "\n%10s\033[31m%s\033[0m\n\n" "" "ERROR : Invalid response"
-		nawk '{ printf "%10s%s\033[32m%s\033[0m\n", "", NR ". ", $1 }' "$PH_CONF_DIR"/integrated_apps 2>/dev/null
+		[[ "$PH_COUNT" -gt "0" ]] && \
+			printf "\n%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Invalid response"
+		nawk '{
+			printf "%10s%s\033[32m%s\033[0m\n", "", NR ". ", $1
+		}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null
 		printf "%10s%s\033[32m%s\033[0m\n" "" "${#PH_APP_READ[@]}. " "none"
-		printf "%10s%s\033[32m%s\033[0m\n\n" "" "$(("${#PH_APP_READ[@]}"+1)). " "Keep current 'StartApp' ('$PH_PIEH_STARTAPP')"
+		printf "%10s%s\033[32m%s\033[0m\n\n" "" "$(("${#PH_APP_READ[@]}"+1)). " "Keep the current StartApp : '${PH_PIEH_STARTAPP}'"
 		printf "%8s%s" "" "Your choice : "
 		read -r PH_APP_READ[0] 2>/dev/null
 		((PH_COUNT++))
 		ph_screen_input "${PH_APP_READ[0]}"
-		if [[ "$?" -ne "0" ]]
-		then
-			unset PH_APP_READ
-			return 1
-		fi
-		case "${PH_APP_READ[0]}" in `cat -n "$PH_CONF_DIR"/integrated_apps 2>/dev/null | nawk '{ print $1 }' | paste -d "|" -s`)
-			PH_APP="$(nawk -v line="${PH_APP_READ[0]}" '{ if (NR==line) { print $1 }}' "$PH_CONF_DIR"/integrated_apps 2>/dev/null)" ;;
+		case "${PH_APP_READ[0]}" in $(cat -n "${PH_CONF_DIR}/integrated_apps" 2>/dev/null | nawk '{ \
+				print $1 \
+			}' | paste -d "|" -s))
+			PH_APP="$(nawk -v line="${PH_APP_READ[0]}" '{ \
+					if (NR == line) { \
+						print $1 \
+					} \
+				}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null)" ;;
 					    "${#PH_APP_READ[@]}")
 			PH_APP="none" ;;
 					    "$(("${#PH_APP_READ[@]}"+1))")
-			printf "%10s\033[32m%s\033[0m\n" "" "OK (Skipping)"
-			unset PH_APP_READ
-			return 0 ;;
+			unset PH_APP_READ 2>/dev/null
+			ph_run_with_rollback -c true -m "Skipping" && \
+				return "$?" ;;
 		esac
 		if [[ -n "$PH_APP" ]]
 		then
-			printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_APP')"
+			unset PH_APP_READ
+			ph_run_with_rollback -c true -m "$PH_APP"
 			break
 		fi
 	done
 fi
-unset PH_APP_READ
-printf "%8s%s\n" "" "--> Comparing old and new values for 'StartApp'"
+printf "%8s%s\n" "" "--> Comparing old and new values for StartApp"
 if [[ "$PH_PIEH_STARTAPP" == "$PH_APP" ]]
 then
-	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Nothing to do (Both '$PH_APP')"
-	return "$?"
+	ph_run_with_rollback -c true -m "Nothing to do" && \
+		return "$?"
 else
-	printf "%10s\033[32m%s\033[0m\n" "" "OK"
+	ph_run_with_rollback -c true
 fi
 if [[ "$PH_APP" != "none" ]]
 then
 	ph_get_app_tty "$PH_APP"
 	PH_APP_TTY="$?"
-	[[ "$PH_APP_TTY" -eq "1" ]] && return 1
+	[[ "$PH_APP_TTY" -eq "1" ]] && \
+		return 1
 fi
-ph_run_with_rollback -c "ph_set_tty_for_boot \"$PH_APP_TTY\"" || return 1
-ph_run_with_rollback -c "ph_set_option_to_value PieHelper -r \"PH_PIEH_STARTAPP'$PH_APP\"" || return 1
+ph_run_with_rollback -c "ph_set_tty_for_boot '${PH_APP_TTY}'" || \
+	return 1
+ph_run_with_rollback -c "ph_set_option_to_value PieHelper -r \"PH_PIEH_STARTAPP'${PH_APP}\"" || \
+	return 1
 ph_add_value_to_param -p PH_STARTAPP -v "$PH_OLD_STARTAPP"
 return 0
 }
@@ -6259,11 +6948,19 @@ return "$PH_RET_CODE"
 
 function ph_show_report {
 
-printf "\n\033[36m%s\033[0m\n\n" "- Verifying 'PieHelper' configurations"
-printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED : Critical configuration issues detected"
-nawk '$1 ~ /^OR$/ { printf "\n%s\033[36m%s\033[0m\n\n", "", $0 ; next } { printf "%s%s\n", "", $0 }' "$PH_TMP_DIR/reported_issues" 2>/dev/null
+[[ "$#" -gt "0" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+printf "\n\033[36m%s\033[0m\n" "- Verifying 'PieHelper' configurations"
+printf "\n%2s\033[31m%s\033[0m\n\n" "" "FAILED : Critical configuration issues detected"
+nawk '$1 ~ /^OR$/ {
+		printf "\n%s\033[36m%s\033[0m\n\n", "", $0 ;
+		next
+	} {
+		printf "%s%s\n", "", $0
+	}' "${PH_TMP_DIR}/reported_issues" 2>/dev/null
 printf "\n%2s\033[31m%s\033[0m\n" "" "They need to be resolved for normal operation to continue"
-printf "%2s\033[31m%s\033[0m\n\n" "" "Fix issues manually or run '$PH_SUDO $PH_SCRIPTS_DIR/confpieh_ph.sh -v' to attempt automatic repair"
+printf "%2s\033[31m%s\033[0m\n\n" "" "Fix issues manually or run '${PH_SUDO} ${PH_SCRIPTS_DIR}/confpieh_ph.sh -v' to attempt automatic repair"
 exit 1
 }
 
@@ -6300,7 +6997,7 @@ do
 	[[ "$PH_COUNT" -gt "0" ]] && printf "\n%10s\033[31m%s\033[0m\n\n" "" "ERROR : Invalid response"
 	printf "%8s%s" "" "--> Continue verification of PieHelper (y/n) ? "
 	read PH_ANSWER 2>/dev/null
-	ph_screen_input "$PH_ANSWER" || return 1
+	ph_screen_input "$PH_ANSWER"
 	((PH_COUNT++))
 done
 printf "%10s\033[32m%s\033[0m\n" "" "OK"
@@ -6348,16 +7045,16 @@ for PH_i in README.md TODO CODE_OF_CONDUCT.md INSTALL LICENSE VERSIONS
 do
 	ph_check_object_existence -o "$PH_BASE_DIR/$PH_i"
 done
-mkdir -p "$PH_SCRIPTS_DIR/../temp" 2>/dev/null
-mv "$PH_BASE_DIR/"+(README.md|TODO|CODE_OF_CONDUCT.md|INSTALL|HOWTO|LICENSE|VERSIONS|builds|snapshots|tmp|mnt|main|conf|files|post_cmds|pre_cmds|.git|.github|scripts) "$PH_BASE_DIR/temp/" 2>/dev/null
-rm -r "${PH_SCRIPTS_DIR%/scripts}/"!(temp) 2>/dev/null
-mv "${PH_SCRIPTS_DIR%/scripts}/temp/"* "${PH_SCRIPTS_DIR%/scripts}/" 2>/dev/null
+mkdir -p "${PH_SCRIPTS_DIR}/../temp" 2>/dev/null
+mv ${PH_BASE_DIR}/+(README.md|TODO|CODE_OF_CONDUCT.md|INSTALL|HOWTO|LICENSE|VERSIONS|builds|snapshots|tmp|mnt|main|conf|files|post_cmds|pre_cmds|.git|.github|scripts) "${PH_BASE_DIR}/temp/" 2>/dev/null
+rm -r ${PH_SCRIPTS_DIR%/scripts}/!(temp) 2>/dev/null
+mv ${PH_SCRIPTS_DIR%/scripts}/temp/* "${PH_SCRIPTS_DIR%/scripts}/" 2>/dev/null
 mv "${PH_SCRIPTS_DIR%/scripts}/temp/.git" "${PH_SCRIPTS_DIR%/scripts}/" 2>/dev/null
 mv "${PH_SCRIPTS_DIR%/scripts}/temp/.github" "${PH_SCRIPTS_DIR%/scripts}/" 2>/dev/null
-rmdir "$PH_SCRIPTS_DIR/../temp" 2>/dev/null
-rm -r "$PH_MAIN_DIR/distros/"!(functions.+(Archlinux|Debian)) 2>/dev/null
-rm -r "$PH_MAIN_DIR/"!(+(distros|main.sh|functions*|confctrls.expect*)) 2>/dev/null
-rm -r "$PH_CONF_DIR/distros/"!(+(Archlinux|buster|jessie|stretch).conf) 2>/dev/null
+rmdir "${PH_SCRIPTS_DIR}/../temp" 2>/dev/null
+rm -r ${PH_MAIN_DIR}/distros/!(functions.+(Archlinux|Debian)) 2>/dev/null
+rm -r ${PH_MAIN_DIR}/!(+(distros|main.sh|functions*|confctrls.expect*)) 2>/dev/null
+rm -r ${PH_CONF_DIR}/distros/!(+(Archlinux|buster|jessie|stretch).conf) 2>/dev/null
 if ! ph_check_object_existence -o sup
 then
 	ph_create_default_base_conf_file sup
@@ -6396,11 +7093,11 @@ else
 			printf "%10s\033[32m%s\033[0m\n" "" "OK"
 		else
 			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Corrupted integration data found -> Reintegrating"
-			ph_integrate_app -a "PieHelper"
+			ph_integrate_app -a PieHelper
 		fi
 	else
 		printf "%10s\033[33m%s\033[0m\n" "" "Warning : No -> Integrating"
-		ph_integrate_app -a "PieHelper"
+		ph_integrate_app -a PieHelper
 	fi
 fi
 PH_RUN_USER="$(ph_get_app_user_from_app_name PieHelper)"
@@ -6612,7 +7309,7 @@ do
 	ph_create_app_menus "$PH_APP"
 done
 mv "$PH_MENUS_DIR/temp/"* "$PH_MENUS_DIR/" 2>/dev/null
-ph_do_link_to_menu "PieHelper"
+ph_link_app_to_menu "PieHelper"
 rmdir "$PH_MENUS_DIR/temp" 2>/dev/null
 ph_set_app_for_start PieHelper
 rm /etc/sudoers.d/020_pieh-* 2>/dev/null
@@ -6706,16 +7403,27 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-printf "%8s%s\n" "" "--> Setting run account '$PH_APP_USER' secondary groups"
-PH_APP_USER_CUR_GROUPS="$(groups "$PH_APP_USER" 2>/dev/null | nawk 'BEGIN { OFS = "," } { for (i=3;i<=NF;i++) { if (NF==i) { printf $i } else { printf "%s", $i "," }}}')"
+printf "%8s%s\n" "" "--> Setting run account '${PH_APP_USER}' secondary groups"
+PH_APP_USER_CUR_GROUPS="$(groups "$PH_APP_USER" 2>/dev/null | nawk 'BEGIN { \
+		OFS = "," \
+	} { \
+		for (i=3;i<=NF;i++) { \
+			if (NF==i) { \
+				printf $i \
+			} else { \
+				printf "%s", $i "," \
+			} \
+		} \
+	}')"
 if "$PH_SUDO" usermod -G "$PH_APP_USER_GROUPS" "$PH_APP_USER" >/dev/null 2>&1
 then
-	printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_APP_USER_GROUPS')"
+	printf "%10s\033[32m%s\033[0m\n" "" "OK ('${PH_APP_USER_GROUPS}')"
 	ph_set_result -r 0
-	ph_add_value_to_param -p PH_GROUPS -v "$PH_APP_USER'$PH_APP_USER_CUR_GROUPS"
+	ph_add_value_to_param -p PH_GROUPS -v "${PH_APP_USER}'${PH_APP_USER_CUR_GROUPS}"
 else
 	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not set groups"
-	ph_run_with_rollback -c "false" || return 1
+	ph_run_with_rollback -c false || \
+		return 1
 fi
 return 0
 }
@@ -6839,70 +7547,55 @@ function ph_configure_pieh {
 declare PH_ANSWER=""
 declare PH_i=""
 declare PH_CONF_STATE=""
-declare PH_EMUL_SETUP_DIR_INIT=""
-declare PH_EMUL_DIR_INIT=""
 declare -i PH_COUNT="0"
 
 PH_ROLLBACK_USED="yes"
-PH_CONF_STATE="$(ph_get_pieh_conf_state | nawk 'BEGIN { \
-		FS = "\x27" \
-	} \
-	$0 ~ /configuration state : / { \
-		printf $2 ; \
-		exit 0 \
-	} { \
-		next \
-	}' 2>/dev/null)"
+PH_CONF_STATE="$(ph_get_pieh_conf_state -q)"
 if [[ "$PH_CONF_STATE" == "Configured" ]]
 then
-	ph_set_result -r 0 -w -m "PieHelper configuration state already 'Configured'"
+	ph_set_result -r 0 -w -m "PieHelper is already configured"
 	return 0
 fi
 [[ -z "$PH_RUN_USER" ]] && \
 	export PH_RUN_USER="$(whoami 2>/dev/null)"
 printf "%2s%s\n\n" "" "This will :"
-printf "%4s%s\n" "" "- Configure '${PH_RUN_USER}' as the default run account for 'PieHelper'"
+printf "%4s%s\n" "" "- Configure '${PH_RUN_USER}' as the user account for the PieHelper application"
 printf "%4s%s\n" "" "- Install all required packages"
-printf "%4s%s\n" "" "- Remove and backup existing custom TTY configurations made by 'Emulationstation'"
+printf "%4s%s\n" "" "- Detect and backup existing StartApp configurations made by Emulationstation (RetroPie)"
 printf "%4s%s\n" "" "- Change a few system related settings"
 printf "%4s%s\n" "" "- Create all base configuration files"
-printf "%4s%s\n" "" "- Setup 'PieHelper' as a 'Supported' application"
-printf "%4s%s\n" "" "- Setup 'PieHelper' as an 'Integrated' application"
+printf "%4s%s\n" "" "- Setup PieHelper as a 'Supported' application"
+printf "%4s%s\n" "" "- Setup PieHelper as an 'Integrated' application"
 printf "%4s%s\n" "" "- Create the controller settings"
-printf "%4s%s\n" "" "- Configure 'PieHelper' as 'StartApp'"
+printf "%4s%s\n" "" "- Configure PieHelper as the system's StartApp"
 printf "%4s%s\n" "" "- Disable the graphical environment"
-printf "%4s%s\n\n" "" "- Reboot your system"
-while [[ "$PH_ANSWER" != @(y|n) ]]
+printf "%4s%s\n\n" "" "- Reboot your system into the PieHelper menu"
+while [[ "$PH_ANSWER" != @(y@(es|)|n@(o|)) ]]
 do
 	[[ "$PH_COUNT" -gt "0" ]] && \
-		printf "\n%10s\033[31m%s\033[0m\n\n" "" "ERROR : Invalid response"
+		printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Invalid response"
 	printf "%8s%s" "" "--> Continue configuring PieHelper under account '${PH_RUN_USER}' (y/n) ? "
 	read PH_ANSWER 2>/dev/null
-	ph_screen_input "$PH_ANSWER" || \
-		return 1
+	ph_screen_input "$PH_ANSWER"
 	((PH_COUNT++))
 done
-printf "%10s\033[32m%s\033[0m\n" "" "OK"
-ph_set_result -r 0
-if [[ "$PH_ANSWER" == "n" ]]
+ph_run_with_rollback -c true -m "$PH_ANSWER"
+if [[ "$PH_ANSWER" == n@(o|) ]]
 then
-	ph_set_result -w -m "Quit at user request"
+	ph_set_result -w -m "Quitting at user request"
 	ph_show_result
 	return "$?"
 fi
 if [[ "$PH_RUN_USER" != "root" ]]
 then
-	printf "%8s%s\n" "" "--> Checking sudo rights for run account '${PH_RUN_USER}'"
+	printf "%8s%s\n" "" "--> Checking privilege elevation rights of user '${PH_RUN_USER}'"
 	if [[ -n "$PH_SUDO" ]]
 	then
-		ph_set_result -r 0
-		printf "%10s\033[32m%s\033[0m\n" "" "OK"
+		ph_run_with_rollback -c true
 	else
-		ph_set_result -r 1
-		printf "%10s\033[31m%s\n" "" "ERROR : PieHelper's run account needs administrative rights to function"
-		printf "%12s%s\n" "" "- Either run PieHelper directly as 'root'"
-		printf "%12s%s\n\n" "" "- Or manually install and configure sudo rights for run account '${PH_RUN_USER}' with the 'SETENV' parameter"
-		return 1
+		ph_set_result -m "Run PieHelper as root or manually configure full sudo rights for user '${PH_RUN_USER}' as '/etc/sudoers.d/020_pieh-${PH_RUN_USER}' prior to installation"
+		ph_run_with_rollback -c false -m "Not found" || \
+			return 1
 	fi
 fi
 if [[ "$PH_DISTRO" == "Debian" ]]
@@ -6910,178 +7603,156 @@ then
 	ph_update_pkg_index || \
 		return 1
 fi
-if ! ph_get_pkg_inst_state "lsb-release"
-then
-	ph_run_with_rollback -c "ph_install_pkg lsb-release" || \
-		return 1
-fi
+ph_run_with_rollback -c "ph_install_pkg lsb-release" || \
+	return 1
 if [[ "$PH_DISTRO" == "Debian" ]]
 then
-	printf "%8s%s\n" "" "--> Determining current 'Debian' release"
+	printf "%8s%s\n" "" "--> Determining currently installed Debian release"
         PH_SPEC_DISTRO="$(lsb_release -a 2>/dev/null | nawk '$1 ~ /^Codename:/ { \
 			printf $2 \
 		}')"
 	if [[ -z "$PH_SPEC_DISTRO" ]]
 	then
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not determine release"
-		ph_set_result -m "An error occurred determining installed Debian release"
-		ph_run_with_rollback -c false || \
+		ph_set_result -m "Unable to determine the currently installed Debian release"
+		ph_run_with_rollback -c false -m "Could not determine" || \
 			return 1
 	fi
 	if [[ ! -f "${PH_CONF_DIR}/distros/${PH_SPEC_DISTRO}.conf" ]]
 	then
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Unsupported release"
-		ph_set_result -m "Debian release '${PH_SPEC_DISTRO}' is not supported"
-		ph_run_with_rollback -c false || \
+		ph_set_result -m "Debian release '${PH_SPEC_DISTRO}' is currently not supported"
+		ph_run_with_rollback -c false -m "$PH_SPEC_DISTRO" || \
 			return 1
 	else
-		ph_run_with_rollback -c true
+		ph_run_with_rollback -c true -m "${PH_SPEC_DISTRO}"
 	fi
 	if [[ ! -L "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" ]]
 	then
-		ph_run_with_rollback -c "ph_create_empty_file -t link -s \"${PH_CONF_DIR}/distros/${PH_SPEC_DISTRO}.conf\" -d \"${PH_CONF_DIR}/distros/${PH_DISTRO}.conf\"" || \
+		ph_run_with_rollback -c "ph_create_empty_file -t link -s '${PH_CONF_DIR}/distros/${PH_SPEC_DISTRO}.conf' -d '${PH_CONF_DIR}/distros/${PH_DISTRO}.conf'" || \
 			return 1
 	fi
-	source "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" 2>/dev/null
+	printf "%8s%s\n" "" "--> Loading release-dependent codebase"
+	if source "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" 2>/dev/null
+	then
+		ph_run_with_rollback -c true
+	else
+		ph_set_result -m "An error occured trying to load codebase file '${PH_CONF_DIR}/distros/${PH_DISTRO}.conf'"
+		ph_run_with_rollback -c false -m "Could not load" || \
+			return 1
+	fi
 fi
 printf "%8s%s\n" "" "--> Checking parent directory"
 if [[ "$PH_BASE_DIR" == "${PH_INST_DIR}/PieHelper" ]]
 then
-	"$PH_SUDO" chmod -R 750 "$PH_BASE_DIR" >/dev/null 2>&1
-	"$PH_SUDO" chown -R "${PH_RUN_USER}:$("$PH_SUDO" id -gn "$PH_RUN_USER" 2>/dev/null)" "$PH_BASE_DIR" >/dev/null 2>&1
-	ph_run_with_rollback -c true
-else
-	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : PieHelper root directory must be called 'PieHelper'"
-	ph_run_with_rollback -c false || \
-		return 1
-fi
-ph_run_with_rollback -c "ph_set_user_group_membership -u \"${PH_RUN_USER}\" -g \"tty,audio,video,input\"" || \
-	return 1
-ph_run_with_rollback -c "ph_pieh_configured_logind_conf" || \
-	return 1
-for PH_i in sudo acl xboxdrv git make bluez bluez-tools lsb-release expect less ${PH_DISTRO_PKGS}
-do
-	if ! ph_get_pkg_inst_state "$PH_i"
+	if "$PH_SUDO" chmod -R 750 "$PH_BASE_DIR" >/dev/null 2>&1
 	then
-		ph_run_with_rollback -c "ph_install_pkg \"${PH_i}\"" || \
-			return 1
-	else
-		printf "%8s%s\n" "" "--> Installing '${PH_i}' package"
-		printf "%10s\033[32m%s\033[0m\n" "" "OK (Already installed)"
-		ph_set_result -r 0
-	fi
-done
-ph_run_with_rollback -c "ph_blacklist_kernel_module xpad" || \
-	return 1
-for PH_i in uinput joydev
-do
-	ph_run_with_rollback -c "ph_load_kernel_module \"${PH_i}\"" || \
-		return 1
-done
-printf "%8s%s\n" "" "--> Checking 'Emulationstation' presence"
-if [[ -f /usr/bin/emulationstation ]]
-then
-	printf "%10s\033[32m%s\033[0m\n" "" "OK (Found)"
-	ph_set_result -r 0
-	printf "%8s%s\n" "" "--> Determining 'Emulationstation' base directory"
-	if [[ -f /etc/profile.d/10-retropie.sh ]]
-	then
-		PH_EMUL_DIR_INIT="$(nawk -F'"' '$1 ~ /bash/ { \
-				print $2 \
-			}' /etc/profile.d/10-retropie.sh 2>/dev/null)"
-		if [[ -n "$PH_EMUL_DIR_INIT" ]]
+		if "$PH_SUDO" chown -R "${PH_RUN_USER}:$("$PH_SUDO" id -gn "$PH_RUN_USER" 2>/dev/null)" "$PH_BASE_DIR" >/dev/null 2>&1
 		then
-			PH_EMUL_DIR_INIT="${PH_EMUL_DIR_INIT%%/configs*}"
+			ph_run_with_rollback -c true
+			ph_run_with_rollback -c "ph_set_user_group_membership -u '${PH_RUN_USER}' -g 'tty,audio,video,input'" || \
+				return 1
+			ph_run_with_rollback -c "ph_pieh_configured_logind_conf" || \
+				return 1
+			for PH_i in sudo acl xboxdrv git make bluez bluez-tools expect less ${PH_DISTRO_PKGS}
+			do
+				ph_run_with_rollback -c "ph_install_pkg '${PH_i}'" || \
+					return 1
+			done
+			ph_run_with_rollback -c "ph_blacklist_kernel_module xpad" || \
+				return 1
+			for PH_i in uinput joydev
+			do
+				ph_run_with_rollback -c "ph_load_kernel_module '${PH_i}'" || \
+					return 1
+			done
+			printf "%8s%s\n" "" "--> Checking for Emulationstation (RetroPie)"
+			if [[ -f /usr/bin/emulationstation ]]
+			then
+				ph_run_with_rollback -c true -m "Found"
+				ph_run_with_rollback -c "ph_pieh_configured_emul_conf" || \
+					return 1
+			else
+				ph_run_with_rollback -c true -m "Not found"
+			fi
+			ph_run_with_rollback -c "ph_pieh_configured_path_conf" || \
+				return 1
+			for PH_i in cont os defaults alloweds
+			do
+				ph_create_default_base_conf_file "$PH_i" || \
+					return 1
+			done
+			ph_run_with_rollback -c "ph_create_empty_file -t file -d '${PH_TMP_DIR}/.configure_in_progress'" || \
+				return 1
+			ph_run_with_rollback -c "ph_support_app -a PieHelper" || \
+				return 1
+			printf "%8s%s\n" "" "--> Loading configuration for application 'PieHelper'"
+			if source "${PH_CONF_DIR}/PieHelper.conf" >/dev/null 2>&1
+			then
+				ph_run_with_rollback -c true
+			else
+				ph_set_result -m "An error occured trying to load configuration file '${PH_CONF_DIR}/PieHelper.conf'"
+				ph_run_with_rollback -c false -m "Could not load" || \
+					return 1
+			fi
+			for ((PH_COUNT=2;PH_COUNT<="$PH_PIEH_MAX_TTYS";PH_COUNT++))
+			do
+				ph_run_with_rollback -c "ph_disable_app_tty '${PH_COUNT}'" || \
+					return 1
+			done
+			ph_run_with_rollback -c "ph_enable_app_tty 1" || \
+				return 1
+			ph_run_with_rollback -c "ph_integrate_app -a PieHelper" || \
+				return 1
+			ph_run_with_rollback -c "ph_remove_empty_file -t file -d '${PH_TMP_DIR}/.configure_in_progress'" || \
+				return 1
+			ph_run_with_rollback -c "ph_set_app_for_start PieHelper" || \
+				return 1
+			ph_run_with_rollback -c "ph_create_app_items -a Ctrls -t support" || \
+				return 1
+			ph_run_with_rollback -c "ph_set_bootenv multi-user.target" || \
+				return 1
+			PH_ANSWER=""
+			PH_COUNT="0"
+			while [[ "$PH_ANSWER" != @(y@(es|)|n@(o|)) ]]
+			do
+				[[ "$PH_COUNT" -gt "0" ]] && \
+					printf "\n%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Invalid response"
+				printf "%8s%s\n\n" "" "--> Perform full system update before reboot (Recommended)"
+				printf "%12s%s\n" "" "- System updates can take a long time depending on the system's current version and configuration"
+				printf "%12s%s\n\n" "" "- Please note that system updates are not reversible"
+				printf "%12s%s" "" "Perform update (y/n) ? "
+				read PH_ANSWER 2>/dev/null
+				ph_screen_input "$PH_ANSWER"
+				((PH_COUNT++))
+			done
+			ph_run_with_rollback -c true -m "$PH_ANSWER"
+			if [[ "$PH_ANSWER" == y@(es|) ]]
+			then
+				ph_update_system || \
+					return 1
+			fi
+			printf "%8s%s\n" "" "--> Displaying the user manual"
+			sleep 2
+			if less "${PH_SCRIPTS_DIR}/../HOWTO" 2>/dev/null
+			then
+				ph_run_with_rollback -l -c true -m "${PH_SCRIPTS_DIR}/../HOWTO"
+			else
+				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not display"
+				ph_set_result -r 0
+			fi
+			printf "\n%s" "Press Enter to reboot into the PieHelper menu"
+			read 2>/dev/null
+			"$PH_SUDO" init 6
+		else
+			ph_set_result -m "Could not recursively set ownership of directory '${PH_BASE_DIR}' to '${PH_RUN_USER}:$("$PH_SUDO" id -gn "$PH_RUN_USER" 2>/dev/null)'"
 		fi
 	else
-		if [[ -d /opt/retropie ]]
-		then
-			PH_EMUL_DIR_INIT="/opt/retropie"
-		fi
-	fi
-	if [[ -n "$PH_EMUL_DIR_INIT" ]]
-	then
-		printf "%10s\033[32m%s\033[0m\n" "" "OK ('${PH_EMUL_DIR_INIT}')"
-		ph_set_result -r 0
-		ph_run_with_rollback -c "ph_pieh_configured_emul_conf" || \
-			return 1
-	else
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not locate directory"
-		ph_run_with_rollback -c false || \
-			return 1
-	fi
-	export OLD_PH_EMUL_DIR=""
-	ph_run_with_rollback -c "ph_set_option_to_value Emulationstation -r \"PH_EMUL_DIR'${PH_EMUL_DIR_INIT}\"" || \
-		return 1
-	printf "%8s%s\n" "" "--> Determining 'Emulationstation' setup directory (This may take a while)"
-	PH_EMUL_SETUP_DIR_INIT="$("$PH_SUDO" find / -type d ! -fstype nfs -name RetroPie 2>/dev/null)"
-	if [[ -n "$PH_EMUL_SETUP_DIR_INIT" ]]
-	then
-		ph_run_with_rollback -c true
-		export OLD_PH_EMUL_SETUP_DIR=""
-		ph_run_with_rollback -c "ph_set_option_to_value Emulationstation -r \"PH_EMUL_SETUP_DIR'${PH_EMUL_SETUP_DIR_INIT}\"" || \
-			return 1
-	else
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not locate directory"
-		ph_run_with_rollback -c false || \
-			return 1
+		ph_set_result -m "Could not recursively set permissions for directory '${PH_BASE_DIR}' to '750'"
 	fi
 else
-	printf "%10s\033[32m%s\033[0m\n" "" "OK (Not found)"
-	ph_set_result -r 0
+	ph_set_result -m "The directory that contains PieHelper should be called 'PieHelper' (Correct by running 'sudo mv ${PH_BASE_DIR} ${PH_BASE_DIR%/*}/PieHelper')"
+	ph_run_with_rollback -c false -m "Incorrect parent" || \
+		return 1
 fi
-ph_run_with_rollback -c "ph_pieh_configured_path_conf" || \
-	return 1
-for PH_i in cont os defaults alloweds
-do
-	ph_create_default_base_conf_file "$PH_i" || \
-		return 1
-done
-ph_run_with_rollback -c "ph_support_app -a PieHelper" || \
-	return 1
-ph_run_with_rollback -c "ph_do_link_to_menu PieHelper" || \
-	return 1
-source "${PH_CONF_DIR}/PieHelper.conf"
-for ((PH_COUNT=2;PH_COUNT<="$PH_PIEH_MAX_TTYS";PH_COUNT++))
-do
-	ph_run_with_rollback -c "ph_disable_app_tty \"${PH_COUNT}\"" || \
-		return 1
-done
-ph_run_with_rollback -c "ph_enable_app_tty 1" || \
-	return 1
-ph_run_with_rollback -c "ph_integrate_app -a PieHelper" || \
-	return 1
-ph_run_with_rollback -c "ph_set_app_for_start PieHelper" || \
-	return 1
-ph_run_with_rollback -c "ph_create_app_items -a Ctrls -t support" || \
-	return 1
-ph_run_with_rollback -c "ph_set_bootenv multi-user.target" || \
-	return 1
-PH_ANSWER=""
-PH_COUNT="0"
-printf "%8s%s\n" "" "--> Proposing system update"
-while [[ "$PH_ANSWER" != @(y|n) ]]
-do
-	[[ "$PH_COUNT" -gt "0" ]] && \
-		printf "\n%10s\033[31m%s\033[0m\n\n" "" "ERROR : Invalid response" || \
-		printf "%10s\033[32m%s\033[0m\n" "" "OK"
-	printf "%8s%s" "" "--> Recommended : Do you want to perform a full system update before reboot (y/n) ? "
-	read PH_ANSWER 2>/dev/null
-	ph_screen_input "$PH_ANSWER" || \
-		return 1
-	((PH_COUNT++))
-done
-ph_run_with_rollback -c true
-[[ "$PH_ANSWER" == "y" ]] && \
-	ph_update_system
-printf "%8s%s\n" "" "--> Displaying manual"
-sleep 3
-less "${PH_SCRIPTS_DIR}/../HOWTO" 2>/dev/null
-ph_run_with_rollback -l -c true
-unset PH_EMUL_DIR PH_EMUL_SETUP_DIR
-printf "%s" "Press Enter to reboot into the PieHelper menu"
-read 2>/dev/null
-"$PH_SUDO" init 6
 }
 
 function ph_get_filename_from_shortname {
@@ -7089,7 +7760,8 @@ function ph_get_filename_from_shortname {
 declare PH_SHORTNAME="$1"
 declare PH_FILE=""
 
-[[ -z "$PH_SHORTNAME" ]] && return 1
+[[ -z "$PH_SHORTNAME" ]] && \
+	return 1
 case "$PH_SHORTNAME" in cont)
 		PH_FILE="controller_cli_ids" ;;
 			os)
@@ -7099,7 +7771,7 @@ case "$PH_SHORTNAME" in cont)
 			sup)
 		PH_FILE="supported_apps" ;;
 			defaults|alloweds)
-		PH_FILE="options.$PH_SHORTNAME" ;;
+		PH_FILE="options.${PH_SHORTNAME}" ;;
 esac
 echo -n "$PH_FILE"
 return 0
@@ -7108,35 +7780,31 @@ return 0
 function ph_set_bootenv {
 
 declare PH_ENV="$1"
-declare -i PH_RET_CODE="0"
+declare PH_ENV_ACTION=""
 
-[[ -z "$PH_ENV" ]] && return 1
+[[ -z "$PH_ENV" || "$#" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
 if [[ "$PH_ENV" == "multi-user.target" ]]
 then 
-	printf "%8s%s\n" "" "--> Disabling 'X'"
-	if "$PH_SUDO" systemctl set-default "$PH_ENV" >/dev/null 2>&1
-	then
-		ph_add_value_to_param -p PH_BOOTENV -v "graphical.target"
-		ph_run_with_rollback -c "true"
-	else
-		PH_RET_CODE="1"
-	fi
+	PH_ENV_ACTION="disable"
+	printf "%8s%s\n" "" "--> Disabling the graphical environment"
 else
-	printf "%8s%s\n" "" "--> Enabling 'X'"
-	if "$PH_SUDO" systemctl set-default "$PH_ENV" >/dev/null 2>&1
-	then
-		ph_add_value_to_param -p PH_BOOTENV -v "multi-user.target"
-		ph_run_with_rollback -c "true"
-	else
-		PH_RET_CODE="1"
-	fi
+	PH_ENV_ACTION="enable"
+	printf "%8s%s\n" "" "--> Enabling the graphical environment"
 fi
-if [[ "$PH_RET_CODE" -ne "0" ]]
+if "$PH_SUDO" systemctl set-default "$PH_ENV" >/dev/null 2>&1
 then
-	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not enable environment"
-	ph_run_with_rollback -c "false" || return 1
+	[[ "$PH_ENV" == "graphical.target" ]] && \
+		PH_ENV="multi-user.target" || \
+		PH_ENV="graphical.target"
+	ph_add_value_to_param -p PH_BOOTENV -v "$PH_ENV"
+	ph_run_with_rollback -c true && \
+		return "$?"
 fi
-return "$PH_RET_CODE"
+ph_set_result -m "An error occured trying to ${PH_ENV_ACTION} the graphical environment"
+ph_run_with_rollback -c false -m "Could not ${PH_ENV_ACTION}" || \
+	return 1
 }
 
 function ph_do_app_routine {

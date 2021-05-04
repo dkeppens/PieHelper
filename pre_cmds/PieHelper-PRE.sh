@@ -1,41 +1,82 @@
-# PieHelper PRE-command script to run before PieHelper startup
-# by Davy Keppens on 04/10/2018
+# PieHelper PRE-command script which runs before PieHelper startup
+#
+# - Will check if a valid System Settings backup file called 'OS.defaults' exists in the CIFS-mounted directory defined by option PH_PIEH_CIFS_MPT
+# - Will attempt to copy the file to the '/conf' subdirectory of the PieHelper application directory
+# - Will attempt to set proper ownership and permissions of the restored file
+# - Will replace a previously existing file with the same name on success for all or restore it in case of failure for any
+#
+# @Davy Keppens on 04/10/2018
 #
 
 #set -x
 
-declare PH_FAILED="no"
+declare PH_PIEH_GROUP=""
+declare PH_PIEH_LOC_DIR=""
+declare PH_PIEH_REM_DIR=""
 
-printf "%8s%s\n" "" "--> Checking for 'PieHelper' PRE-command CIFS mount requirement"
-ph_set_result -r 0
+PH_PIEH_GROUP="$("$PH_SUDO" id -gn "${PH_APP_USER}" 2>/dev/null)"
+PH_PIEH_LOC_DIR="$(ph_get_app_cifs_mpt -a PieHelper -r)"
+PH_PIEH_REM_DIR="$(eval "echo -n ${PH_PIEH_CIFS_DIR}${PH_PIEH_CIFS_SUBDIR}")"
+printf "%8s%s\n" "" "--> Checking for PieHelper PRE-command prerequisite : CIFS configured"
 if [[ "$PH_PIEH_CIFS_SHARE" == "yes" ]]
 then
-	printf "%10s\033[32m%s\033[0m\n" "" "OK (Yes)"
-        printf "%8s%s\n" "" "--> Checking for 'PieHelper' PRE-command CIFS mount presence"
-	ph_set_result -r 0
-        mount 2>/dev/null | nawk -v rempath=^"//$PH_PIEH_CIFS_SRV$(eval echo -n "$PH_PIEH_CIFS_DIR""$PH_PIEH_CIFS_SUBDIR")"$ -F' on ' '$1 ~ rempath { exit 1 }'
-        if [[ "$?" -eq "1" ]]
-        then
-                printf "%10s\033[32m%s\033[0m\n" "" "OK (Found) -> Restoring OS configuration defaults"
-		printf "%8s%s%s%s\n" "" "--> Restoring 'OS.defaults' backup to '" "$PH_FILES_DIR" "/'"
-		ph_set_result -r 0
-		if [[ -s "$(eval echo -n "$PH_PIEH_CIFS_MPT")"/OS.defaults ]]
+	ph_run_with_rollback -c true -m Yes
+	printf "%8s%s\n" "" "--> Checking for PieHelper PRE-command prerequisite : CIFS mounted"
+       	if [[ "$(mount 2>/dev/null | nawk -v rempath="^//${PH_PIEH_CIFS_SRV}${PH_PIEH_REM_DIR}$" -F' on ' '$1 ~ rempath { \
+			printf "%s", "yes" ; \
+			exit \
+		} { \
+			next \
+		}')" == "yes" ]]
+       	then
+		ph_run_with_rollback -c true -m Yes
+		printf "%8s%s\n" "" "--> Checking for PieHelper PRE-command prerequisite : Accessible backup"
+		if [[ -r "${PH_PIEH_LOC_DIR}/OS.defaults" ]]
 		then
-			cp -p "$(eval echo -n "$PH_PIEH_CIFS_MPT")"/OS.defaults "$PH_FILES_DIR"/ 2>/dev/null
-			if [[ "$?" -ne "0" ]]
+			ph_run_with_rollback -c true -m Yes
+			printf "%8s%s\n" "" "--> Checking for PieHelper PRE-command prerequisite : Valid backup"
+			if [[ -s "${PH_PIEH_LOC_DIR}/OS.defaults" ]]
 			then
-				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not restore backup"
-				PH_FAILED="yes"
+				ph_run_with_rollback -c true -m Yes
+				printf "%8s%s\n" "" "--> Restoring CIFS backup '${PH_PIEH_LOC_DIR}/OS.defaults' as '${PH_CONF_DIR}/OS.defaults'"
+				if [[ -f "${PH_CONF_DIR}/OS.defaults" ]]
+				then
+					if ! mv "${PH_CONF_DIR}/OS.defaults" "${PH_TMP_DIR}/OS.defaults_tmp" 2>/dev/null
+					then
+						printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not store '${PH_CONF_DIR}/OS.defaults' as '${PH_TMP_DIR}/OS.defaults_tmp' -> Skipping"
+						ph_set_result -r 0
+						unset PH_PIEH_GROUP PH_PIEH_LOC_DIR PH_PIEH_REM_DIR
+						return 1
+					fi
+				fi
+				if cp "${PH_PIEH_LOC_DIR}/OS.defaults" "${PH_CONF_DIR}/" 2>/dev/null
+				then
+					if ph_secure_pieh -q -f "${PH_CONF_DIR}/OS.defaults" 2>/dev/null
+					then
+						"$PH_SUDO" rm "${PH_TMP_DIR}/OS.defaults_tmp" 2>/dev/null
+						unset PH_PIEH_GROUP PH_PIEH_LOC_DIR PH_PIEH_REM_DIR
+						ph_run_with_rollback -c true && \
+							return "$?"
+					else
+						printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not set ownership of '${PH_CONF_DIR}/OS.defaults' to '${PH_APP_USER}:${PH_PIEH_GROUP}' -> Skipping"
+						PH_RESULT_MSG=""
+					fi
+				else
+					printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not copy '${PH_PIEH_LOC_DIR}/OS.defaults' to '${PH_CONF_DIR}/' -> Skipping"
+				fi
+				"$PH_SUDO" mv "${PH_TMP_DIR}/OS.defaults_tmp" "${PH_CONF_DIR}/OS.defaults" 2>/dev/null
 			else
-				printf "%10s\033[32m%s\033[0m\n" "" "OK"
+				printf "%10s\033[33m%s\033[0m\n" "" "Warning : '${PH_PIEH_LOC_DIR}/OS.defaults' is not a valid System Settings backup -> Skipping" 
 			fi
 		else
-			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Backup not found -> Skipping"
+			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not access '${PH_PIEH_LOC_DIR}/OS.defaults' -> Skipping" 
 		fi
 	else
-		printf "%10s\033[33m%s\033[0m\n" "" "Warning : CIFS mount '//$PH_PIEH_CIFS_SRV$(eval echo -n "$PH_PIEH_CIFS_DIR""$PH_PIEH_CIFS_SUBDIR")' presence on mountpoint '$(eval echo -n "$PH_PIEH_CIFS_MPT")' is mandatory for 'PieHelper' PRE-command -> Skipping"
+		printf "%10s\033[33m%s\033[0m\n" "" "Warning : No -> Skipping" 
 	fi
 else
-	printf "%10s\033[33m%s\033[0m\n" "" "Warning : CIFS is mandatory for 'PieHelper' PRE-command -> Skipping"
+	printf "%10s\033[33m%s\033[0m\n" "" "Warning : No -> Skipping" 
 fi
-[[ "$PH_FAILED" == "yes" ]] && return 1 || return 0
+ph_set_result -r 0
+unset PH_PIEH_GROUP PH_PIEH_LOC_DIR PH_PIEH_REM_DIR
+return 1

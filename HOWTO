@@ -1,4 +1,5 @@
-- Use the arrow keys to navigate and press 'q' to quit
+- Welcome to the Piehelper manual
+  Use the arrow keys to navigate and press 'q' to quit
 
 - PieHelper is an application management framework consisting of a pure text-based menu accompanied by a range of CLI tools
   Functionality is established by binding applications integrated into it's framework to a specific TTY
