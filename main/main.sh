@@ -103,11 +103,11 @@ do
 	then
 		if ! source "${PH_MAIN_DIR}/${PH_i}" >/dev/null 2>&1
 		then
-			printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Could not load critical codebase file '${PH_MAIN_DIR/${PH_i}')"
+			printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Could not load critical codebase file '${PH_MAIN_DIR}/${PH_i}')"
 			exit 1
 		fi
 	else
-		printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '${PH_MAIN_DIR/${PH_i}')"
+		printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '${PH_MAIN_DIR}/${PH_i}')"
 		exit 1
 	fi
 done
@@ -296,7 +296,7 @@ then
 		touch "${PH_FILES_DIR}/first_run" 2>/dev/null
 		ph_set_result -a -m "Unknown user account for PieHelper : Try configuring first by running '${PH_SCRIPTS_DIR}/confpieh_ph.sh -c'"
 	else
-		ph_set_result -a -m "Only the following accounts are allowed to run PieHelper : '$(echo -n "$PH_ALLOW_USERS" | sed 's/|/ /g')'"
+		ph_set_result -a -m "Only the following accounts are allowed to run PieHelper : '${PH_ALLOW_USERS//|/ /}'"
 	fi
 fi
 
