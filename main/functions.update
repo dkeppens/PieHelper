@@ -595,52 +595,58 @@ OPTARG="$PH_OLDOPTARG"
 	"$PH_CMD" != @(ph_*|true|false) || "$#" -lt "2" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-((PH_ROLLBACK_DEPTH++))
+if [[ "$PH_ROLLBACK_USED" == "yes" ]]
+then
+	((PH_ROLLBACK_DEPTH++))
+fi
 eval "$PH_CMD"
 PH_RET_CODE="$?"
-if [[ "$PH_CMD" == @(true|false) ]]
+if [[ "$PH_ROLLBACK_USED" == "yes" ]]
 then
-	ph_set_result -r "$PH_RET_CODE"
-	if [[ "$PH_CMD" == "true" ]]
+	if [[ "$PH_CMD" == @(true|false) ]]
 	then
-		if [[ -z "$PH_CMD_MSG" ]]
+		ph_set_result -r "$PH_RET_CODE"
+		if [[ "$PH_CMD" == "true" ]]
 		then
-			printf "%10s\033[32m%s\033[0m\n" "" "OK"
+			if [[ -z "$PH_CMD_MSG" ]]
+			then
+				printf "%10s\033[32m%s\033[0m\n" "" "OK"
+			else
+				printf "%10s\033[32m%s\033[0m%s\n" "" "OK : " "$PH_CMD_MSG"
+			fi
 		else
-			printf "%10s\033[32m%s\033[0m%s\n" "" "OK : " "$PH_CMD_MSG"
+			>&2 printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "$PH_CMD_MSG"
 		fi
 	else
-		>&2 printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "$PH_CMD_MSG"
-	fi
-else
-	if [[ "$PH_RET_CODE" -ne "0" ]]
-	then
-		if [[ "$PH_ROLLBACK_DEPTH" -eq "1" ]]
+		if [[ "$PH_RET_CODE" -ne "0" ]]
 		then
-			ph_show_result
+			if [[ "$PH_ROLLBACK_DEPTH" -eq "1" ]]
+			then
+				ph_show_result
+				for PH_ARRAY_INDEX in "${!PH_DEPTH[@]}"
+				do
+					PH_ROLLBACK_PARAMS+=("${PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]}")
+					unset PH_DEPTH[${PH_ARRAY_INDEX}]
+				done
+				for PH_ARRAY_INDEX in "${!PH_DEPTH_PARAMS[@]}"
+				do
+					unset PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]
+				done
+				printf "\033[36m%s\033[0m\n\n" "- Rolling back changes"
+				ph_rollback_changes
+				ph_clean_tmp_dir
+				exit "$?"
+			fi
+		else
 			for PH_ARRAY_INDEX in "${!PH_DEPTH[@]}"
 			do
-				PH_ROLLBACK_PARAMS+=("${PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]}")
-				unset PH_DEPTH[${PH_ARRAY_INDEX}]
+				[[ "${PH_DEPTH[${PH_ARRAY_INDEX}]}" -gt "$PH_ROLLBACK_DEPTH" ]] && \
+					unset PH_DEPTH[${PH_ARRAY_INDEX}]
 			done
-			for PH_ARRAY_INDEX in "${!PH_DEPTH_PARAMS[@]}"
-			do
-				unset PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]
-			done
-			printf "\033[36m%s\033[0m\n\n" "- Rolling back changes"
-			ph_rollback_changes
-			ph_clean_tmp_dir
-			exit "$?"
 		fi
-	else
-		for PH_ARRAY_INDEX in "${!PH_DEPTH[@]}"
-		do
-			[[ "${PH_DEPTH[${PH_ARRAY_INDEX}]}" -gt "$PH_ROLLBACK_DEPTH" ]] && \
-				unset PH_DEPTH[${PH_ARRAY_INDEX}]
-		done
 	fi
+	((PH_ROLLBACK_DEPTH--))
 fi
-((PH_ROLLBACK_DEPTH--))
 return "$PH_RET_CODE"
 }
 
