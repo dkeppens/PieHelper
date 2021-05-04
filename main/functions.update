@@ -639,7 +639,7 @@ else
 		done
 	fi
 fi
-((PH_ROLLBACK_DEPTH++))
+((PH_ROLLBACK_DEPTH--))
 return "$PH_RET_CODE"
 }
 
