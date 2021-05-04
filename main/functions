@@ -3420,6 +3420,8 @@ declare -i PH_ARRAY2_INDEX="0"
 declare -i PH_RET_CODE="0"
 declare -a PH_RUN_ACLS
 
+set -x
+
 PH_ROLLBACK_USED="no"
 for PH_ARRAY_INDEX in $(echo -n "${!PH_ROLLBACK_PARAMS[*]} " | tac -s " ")
 do
