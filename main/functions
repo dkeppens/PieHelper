@@ -6702,7 +6702,6 @@ then
 		fi
 		if ph_run_with_rollback -c "ph_copy_file -s '${PH_FILES_DIR}/LoginScript.template' -d '${PH_CONF_DIR}/LoginScript.conf'"
 		then
-			ph_run_with_rollback -c true
 			ph_run_with_rollback -c "ph_set_option_to_value LoginScript -r \"PH_APP_TTY'tty${PH_APP_TTY}\" -r \"PH_APP_USER'${PH_APP_USER}\" -r \"PH_APP_CMD'${PH_APP_CMD}\"" || \
 				return 1
 			printf "%8s%s\033[32m%s\033[0m\n" "" "--> Installing ${PH_APP} LoginScript as " "'/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh'"
