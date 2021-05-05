@@ -627,22 +627,28 @@ then
 			exit "$?"
 		fi
 	else
-		for PH_ARRAY_INDEX in "${!PH_DEPTH[@]}"
+		for PH_ARRAY_INDEX in ${!PH_DEPTH[@]}
 		do
-			if [[ "${PH_DEPTH[${PH_ARRAY_INDEX}]}" -gt "$PH_ROLLBACK_DEPTH" ]]
+			if [[ "${PH_DEPTH["${PH_ARRAY_INDEX}"]}" -gt "$PH_ROLLBACK_DEPTH" ]]
 			then
 				PH_COUNT="0"
-				for ((PH_COMPARE_INDEX="0";PH_COMPARE_INDEX<"$PH_ARRAY_INDEX";PH_COMPARE_INDEX++))
+				for PH_COMPARE_INDEX in ${!PH_DEPTH_PARAMS[@]}
 				do
-					[[ "${PH_DEPTH_PARAMS["${PH_COMPARE_INDEX}"]}" == "${PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]}" ]] && \
+					[[ "${PH_DEPTH_PARAMS["${PH_COMPARE_INDEX}"]}" == "${PH_DEPTH_PARAMS["${PH_ARRAY_INDEX}"]}" ]] && \
 						((PH_COUNT++))
+					[[ "$PH_COMPARE_INDEX" -eq "$PH_ARRAY_INDEX" ]] && \
+						break
 				done
-				[[ "$PH_COUNT" -gt "0" ]] && \
-					((PH_COUNT--))
 				declare -n PH_PARAM_ARRAY="${PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]}"
-				unset PH_PARAM_ARRAY[$(echo -n "${!PH_PARAM_ARRAY[@]}" | cut -d' ' -f "$PH_COUNT")]
-				unset PH_DEPTH[${PH_ARRAY_INDEX}]
+				if [[ "$PH_COUNT" -eq "0" ]]
+				then
+					unset PH_PARAM_ARRAY["$(echo "${!PH_PARAM_ARRAY[@]}" | cut -d' ' -f1)"]
+				else
+					for PH_COMPARE_INDEX
+					unset PH_PARAM_ARRAY["$(echo "${!PH_PARAM_ARRAY[@]}" | nawk -d' ' -f"${PH_COUNT}")"]
+				fi
 				unset PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]
+				unset PH_DEPTH[${PH_ARRAY_INDEX}]
 				unset -n PH_PARAM_ARRAY
 			fi
 		done
