@@ -640,14 +640,8 @@ then
 						break
 				done
 				declare -n PH_PARAM_ARRAY="${PH_DEPTH_PARAMS["${PH_ARRAY_INDEX}"]}"
-				if [[ "$PH_COUNT" -eq "0" ]]
-				then
-					echo "hitting count zero where PARAM is ${PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]} where ARRAY_INDEX is ${PH_ARRAY_INDEX}"
-					echo "hitting count zero where unsetting ${PH_PARAM_ARRAY[$(echo ${!PH_PARAM_ARRAY[@]} | cut -d' ' -f1)]} at INDEX $(echo ${!PH_PARAM_ARRAY[@]} | cut -d' ' -f1)"
-					unset PH_PARAM_ARRAY["$(echo ${!PH_PARAM_ARRAY[@]} | cut -d' ' -f1)"]
-				else
-					unset PH_PARAM_ARRAY["$(echo ${!PH_PARAM_ARRAY[@]} | cut -d' ' -f"${PH_COUNT}")"]
-				fi
+				unset PH_PARAM_ARRAY["$(echo ${!PH_PARAM_ARRAY[@]} | cut -d' ' -f"${PH_COUNT}")"]
+				echo "unsetting ${PH_DEPTH_PARAMS["${PH_ARRAY_INDEX}"]} array element 'PH_PARAM_ARRAY[$(echo ${!PH_PARAM_ARRAY[@]} | cut -d' ' -f${PH_COUNT})]' at index $(echo ${!PH_PARAM_ARRAY[@]} | cut -d' ' -f${PH_COUNT})"
 				unset PH_DEPTH_PARAMS["${PH_ARRAY_INDEX}"]
 				unset PH_DEPTH["${PH_ARRAY_INDEX}"]
 				unset -n PH_PARAM_ARRAY
