@@ -626,9 +626,11 @@ then
 			do
 				unset PH_DEPTH[${PH_ARRAY_INDEX}]
 			done
-			printf "\033[36m%s\033[0m\n\n" "- Rolling back changes"
-			ph_rollback_changes
-			ph_clean_tmp_dir
+			if [[ "${#PH_DEPTH_PARAMS[@]}" -gt "0" ]]
+			then
+				printf "\033[36m%s\033[0m\n\n" "- Rolling back changes"
+				ph_rollback_changes
+			fi
 			exit "$?"
 		fi
 	else
