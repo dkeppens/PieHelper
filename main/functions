@@ -3387,6 +3387,8 @@ return 0
 
 function ph_rollback_changes {
 
+set -x
+
 declare PH_CMD=""
 declare PH_PARAMS=""
 declare PH_MOVE_SCRIPTS_REGEX=""
