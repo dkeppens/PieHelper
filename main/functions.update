@@ -627,6 +627,7 @@ then
 			exit "$?"
 		fi
 	else
+		echo "current depth indices are ${!PH_DEPTH[@]}}"
 		for PH_ARRAY_INDEX in ${!PH_DEPTH[@]}
 		do
 			if [[ "${PH_DEPTH["${PH_ARRAY_INDEX}"]}" -gt "$PH_ROLLBACK_DEPTH" ]]
@@ -640,6 +641,10 @@ then
 						break
 				done
 				declare -n PH_PARAM_ARRAY="${PH_DEPTH_PARAMS["${PH_ARRAY_INDEX}"]}"
+				echo "param to unset is ${PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]}"
+				echo "contents of ${PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]} are ${PH_PARAM_ARRAY[@]}"
+				echo "indices of ${PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]} are ${!PH_PARAM_ARRAY[@]}"
+				echo "match count of ${PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]} is ${PH_COUNT}"
 				unset PH_PARAM_ARRAY["$(echo ${!PH_PARAM_ARRAY[@]} | nawk -v cnt="$PH_COUNT" '{ printf $cnt ; exit }')"]
 				echo "unsetting ${PH_DEPTH_PARAMS["${PH_ARRAY_INDEX}"]} array element 'PH_PARAM_ARRAY[$(echo ${!PH_PARAM_ARRAY[@]} | nawk -v cnt=${PH_COUNT} '{ printf $cnt ; exit }')]' at index $(echo ${!PH_PARAM_ARRAY[@]} | nawk -v cnt=${PH_COUNT} '{ printf $cnt ; exit }')"
 				unset PH_DEPTH_PARAMS["${PH_ARRAY_INDEX}"]
