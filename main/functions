@@ -3449,7 +3449,7 @@ PH_ROLLBACK_USED="no"
 for PH_PARAM_INDEX in $(echo -n "${!PH_DEPTH_PARAMS[*]} " | tac -s " ")
 do
 	PH_RET_CODE="0"
-	PH_OPT="${PH_DEPTH_PARAMS[${PH_PARAM_INDEX}]}"
+	PH_OPT="${PH_DEPTH_PARAMS["${PH_PARAM_INDEX}"]}"
 	declare -n PH_DATA_ARRAY="$PH_OPT"
 	PH_DATA_INDEX="$(echo "${!PH_DATA_ARRAY[@]}" | nawk '{ \
 			printf $NF \
@@ -3717,7 +3717,7 @@ do
 		PH_CMD="ph_pieh_unconfigured_${PH_VALUE}_conf" ;;
 	esac
 	unset PH_DATA_ARRAY["$PH_DATA_INDEX"]
-	unset PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]
+	unset PH_DEPTH_PARAMS["${PH_ARRAY_INDEX}"]
 	unset -n PH_DATA_ARRAY
 	eval "$PH_CMD"
 	PH_RET_CODE="$?"
