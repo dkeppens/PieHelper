@@ -645,7 +645,7 @@ then
 				PH_COUNT="0"
 				for ((PH_PARAM_INDEX="0";PH_PARAM_INDEX<"$PH_ARRAY_INDEX";PH_PARAM_INDEX++))
 				do
-					[[ "${PH_DEPTH_PARAMS["${PH_PARAM_INDEX}"]}" == "${PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]}" && \
+					[[ "${PH_DEPTH_PARAMS["${PH_PARAM_INDEX}"]}" == "${PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]}" ]] && \
 						((PH_COUNT++))
 				done
 				declare -n PH_PARAM_ARRAY="${PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]}"
