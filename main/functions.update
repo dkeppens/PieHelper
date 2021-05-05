@@ -632,15 +632,15 @@ then
 			if [[ "${PH_DEPTH[${PH_ARRAY_INDEX}]}" -gt "$PH_ROLLBACK_DEPTH" ]]
 			then
 				PH_COUNT="0"
-				for ((PH_PARAM_INDEX="0";PH_PARAM_INDEX<"$PH_ARRAY_INDEX";PH_PARAM_INDEX++))
+				for ((PH_COMPARE_INDEX="0";PH_COMPARE_INDEX<"$PH_ARRAY_INDEX";PH_COMPARE_INDEX++))
 				do
-					[[ "${PH_DEPTH_PARAMS["${PH_PARAM_INDEX}"]}" == "${PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]}" ]] && \
+					[[ "${PH_DEPTH_PARAMS["${PH_COMPARE_INDEX}"]}" == "${PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]}" ]] && \
 						((PH_COUNT++))
 				done
 				[[ "$PH_COUNT" -gt "0" ]] && \
 					((PH_COUNT--))
 				declare -n PH_PARAM_ARRAY="${PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]}"
-				unset PH_PARAM_ARRAY["$PH_COUNT"]
+				unset PH_PARAM_ARRAY[$(echo -n "${!PH_PARAM_ARRAY[@]}" | cut -d' ' -f "$PH_COUNT")]
 				unset PH_DEPTH[${PH_ARRAY_INDEX}]
 				unset PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]
 				unset -n PH_PARAM_ARRAY
