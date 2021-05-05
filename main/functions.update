@@ -644,7 +644,7 @@ then
 				then
 					unset PH_PARAM_ARRAY["$(echo ${!PH_PARAM_ARRAY[@]} | cut -d' ' -f1)"]
 				else
-					unset PH_PARAM_ARRAY["$(echo ${!PH_PARAM_ARRAY[@]} | nawk -d' ' -f"${PH_COUNT}")"]
+					unset PH_PARAM_ARRAY["$(echo ${!PH_PARAM_ARRAY[@]} | cut -d' ' -f"${PH_COUNT}")"]
 				fi
 				unset PH_DEPTH_PARAMS["${PH_ARRAY_INDEX}"]
 				unset PH_DEPTH["${PH_ARRAY_INDEX}"]
