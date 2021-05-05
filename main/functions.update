@@ -627,7 +627,7 @@ then
 			exit "$?"
 		fi
 	else
-		echo "current depth indices are ${!PH_DEPTH[@]}}"
+		echo "current depth indices are ${!PH_DEPTH[@]}"
 		for PH_ARRAY_INDEX in ${!PH_DEPTH[@]}
 		do
 			if [[ "${PH_DEPTH["${PH_ARRAY_INDEX}"]}" -gt "$PH_ROLLBACK_DEPTH" ]]
