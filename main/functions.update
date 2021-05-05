@@ -71,7 +71,6 @@ OPTARG="$PH_OLDOPTARG"
 set -x
 [[ -z "$PH_FILE_DEST" || -z "$PH_FILE_TYPE" || "$#" -lt "4" || "$#" -gt "6" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
-set +x
 
 [[ ! -d "$PH_FILE_DEST" && ! -L "$PH_FILE_DEST" && ! -f "$PH_FILE_DEST" ]] && \
         return 0
