@@ -7587,6 +7587,7 @@ then
 			return 1
 	fi
 	printf "%8s%s\n" "" "--> Loading release-dependent codebase"
+set -x
 	if source "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" 2>/dev/null
 	then
 		ph_run_with_rollback -c true
@@ -7595,6 +7596,7 @@ then
 		ph_run_with_rollback -c false -m "Could not load" || \
 			return 1
 	fi
+set +x
 fi
 printf "%8s%s\n" "" "--> Checking parent directory"
 if [[ "$PH_BASE_DIR" == "${PH_INST_DIR}/PieHelper" ]]
