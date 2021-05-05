@@ -3429,7 +3429,9 @@ do
 	PH_RET_CODE="0"
 	PH_OPT="${PH_DEPTH_PARAMS[${PH_PARAM_INDEX}]}"
 	declare -n PH_DATA_ARRAY="$PH_OPT"
-	PH_DATA_INDEX="$(("${#PH_DATA_ARRAY[@]}"-1))"
+	PH_DATA_INDEX="$(("$(echo "${#PH_DATA_ARRAY[@]}" | nawk '{ \
+			printf $NF \
+		}')"
 	PH_VALUE="${PH_DATA_ARRAY["$PH_DATA_INDEX"]}"
 	case "$PH_OPT" in PH_START_APPS)
 		PH_CMD="ph_do_app_action start '${PH_VALUE}'" ;;
