@@ -639,16 +639,15 @@ then
 					[[ "$PH_COMPARE_INDEX" -eq "$PH_ARRAY_INDEX" ]] && \
 						break
 				done
-				declare -n PH_PARAM_ARRAY="${PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]}"
+				declare -n PH_PARAM_ARRAY="${PH_DEPTH_PARAMS["${PH_ARRAY_INDEX}"]}"
 				if [[ "$PH_COUNT" -eq "0" ]]
 				then
-					unset PH_PARAM_ARRAY["$(echo "${!PH_PARAM_ARRAY[@]}" | cut -d' ' -f1)"]
+					unset PH_PARAM_ARRAY["$(echo ${!PH_PARAM_ARRAY[@]} | cut -d' ' -f1)"]
 				else
-					for PH_COMPARE_INDEX
-					unset PH_PARAM_ARRAY["$(echo "${!PH_PARAM_ARRAY[@]}" | nawk -d' ' -f"${PH_COUNT}")"]
+					unset PH_PARAM_ARRAY["$(echo ${!PH_PARAM_ARRAY[@]} | nawk -d' ' -f"${PH_COUNT}")"]
 				fi
-				unset PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]
-				unset PH_DEPTH[${PH_ARRAY_INDEX}]
+				unset PH_DEPTH_PARAMS["${PH_ARRAY_INDEX}"]
+				unset PH_DEPTH["${PH_ARRAY_INDEX}"]
 				unset -n PH_PARAM_ARRAY
 			fi
 		done
