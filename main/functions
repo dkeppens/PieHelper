@@ -7606,7 +7606,7 @@ then
 			ph_run_with_rollback -c true
 			ph_run_with_rollback -c "ph_set_user_group_membership -u '${PH_RUN_USER}' -g 'tty,audio,video,input'" || \
 				return 1
-			for PH_i in sudo acl xboxdrv git make bluez bluez-tools expect less ${PH_DISTRO_PKGS}
+			for PH_i in acl xboxdrv git make bluez bluez-tools expect less ${PH_DISTRO_PKGS}
 			do
 				ph_run_with_rollback -c "ph_install_pkg '${PH_i}'" || \
 					return 1
