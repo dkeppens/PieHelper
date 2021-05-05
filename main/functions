@@ -1780,7 +1780,7 @@ declare PH_FILE=""
 
 if PH_FILE="$(ph_get_filename_from_shortname "$PH_FILE_SHORTNAME")"
 then
-	printf "%8s%s\n" "" "--> Creating base configuration file '${PH_CONF_DIR}/${PH_FILE}'"
+	printf "%8s%s\033[32m%s\033[0m\n" "" "--> Creating base configuration file " "'${PH_CONF_DIR}/${PH_FILE}'"
 	if [[ -f "${PH_CONF_DIR}/${PH_FILE}" && ! -s "${PH_CONF_DIR}/${PH_FILE}" ]]
 	then
 		ph_run_with_rollback -c true -m "Nothing to do" && \
@@ -1788,7 +1788,7 @@ then
 	else
 		if [[ ! -s "${PH_CONF_DIR}/${PH_FILE}" ]]
 		then
-			ph_set_result -m "Could not create base configuration file '${PH_CONF_DIR}/${PH_FILE}' since one exists already'
+			ph_set_result -m "Could not create base configuration file '${PH_CONF_DIR}/${PH_FILE}' since one exists already"
 		else
 			ph_run_with_rollback -c "ph_create_empty_file -q -t file -d '${PH_CONF_DIR}/${PH_FILE}'" && \
 				ph_run_with_rollback -c true && \
