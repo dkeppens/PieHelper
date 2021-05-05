@@ -1771,7 +1771,6 @@ return 1
 }
 
 function ph_create_default_base_conf_file {
-set -x
 
 declare PH_FILE_SHORTNAME="$1"
 declare PH_FILE=""
@@ -1787,18 +1786,16 @@ then
 		ph_run_with_rollback -c true -m "Nothing to do" && \
 			return "$?"
 	else
-		if [[ ! -s "${PH_CONF_DIR}/${PH_FILE}" ]]
+		if [[ -s "${PH_CONF_DIR}/${PH_FILE}" ]]
 		then
 			ph_set_result -m "Could not create base configuration file '${PH_CONF_DIR}/${PH_FILE}' since one exists already"
 		else
-			set +x
 			ph_run_with_rollback -c "ph_create_empty_file -q -t file -d '${PH_CONF_DIR}/${PH_FILE}'" && \
 				ph_run_with_rollback -c true && \
 				return "$?"
 		fi
 	fi
 fi
-set +x
 ph_run_with_rollback -c false -m "Could not create" || \
 	return 1
 }
