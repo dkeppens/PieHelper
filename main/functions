@@ -3388,49 +3388,49 @@ return 0
 function ph_rollback_changes {
 
 declare PH_CMD=""
-declare PH_OPT=""
-declare PH_OPTION=""
 declare PH_PARAMS=""
-declare PH_ROLLBACK_TIME=""
-declare PH_OPTION_VALUE=""
-declare PH_VALUE=""
 declare PH_MOVE_SCRIPTS_REGEX=""
-declare PH_FILE_TYPE=""
-declare PH_FILE_SOURCE=""
-declare PH_FILE_DEST=""
+declare PH_RUN_SECURE=""
 declare PH_RUN_GIT_COMMIT_LOCAL=""
 declare PH_RUN_GIT_COMMIT_MASTER=""
 declare PH_RUN_GIT_ADD_LOCAL=""
 declare PH_RUN_GIT_TAG_LOCAL=""
+declare PH_ROLLBACK_TIME=""
 declare PH_GIT_REPO_DIR=""
 declare PH_GIT_REPO_NAME=""
 declare PH_GIT_REPO_ARGS=""
 declare PH_GIT_REPO=""
-declare PH_FILE=""
 declare PH_LINE=""
+declare PH_FILE=""
+declare PH_FILE_TYPE=""
+declare PH_FILE_SOURCE=""
+declare PH_FILE_DEST=""
 declare PH_APP=""
-declare PH_RUN_SECURE=""
 declare PH_APP_USER=""
 declare PH_APP_USER_GROUPS=""
 declare PH_APP_CMD=""
 declare PH_APP_PKG=""
 declare PH_APP_INST_STATE=""
+declare PH_OPTION=""
+declare PH_OPTION_VALUE=""
 declare PH_VAR_NAME=""
 declare PH_VAR_VALUE=""
+declare PH_OPT=""
+declare PH_VALUE=""
+declare -i PH_PARAM_INDEX="0"
+declare -i PH_DATA_INDEX="0"
 declare -i PH_APP_TTY="0"
-declare -i PH_ARRAY_INDEX="0"
-declare -i PH_ARRAY2_INDEX="0"
 declare -i PH_RET_CODE="0"
 declare -a PH_RUN_ACLS
 
 PH_ROLLBACK_USED="no"
-for PH_ARRAY_INDEX in $(echo -n "${!PH_ROLLBACK_PARAMS[*]} " | tac -s " ")
+for PH_PARAM_INDEX in $(echo -n "${!PH_DEPTH_PARAMS[*]} " | tac -s " ")
 do
 	PH_RET_CODE="0"
-	PH_OPT="${PH_ROLLBACK_PARAMS["$PH_ARRAY_INDEX"]}"
-	declare -n PH_ARRAY2="$PH_OPT"
-	PH_ARRAY2_INDEX="$(("${#PH_ARRAY2[@]}"-1))"
-	PH_VALUE="${PH_ARRAY2["$PH_ARRAY2_INDEX"]}"
+	PH_OPT="${PH_DEPTH_PARAMS[${PH_PARAM_INDEX}]}"
+	declare -n PH_DATA_ARRAY="$PH_OPT"
+	PH_DATA_INDEX="$(("${#PH_DATA_ARRAY[@]}"-1))"
+	PH_VALUE="${PH_DATA_ARRAY["$PH_DATA_INDEX"]}"
 	case "$PH_OPT" in PH_START_APPS)
 		PH_CMD="ph_do_app_action start '${PH_VALUE}'" ;;
 			  PH_STOP_APPS)
@@ -3692,9 +3692,9 @@ do
 			PH_UNCONFIGURED_STATE)
 		PH_CMD="ph_pieh_unconfigured_${PH_VALUE}_conf" ;;
 	esac
-	unset PH_ARRAY2["$PH_ARRAY2_INDEX"]
-	unset PH_ROLLBACK_PARAMS["$PH_ARRAY_INDEX"]
-	unset -n PH_ARRAY2
+	unset PH_DATA_ARRAY["$PH_DATA_INDEX"]
+	unset PH_DEPTH_PARAMS[${PH_ARRAY_INDEX}]
+	unset -n PH_DATA_ARRAY
 	eval "$PH_CMD"
 	PH_RET_CODE="$?"
 	[[ "$PH_RET_CODE" -ne "0" ]] && \
