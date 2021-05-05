@@ -3844,10 +3844,10 @@ function ph_pieh_configured_logind_conf {
 declare PH_i=""
 declare -i PH_VALUE="0"
 
+printf "%8s%s\n" "" "--> Changing settings in system file '/etc/systemd/logind.conf'"
 if [[ "$(grep -E "^NAutoVTs=${PH_PIEH_MAX_TTYS}$" /etc/systemd/logind.conf >/dev/null 2>&1 ; echo "$?")" -ne "0" && \
 	"$(grep -E "^ReserveVT=1$" /etc/systemd/logind.conf >/dev/null 2>&1 ; echo "$?")" -ne "0" ]]
 then
-	printf "%8s%s\n" "" "--> Changing settings in system file '/etc/systemd/logind.conf'"
 	if ph_run_with_rollback -c "ph_copy_file -q -r -s '/etc/systemd/logind.conf' -d '${PH_FILES_DIR}/logind_conf'"
 	then
 		for PH_i in NAutoVTs ReserveVT
@@ -3888,7 +3888,7 @@ then
 			return 1
 	fi
 else
-	ph_run_with_rollback -c true -m "Nothing to do" || \
+	ph_run_with_rollback -c true -m "Nothing to do" && \
 		return "$?"
 fi
 ph_add_value_to_param -p PH_UNCONFIGURED_STATE -v "logind"
@@ -7587,7 +7587,6 @@ then
 			return 1
 	fi
 	printf "%8s%s\n" "" "--> Loading release-dependent codebase"
-set -x
 	if source "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" 2>/dev/null
 	then
 		ph_run_with_rollback -c true
@@ -7596,7 +7595,6 @@ set -x
 		ph_run_with_rollback -c false -m "Could not load" || \
 			return 1
 	fi
-set +x
 fi
 printf "%8s%s\n" "" "--> Checking parent directory"
 if [[ "$PH_BASE_DIR" == "${PH_INST_DIR}/PieHelper" ]]
@@ -7643,7 +7641,7 @@ then
 			then
 				ph_run_with_rollback -c true
 			else
-				ph_set_result -m "An error occured trying to load configuration file '${PH_CONF_DIR}/PieHelper.conf'"
+				ph_set_result -m "An error occurred trying to load configuration file '${PH_CONF_DIR}/PieHelper.conf'"
 				ph_run_with_rollback -c false -m "Could not load" || \
 					return 1
 			fi
