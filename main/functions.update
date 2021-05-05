@@ -68,25 +68,23 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_FILE_DEST" || -z "$PH_FILE_TYPE" || "$#" -lt "4" || "$#" -gt "6" ]] && \
+[[ -z "$PH_FILE_DEST" || -z "$PH_FILE_TYPE" || \
+	( "$PH_FILE_TYPE" == "link" && ! -L "$PH_FILE_DEST" ) || \
+	( "$PH_FILE_TYPE" == "directory" && ! -d "$PH_FILE_DEST" ) || \
+	( "$PH_FILE_TYPE" == "file" && ( ! -f "$PH_FILE_DEST" || -L "$PH_FILE_DEST" || -s "$PH_FILE_DEST" )) || \
+	"$#" -lt "4" || "$#" -gt "6" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-[[ ! -d "$PH_FILE_DEST" && ! -L "$PH_FILE_DEST" && ! -f "$PH_FILE_DEST" ]] && \
-        return 0
-[[ "$PH_FILE_TYPE" == "link" && ! -L "$PH_FILE_DEST" ]] && \
-        return 1
-[[ "$PH_FILE_TYPE" == "directory" && ! -d "$PH_FILE_DEST" ]] && \
-        return 1
-if [[ ( "$PH_FILE_TYPE" == "file" ) && ( ! -f "$PH_FILE_DEST" || -d "$PH_FILE_DEST" || -L "$PH_FILE_DEST" || -s "$PH_FILE_DEST" ) ]]
-then
-        return 1
-fi
 [[ "$PH_QUIESCE" -eq "1" ]] && \
-        printf "%8s%s\n" "" "--> Removing ${PH_FILE_TYPE} '${PH_FILE_DEST}'"
+        printf "%8s%s\033[32m%s\033[0m\n" "" "--> Removing ${PH_FILE_TYPE} " "'${PH_FILE_DEST}'"
+if [[ ! -e "$PH_FILE_DEST" ]]
+then
+	[[ "$PH_QUIESCE" -eq "1" ]] && \
+		ph_run_with_rollback -c true -m "Nothing to do"
+	return 0
+fi
 case "$PH_FILE_TYPE" in link)
-	PH_FILE_SOURCE="$("$PH_SUDO" find "$PH_FILE_DEST" -exec ls -l {} \; 2>/dev/null | nawk '{ \
-                        print $NF \
-                }')"
+	PH_FILE_SOURCE="$(ph_get_link_target "$PH_FILE_DEST")"
         [[ "$PH_FILE_SOURCE" != /* ]] && \
                 PH_FILE_SOURCE="${PH_FILE_DEST%/*}/${PH_FILE_SOURCE}"
         if [[ "$PH_REMOVE_AS_ROOT" -eq "0" ]]
@@ -180,27 +178,22 @@ OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
 [[ -z "$PH_FILE_DEST" || -z "$PH_FILE_TYPE" || ( "$PH_FILE_TYPE" == "link" && -z "$PH_FILE_SOURCE" ) || \
+	( -e "$PH_FILE_DEST" && (( "$PH_FILE_TYPE" == "directory" && ! -d "$PH_FILE_DEST" ) || 
+	( "$PH_FILE_TYPE" == "link" && ! -L "$PH_FILE_DEST" ) || \
+	( "$PH_FILE_TYPE" == "file" && ( ! -f "$PH_FILE_DEST" || -L "$PH_FILE_DEST" )))) || \
 	"$#" -lt "4" || "$#" -gt "8" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-case "$PH_FILE_TYPE" in link)
-	[[ -L "$PH_FILE_DEST" && "$PH_FILE_SOURCE" == "$("$PH_SUDO" find "$PH_FILE_DEST" -exec ls -l {} \; 2>/dev/null | nawk '{ \
-			printf $NF \
-		}')" ]] && \
-		return 0 ;;
-                        directory)
-	[[ -d "$PH_FILE_DEST" ]] && \
-		return 0 ;;
-                        file)
-	[[ -f "$PH_FILE_DEST" && ! -s "$PH_FILE_DEST" ]] && \
-		return 0 ;;
-esac
-if [[ -L "$PH_FILE_DEST" || -d "$PH_FILE_DEST" || -f "$PH_FILE_DEST" ]]
-then
-	return 1
-fi
 [[ "$PH_QUIESCE" -eq "1" ]] && \
-        printf "%8s%s" "" "--> Creating ${PH_FILE_TYPE} '${PH_FILE_DEST}'"
+        printf "%8s%s\033[32m%s\033[0m" "" "--> Creating ${PH_FILE_TYPE} " "'${PH_FILE_DEST}'"
+if [[ ( "$PH_FILE_TYPE" == "link" && -e "$PH_FILE_DEST" && "$PH_FILE_SOURCE" == "$(ph_get_link_target "$PH_FILE_DEST")" ) || \
+	( "$PH_FILE_TYPE" == @(directory|file) && -e "$PH_FILE_DEST" ) ]]
+then
+	[[ "$PH_QUIESCE" -eq "1" ]] && \
+		printf "\n" && \
+		ph_run_with_rollback -c true -m "Nothing to do"
+	return 0
+fi
 case "$PH_FILE_TYPE" in link)
 	[[ "$PH_QUIESCE" -eq "1" ]] && \
         	printf "%s\n" " to '${PH_FILE_SOURCE}'"
