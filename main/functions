@@ -7636,6 +7636,8 @@ return 0
 
 function ph_get_app_list_by_state {
 
+set -x
+
 declare PH_i=""
 declare PH_APP=""
 declare PH_APP_STATE=""
