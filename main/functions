@@ -1783,7 +1783,7 @@ if [[ ! -e "${PH_CONF_DIR}/${PH_FILE}" || -s "${PH_CONF_DIR}/${PH_FILE}" ]]
 then
 	if [[ -s "${PH_CONF_DIR}/${PH_FILE}" ]]
 	then
-		printf "%8s%s\n" "" "--> Creating base configuration file '${PH_FILE}'
+		printf "%8s%s\n" "" "--> Creating base configuration file '${PH_FILE}'"
 		ph_set_result -m "Could not create base configuration file '${PH_CONF_DIR}/${PH_FILE}' since one exists already"
 		ph_run_with_rollback -c false -m "Could not create" || \
 			return 1
@@ -3450,11 +3450,6 @@ do
 			printf $NF \
 		}')"
 	PH_VALUE="${PH_DATA_ARRAY["$PH_DATA_INDEX"]}"
-	echo "PARAM is ${PH_OPT}"
-	echo "indices of ${PH_OPT} array are ${!PH_OPT[@]}"
-	echo "contents of ${PH_OPT} array are ${PH_DATA_ARRAY[@]}"
-	echo "active index is ${PH_DATA_INDEX[@]}"
-	echo "active value is ${PH_VALUE}"
 	case "$PH_OPT" in PH_START_APPS)
 		PH_CMD="ph_do_app_action start '${PH_VALUE}'" ;;
 			  PH_STOP_APPS)
