@@ -2545,7 +2545,7 @@ declare -i PH_RET_CODE="0"
 
 OPTIND="1"
 
-while getopts a:isuhnrqf PH_OPTION 2>/dev/null
+while getopts a:isuhnrdqf PH_OPTION 2>/dev/null
 do
 	case "$PH_OPTION" in i)
 		[[ -n "$PH_APP_TYPE" ]] && \
@@ -2559,6 +2559,12 @@ do
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
 		PH_APP_TYPE="Supported" ;;
+			     d)
+		[[ -n "$PH_APP_TYPE" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_APP_TYPE="Default" ;;
 			     n)
 		[[ -n "$PH_APP_TYPE" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
@@ -2626,22 +2632,15 @@ then
 		then
 			[[ "$PH_APPL" == @(x11|kodi|moon|emul|bash|pieh) ]] && \
 				PH_APP_STATE="Reserved"
-		else
-			PH_APP_STATE="Default"
 		fi
-		for PH_i in $(nawk 'BEGIN { \
-				ORS = " " \
-			} { \
-				print $1 \
-			}' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)
-		do
-			PH_APP_STATE="$(ph_get_app_state_from_app_name "$PH_APP")"
-		done
+		PH_APP_STATE="$(ph_get_app_state_from_app_name "$PH_APP")"
 	fi
 	[[ "$PH_APP_STATE" == "Unknown" ]] && \
 		PH_APP_STATE="Unused" || \
 		PH_RET_CODE="1"
 else
+	cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null && \
+		PH_APP_STATE="Default"
 	if cut -f1 "${PH_CONF_DIR}/supported_apps" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
 	then
 		PH_APP_STATE="Supported"
@@ -7678,20 +7677,18 @@ case "$PH_REQ_APP_STATE" in Integrated)
 			    Supported)
 	PH_REQ_APP_STATE_PARAM="-s" ;;
 			    Default)
-	PH_REQ_APP_STATE_PARAM="-u" ;;
+	PH_REQ_APP_STATE_PARAM="-n" ;;
 			    Halted)
 	PH_REQ_APP_STATE_PARAM="-h" ;;
 			    Running)
 	PH_REQ_APP_STATE_PARAM="-r" ;;
-			    StartApp)
-	PH_REQ_APP_STATE_PARAM="-i" ;;
 			    Unknown)
 	PH_REQ_APP_STATE_PARAM="-u" ;;
 esac
 for PH_APP in $(nawk 'BEGIN { \
 		ORS = " " \
 	} { \
-		printf $1 \
+		print $1 \
 	}' "${PH_CONF_DIR}/supported_apps" "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null)
 do
 	for PH_i in "${PH_APP_LIST[@]}"
