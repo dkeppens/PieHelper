@@ -2622,8 +2622,7 @@ OPTARG="$PH_OLDOPTARG"
 
 [[ "$PH_QUIESCE" -eq "1" ]] && \
 	printf "%8s%s\n" "" "--> Checking the application state of ${PH_APP}"
-if [[ "$PH_APP_TYPE" == "Unused" ]]
-then
+case "$PH_APP_TYPE" in Unused)
 	if [[ "$PH_APPL" == @(none|all|prom) ]]
 	then
 		PH_APP_STATE="Reserved"
@@ -2637,10 +2636,12 @@ then
 	fi
 	[[ "$PH_APP_STATE" == "Unknown" ]] && \
 		PH_APP_STATE="Unused" || \
-		PH_RET_CODE="1"
-else
+		PH_RET_CODE="1" ;;
+		       Default)
 	cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null && \
-		PH_APP_STATE="Default"
+		PH_APP_STATE="Default" || \
+		PH_RET_CODE="1" ;;
+		       *)
 	if cut -f1 "${PH_CONF_DIR}/supported_apps" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
 	then
 		PH_APP_STATE="Supported"
@@ -2676,8 +2677,8 @@ else
 				fi
 			fi
 		fi
-	fi
-fi
+	fi ;;
+esac
 if [[ "$PH_APP_TYPE" == "$PH_APP_STATE" ]]
 then
 	if [[ "$PH_QUIESCE" -eq "1" || "$PH_FORCE_PRINT_FLAG" -eq "0" ]]
@@ -2692,6 +2693,7 @@ then
 else
 	case "$PH_APP_STATE" in Unknown)
 			PH_RET_CODE="1" ;;
+				PH_RET_CODE="1" ;;
 				Supported)
 			[[ "$PH_APP_TYPE" == @(Halted|Running|Integrated|Unknown) ]] && \
 				PH_RET_CODE="1" ;;
@@ -7647,7 +7649,7 @@ OPTIND="1"
 while getopts s:t: PH_OPTION 2>/dev/null
 do
 	case "$PH_OPTION" in s)
-		[[ -n "$PH_APP_STATE" || "$OPTARG" != @(Integrated|Supported|Default|Halted|Running|StartApp|Unknown) ]] && \
+		[[ -n "$PH_APP_STATE" || "$OPTARG" != @(Integrated|Supported|Default|Running|Halted) ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -7677,13 +7679,11 @@ case "$PH_REQ_APP_STATE" in Integrated)
 			    Supported)
 	PH_REQ_APP_STATE_PARAM="-s" ;;
 			    Default)
-	PH_REQ_APP_STATE_PARAM="-n" ;;
+	PH_REQ_APP_STATE_PARAM="-d" ;;
 			    Halted)
 	PH_REQ_APP_STATE_PARAM="-h" ;;
 			    Running)
 	PH_REQ_APP_STATE_PARAM="-r" ;;
-			    Unknown)
-	PH_REQ_APP_STATE_PARAM="-u" ;;
 esac
 for PH_APP in $(nawk 'BEGIN { \
 		ORS = " " \
