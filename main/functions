@@ -7671,7 +7671,7 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_APP_STATE" || -z "$PH_STATE_MATCH_TYPE" || "$#" -ne "4" ] && \
+[[ -z "$PH_APP_STATE" || -z "$PH_STATE_MATCH_TYPE" || "$#" -ne "4" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 declare -a PH_APP_LIST
