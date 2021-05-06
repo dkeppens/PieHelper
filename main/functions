@@ -2693,7 +2693,6 @@ then
 else
 	case "$PH_APP_STATE" in Unknown)
 			PH_RET_CODE="1" ;;
-				PH_RET_CODE="1" ;;
 				Supported)
 			[[ "$PH_APP_TYPE" == @(Halted|Running|Integrated|Unknown) ]] && \
 				PH_RET_CODE="1" ;;
