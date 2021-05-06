@@ -1,0 +1,94 @@
+VERSION 1.0 - 02/02/2019
+________________________
+
+* Release
+
+VERSION 1.01 - 02/02/2019
+________________________
+
+* Fixes for confsupp_ph.sh
+
+VERSION 1.02 - 05/02/2019
+________________________
+
+* Added support for Moonlight's -width and -height parameters
+* Fixes for non-default run accounts for OOS apps
+* Fixes for removing OOS apps
+* Fix for ph_undo_setup_tty
+* Fixed output format for ph_configure_moon
+* Fixed error output for confoper_ph.sh bootenv function
+* Fixed output format for ph_check_pkg_run_user user creation
+* Added clarification in usage info display for ph_configure_pieh
+* Added library path definition to PieHelper path extension
+* Fix for moonlight quitting in ph_run_app_action
+* Fix for password prompting in ph_run_app_action and confoper_ph.sh
+* Added new read-only option PH_PIEH_NUM_CTRL
+* Changed default of PH_CTRL_PS3_PIN to '0000'
+* Added menu options to view value of read-only options for all apps and integrated changes with confsupp_ph.sh
+* Changed CIFS options for Moonlight to read-only
+* Fixes for listblue_ph.sh
+* Fix for ph_run_app_action moonlight configured precheck
+* Fixes for non-default run account for Moonlight
+* Fixes for non-default run account for Emulationstation
+* Changed top and bottom overscan defaults to 30 (up from 16)
+* Added several reminder displays for non-default run accounts
+
+VERSION 1.03 - 06/02/2019
+________________________
+
+* listmoon_ph.sh now allows interactively selecting a game for streaming
+* Bug fixes for user creation module in confoper_ph.sh
+* Bug fix for gpu_mem reservation module in confoper_ph.sh for no pre-existing config
+* Changed ERROR level to warning for local git tagging
+
+VERSION 1.04 - 20/02/2019
+________________________
+
+* Bug fix for ph_run_app_action
+
+VERSION 1.05 - 02/03/2019
+________________________
+
+* Bug fix for TTY switching in ph_run_app_action
+* Bug fix for remaining processes when stopping a TTY
+* Corrected help information for all *_CIFS_SHARE options
+* Fix correct determination of CLI id for xboxdrv mapping
+* Added correction for help of option PH_PIEH_CIFS_SHARE
+* Fix for restoring certain option values when any old option value was empty for treated options
+* Removed hardcoded path check in confoper_ph.sh
+* Added support for interactive module selection for listing module debug state via the PieHelper menu
+* Added support for use of disabled/enabled keywords for module selection with 'confpieh_ph.sh -p debug'
+
+VERSION 1.06 - 05/05/2019
+________________________
+
+* Additional checks implemented for Kodi post-command runs under special circumstances
+* Enhanced wording of help for POST and PRE variables
+* Verified functionality on Debian kernel 4.14.98-v7+
+* Additional checks implemented for confgena_ph.sh
+* Clarified help for confgena_ph.sh
+* Clarified README.md
+* Improved menus
+
+VERSION 1.07 - 15/05/2019
+________________________
+
+* Corrected some output typos
+* Interactive use of confoper_ph.sh OS configuration functions now present a list of all possible choices
+* Major improvements to confoper_ph.sh
+* Color coding and other formatting added to confopts_ph.sh and ph_configure_moon for improved readability
+* Miscellaneous bugfixes
+
+VERSION 1.08 - 19/06/2019
+________________________
+
+* Bugfix for mounting a CIFS share for an integrated application which has a run account different from the account used to authenticate to the CIFS server
+* Updated help information for CIFS-related options
+* Some general small code changes
+* Bugfix for unnecessary ACLs and sudo rules when running an integrated app as 'root'
+* ph_repair_pieh can now detect and fix additional possible configuration issues
+
+VERSION 1.10 - 29/10/2019
+________________________
+
+* complete rewrite part one complete

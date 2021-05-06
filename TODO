@@ -1,0 +1,163 @@
+* do away with ph_store_options shit in confapps_ph.sh
+* change file quoting everywhere left to do
+* check all function param checks in place and check OPTIND and OPTARG resets in place everywhere for getopts early return 1's
+* replace stored_options with set_to_default
+* keep way of not running rollback for all three 'all' functions or not ?
+* remove ph_secure_pieh where no longer needed if in place in all .update functions that require it
+* change store_file to use other file functions
+* exclude special backuped files in PH_FILES_DIR from ph_secure_pieh
+* todo : investigate why such issues when piehelper no allocated TTY for starting other apps : ultimate goal is to make piehelper menu optional to support and integrate
+* add support for removing and creating functions.user stuff where required
+* create full support for ph_install_app and ph_remove_app
+* write code for prompting into confapps_ph.sh and ph_do_app_routine params for them
+* look into possibly providing more specific result messages for failed ph_do_app_routine calls
+* check for need of PH_ROUTINE_FLAG and stuff into ph_do_app_routine : probably an easier solution
+* introduce ph_run_with_rollback into ph_do_app_routine !!!!
+* is function ph_get_option_value_from_app_conf_file still useful somewhere ? -> then use otherwise delete
+* change ph_create and ph_remove_empty_file and possibly also ph_store and ph_restore_file to also use perms and ownership
+* CIFS backup of archives in confgena does not work + how to handle not running rollback stuff in ph_create and ph_remove app_items when called from unint/unsup/sup or unsup functions
+* change ph_check_pieh_configured and unconfigured to use ph_check_object_existence
+* possible to write something to autodetect replaced packages automatically ?
+* change create_conf_file and defaults and alloweds to use ""'s for variables and retest everything
+* create function for getting list of supported_apps or integrated_apps or default_apps and use everywhere
+* create functions for setting a variable to a value for rollback purposes
+* change ph_set_app_options_to_default_value in menus to call to confopts (implement first)
+* creating separate lines for each derivate creation and removal of defs, allows, menus ?
+* add a mk_dirs and rm_dirs option to confapps_ph.sh and ph_do_app_routine + check if possible to easily replace method for mk_* and rm_* with ph_create|remove_app_items call
+* rename functions stuff everywhere to modules
+* change info in conf files for allowed values of NUM_CTRL and something else
+* add extra typesets in conf file templates for integers ?
+* check PH_APP_CMD resolution already in ph_get_app_cmd_from_app_name is doable and remove all remaining other resolves if so
+* add prompts for required info to ph_(un)support_app, ph_(un)integrate_app
+* add detection of PH_EVENT in CMD_OPTS in ph_set_option and auto-change PH_RUNAPPU_USE_CTRL
+* test and if ok remove line ph-run-account always created on CIFS_SRV in all conf file templates
+* change PH_APP_PKG resolution with extra eval for OOSapp package default or not ? how added ?
+* add also extra evals in all PRE and POST scripts where needed
+* Migrate emulationstation check and it's option settings to separate function and call it when supporting Emulationstation instead of ph_configure_pieh
+* write function ph_check_base_conf_file_validity
+* why PH_ROLLBACK_PARAMS empty when running confgena_ph.sh
+* now error unmounting cifs share in popst scripts when stopping app ??
+* replace default base conf file for integrated_apps with empty file and change all stuff affected by that change
+* libcurl4 replaces libcurl4 on new debian
+* implement additional options for confgena archive selection
+* Add initial unset of startapp and initial remove of only additional acls and path extension to ph_repair_pieh
+* ph_show_result for returns in ph_repair_pieh
+* Disable all tty's instead of enabling all on configure time OK ?
+* At configure_time : also edit /etc/X11/Xwrapper.config with allowed_users=anybody and needs_root_rights=yes needed ?
+* permissions are added for new users after generating app items : NOT OK
+* change nawk _tmp files to "$PH_TMP_DIR"
+* OS.defaults backup cannot be created : permission problem ? Also check other post and pre actions for same problem :  test if now OK ?
+* change all ph_set_result and ph_show_result calls to reflect changes
+* test result prints for ph_do_app_routine in case of failures
+* finish tests and man of new confapps_ps.sh
+* finish rewrite of confgena_ph.sh (with developer mode etc)
+* change all result prints to use colour coded function
+* rewrite all new changes into action scripts and regenerate everything before generating build
+* change ph_do_app_action again to be correct for back to original done and now : confopts get
+* attention for restart stopped app that was running on a pts
+* check and change ange ph_restore_options and ph_set_option_to_default for reason above
+* check set and export old value that was changed in ph_set_option
+* change ph_set_option to ph_set_option_value
+* change confopts to use new expansion functions
+* replace all instances of FILES/CONF/TMP/MAIN/MENUS with BASE dir
+* checks for PieHelper -p detects on boot
+* perms still not applied correctly after confpieh_ps.sh -v ?
+* Check and change where needed : ph_get_thing_from_login_script and autologin functions for RUNAPP->APP change
+* change everywhere where appropriate to use new ph_stop_all_running_apps function
+* THINGS remaining for working repair : cifs checks to add, double instances in conf files checks to add, and completely rewrite all startapp related code + implement better handling for startapp repair than just reset to PieHelper in ph_repair + even reset not workin now
+* review all for i in "$var" statements that i didn't quote the var where it  shouldn't be !!!
+* investigate possibility of replacing separate create scripts in ph_repair with ph_create_app_items
+* add CIFS mount check in ph_update and test ph_update
+* why crazy stuff remains in ph_change_app_opt_values with nameref needing echo ?
+* rewrite confgena_ph.sh to now use new scripts in functions.update
+* implement default_apps everywhere
+* Only generate movescripts if other app is also integrated
+* add display error capability when launching start scripts from command line and receiving failed result
+* use secure_pieh and ph_create_all_acls after every mv after a file modification
+* better error handling in many places
+
+* create function for applying default permissions and use everywhere
+* change CMD_OPTS for moonlight and possibly all var values and in conf files etc to always have quotes around varnames + implement in update scripts
+* adapt confpieh_ph.sh for better Result integration AND performance
+* add support for immediately resolving string replacement and bash replacement for APP_CMDs in ph_get_app_cmd_from_app_name and implement where useful
+* move all FAILED and SUCCESS statements from ph_set_app_for_start to caller scripts
+* change menu entries for ph_configure_app_options to confopts_ph.sh call
++
+* change menu entries for ph_update_app to confapps_ph.sh call
+* correct line in ph_setup_controllers with eval where options are still unquoted
+* add another space between each \033[36 header and all results and another one before each 'RESULT' print at the end for improved readability
+* move OS.defaults , alloweds, defaults and controller_cli_ids to conf dir
+* Remember and check everywhere now PieHelper should always be integrated and supported and only PieHelper for base_config _apps files except default
+* change ph_configure_pieh to also set link to PieHelper if needed
+* still looping in confgena_ph when certain conditions of repair_required
+* Why *CIFS_USER not correctly reset to old value when confgena_ph.sh fails ?
+* add CIFS info to HOWTO
+* update all code to use all new functions
+* change HOWTO to reflect new script functionalities
+* developer only option for confgena_ph.sh
+* detect existing custom TTY configurations on PieHelper configure and offer to delete, else exit
+* modify confpieh manpage about repair
+* check if PH_OPTION thing in rollback needs to be replaced with a 'shift' solution
+* cmd modification in supported_apps in old version of ph_get_app_user_from_input really no longer needed now ?
+* write prompting for cmd in ph_support_app
+* Create rollback for create and restore emul (ph_restore_emul etc) and implement where needed
+* Check all --> arrows in scripts dir scripts and main.sh and distros files for double arrows
+* Retropie dir detect good with emul run user ?
+* Correct all scripts code for correct quoting of variables
+* adapt all menus to new code
+* implement daily auto-update option
+* create function for adding a user : steal from 'confoper_ph.sh' ?
+* change ph_revoke for prompt for user removal
+* add remaining colour coding
+* add support for -o parameter to confopts_ph.sh -p prompt -s -o XXXX and make changes for that in ph_configure_app_options + reflect in menus if needed
+* add option for confopts_ph.sh to list option default(s) + add to menus
+* add option for confopts_ph.sh to set option(s) to defaults + reflect in menus
+* check reminderlike displays for similar output formatting
+* additional option for confopts_ph.sh to only act on variables with a value different from 'N/A' and ''
+* add userdel function in confoper_ph.sh and menus
+* change no-root restriction in confoper_ph.sh user modify operations to no-system users
+* add skip option to all lists in confoper_ph.sh interactive modes
+* change 'prompt phase' of confoper_ph.sh -p savedef to 'parameter phase' for all modes
+* check problem for non-working supported locales in confoper_ph.sh. Not installed ?
+* add a get currently configured values function in confoper_ph.sh and add to menus
+* add a remdef function for confoper_ph.sh and add to menus
+* add functionality for passing a list of functions to confoper_ph.sh -p savedef -i instead of just one
+* unsets in confoper_ph.sh
+* check confoper_ph.sh for cases when PH_RUN_USER is 'root'
+* test correct quit for moonlight streaming on PTS and TTY
+* update Wiki with reference and download links
+* change -m option to not permanently change option value for piehelper start location or not ?
+* replace prompts in OS configuration functions for timezone, etc with lists of possible options
+* add check for mount present in ph_umount_cifs and generate warning if not
+* write backup and restore functionality for Pi in OS section based on confgena_ph.sh non-developer tar generation and new restore option
+* change xboxdrv mapping to xbox controller(s) in ph_setup_controllers for all but PS4 usb to correct mappings 
+* add menu choice or script/module to move PieHelper to a different location
+* test if Emulationstation savegames require mount as $PH_RUNAPP_USER for CIFS authentication
+* add confoper_ph.sh splash screen management module
+* support for bluetooth devices distributed over multiple adapters in confctrl_ph.sh
+* test archlinux
+* controller detection for XBOX360 usb receiver
+* solve bluetooth pairing dualshock3 controllers
+* change workings confoper_ph.sh to reflect already trusted controllers
+* incremental backup for Kodi autobackup OR switch to only use CIFS option for kodi on remove and install Kodi + change related conf file information
+* use _CMD_OPTS for all apps as well as in supported_apps configuration file for all but basic start command + general impact on way graphical applications are handled
+* using kodi + cmd_opts -> kodi num_ctrl can no longer be read-only
+* keyword "all" support for confopts_ph.sh interactive and non-interactive set
+* re-examine possibility of using ph_show_menu 'Menu' instead of startpieh.sh in integrated_apps for PieHelper
+* create button configuration files for the different controller types for emulationstation with configure script
+* change confpieh_ph.sh -p debug for partial results and for fasttrack bypass to set all modules to debug/no debug 
+* occasional cifs mount problem for Emulationstation + test extended use session
+* additional option for application restarts to not auto-switch to TTY restarted app + check compatibility with Kodi, Emulationstation and Moonlight
+* check for /etc/apt/apt.conf on debian and turn off option don't install recommended packages
+* test for controllers actually online
+* support for using a mix of different controller types
+* add limit check for oos aaps or test from menus to see if increase in PH_PIEH_MAX_TTYS viable or not and if so : remove limit check
+* recursive going back to original settings when error occured ala confgena also in other places
+* empty line remains in functions.user
+* test second controller input
+* test ph_remove_pieh from menus and through confpieh_ph.sh
+* hashing of passwords functionality
+* test graphical stuff
+* test and support all other linux-based distros
+* REST interface for calling scripts and android app : use vtutil && android app
+* package version with or without dependencies ? (with could possibly change scripts f.e. required packages no longer needed ?)
