@@ -1778,26 +1778,21 @@ declare PH_FILE=""
 [[ -z "$PH_FILE_SHORTNAME" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-if PH_FILE="$(ph_get_filename_from_shortname "$PH_FILE_SHORTNAME")"
+PH_FILE="$(ph_get_filename_from_shortname "$PH_FILE_SHORTNAME")"
+if [[ ! -e "${PH_CONF_DIR}/${PH_FILE}" || -s "${PH_CONF_DIR}/${PH_FILE}" ]]
 then
-	printf "%8s%s\033[32m%s\033[0m\n" "" "--> Creating base configuration file " "'${PH_CONF_DIR}/${PH_FILE}'"
-	if [[ -f "${PH_CONF_DIR}/${PH_FILE}" && ! -s "${PH_CONF_DIR}/${PH_FILE}" ]]
+	if [[ -s "${PH_CONF_DIR}/${PH_FILE}" ]]
 	then
-		ph_run_with_rollback -c true -m "Nothing to do" && \
-			return "$?"
+		printf "%8s%s\n" "" "--> Creating base configuration file '${PH_FILE}'
+		ph_set_result -m "Could not create base configuration file '${PH_CONF_DIR}/${PH_FILE}' since one exists already"
+		ph_run_with_rollback -c false -m "Could not create" || \
+			return 1
 	else
-		if [[ -s "${PH_CONF_DIR}/${PH_FILE}" ]]
-		then
-			ph_set_result -m "Could not create base configuration file '${PH_CONF_DIR}/${PH_FILE}' since one exists already"
-		else
-			ph_run_with_rollback -c "ph_create_empty_file -q -t file -d '${PH_CONF_DIR}/${PH_FILE}'" && \
-				ph_run_with_rollback -c true && \
-				return "$?"
-		fi
+		ph_run_with_rollback -c "ph_create_empty_file -t file -d '${PH_CONF_DIR}/${PH_FILE}'" || \
+			return 1
 	fi
 fi
-ph_run_with_rollback -c false -m "Could not create" || \
-	return 1
+return 0
 }
 
 function ph_update_pieh_version {
@@ -3457,7 +3452,7 @@ do
 	PH_VALUE="${PH_DATA_ARRAY["$PH_DATA_INDEX"]}"
 	echo "PARAM is ${PH_OPT}"
 	echo "indices of ${PH_OPT} array are ${!PH_OPT[@]}"
-	echo "contents of ${PH_OPT} array are ${PH_OPT[@]}"
+	echo "contents of ${PH_OPT} array are ${PH_DATA_ARRAY[@]}"
 	echo "active index is ${PH_DATA_INDEX[@]}"
 	echo "active value is ${PH_VALUE}"
 	case "$PH_OPT" in PH_START_APPS)
@@ -7662,7 +7657,7 @@ then
 			else
 				ph_run_with_rollback -c true -m "Not found"
 			fi
-			for PH_i in cont os defaults alloweds
+			for PH_i in sup defaults alloweds int os cont
 			do
 				ph_create_default_base_conf_file "$PH_i" || \
 					return 1
@@ -7751,8 +7746,9 @@ function ph_get_filename_from_shortname {
 declare PH_SHORTNAME="$1"
 declare PH_FILE=""
 
-[[ -z "$PH_SHORTNAME" ]] && \
-	return 1
+[[ -z "$PH_SHORTNAME" || "$#" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
 case "$PH_SHORTNAME" in cont)
 		PH_FILE="controller_cli_ids" ;;
 			os)
