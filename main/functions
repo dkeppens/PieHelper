@@ -7644,6 +7644,7 @@ declare PH_REQ_APP_STATE_PARAM=""
 declare PH_OPTION=""
 declare PH_OLDOPTARG="$OPTARG"
 declare -i PH_OLDOPTIND="$OPTIND"
+declare -i PH_PIEH_ADDED_FLAG="1"
 
 OPTIND="1"
 
@@ -7698,7 +7699,7 @@ for PH_APP in $(nawk 'BEGIN { \
 do
 	for PH_i in "${PH_APP_LIST[@]}"
 	do
-		[[ "$PH_APP" == "$PH_i" ]] && \
+		[["$PH_i" == "$PH_APP" ]] && \
 			continue 2
 	done
 	if [[ "$PH_STATE_MATCH_TYPE" == "exact" ]]
@@ -7714,7 +7715,19 @@ do
 		fi
 	fi
 done
-echo -n "${PH_APP_LIST[@]}"
+for PH_i in "${PH_APP_LIST[@]}"
+do
+	[[ "$PH_i" == "PieHelper" ]] && \
+		PH_PIEH_ADDED_FLAG="0" && \
+		break
+		
+done
+if [[ "$PH_PIEH_ADDED_FLAG" -eq "0" ]]
+then
+	echo -n PieHelper "${{PH_APP_LIST[@]}//PieHelper/}"
+else
+	echo -n "${PH_APP_LIST[@]}"
+fi
 unset PH_APP_LIST
 return 0
 }
