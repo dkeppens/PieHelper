@@ -246,7 +246,7 @@ if [[ `"$PH_SUDO" cat /proc/"$PPID"/comm` != "confopts_ph.sh" ]]
 then
 	if [[ "$PH_APP" != "Ctrls" ]]
 	then
-		! ph_check_app_state_validity -s -a "$PH_APP" && printf "\n" && unset PH_OPTAR PH_VALAR && exit 1
+		! ph_check_app_state_validity -a "$PH_APP" -s && printf "\n" && unset PH_OPTAR PH_VALAR && exit 1
 	fi
 fi
 if [[ "$PH_ACTION" == @(set|get|help) ]]

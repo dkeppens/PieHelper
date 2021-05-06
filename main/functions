@@ -575,17 +575,9 @@ declare PH_APP_STATE=""
 [[ -z "$PH_APP" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-PH_APP_STATE="$(ph_check_app_state_validity -a "$PH_APP" -u -f -q | tail -1 | nawk 'BEGIN { \
-		FS = "\x27" \
-	} { \
-		printf $2 \
-	}')"
+PH_APP_STATE="$(ph_check_app_state_validity -a "$PH_APP" -q -u)"
 [[ "$PH_APP_STATE" == "Unknown" ]] && \
-	PH_APP_STATE="$(ph_check_app_state_validity -a "$PH_APP" -n -f -q | tail -1 | nawk 'BEGIN { \
-		FS = "\x27" \
-	} { \
-		printf $2 \
-	}')"
+	PH_APP_STATE="$(ph_check_app_state_validity -a "$PH_APP" -q -n)"
 echo -n "$PH_APP_STATE"
 return 0
 }
@@ -2622,26 +2614,30 @@ OPTARG="$PH_OLDOPTARG"
 [[ -z "$PH_APP" || -z "$PH_APP_TYPE" || "$#" -lt "4" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-[[ "$PH_QUIESCE" -eq "1" || "$PH_FORCE_PRINT_FLAG" -eq "0" ]] && \
+[[ "$PH_QUIESCE" -eq "1" ]] && \
 	printf "%8s%s\n" "" "--> Checking the application state of ${PH_APP}"
 if [[ "$PH_APP_TYPE" == "Unused" ]]
 then
-	[[ "$PH_APPL" == @(none|all|prom) ]] && \
-		PH_APP_STATE="Reserved"
-	if ! cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
+	if [[ "$PH_APPL" == @(none|all|prom) ]]
 	then
-		[[ "$PH_APPL" == @(x11|kodi|moon|emul|bash|pieh) ]] && \
-			PH_APP_STATE="Reserved"
+		PH_APP_STATE="Reserved"
+	else
+		if ! cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
+		then
+			[[ "$PH_APPL" == @(x11|kodi|moon|emul|bash|pieh) ]] && \
+				PH_APP_STATE="Reserved"
+		else
+			PH_APP_STATE="Default"
+		fi
+		for PH_i in $(nawk 'BEGIN { \
+				ORS = " " \
+			} { \
+				print $1 \
+			}' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)
+		do
+			PH_APP_STATE="$(ph_get_app_state_from_app_name "$PH_APP")"
+		done
 	fi
-	for PH_i in $(nawk 'BEGIN { \
-			ORS = " " \
-		} { \
-			print $1 \
-		}' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)
-	do
-		[[ "$(echo -n "${PH_i:0:4}" | tr "[:upper:]" "[:lower:]")" == "$PH_APPL" ]] && \
-			PH_APP_STATE="Used"
-	done
 	[[ "$PH_APP_STATE" == "Unknown" ]] && \
 		PH_APP_STATE="Unused" || \
 		PH_RET_CODE="1"
@@ -2691,39 +2687,42 @@ then
 		then
 			ph_run_with_rollback -c true -m "'${PH_APP_STATE}' (Needed '${PH_APP_TYPE}')"
 		else
-			printf "%10s\033[32m%s\033[0m%s\n" "" "OK : " "'$PH_APP_STATE' (Needed '$PH_APP_TYPE')"
+			echo -n "$PH_APP_STATE"
 		fi
 	fi
 else
 	case "$PH_APP_STATE" in Unknown)
 			PH_RET_CODE="1" ;;
 				Supported)
-			[[ "$PH_APP_TYPE" == @(Halted|Running|Integrated|Unknown) ]] && PH_RET_CODE="1" ;;
+			[[ "$PH_APP_TYPE" == @(Halted|Running|Integrated|Unknown) ]] && \
+				PH_RET_CODE="1" ;;
 				Integrated)
-			[[ "$PH_APP_TYPE" == @(Halted|Running|Unknown) ]] && PH_RET_CODE="1" ;;
+			[[ "$PH_APP_TYPE" == @(Halted|Running|Unknown) ]] && \
+				PH_RET_CODE="1" ;;
 				Running)
-			[[ "$PH_APP_TYPE" == @(Halted|Unknown) ]] && PH_RET_CODE="1" ;;
+			[[ "$PH_APP_TYPE" == @(Halted|Unknown) ]] && \
+				PH_RET_CODE="1" ;;
 				Halted)
-			[[ "$PH_APP_TYPE" == @(Running|Unknown) ]] && PH_RET_CODE="1" ;;
+			[[ "$PH_APP_TYPE" == @(Running|Unknown) ]] && \
+				PH_RET_CODE="1" ;;
 	esac
 fi
 if [[ "$PH_QUIESCE" -eq "1" || "$PH_FORCE_PRINT_FLAG" -eq "0" ]]
 then
 	if [[ "$PH_RET_CODE" -eq "0" ]]
 	then
-		printf "%10s\033[32m%s\033[0m%s\n" "" "OK : " "'${PH_APP_STATE}' (Needed '${PH_APP_TYPE}')"
 		if [[ "$PH_QUIESCE" -eq "1" ]]
 		then
 			ph_run_with_rollback -c true -m "'${PH_APP_STATE}' (Needed '${PH_APP_TYPE}')"
 		else
-			printf "%10s\033[32m%s\033[0m%s\n" "" "OK : " "'${PH_APP_STATE}' (Needed '${PH_APP_TYPE}')"
+			echo -n "$PH_APP_STATE"
 		fi
 	else
 		if [[ "$PH_QUIESCE" -eq "1" ]]
 		then
 			ph_run_with_rollback -c false -m "'${PH_APP_STATE}' (Needed '${PH_APP_TYPE}')"
 		else
-			printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "'${PH_APP_STATE}' (Needed '${PH_APP_TYPE}')"
+			echo -n "$PH_APP_STATE"
 		fi
 		ph_set_result -m "Application state '${PH_APP_TYPE}' is mandatory but got '${PH_APP_STATE}'"
 	fi
@@ -4636,7 +4635,7 @@ OPTARG="$PH_OLDOPTARG"
 	return 1
 
 PH_APP_STATE="$(ph_get_app_state_from_app_name "$PH_APP")"
-if ph_check_app_state_validity -a "$PH_APP" -s -q
+if ph_check_app_state_validity -a "$PH_APP" -q -s
 then
 	printf "%8s%s\n" "" "--> Checking application state of '${PH_APP}'"
 	ph_run_with_rollback -c true -m "${PH_APP_STATE} (Nothing to do)" && \
@@ -7707,7 +7706,7 @@ do
 			PH_APP_LIST+=("$PH_APP")
 		fi
 	else
-		if ph_check_app_state_validity -q -a "$PH_APP" "${PH_REQ_APP_STATE_PARAM}"
+		if ph_check_app_state_validity -a "$PH_APP" -q ${PH_REQ_APP_STATE_PARAM}
 		then
 			PH_APP_LIST+=("$PH_APP")
 		fi
@@ -8239,7 +8238,7 @@ then
 	case "$PH_KEYWORD" in halt)
 		for PH_i in $(nawk 'BEGIN { ORS = " " } $3 !~ /^-$/ { print $1 }' "$PH_CONF_DIR"/integrated_apps 2>/dev/null)
 		do
-			if ! ph_check_app_state_validity -a "$PH_i" -r -q
+			if ! ph_check_app_state_validity -a "$PH_i" -q -r
 			then
 				[[ -z "$PH_LIST" ]] && PH_LIST="$PH_i" || PH_LIST="$PH_LIST,$PH_i"
 			fi
@@ -8247,7 +8246,7 @@ then
 			      run)
 		for PH_i in $(nawk 'BEGIN { ORS = " " } $3 !~ /^-$/ { print $1 }' "$PH_CONF_DIR"/integrated_apps 2>/dev/null)
 		do
-			if ph_check_app_state_validity -a "$PH_i" -r -q
+			if ph_check_app_state_validity -a "$PH_i" -q -r
 			then
 				[[ -z "$PH_LIST" ]] && PH_LIST="$PH_i" || PH_LIST="$PH_LIST,$PH_i"
 			fi
@@ -8364,7 +8363,7 @@ do
 					continue
 				fi
 			fi
-			if ! ph_check_app_state_validity -a "$PH_i" $PH_REQ_APP_STATE_PARAM -q
+			if ! ph_check_app_state_validity -a "$PH_i" -q ${PH_REQ_APP_STATE_PARAM}
 			then
 				if [[ "$PH_ACTION" != mk_* ]] && ! [[ "$PH_i" == "PieHelper" && "$PH_ACTION" == "conf" ]] 
 				then
