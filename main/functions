@@ -3455,6 +3455,11 @@ do
 			printf $NF \
 		}')"
 	PH_VALUE="${PH_DATA_ARRAY["$PH_DATA_INDEX"]}"
+	echo "PARAM is ${PH_OPT}"
+	echo "indices of ${PH_OPT} array are ${!PH_OPT[@]}"
+	echo "contents of ${PH_OPT} array are ${PH_OPT[@]}"
+	echo "active index is ${PH_DATA_INDEX[@]}"
+	echo "active value is ${PH_VALUE}"
 	case "$PH_OPT" in PH_START_APPS)
 		PH_CMD="ph_do_app_action start '${PH_VALUE}'" ;;
 			  PH_STOP_APPS)
