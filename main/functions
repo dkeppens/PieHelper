@@ -2639,9 +2639,10 @@ case "$PH_APP_TYPE" in Unused)
 		PH_RET_CODE="1" ;;
 		       Default)
 	cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null && \
-		PH_APP_STATE="Default" || \
-		PH_RET_CODE="1" ;;
+		PH_APP_STATE="Default" ;;
 		       *)
+	cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null && \
+		PH_APP_STATE="Default"
 	if cut -f1 "${PH_CONF_DIR}/supported_apps" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
 	then
 		PH_APP_STATE="Supported"
@@ -2693,6 +2694,9 @@ then
 else
 	case "$PH_APP_STATE" in Unknown)
 			PH_RET_CODE="1" ;;
+				Default)
+			[[ "$PH_APP_TYPE" == @(Halted|Running|Integrated|Supported|Unknown) ]] && \
+				PH_RET_CODE="1" ;;
 				Supported)
 			[[ "$PH_APP_TYPE" == @(Halted|Running|Integrated|Unknown) ]] && \
 				PH_RET_CODE="1" ;;
@@ -2706,6 +2710,10 @@ else
 			[[ "$PH_APP_TYPE" == @(Running|Unknown) ]] && \
 				PH_RET_CODE="1" ;;
 	esac
+	if [[ "$PH_RET_CODE" -ne "0" && "$PH_APP_TYPE" == "Default" && "$PH_APP_STATE" != "Unknown" ]]
+	then
+		[[ "$(ph_check_app_state_validity -a "$PH_APP" -q -d ; echo "$?")" -eq "0" ]] && \
+			PH_RET_CODE="0"
 fi
 if [[ "$PH_QUIESCE" -eq "1" || "$PH_FORCE_PRINT_FLAG" -eq "0" ]]
 then
