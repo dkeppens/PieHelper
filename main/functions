@@ -2714,6 +2714,7 @@ else
 	then
 		[[ "$(ph_check_app_state_validity -a "$PH_APP" -q -d ; echo "$?")" -eq "0" ]] && \
 			PH_RET_CODE="0"
+	fi
 fi
 if [[ "$PH_QUIESCE" -eq "1" || "$PH_FORCE_PRINT_FLAG" -eq "0" ]]
 then
