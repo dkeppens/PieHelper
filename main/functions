@@ -575,9 +575,9 @@ declare PH_APP_STATE=""
 [[ -z "$PH_APP" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-PH_APP_STATE="$(ph_check_app_state_validity -a "$PH_APP" -q -u)"
+PH_APP_STATE="$(ph_check_app_state_validity -a "$PH_APP" -q -f -u)"
 [[ "$PH_APP_STATE" == "Unknown" ]] && \
-	PH_APP_STATE="$(ph_check_app_state_validity -a "$PH_APP" -q -n)"
+	PH_APP_STATE="$(ph_check_app_state_validity -a "$PH_APP" -q -f -n)"
 echo -n "$PH_APP_STATE"
 return 0
 }
@@ -2680,18 +2680,8 @@ case "$PH_APP_TYPE" in Unused)
 		fi
 	fi ;;
 esac
-if [[ "$PH_APP_TYPE" == "$PH_APP_STATE" ]]
+if [[ "$PH_APP_TYPE" != "$PH_APP_STATE" ]]
 then
-	if [[ "$PH_QUIESCE" -eq "1" || "$PH_FORCE_PRINT_FLAG" -eq "0" ]]
-	then
-		if [[ "$PH_QUIESCE" -eq "1" ]]
-		then
-			ph_run_with_rollback -c true -m "'${PH_APP_STATE}' (Needed '${PH_APP_TYPE}')"
-		else
-			echo -n "$PH_APP_STATE"
-		fi
-	fi
-else
 	case "$PH_APP_STATE" in Unknown)
 			PH_RET_CODE="1" ;;
 				Default)
@@ -2710,7 +2700,7 @@ else
 			[[ "$PH_APP_TYPE" == @(Running|Unknown) ]] && \
 				PH_RET_CODE="1" ;;
 	esac
-	if [[ "$PH_RET_CODE" -ne "0" && "$PH_APP_TYPE" == "Default" && "$PH_APP_STATE" != "Unknown" ]]
+	if [[ "$PH_RET_CODE" -ne "0" && "$PH_APP_TYPE" == @(Default|Unknown) && "$PH_APP_STATE" != "Unknown" ]]
 	then
 		[[ "$(ph_check_app_state_validity -a "$PH_APP" -q -d ; echo "$?")" -eq "0" ]] && \
 			PH_RET_CODE="0"
@@ -7640,11 +7630,9 @@ return 0
 
 function ph_get_app_list_by_state {
 
-set -x
-
 declare PH_i=""
 declare PH_APP=""
-declare PH_APP_STATE=""
+declare PH_REQ_APP_STATE=""
 declare PH_STATE_MATCH_TYPE=""
 declare PH_REQ_APP_STATE_PARAM=""
 declare PH_OPTION=""
@@ -7657,17 +7645,16 @@ OPTIND="1"
 while getopts s:t: PH_OPTION 2>/dev/null
 do
 	case "$PH_OPTION" in s)
-		[[ -n "$PH_APP_STATE" || "$OPTARG" != @(Integrated|Supported|Default|Running|Halted) ]] && \
+		[[ -n "$PH_REQ_APP_STATE" || "$OPTARG" != @(Integrated|Supported|Default|Running|Halted) ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
-		PH_APP_STATE="$OPTARG" ;;
+		PH_REQ_APP_STATE="$OPTARG" ;;
 			     t)
 		[[ -n "$PH_STATE_MATCH_TYPE" || "$OPTARG" != @(exact|minimum) ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
-
 		PH_STATE_MATCH_TYPE="$OPTARG" ;;
 			     *)
 		OPTIND="$PH_OLDOPTIND"
@@ -7678,7 +7665,7 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_APP_STATE" || -z "$PH_STATE_MATCH_TYPE" || "$#" -ne "4" ]] && \
+[[ -z "$PH_REQ_APP_STATE" || -z "$PH_STATE_MATCH_TYPE" || "$#" -ne "4" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 declare -a PH_APP_LIST
@@ -7706,7 +7693,7 @@ do
 	done
 	if [[ "$PH_STATE_MATCH_TYPE" == "exact" ]]
 	then
-		if [[ "$(ph_get_app_state_from_app_name "$PH_APP")" == "$PH_APP_STATE" ]]
+		if [[ "$(ph_get_app_state_from_app_name "$PH_APP")" == "$PH_REQ_APP_STATE" ]]
 		then
 			PH_APP_LIST+=("$PH_APP")
 		fi
@@ -7726,9 +7713,9 @@ do
 done
 if [[ "$PH_PIEH_ADDED_FLAG" -eq "0" ]]
 then
-	echo -n PieHelper "${{PH_APP_LIST[@]}//PieHelper/}"
+	echo -n PieHelper $(sed 's/PieHelper//g'<<<${PH_APP_LIST[@]})
 else
-	echo -n "${PH_APP_LIST[@]}"
+	echo -n ${PH_APP_LIST[@]}
 fi
 unset PH_APP_LIST
 return 0
