@@ -7649,7 +7649,7 @@ OPTIND="1"
 while getopts s:t: PH_OPTION 2>/dev/null
 do
 	case "$PH_OPTION" in s)
-		[[ -n "$PH_APP_STATE" || "OPTARG" != @(Integrated|Supported|Default|Halted|Running|StartApp|Unknown) ]] && \
+		[[ -n "$PH_APP_STATE" || "$OPTARG" != @(Integrated|Supported|Default|Halted|Running|StartApp|Unknown) ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
