@@ -1,6 +1,6 @@
-Moonlight	-	/usr/local/bin/moonlight stream
-Emulationstation	-	/usr/bin/emulationstation
+PieHelper	-	"$PH_SCRIPTS_DIR"/startpieh.sh
 Bash	-	/bin/bash
 X11	-	/usr/bin/startx -- :1 vt#PH_TTY#
 Kodi	-	/usr/bin/xinit /usr/bin/kodi-standalone -- :0 -nolisten tcp vt#PH_TTY#
-PieHelper	-	"$PH_SCRIPTS_DIR"/startpieh.sh
+Moonlight	-	/usr/local/bin/moonlight stream
+Emulationstation	-	/usr/bin/emulationstation
