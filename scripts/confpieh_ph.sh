@@ -82,12 +82,12 @@ do
 			fi
 		fi
 		case "$PH_i" in *.sh|*.expect)
-			if ! "$PH_SUDO" -E find "$PH_MAIN_DIR"/.. \( ! -name 10-retropie.sh -and -name "$PH_i" \) >/dev/null 2>&1
+			if ! "$PH_SUDO" find "${PH_MAIN_DIR}/.." \( ! -name 10-retropie.sh -and -name "$PH_i" \) >/dev/null 2>&1
 			then
 				PH_RET_CODE="1"
 			fi ;;
 				*)
-			if ! functions 2>/dev/null | nawk '$1 ~ /^function$/ { print $2 }' | grep -E ^"$PH_i"$ >/dev/null
+			if ! functions 2>/dev/null | nawk '$1 ~ /^function$/ { print $2 }' | grep -E "^${PH_i}$" >/dev/null
 			then
 				PH_RET_CODE="1"
 			fi ;;
