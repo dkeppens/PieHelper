@@ -5727,11 +5727,11 @@ then
 	return 1
 else
 	PH_APP_STATE="$(ph_get_app_state_from_app_name "$PH_APP")"
-	case "$PH_APP_STATE" in Reserved|Used)
+	case "$PH_APP_STATE" in Reserved|Supported|Integrated|Running|Halted)
 			printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid name ('${PH_APP_STATE}')"
 			ph_set_result -r 1 -m "An unreserved and unused application shortname is mandatory for supporting '${PH_APP}'"
 			return 1 ;;
-				Unknown|Unused)
+				Unused|Default)
 			printf "%10s\033[32m%s\033[0m\n" "" "OK ('${PH_APP}')" ;;
 				*)
 			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid name"
