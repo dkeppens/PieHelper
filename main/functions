@@ -5153,10 +5153,9 @@ then
 			print $1 \
 		}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null)
 	do
-		ph_run_with_rollback -c "ph_unintegrate_app -a '${PH_APP}'" || \
+		ph_unintegrate_app -a "$PH_APP" || \
 			return 1
 	done
-	ph_add_value_to_param -p PH_INT_APPS -v "${PH_APP}''"
 	return 0
 else
 	if [[ -z "$PH_APP" ]]
@@ -5332,7 +5331,7 @@ then
 				print $1 \
 			}' "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null)
 		do
-			ph_run_with_rollback -c "ph_unsupport_app -a '${PH_APP}'" || \
+			ph_unsupport_app -a "$PH_APP}" || \
 				return 1
 		done
 	else
@@ -5342,11 +5341,10 @@ then
 				print $1 \
 			}' "${PH_CONF_DIR}/${PH_APP}_apps" 2>/dev/null)
 		do
-			ph_run_with_rollback -c "ph_unsupport_app -a '${PH_APP}'" || \
+			ph_unsupport_app -a "$PH_APP" || \
 				return 1
 		done
 	fi
-	ph_add_value_to_param -p PH_SUP_APPS -v "${PH_APP}'''"
 	return 0
 else
 	if [[ -z "$PH_APP" ]]
@@ -5713,10 +5711,9 @@ if [[ "$PH_APP" == "default" ]]
 then
 	for PH_APP in $(ph_get_app_list_by_state -s Default -t exact)
 	do
-		ph_run_with_rollback -c "ph_support_app -a '${PH_APP}'" || \
+		ph_support_app -a "$PH_APP" || \
 			return 1
 	done
-	ph_add_value_to_param -p PH_UNSUP_APPS -v "${PH_APP}'"
 	return 0
 fi
 printf "%8s%s\n" "" "--> Checking application name parameter"
@@ -5742,11 +5739,8 @@ else
 fi
 if [[ "$PH_APP" == "PieHelper" ]]
 then
-	if ! ph_run_with_rollback -c "ph_create_empty_file -q -t file -d '${PH_SCRIPTS_DIR}/startpieh.sh'"
-	then
-		ph_set_result -m "An error occurred creating temporary startscript '${PH_SCRIPTS_DIR}/startpieh.sh'"
+	! ph_run_with_rollback -c "ph_create_empty_file -t file -d '${PH_SCRIPTS_DIR}/startpieh.sh'" || \
 		return 1
-	fi
 fi
 if ! cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
 then
@@ -5820,7 +5814,7 @@ then
 		return 1
 	fi
 fi
-ph_run_with_rollback -c "ph_create_app_items -a \"${PH_APP}\" -t support" || \
+ph_run_with_rollback -c "ph_create_app_items -a '${PH_APP}' -t support" || \
 	return 1
 if cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E ^"${PH_APP}"$ >/dev/null
 then
@@ -6511,10 +6505,9 @@ then
 			print $1 \
 		}' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)
 	do
-		ph_run_with_rollback -c "ph_integrate_app -a '${PH_APP}'" || \
+		ph_integrate_app -a "$PH_APP" || \
 			return 1
 	done
-	ph_add_value_to_param -p PH_UNINT_APPS -v "$PH_APP"
 	return 0
 else
 	if [[ -z "$PH_APP" ]]
