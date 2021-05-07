@@ -46,7 +46,7 @@ PH_PI_MODEL="$(nawk '$0 ~ /Raspberry Pi/ { \
 
 if [[ "$(dtoverlay -l 2>/dev/null | grep -E "vc4-(f)*kms-v3d" >/dev/null ; echo "$?")" -eq "0" || \
 	( "$PH_PI_MODEL" == "pi4" && "$(dtoverlay -l 2>/dev/null | grep -E "vc4-kms-v3d-pi4" >/dev/null ; echo "$?")" -eq "0" ) || \
-	( "$(ls -ld /sys/firmware/devicetree/base/chosen/framebuffer\@* 2>/dev/null | wc -l)" -gt "0" ]]
+	"$(ls -ld /sys/firmware/devicetree/base/chosen/framebuffer\@* 2>/dev/null | wc -l)" -gt "0" ]]
 then
 	PH_FILE_SUFFIX="_GL"
 else
