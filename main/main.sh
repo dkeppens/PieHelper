@@ -126,10 +126,10 @@ done
 
 # Set version
 
-PH_VERSION="$(cat "${PH_CONF_DIR}/VERSION" 2>/dev/null)"
+PH_VERSION="$(cat "${PH_FILES_DIR}/VERSION" 2>/dev/null)"
 if [[ "$PH_VERSION" != +([[:digit:]])\.+([[:digit:]]) ]]
 then
-	ph_set_result -a -m "Reinstallation of PieHelper is required (Missing or corrupted critical config file '${PH_CONF_DIR}/VERSION')"
+	ph_set_result -a -m "Reinstallation of PieHelper is required (Missing or corrupted critical config file '${PH_FILES_DIR}/VERSION')"
 fi
 
 # Load controller settings and load configuration of all supported applications
