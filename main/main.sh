@@ -37,21 +37,23 @@ PH_RUN_USER=""
 PH_SUDO=""
 PH_PI_MODEL="$(nawk '$0 ~ /Raspberry Pi/ { \
 		for (i=1;i<=NF;i++) { \
-			if ($i~/^Raspberry$/ && $(i+1)~/^Pi$/) { \
-				printf "RPI" $(i+2) ; \
+			if ($i ~ /^Raspberry$/ && $(i+1) ~ /^Pi$/) { \
+				printf "pi" $(i+2) ; \
 				exit 0 \
 			} \
 		} \
 	}' /proc/cpuinfo 2>/dev/null)"
 
-if [[ "$PH_PI_MODEL" == "RPI4" ]]
+if [[ "$(dtoverlay -l 2>/dev/null | grep -E "vc4-(f)*kms-v3d" >/dev/null ; echo "$?")" -eq "0" || \
+	( "$PH_PI_MODEL" == "pi4" && "$(dtoverlay -l 2>/dev/null | grep -E "vc4-kms-v3d-pi4" >/dev/null ; echo "$?")" -eq "0" ) || \
+	( "$(ls -ld /sys/firmware/devicetree/base/chosen/framebuffer\@* 2>/dev/null | wc -l)" -gt "0" ]]
 then
 	PH_FILE_SUFFIX="_GL"
 else
 	PH_FILE_SUFFIX="_X"
 fi
 
-export PH_SCRIPTS_DIR PH_INST_DIR PH_BASE_DIR PH_BUILD_DIR PH_SNAPSHOT_DIR PH_MNT_DIR PH_CONF_DIR PH_MAIN_DIR PH_TMP_DIR PH_FILES_DIR PH_MENUS_DIR
+export PH_SCRIPTS_DIR PH_INST_DIR PH_BASE_DIR PH_BUILD_DIR PH_SNAPSHOT_DIR PH_MNT_DIR PH_CONF_DIR PH_MAIN_DIR PH_TMP_DIR PH_FILES_DIR PH_MENUS_DIR PH_EXCLUDES_DIR PH_TEMPLATES_DIR
 export PH_VERSION PH_DISTRO PH_SPEC_DISTRO PH_RUN_USER PH_SUDO PH_PI_MODEL PH_FILE_SUFFIX PH_SUPPORTED_DISTROS
 
 # Global variable declarations related to rollback
