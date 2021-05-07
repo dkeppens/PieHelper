@@ -5739,7 +5739,7 @@ else
 fi
 if [[ "$PH_APP" == "PieHelper" ]]
 then
-	! ph_run_with_rollback -c "ph_create_empty_file -t file -d '${PH_SCRIPTS_DIR}/startpieh.sh'" || \
+	ph_run_with_rollback -c "ph_create_empty_file -t file -d '${PH_SCRIPTS_DIR}/startpieh.sh'" || \
 		return 1
 fi
 if ! cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
