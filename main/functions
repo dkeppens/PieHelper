@@ -7705,7 +7705,7 @@ for PH_APP in $(nawk 'BEGIN { \
 do
 	for PH_i in "${PH_APP_LIST[@]}"
 	do
-		[["$PH_i" == "$PH_APP" ]] && \
+		[[ "$PH_i" == "$PH_APP" ]] && \
 			continue 2
 	done
 	if [[ "$PH_STATE_MATCH_TYPE" == "exact" ]]
@@ -7894,7 +7894,7 @@ then
 				return 1
 			ph_run_with_rollback -c "ph_pieh_configured_path_conf" || \
 				return 1
-			for ((PH_COUNT="2";PH_COUNT<="${PH_PIEH_MAX_TTYS}";PH_COUNT++))
+			for ((PH_COUNT=2;PH_COUNT<="${PH_PIEH_MAX_TTYS}";PH_COUNT++))
 			do
 				ph_run_with_rollback -c "ph_disable_app_tty '${PH_COUNT}'" || \
 					return 1
