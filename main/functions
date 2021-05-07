@@ -7870,7 +7870,7 @@ then
 				ph_create_default_base_conf_file "$PH_i" || \
 					return 1
 			done
-			ph_run_with_rollback -c "ph_support_app -a default" || \
+			ph_support_app -a default || \
 				return 1
 			printf "%8s%s\n" "" "--> Loading configuration for all supported applications"
 			for PH_i in $(ph_get_app_list_by_state -s Supported -t exact)
