@@ -1,3 +1,27 @@
+* move default_apps* files + options.* files + VERSIONS + default_apps* files + TODO to files dir
+* move pre_cmds and post_cmds directories to scripts/app/ directory
+* check what to do with auto_update_denied
+* implement use of newly defined array holding all supported distros/specdistros
+* check if PH_MOVE_SCRIPTS_REGEX and function for it are still required. Remove if not
+* remove all references to ph_total_result stuff
+* remove ph_set_variable stuff
+* check for double function definitions in functions and check for doubles in ph_rollback_changes
+* make sure when running functions with quiesce enabled that no results are set
+* bug : detects piehelper as already active + does not switch to active tty on piehelper startup or does he ?
+* check why mnt/App dirs not being created with piehelper (at least not mnt/PieHelper on initial configure): change
+* change content of bullseye.conf to appropriate values
+* extra output comments for package update : is irreversible and may take a while
+* extra output comments for system update : is recommended but irreversible and can take very long depending on system config
+* further process whether all actions for a piehelper configuration are now under correct rollback control : including '-c true|-c false' or manual OK/ERROR print with ph_set_result
+* reflect changes for ph_set_option_to_value to confopts_ph.sh
+* add check function a la those for ip and users etc for cifs mountpoints : are they valid ? + implement use where needed
+* and there was one more check function that could be useful to write but which one ?
+* implement rename of ph_create_app_dir and ph_remove_app_dir -> 'cifs_mpt' replaces 'dir'
+* scan code for evals and other occurences of _CIFS_MPT and change code to use new ph_get_app_cifs_mpt function
+* create option for selection of Xserver
+* implement option for limit menu size on screen to 1080p
+* add ph_remove_default_base_conf_file function + rollback
+***
 * do away with ph_store_options shit in confapps_ph.sh
 * change file quoting everywhere left to do
 * check all function param checks in place and check OPTIND and OPTARG resets in place everywhere for getopts early return 1's

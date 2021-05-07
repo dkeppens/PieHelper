@@ -16,7 +16,7 @@
   PieHelper functions by binding each application to a specific TTY and uses autologin functionality at TTY selection  
   Since PieHelper creates custom TTY configurations, any pre-existing TTY customizations should be removed before configuring PieHelper and no independent ones should be created after
 
-* The default list of supported integrable applications is :
+* The default list of applications supported by default is :
 
 	- Kodi (Media Center)
 	- Moonlight (Gamestreaming from devices running NVIDIA graphic cards with Geforce Experience software)
@@ -38,14 +38,15 @@
 	- selecting one integrated application to start by default on system boot
 	- managing which TTY is allocated to each application
 
-* Developed exclusively with ksh93 and bash, no other prerequisites exist except for the following assumptions :
+* Developed exclusively with bash, no other prerequisites exist except for the following assumptions :
 
 	- systemd as a service management facility
-	- presence of a /proc filesystem
+	- presence of a /proc and /sys filesystem
 	- either apt or pacman as a package management utility
 
+* Note that PieHelper is NOT compatible with any kind of of login manager since graphical environments are only supported through the use of xinit
+
 * Compatibility should be out-of-the-box for Pi-based Raspbian, Noobs, and Ubuntu linux distributions
-  
   Currently however, only the official Raspbian distro has been tested
 
 * Feedback, bug reports and feature requests can be reported on the official github repository
@@ -73,6 +74,7 @@
 
 	- Multiple physical displays
 	- Mixing different controller types
+	- Login managers of any kind
 
 PieHelper written by Davy Keppens on 04/10/18
 PieHelper.official@gmail.com
