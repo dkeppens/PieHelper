@@ -109,8 +109,8 @@ declare PH_LINE=""
 declare PH_PARAMS=""
 declare PH_FILE=""
 declare PH_OPTION=""
-declare PH_OLDOPTARG=""
-declare -i PH_OLDOPTIND="0"
+declare PH_OLDOPTARG="$OPTARG"
+declare -i PH_OLDOPTIND="$OPTIND"
 declare -i PH_ADD_AS_ROOT="1"
 
 OPTIND="1"
@@ -175,8 +175,8 @@ declare PH_FILE=""
 declare PH_LINK_TARGET=""
 declare PH_TMP_FILE=""
 declare PH_OPTION=""
-declare PH_OLDOPTARG=""
-declare -i PH_OLDOPTIND="0"
+declare PH_OLDOPTARG="$OPTARG"
+declare -i PH_OLDOPTIND="$OPTIND"
 declare -i PH_COUNT="0"
 declare -i PH_REMOVE_AS_ROOT="1"
 
@@ -588,7 +588,7 @@ declare PH_i=""
 
 for PH_i in Bash_conf Ctrls_conf Emulationstation_conf Kodi_conf Moonlight_conf MovefromPieHScript LoginScript MoveScript MovetoPieHScript OOSapp_conf PieHelper_conf RestartScriptPieH RestartScript StartScriptPieH StartScript StopScriptPieH StopScript X11_conf
 do
-	if ! ph_check_object_existence -q -o "$PH_FILES_DIR/$PH_i.template"
+	if ! ph_check_object_existence -q -o "${PH_TEMPLATES_DIR}/${PH_i}.template"
 	then
 		ph_show_result
 		exit "$?"
@@ -596,7 +596,7 @@ do
 done
 for PH_i in GL X
 do
-	if ! ph_check_object_existence -q -o "$PH_CONF_DIR/default_apps_$PH_i"
+	if ! ph_check_object_existence -q -o "${PH_CONF_DIR}/default_apps_${PH_i}"
 	then
 		ph_show_result
 		exit "$?"
@@ -604,7 +604,7 @@ do
 done
 for PH_i in Advanced Controllers Main OS OSdefaults PS3 PS4 XBOX360 Settings AppManagement_PieHelper OptsManagement_PieHelper TTYManagement_PieHelper PieHelper
 do
-	if ! ph_check_object_existence -q -o "$PH_MENUS_DIR/$PH_i.lst"
+	if ! ph_check_object_existence -q -o "${PH_MENUS_DIR}/${PH_i}.lst"
         then
 		ph_show_result
 		exit "$?"
@@ -824,13 +824,13 @@ else
 fi
 if [[ "$PH_RET_CODE" -ne "0" ]]
 then
-	if [[ -f "$PH_FILES_DIR/first_run" ]]
+	if [[ -f "${PH_TMP_DIR}/.first_run" ]]
 	then
-		printf "%4s%s\n" "" "- File '$PH_FILES_DIR/first_run' is 'Present'" >>"$PH_TMP_DIR/reported_issues"
+		printf "%4s%s\n" "" "- File '${PH_TMP_DIR}/.first_run' is 'Present'" >>"${PH_TMP_DIR}/reported_issues"
 		PH_RET_CODE="1"
 	fi
 else
-	"$PH_SUDO" rm "$PH_TMP_DIR/reported_issues" 2>/dev/null
+	"$PH_SUDO" rm "${PH_TMP_DIR}/reported_issues" 2>/dev/null
 fi
 return "$PH_RET_CODE"
 }
@@ -971,13 +971,13 @@ then
 fi
 if [[ "$PH_RET_CODE" -ne "0" ]]
 then
-	if [[ ! -f "$PH_FILES_DIR/first_run" ]]
+	if [[ ! -f "${PH_TMP_DIR}/.first_run" ]]
 	then
-		printf "%4s%s\n" "" "- File '$PH_FILES_DIR/first_run' is 'Missing'" >>"$PH_TMP_DIR/reported_issues"
+		printf "%4s%s\n" "" "- File '${PH_TMP_DIR}/.first_run' is 'Missing'" >>"${PH_TMP_DIR}/reported_issues"
 		PH_RET_CODE="1"
 	fi
 else
-	"$PH_SUDO" rm "$PH_TMP_DIR/reported_issues" 2>/dev/null
+	"$PH_SUDO" rm "${PH_TMP_DIR}/reported_issues" 2>/dev/null
 fi
 return "$PH_RET_CODE"
 }
@@ -1088,14 +1088,28 @@ OPTIND="1"
 while getopts o:q PH_OPTION 2>/dev/null
 do
 	case "$PH_OPTION" in o)
-			[[ -n "$PH_OBJECT" ]] && OPTIND="$PH_OLDOPTIND" && OPTARG="$PH_OLDOPTARG" && return 1
-			PH_OBJECT="$OPTARG" ;;
+		[[ -n "$PH_OBJECT" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_OBJECT="$OPTARG" ;;
 			     q)
-			PH_QUIESCE="0" ;;
+		[[ "$PH_QUIESCE" -eq "0" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_QUIESCE="0" ;;
+			     *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}' ;;
 	esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
+
+[[ -z "$PH_OBJECT" || "$#" -lt "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 PH_DIR="${PH_OBJECT%/*}"
 PH_FILE="${PH_OBJECT##*/}"
@@ -1122,7 +1136,7 @@ else
 		PH_FILE="OS.defaults" ;;
 			defaults|alloweds)
 		PH_DIR="$PH_CONF_DIR"
-		PH_FILE="options.$PH_OBJECT" ;;
+		PH_FILE="options.${PH_OBJECT}" ;;
 			*/VERSION)
 		PH_TYPE="Unique" ;;
 			*/buster.*|*/jessie.*|*/stretch.*|*/Archlinux.*)
@@ -1143,7 +1157,7 @@ else
 			*.template)
 		PH_OBJECT_TYPE="template"
 		PH_TYPE="Unique" ;;
-			*/auto_update_denied|*/first_run)
+			*/auto_update_denied|*/.first_run)
 		PH_OBJECT_TYPE="file"
 		PH_TYPE="Optional" ;;
 			*.expect)
@@ -1157,15 +1171,17 @@ else
 		PH_TYPE="Optional" ;;
        	esac
 fi
-[[ "$PH_QUIESCE" -eq "1" ]] && printf "%8s%s\n" "" "--> Checking '$PH_TYPE' $PH_OBJECT_TYPE '$PH_DIR/$PH_FILE'"
-if ! [[ -f "$PH_DIR/$PH_FILE" && "$PH_OBJECT_TYPE" != @(directory|link) ]] && ! [[ -d "$PH_DIR/$PH_FILE" && "$PH_OBJECT_TYPE" == "directory" ]] && \
-	! [[ -L "$PH_DIR/$PH_FILE" && "$PH_OBJECT_TYPE" == "link" ]]
+[[ "$PH_QUIESCE" -eq "1" ]] && \
+	printf "%8s%s\n" "" "--> Checking '${PH_TYPE}' ${PH_OBJECT_TYPE} '${PH_DIR}/${PH_FILE}'"
+if [[ ! ( -f "${PH_DIR}/${PH_FILE}" && "$PH_OBJECT_TYPE" != @(directory|link) ) && \
+	! ( -d "${PH_DIR}/${PH_FILE}" && "$PH_OBJECT_TYPE" == "directory" ) && \
+	! ( -L "${PH_DIR}/${PH_FILE}" && "$PH_OBJECT_TYPE" == "link" ) ]]
 then
 	if [[ "$PH_TYPE" == "Unique" ]]
 	then
-		ph_set_result -a -m "'$PH_TYPE' $PH_OBJECT_TYPE '$PH_DIR/$PH_FILE' is 'Missing' -> Reinstallation and reconfiguration of PieHelper is required"
+		ph_set_result -a -m "'${PH_TYPE}' ${PH_OBJECT_TYPE} '${PH_DIR}/${PH_FILE}' is 'Missing' -> Reinstallation and reconfiguration of PieHelper is required"
 	else
-		ph_set_result -w -m "'$PH_TYPE' $PH_OBJECT_TYPE '$PH_DIR/$PH_FILE' is 'Missing'"
+		ph_set_result -w -m "'${PH_TYPE}' ${PH_OBJECT_TYPE} '${PH_DIR}/${PH_FILE}' is 'Missing'"
 		if [[ "$PH_QUIESCE" -eq "1" ]]
 		then
 			printf "%10s\033[33m%s\033[0m\n\n" "" "Warning : Not found"
@@ -1176,8 +1192,7 @@ then
 else
 	if [[ "$PH_QUIESCE" -eq "1" ]]
 	then
-		printf "%10s\033[32m%s\033[0m\n" "" "OK (Found)"
-		ph_set_result -r 0
+		ph_run_with_rollback -c true -m "Found"
 	fi
 fi
 return 0
@@ -1417,8 +1432,8 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_APP" ]] && \
-	return 1
+[[ -z "$PH_APP" || "$#" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 if [[ "$PH_APP" == "PieHelper" ]]
 then
@@ -1574,8 +1589,8 @@ then
 	ph_secure_pieh -t delayed
 	printf "%8s%s\n" "" "--> Cleaning up"
 	"$PH_SUDO" rm -r /tmp/PieHelper 2>/dev/null
-	"$PH_SUDO" rm "$PH_FILES_DIR/first_run" 2>/dev/null
-	"$PH_SUDO" rm "$PH_FILES_DIR/auto_update_denied" 2>/dev/null
+	"$PH_SUDO" rm "${PH_TMP_DIR}/.first_run" 2>/dev/null
+	"$PH_SUDO" rm "${PH_FILES_DIR}/auto_update_denied" 2>/dev/null
 	printf "%10s\033[32m%s\033[0m\n\n" "" "OK"
 	printf "%s\n" "Restart 'PieHelper' manually to finalize updating to version '$PH_NEW_VERSION'"
 	printf "%s\n" "Press 'Enter' to quit"
@@ -2033,7 +2048,7 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-if [[ -f "${PH_FILES_DIR}/first_run" ]]
+if [[ -f "${PH_TMP_DIR}/.first_run" ]]
 then
 	PH_CONF_STATE="Unconfigured"
 else
@@ -2536,12 +2551,12 @@ declare PH_i=""
 declare PH_APP_TYPE=""
 declare PH_APP_STATE="Unknown"
 declare PH_OLDOPTARG="$OPTARG"
-declare -l PH_APPL=""
 declare -i PH_OLDOPTIND="$OPTIND"
 declare -i PH_APP_TTY="0"
 declare -i PH_QUIESCE="1"
 declare -i PH_FORCE_PRINT_FLAG="1"
 declare -i PH_RET_CODE="0"
+declare -l PH_APPL=""
 
 OPTIND="1"
 
@@ -4023,13 +4038,13 @@ declare PH_NEWVALUE=""
 declare PH_OPT_DEFS=""
 declare PH_OPT_REGEX=""
 declare PH_OLDOPTARG="$OPTARG"
-declare -u PH_APPU="${PH_APP:0:4}"
 declare -i PH_OLDOPTIND="$OPTIND"
 declare -i PH_LENGTH="0"
 declare -i PH_NOW="0"
 declare -i PH_END="0"
 declare -i PH_RET_CODE="0"
 declare -i PH_OLD_SET_FLAG="1"
+declare -u PH_APPU="${PH_APP:0:4}"
 
 OPTIND="2"
 
@@ -5463,9 +5478,9 @@ then
 		fi
 		ph_run_with_rollback -c "ph_remove_app_from_support_file -a '${PH_APP}'" || \
 			return 1
-		if [[ "$PH_APP" == "PieHelper" && ! -f "${PH_FILES_DIR}/first_run" ]]
+		if [[ "$PH_APP" == "PieHelper" && ! -f "${PH_TMP_DIR}/.first_run" ]]
 		then
-			ph_run_with_rollback -c "ph_create_empty_file -t file -d '${PH_FILES_DIR}/first_run'" || \
+			ph_run_with_rollback -c "ph_create_empty_file -t file -d '${PH_TMP_DIR}/.first_run'" || \
 				return 1
 		fi
 		ph_add_value_to_param -p PH_SUP_APPS -v "${PH_APP}'${PH_APP_INST_STATE}'${PH_APP_CMD}'${PH_APP_PKG}"
@@ -5627,11 +5642,11 @@ declare PH_APP_INST_STATE=""
 declare PH_ANSWER2=""
 declare PH_OPTION=""
 declare PH_OLDOPTARG="$OPTARG"
-declare -u PH_APPU=""
 declare -i PH_OLDOPTIND="$OPTIND"
 declare -i PH_COUNT="0"
 declare -i PH_COUNT2="0"
 declare -i PH_ANSWER="0"
+declare -u PH_APPU=""
 
 OPTIND="1"
 
@@ -5972,9 +5987,9 @@ then
 	ph_run_with_rollback -c "ph_create_oos_app_code '${PH_APP}'" || \
 		return 1
 fi
-if [[ "$PH_APP" == "PieHelper" && -f "${PH_FILES_DIR}/first_run" ]]
+if [[ "$PH_APP" == "PieHelper" && -f "${PH_TMP_DIR}/.first_run" ]]
 then
-	ph_run_with_rollback -c "ph_remove_empty_file -t file -d '${PH_FILES_DIR}/first_run'" || \
+	ph_run_with_rollback -c "ph_remove_empty_file -t file -d '${PH_TMP_DIR}/.first_run'" || \
 		return 1
 fi
 ph_add_value_to_param -p PH_UNSUP_APPS -v "${PH_APP}'${PH_APP_PKG}"
@@ -6779,7 +6794,7 @@ then
 			ph_run_with_rollback -c "ph_modify_app_script -a '${PH_APP}' -t '${PH_APP_TTY}'" || \
 				return 1
 		fi
-		if ph_run_with_rollback -c "ph_copy_file -s '${PH_FILES_DIR}/LoginScript.template' -d '${PH_CONF_DIR}/LoginScript.conf'"
+		if ph_run_with_rollback -c "ph_copy_file -s '${PH_TEMPLATES_DIR}/LoginScript.template' -d '${PH_CONF_DIR}/LoginScript.conf'"
 		then
 			ph_run_with_rollback -c "ph_set_option_to_value LoginScript -r \"PH_APP_TTY'tty${PH_APP_TTY}\" -r \"PH_APP_USER'${PH_APP_USER}\" -r \"PH_APP_CMD'${PH_APP_CMD}\"" || \
 				return 1
@@ -7089,42 +7104,42 @@ then
 	ph_show_result
 	return "$?"
 fi
-rm "$PH_FILES_DIR"/first_run 2>/dev/null
-for PH_i in "$PH_SCRIPTS_DIR" "$PH_FILES_DIR" "$PH_MENUS_DIR" "$PH_CONF_DIR" "$PH_CONF_DIR/distros" "$PH_MAIN_DIR" "$PH_MAIN_DIR/distros" "$PH_BASE_DIR/post_cmds" "$PH_BASE_DIR/pre_cmds" "$PH_MNT_DIR" "$PH_TMP_DIR" "$PH_BUILD_DIR" "$PH_SNAPSHOT_DIR"
+"$PH_SUDO" rm "${PH_TMP_DIR}/.first_run" 2>/dev/null
+for PH_i in "$PH_SCRIPTS_DIR" "$PH_FILES_DIR" "$PH_MENUS_DIR" "$PH_CONF_DIR" "${PH_CONF_DIR}/distros" "${PH_MAIN_DIR}" "${PH_MAIN_DIR}/distros" "${PH_BASE_DIR}/post_cmds" "${PH_BASE_DIR}/pre_cmds" "$PH_MNT_DIR" "$PH_TMP_DIR" "$PH_BUILD_DIR" "$PH_SNAPSHOT_DIR" "$PH_TEMPLATES_DIR" "$PH_EXCLUDES_DIR"
 do
 	ph_check_object_existence -o "$PH_i" || return 1
 done
 for PH_i in LoginScript StartScript StopScript RestartScript StartScriptPieH StopScriptPieH RestartScriptPieH MovetoPieHScript MovefromPieHScript MoveScript Kodi_conf Moonlight_conf PieHelper_conf Emulationstation_conf Bash_conf X11_conf Ctrls_conf OOSapp_conf
 do
-	ph_check_object_existence -o "$PH_FILES_DIR/$PH_i.template" || return 1
+	ph_check_object_existence -o "${PH_TEMPLATES_DIR}/${PH_i}.template" || return 1
 done
 for PH_i in VERSION default_apps_X default_apps_GL
 do
-	ph_check_object_existence -o "$PH_CONF_DIR/$PH_i" || return 1
+	ph_check_object_existence -o "${PH_CONF_DIR}/${PH_i}" || return 1
 done
 for PH_i in Advanced Controllers Main PieHelper OptsManagement_PieHelper AppManagement_PieHelper TTYManagement_PieHelper OS PS3 PS4 OSdefaults Settings XBOX360
 do
-	ph_check_object_existence -o "$PH_MENUS_DIR/$PH_i.lst" || return 1
+	ph_check_object_existence -o "${PH_MENUS_DIR}/${PH_i}.lst" || return 1
 done
 for PH_i in confopts_ph confoper_ph confapps_ph confctrl_ph listblue_ph listmoon_ph confgena_ph confpieh_ph ../post_cmds/Kodi-POST ../post_cmds/PieHelper-POST ../pre_cmds/PieHelper-PRE ../pre_cmds/Kodi-PRE
 do
-	ph_check_object_existence -o "$PH_SCRIPTS_DIR/$PH_i.sh" || return 1
+	ph_check_object_existence -o "${PH_SCRIPTS_DIR}/${PH_i}.sh" || return 1
 done
 for PH_i in Archlinux buster stretch jessie
 do
-	ph_check_object_existence -o "$PH_CONF_DIR/distros/$PH_i.conf" || return 1
+	ph_check_object_existence -o "${PH_CONF_DIR}/distros/${PH_i}.conf" || return 1
 done
 for PH_i in Archlinux Debian
 do
-	ph_check_object_existence -o "$PH_MAIN_DIR/distros/functions.$PH_i" || return 1
+	ph_check_object_existence -o "${PH_MAIN_DIR}/distros/functions.${PH_i}" || return 1
 done
 for PH_i in functions confctrls.expect
 do
-	ph_check_object_existence -o "$PH_MAIN_DIR/$PH_i" || return 1
+	ph_check_object_existence -o "${PH_MAIN_DIR}/${PH_i}" || return 1
 done
 for PH_i in README.md TODO CODE_OF_CONDUCT.md INSTALL LICENSE VERSIONS
 do
-	ph_check_object_existence -o "$PH_BASE_DIR/$PH_i"
+	ph_check_object_existence -o "${PH_BASE_DIR}/${PH_i}"
 done
 mkdir -p "${PH_SCRIPTS_DIR}/../temp" 2>/dev/null
 mv ${PH_BASE_DIR}/+(README.md|TODO|CODE_OF_CONDUCT.md|INSTALL|HOWTO|LICENSE|VERSIONS|builds|snapshots|tmp|mnt|main|conf|files|post_cmds|pre_cmds|.git|.github|scripts) "${PH_BASE_DIR}/temp/" 2>/dev/null
@@ -7339,29 +7354,33 @@ done
 ph_run_with_rollback -c "ph_retrieve_stored_options"
 ph_setup_tty -a "PieHelper" -u "$PH_RUN_USER" -t "2"
 printf "%8s%s\n" "" "--> Generating 'Derivate' miscellaneous files"
-mkdir "$PH_FILES_DIR/temp" 2>/dev/null
-mv "$PH_FILES_DIR/"+(LoginScript|StartScript|StopScript|RestartScript|StartScriptPieH|StopScriptPieH|RestartScriptPieH|MovetoPieHScript|MovefromPieHScript|MoveScript|Kodi_conf|Moonlight_conf|PieHelper_conf|Emulationstation_conf|Bash_conf|X11_conf|Ctrls_conf|OOSapp_conf)".template" "$PH_FILES_DIR/temp" 2>/dev/null
-rm "${PH_FILES_DIR}/tar.excludes" "${PH_FILES_DIR}/kodi.excludes" 2>/dev/null
-cat >"${PH_FILES_DIR}/temp/tar.excludes" <<EOF
+"$PH_SUDO" rm "${PH_EXCLUDES_DIR}/"* 2>/dev/null
+cat >"${PH_EXCLUDES_DIR}/tar.excludes" <<EOF
 ./.git
 ./.github
 ./builds/PieHelper*
 ./snapshots/PieHelper*
 ./files/autologin_conf
+./files/stored_options
 ./files/logind_conf
 ./files/10-retropie_sh
-./tmp/!(.gitignore)
+./tmp/*
+./mnt/*/*
 EOF
-cat >"${PH_FILES_DIR}/temp/kodi.excludes" <<EOF
+cat >"${PH_EXCLUDES_DIR}/kodi.excludes" <<EOF
 ./.kodi/temp/*
 ./.kodi/addons/temp/*
 EOF
-rm -r "${PH_FILES_DIR}/"!(+(menus|temp)) 2>/dev/null
-mv "${PH_FILES_DIR}/temp/"* "$PH_FILES_DIR"
-rmdir "${PH_FILES_DIR}/temp" 2>/dev/null
+rm -r "${PH_EXCLUDES_DIR}/"!(@(tar|kodi).excludes) 2>/dev/null
+"$PH_SUDO" rm "${PH_FILES_DIR}/"!(@(exclude|template)s) 2>/dev/null
+mkdir "$PH_TEMPLATES_DIR}/temp" 2>/dev/null
+mv "${PH_TEMPLATES_DIR}/"+(LoginScript|StartScript|StopScript|RestartScript|StartScriptPieH|StopScriptPieH|RestartScriptPieH|MovetoPieHScript|MovefromPieHScript|MoveScript|Kodi_conf|Moonlight_conf|PieHelper_conf|Emulationstation_conf|Bash_conf|X11_conf|Ctrls_conf|OOSapp_conf)".template" "${PH_TEMPLATES_DIR}/temp" 2>/dev/null
+"$PH_SUDO" rm -r "${PH_TEMPLATES_DIR}/"!(temp) 2>/dev/null
+mv "${PH_TEMPLATES_DIR}/temp/"* "$PH_TEMPLATES_DIR" 2>/dev/null
+rmdir "${PH_TEMPLATES_DIR}/temp" 2>/dev/null
 printf "%10s\033[32m%s\033[0m\n" "" "OK"
 mkdir "$PH_SCRIPTS_DIR/temp" 2>/dev/null
-mv "$PH_SCRIPTS_DIR/"+(conf|list)*".sh" "$PH_SCRIPTS_DIR/temp" 2>/dev/null
+mv "${PH_SCRIPTS_DIR}/"@(conf|list)*.sh "${PH_SCRIPTS_DIR}/temp" 2>/dev/null
 for PH_APP in "PieHelper" $(echo -n "$PH_INTAPPS")
 do
         ph_create_app_scripts "$PH_APP"
@@ -7877,7 +7896,7 @@ then
 				return 1
 			ph_run_with_rollback -c "ph_pieh_configured_path_conf" || \
 				return 1
-			for ((PH_COUNT=2;PH_COUNT<="$PH_PIEH_MAX_TTYS";PH_COUNT++))
+			for ((PH_COUNT="2";PH_COUNT<="${PH_PIEH_MAX_TTYS}";PH_COUNT++))
 			do
 				ph_run_with_rollback -c "ph_disable_app_tty '${PH_COUNT}'" || \
 					return 1
@@ -8016,13 +8035,13 @@ declare PH_SKIPPING="no"
 declare PH_ACTION=""
 declare PH_HEADER=""
 declare PH_OLDOPTARG="$OPTARG"
-declare -u PH_APPU=""
 declare -i PH_OLDOPTIND="$OPTIND"
 declare -i PH_COUNT="0"
 declare -i PH_TOT_LIST_MEMBERS="0"
 declare -i PH_SKIP_LIST_MEMBERS="0"
 declare -i PH_RET_CODE="0"
 declare -i PH_APP_TTY="0"
+declare -u PH_APPU=""
 
 OPTIND="1"
 

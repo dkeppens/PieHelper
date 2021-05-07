@@ -11,7 +11,7 @@ declare PH_i=""
 for PH_i in $("$PH_SUDO" ls -lA "${PH_TMP_DIR}/" 2>/dev/null | nawk 'NR == "1" { \
                 next \
         } \
-        $NF !~ /^\.(gitignore|(un|)configure_in_progress)/ { \
+        $NF !~ /^\.(gitignore|(un|)configure_in_progress|first_run)/ { \
                 printf " " $NF \
         }')
 do
@@ -1858,7 +1858,7 @@ for PH_i in start stop restart
 do
 	PH_APPL="${PH_APP:0:4}"
 	PH_SCRIPT_PREFIX="$(echo -n "$PH_i" | cut -c1 | tr "[:lower:]" "[:upper:]")$(echo -n "$PH_i" | cut -c2-)"
-	if ph_run_with_rollback -c "ph_copy_file -q -s '${PH_FILES_DIR}/${PH_SCRIPT_PREFIX}Script${PH_SCRIPT_SUFFIX}.template' -d '${PH_SCRIPTS_DIR}/${PH_i}${PH_APPL}.sh'"
+	if ph_run_with_rollback -c "ph_copy_file -q -s '${PH_TEMPLATES_DIR}/${PH_SCRIPT_PREFIX}Script${PH_SCRIPT_SUFFIX}.template' -d '${PH_SCRIPTS_DIR}/${PH_i}${PH_APPL}.sh'"
 	then
 		if sed -i "s/#PH_APPL#/${PH_APPL}/g;s/#PH_APP#/${PH_APP}/g" "${PH_SCRIPTS_DIR}/${PH_i}${PH_APPL}.sh" 2>/dev/null
 		then
@@ -1888,7 +1888,7 @@ do
         PH_APPL2="${PH_APP2:0:4}"
         for PH_i in 1 2
         do
-		if ph_run_with_rollback -c "ph_copy_file -q -s '${PH_FILES_DIR}/Move${PH_SCRIPT_SUFFIX}Script.template' -d '${PH_SCRIPTS_DIR}/${PH_APPL}to${PH_APPL2}.sh'"
+		if ph_run_with_rollback -c "ph_copy_file -q -s '${PH_TEMPLATES_DIR}/Move${PH_SCRIPT_SUFFIX}Script.template' -d '${PH_SCRIPTS_DIR}/${PH_APPL}to${PH_APPL2}.sh'"
 		then
 			if sed -i "s/#PH_APPL#/${PH_APPL}/g;s/#PH_APP#/${PH_APP}/g;s/#PH_APPL2#/${PH_APPL2}/g;s/#PH_APP2#/${PH_APP2}/g" "${PH_SCRIPTS_DIR}/${PH_APPL}to${PH_APPL2}.sh" 2>/dev/null
 			then
@@ -1941,7 +1941,7 @@ PH_SOURCE_FILE="${PH_APP}_conf"
 	"$PH_APP" != "Ctrls" ]] && \
 	PH_SOURCE_FILE="OOSapp_conf"
 printf "%8s%s\n" "" "--> Creating config file for ${PH_APP} as '${PH_CONF_DIR}/${PH_APP}.conf'"
-if ph_run_with_rollback -c "ph_copy_file -q -s '${PH_FILES_DIR}/${PH_SOURCE_FILE}.template' -d '${PH_CONF_DIR}/${PH_APP}.conf'"
+if ph_run_with_rollback -c "ph_copy_file -q -s '${PH_TEMPLATES_DIR}/${PH_SOURCE_FILE}.template' -d '${PH_CONF_DIR}/${PH_APP}.conf'"
 then
 	if sed -i "s/#PH_APPU#/${PH_APPU}/;s/#PH_APP#/${PH_APP}/" "${PH_CONF_DIR}/${PH_APP}.conf" 2>/dev/null
 	then

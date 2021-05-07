@@ -45,7 +45,7 @@ then
 					return 1
 				fi
 			fi
-			if ( cd "$PH_KODI_HOME" ; "$PH_SUDO" tar -X "${PH_FILES_DIR}/kodi.excludes" -cf "${PH_TMP_DIR}/Kodi-Prefs.tar" ./.kodi >/dev/null 2>&1 )
+			if ( cd "$PH_KODI_HOME" ; "$PH_SUDO" tar -X "${PH_EXCLUDES_DIR}/kodi.excludes" -cf "${PH_TMP_DIR}/Kodi-Prefs.tar" ./.kodi >/dev/null 2>&1 )
 			then
 				if "$PH_SUDO" chown "${PH_PIEH_USER}:$(id -gn 2>/dev/null)" "${PH_TMP_DIR}/Kodi-Prefs.tar" 2>/dev/null
 				then

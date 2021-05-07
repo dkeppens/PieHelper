@@ -226,16 +226,16 @@ case "$PH_ACTION" in inst)
 		touch "$PH_CONF_DIR"/../mnt/"$PH_APP"/.gitignore 2>/dev/null
 		printf "%10s\033[32m%s\033[0m\n" "" "OK"
 		printf "%8s%s\n" "" "--> Adding '$PH_APP' management scripts"
-		cp -p "$PH_FILES_DIR"/StartScript.template "$PH_SCRIPTS_DIR"/start"$PH_APPL".sh 2>/dev/null
-		cp -p "$PH_FILES_DIR"/StopScript.template "$PH_SCRIPTS_DIR"/stop"$PH_APPL".sh 2>/dev/null
-		cp -p "$PH_FILES_DIR"/RestartScript.template "$PH_SCRIPTS_DIR"/restart"$PH_APPL".sh 2>/dev/null
-		sed "s/#PH_APPL#/$PH_APPL/;s/#PH_APP#/$PH_APP/" "$PH_SCRIPTS_DIR"/start"$PH_APPL".sh >/tmp/start"$PH_APPL"_tmp 2>/dev/null
-		[[ $? -eq 0 ]] && mv /tmp/start"$PH_APPL"_tmp "$PH_SCRIPTS_DIR"/start"$PH_APPL".sh 2>/dev/null
-		sed "s/#PH_APPL#/$PH_APPL/;s/#PH_APP#/$PH_APP/" "$PH_SCRIPTS_DIR"/stop"$PH_APPL".sh >/tmp/stop"$PH_APPL"_tmp 2>/dev/null
-		[[ $? -eq 0 ]] && mv /tmp/stop"$PH_APPL"_tmp "$PH_SCRIPTS_DIR"/stop"$PH_APPL".sh 2>/dev/null
-		sed "s/#PH_APPL#/$PH_APPL/;s/#PH_APP#/$PH_APP/" "$PH_SCRIPTS_DIR"/restart"$PH_APPL".sh >/tmp/restart"$PH_APPL"_tmp 2>/dev/null
-		[[ $? -eq 0 ]] && mv /tmp/restart"$PH_APPL"_tmp "$PH_SCRIPTS_DIR"/restart"$PH_APPL".sh 2>/dev/null
-		for PH_APP2 in `nawk 'BEGIN { ORS = " " } { print $1 }' "$PH_CONF_DIR"/supported_apps 2>/dev/null`
+		cp -p "${PH_TEMPLATES_DIR}/StartScript.template" "${PH_SCRIPTS_DIR}/start${PH_APPL}.sh" 2>/dev/null
+		cp -p "${PH_TEMPLATES_DIR}/StopScript.template" "${PH_SCRIPTS_DIR}/stop${PH_APPL}.sh" 2>/dev/null
+		cp -p "${PH_TEMPLATES_DIR}/RestartScript.template" "${PH_SCRIPTS_DIR}/restart${PH_APPL}.sh" 2>/dev/null
+		sed "s/#PH_APPL#/${PH_APPL}/;s/#PH_APP#/${PH_APP}/g" "${PH_SCRIPTS_DIR}/start${PH_APPL}.sh" >"/tmp/start${PH_APPL}_tmp" 2>/dev/null
+		[[ "$?" -eq "0" ]] && mv "/tmp/start${PH_APPL}_tmp" "${PH_SCRIPTS_DIR}/start${PH_APPL}.sh" 2>/dev/null
+		sed "s/#PH_APPL#/${PH_APPL}/;s/#PH_APP#/${PH_APP}/g" "${PH_SCRIPTS_DIR}/stop${PH_APPL}.sh" >"/tmp/stop${PH_APPL}_tmp" 2>/dev/null
+		[[ "$?" -eq "0" ]] && mv "/tmp/stop${PH_APPL}_tmp" "${PH_SCRIPTS_DIR}/stop${PH_APPL}.sh" 2>/dev/null
+		sed "s/#PH_APPL#/${PH_APPL}/;s/#PH_APP#/${PH_APP}/g" "${PH_SCRIPTS_DIR}/restart${PH_APPL}.sh" >"/tmp/restart${PH_APPL}_tmp" 2>/dev/null
+		[[ "$?" -eq "0" ]] && mv "/tmp/restart${PH_APPL}_tmp" "${PH_SCRIPTS_DIR}/restart${PH_APPL}.sh" 2>/dev/null
+		for PH_APP2 in `nawk 'BEGIN { ORS = " " } { print $1 }' "${PH_CONF_DIR}/supported_apps" 2>/dev/null`
 		do
 			PH_APPL2=`echo "$PH_APP2" | cut -c1-4`
 			for PH_i in 1 2
@@ -244,28 +244,28 @@ case "$PH_ACTION" in inst)
 				then
 					if [[ "$PH_APPL2" == "pieh" ]]
 					then
-						cp -p "$PH_FILES_DIR"/MovetoPieHScript.template "$PH_SCRIPTS_DIR"/"$PH_APPL"to"$PH_APPL2".sh 2>/dev/null
+						cp -p "${PH_TEMPLATES_DIR}/MovetoPieHScript.template" "${PH_SCRIPTS_DIR}/${PH_APPL}to${PH_APPL2}.sh" 2>/dev/null
 					else
-						[[ "$PH_APP" != "$PH_APP2" ]] && cp -p "$PH_FILES_DIR"/MoveScript.template "$PH_SCRIPTS_DIR"/"$PH_APPL"to"$PH_APPL2".sh 2>/dev/null
+						[[ "$PH_APP" != "$PH_APP2" ]] && cp -p "${PH_TEMPLATES_DIR}/MoveScript.template" "${PH_SCRIPTS_DIR}/${PH_APPL}to${PH_APPL2}.sh" 2>/dev/null
 					fi
 				else
-					cp -p "$PH_FILES_DIR"/MovefromPieHScript.template "$PH_SCRIPTS_DIR"/"$PH_APPL"to"$PH_APPL2".sh 2>/dev/null
+					cp -p "${PH_TEMPLATES_DIR}/MovefromPieHScript.template" "${PH_SCRIPTS_DIR}/${PH_APPL}to${PH_APPL2}.sh" 2>/dev/null
 				fi
 				if [[ "$PH_APP" != "$PH_APP2" ]]
 				then
-					sed "s/#PH_APPL#/$PH_APPL/;s/#PH_APP#/$PH_APP/;s/#PH_APPL2#/$PH_APPL2/;s/#PH_APP2#/$PH_APP2/" "$PH_SCRIPTS_DIR"/"$PH_APPL"to"$PH_APPL2".sh >/tmp/"$PH_APPL"_to_tmp 2>/dev/null
-					[[ $? -eq 0 ]] && mv /tmp/"$PH_APPL"_to_tmp "$PH_SCRIPTS_DIR"/"$PH_APPL"to"$PH_APPL2".sh 2>/dev/null
+					sed "s/#PH_APPL#/${PH_APPL}/;s/#PH_APP#/${PH_APP}/g;s/#PH_APPL2#/${PH_APPL2}/g;s/#PH_APP2#/${PH_APP2}/g" "${PH_SCRIPTS_DIR}/${PH_APPL}to${PH_APPL2}.sh" >"/tmp/${PH_APPL}_to_tmp" 2>/dev/null
+					[[ "$?" -eq "0" ]] && mv "/tmp/${PH_APPL}_to_tmp" "${PH_SCRIPTS_DIR}/${PH_APPL}to${PH_APPL2}.sh" 2>/dev/null
 				fi
 				PH_TMP="$PH_APP" ; PH_APP="$PH_APP2" ; PH_APP2="$PH_TMP"
 				PH_TMP="$PH_APPL" ; PH_APPL="$PH_APPL2" ; PH_APPL2="$PH_TMP"
 			done
 		done
-		"$PH_SUDO" chmod 750 "$PH_SCRIPTS_DIR"/*.sh 2>/dev/null
+		"$PH_SUDO" chmod 750 "${PH_SCRIPTS_DIR}/"*.sh 2>/dev/null
 		printf "%10s\033[32m%s\033[0m\n" "" "OK"
-		printf "%8s%s\n" "" "--> Adding '$PH_APP' user function"
-		cat >>"$PH_MAIN_DIR"/functions.user <<EOF
+		printf "%8s%s\n" "" "--> Adding ${PH_APP} user function"
+		cat >>"${PH_MAIN_DIR}/functions.user" <<EOF
 
-function ph_configure_`echo -n "$PH_APPL"` {
+function ph_configure_${PH_APPL} {
 
 ## add your code here
 return 0

@@ -230,7 +230,7 @@ case "$PH_ACTION" in gen)
 	fi
 	printf "%8s%s\n" "" "--> Creating '${PH_ARCHIVE_DIR}/${PH_ARCHIVE_NAME}'"
 	cd "$PH_BASE_DIR" >/dev/null 2>&1
-	if tar -X "${PH_FILES_DIR}/tar.excludes" --anchored -cvf "${PH_ARCHIVE_DIR}/${PH_ARCHIVE_NAME}" ./* >/dev/null 2>&1
+	if tar -X "${PH_EXCLUDES_DIR}/tar.excludes" --anchored -cvf "${PH_ARCHIVE_DIR}/${PH_ARCHIVE_NAME}" ./* >/dev/null 2>&1
 	then
 		if [[ "$PH_ARCHIVE_TYPE" == "build" ]]
 		then

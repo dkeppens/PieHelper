@@ -27,6 +27,8 @@ PH_MAIN_DIR="${PH_SCRIPTS_DIR}/../main"
 PH_TMP_DIR="${PH_SCRIPTS_DIR}/../tmp"
 PH_FILES_DIR="${PH_SCRIPTS_DIR}/../files"
 PH_MENUS_DIR="${PH_FILES_DIR}/menus"
+PH_TEMPLATES_DIR="${PH_FILES_DIR}/templates"
+PH_EXCLUDES_DIR="${PH_FILES_DIR}/excludes"
 PH_SUPPORTED_DISTROS+=("Archlinux" "jessie" "stretch" "buster" "bullseye")
 PH_VERSION=""
 PH_DISTRO=""
@@ -212,7 +214,7 @@ then
 			ph_show_report || \
 				exit "$?"
 		else
-			if [[ -f "${PH_FILES_DIR}/first_run" ]]
+			if [[ -f "${PH_TMP_DIR}/.first_run" ]]
 			then
 				ph_check_pieh_shared_config
 				ph_check_pieh_unconfigured_config
@@ -256,7 +258,7 @@ ph_initialize_rollback
 
 # Autodetect first run
 
-if [[ -f "${PH_FILES_DIR}/first_run" ]]
+if [[ -f "${PH_TMP_DIR}/.first_run" ]]
 then
 	clear
 	printf "\n\033[36m%s\033[0m\n\n" "- Configuring PieHelper '${PH_VERSION}'"
@@ -293,7 +295,7 @@ if [[ "$(whoami 2>/dev/null)" != @(${PH_ALLOW_USERS}) ]]
 then
 	if [[ -z "$PH_RUN_USER" ]]
 	then
-		touch "${PH_FILES_DIR}/first_run" 2>/dev/null
+		touch "${PH_TMP_DIR}/.first_run" 2>/dev/null
 		ph_set_result -a -m "Unknown user account for PieHelper : Try configuring first by running '${PH_SCRIPTS_DIR}/confpieh_ph.sh -c'"
 	else
 		ph_set_result -a -m "Only the following accounts are allowed to run PieHelper : '${PH_ALLOW_USERS//|/ /}'"
