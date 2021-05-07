@@ -7930,6 +7930,8 @@ then
 			then
 				ph_update_system || \
 					return 1
+			else
+				ph_apt_clean
 			fi
 			printf "%8s%s\n" "" "--> Displaying the user manual"
 			sleep 2
