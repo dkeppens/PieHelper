@@ -5905,8 +5905,7 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 			return 1
 	fi
 	ph_add_value_to_param -p PH_UNSUP_APPS -v "${PH_APP}'${PH_APP_PKG}"
-	ph_run_with_rollback -c true && \
-		return "$?" ;;
+	return 0 ;;
 			Reserved)
 	PH_APPL="${PH_APP:0:4}"
 	ph_set_result -m "Could not support ${PH_APP} since it is using a reserved shortname '${PH_APPL}'" ;;
