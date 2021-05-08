@@ -153,7 +153,8 @@ for PH_i in Ctrls $(nawk 'BEGIN { \
 				next \
 			} ; \
 			i++ ; \
-			optarr[i] = $1 \
+			optarr[i] = $1 ; \
+			next \
 		} \
 	} END { \
 		for (j=1;j<=i;j++) { \
