@@ -270,7 +270,7 @@ ph_initialize_rollback
 
 if [[ -f "${PH_TMP_DIR}/.first_run" ]]
 then
-	clear
+	#clear
 	printf "\n\033[36m%s\033[0m\n\n" "- Configuring PieHelper '${PH_VERSION}'"
 	ph_configure_pieh
 	exit "$?"
