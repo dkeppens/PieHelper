@@ -5816,7 +5816,7 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 							     2)
 						printf "%8s%s" "" "--> Please enter the full pathname of '${PH_APP_EXEC##*/}' (Leave empty to return to the previous menu) :"
 						read -r PH_APP_EXEC 2>/dev/null
-						ph_screen_input "$PH_APP_EXEC" ;;
+						ph_screen_input "$PH_APP_EXEC"
 						[[ -z "$PH_APP_EXEC" ]] && \
 							ph_run_with_rollback -c true && \
 							continue ;;
