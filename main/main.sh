@@ -137,23 +137,38 @@ fi
 
 # Load controller settings and configuration of all supported and default applications as well as distro-specific configuration
 
-set -x
-for PH_i in "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" $(nawk -v confdir="${PH_CONF_DIR}/" 'BEGIN { \
-		ORS = " " \
+for PH_i in Ctrls "${PH_DISTRO}" $(nawk 'BEGIN { \
+		i = "1" \
+	} \
+	NR == "1" { \
+		optarr[i] = $1 ; \
+		next \
 	} { \
-		printf "%s%s", " " confdir, $1 ".conf" \
+		for (j=1;j<=i;j++) { \
+			if ($1 == optarr[j]) { \
+				next \
+			} else { \
+				i++ ; \
+				optarr[i] = $1 \
+			}
+		} \
 	} END { \
-		printf "%s%s", " " confdir, "Ctrls.conf " \
+		for (j=1;j<=i;j++) { \
+			printf optarr[j] ; \
+			delete optarr[j] \
+		} ; \
+		if (j != i) { \
+			printf " " \
+		} \
 	}' "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" "${PH_CONF_DIR}/supported_apps" 2>/dev/null)
 do
-	if [[ -f "$PH_i" ]]
+	if [[ -f "${PH_CONF_DIR}/${PH_i}.conf" ]]
 	then
-		source "$PH_i" >/dev/null 2>&1
+		source "${PH_CONF_DIR}/${PH_i}.conf" >/dev/null 2>&1
 	else
-		source "${PH_TEMPLATES_DIR}/${PH_i//./_}.template" >/dev/null 2>&1
+		source "${PH_TEMPLATES_DIR}/${PH_i}_conf.template" >/dev/null 2>&1
 	fi
 done
-set +x
 
 # Handle modules xtrace
 
@@ -270,7 +285,7 @@ ph_initialize_rollback
 
 if [[ -f "${PH_TMP_DIR}/.first_run" ]]
 then
-	#clear
+	clear
 	printf "\n\033[36m%s\033[0m\n\n" "- Configuring PieHelper '${PH_VERSION}'"
 	ph_configure_pieh
 	exit "$?"
