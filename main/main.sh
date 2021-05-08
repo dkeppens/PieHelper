@@ -137,6 +137,7 @@ fi
 
 # Load controller settings and configuration of all supported and default applications as well as distro-specific configuration
 
+set -x
 for PH_i in Ctrls "${PH_DISTRO}" $(nawk 'BEGIN { \
 		i = "1" \
 	} \
@@ -169,6 +170,7 @@ do
 		source "${PH_TEMPLATES_DIR}/${PH_i}_conf.template" >/dev/null 2>&1
 	fi
 done
+set -x
 
 # Handle modules xtrace
 
