@@ -384,8 +384,8 @@ PH_RESULT_TYPE_USED="Normal"
 unset -n PH_RESULT_TYPE
 if [[ "$PH_RESULT" == "Abort" ]]
 then
-	ph_show_result
 	ph_clean_tmp_dir
+	ph_show_result
 	exit "$?"
 fi
 return 0
@@ -623,8 +623,8 @@ then
 			then
 				printf "\033[36m%s\033[0m\n\n" "- Rolling back changes"
 				ph_rollback_changes
+				exit "$?"
 			fi
-			exit "$?"
 		fi
 	else
 		for PH_ARRAY_INDEX in ${!PH_DEPTH[@]}
