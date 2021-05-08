@@ -5738,7 +5738,6 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 					return 1
 			fi
 		fi
-		ph_run_with_rollback -c true -m "$PH_APP_PKG"
 	else
 		if [[ -n "$PH_APP_CMD" && "$PH_APP_CMD" != "$(ph_get_app_cmd_from_app_name "$PH_APP")" ]]
 		then
@@ -5751,16 +5750,25 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 			ph_run_with_rollback -c true -m "'${PH_APP_CMD}'"
 		fi
 		printf "%8s%s\n" "" "--> Checking the package of ${PH_APP}"
-		if [[ "$PH_APP_PKG" != "$(ph_get_app_pkg_from_app_name "$PH_APP")" ]]
+	fi
+	if [[ -n "$PH_APP_PKG" ]]
+	then
+		PH_APP_INST_STATE="Packaged"
+	else
+		PH_APP_INST_STATE="Packageless"
+	fi
+	if [[ "$(cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null ; echo "$?")" -eq "0" && \
+		"$PH_APP_PKG" != "$(ph_get_app_pkg_from_app_name "$PH_APP")" ]]
+	then
+		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid package -> Setting to default"
+		ph_set_result -r 0
+		PH_APP_PKG="$(ph_get_app_pkg_from_app_name "$PH_APP")"
+	else
+		if [[ -z "$PH_APP_PKG" ]]
 		then
-			if [[ "$PH_APP_PKG" != "$(ph_get_app_pkg_from_app_name "$PH_APP")" ]]
-			then
-				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid package -> Setting to default"
-				ph_set_result -r 0
-				PH_APP_PKG="$(ph_get_app_pkg_from_app_name "$PH_APP")"
-			fi
+			ph_run_with_rollback -c true -m "$PH_APP_INST_STATE"
 		else
-			ph_run_with_rollback -c true
+			ph_run_with_rollback -c true -m "$PH_APP_PKG"
 		fi
 	fi
 	PH_APP_GRAPH="$(echo -n "$PH_APP_CMD" | nawk -v app="$PH_APP" 'BEGIN { \
@@ -5863,12 +5871,6 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 			ph_run_with_rollback -c "ph_install_app -a '${PH_APP}'" || \
 				return 1
 		done
-	fi
-	if [[ -n "$PH_APP_PKG" ]]
-	then
-		PH_APP_INST_STATE="Packaged"
-	else
-		PH_APP_INST_STATE="Packageless"
 	fi
 	printf "%8s%s\n" "" "--> Checking for ${PH_APP} dependencies"
 	if [[ "$PH_APP_GRAPH" == "yes" && "$PH_APP" != "X11" ]]

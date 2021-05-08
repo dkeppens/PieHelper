@@ -10,6 +10,7 @@ shopt -s extglob
 # Local variable declarations
 
 declare PH_i=""
+declare PH_LOAD_FILES=""
 declare PH_MOVE_SCRIPTS_REGEX=""
 declare PH_ALLOW_USERS=""
 declare -i PH_FLAG="1"
@@ -134,15 +135,15 @@ then
 	ph_set_result -a -m "Reinstallation of PieHelper is required (Missing or corrupted critical config file '${PH_FILES_DIR}/VERSION')"
 fi
 
-# Load controller settings and load configuration of all supported applications
+# Load controller settings and configuration of all supported and default applications as well as distro-specific configuration
 
-for PH_i in $(nawk -v confdir="${PH_CONF_DIR}/" 'BEGIN { \
+for PH_i in "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" $(nawk -v confdir="${PH_CONF_DIR}/" 'BEGIN { \
 		ORS = " " \
 	} { \
 		printf "%s%s", " " confdir, $1 ".conf" \
 	} END { \
 		printf "%s%s", " " confdir, "Ctrls.conf " \
-	}' "${PH_CONF_DIR}/supported_apps" 2>/dev/null) "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf"
+	}' "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" "${PH_CONF_DIR}/supported_apps" 2>/dev/null)
 do
 	if [[ -f "$PH_i" ]]
 	then
