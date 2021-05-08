@@ -159,10 +159,10 @@ for PH_i in Ctrls $(nawk 'BEGIN { \
 	} END { \
 		for (j=1;j<=i;j++) { \
 			printf optarr[j] ; \
-			delete optarr[j] \
-		} ; \
-		if (j != i) { \
-			printf " " \
+			delete optarr[j] ; \
+			if (j != i) { \
+				printf " " \
+			} \
 		} \
 	}' "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" "${PH_CONF_DIR}/supported_apps" 2>/dev/null)
 do
