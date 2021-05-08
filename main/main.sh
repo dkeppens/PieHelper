@@ -170,7 +170,7 @@ do
 		source "${PH_TEMPLATES_DIR}/${PH_i}_conf.template" >/dev/null 2>&1
 	fi
 done
-set -x
+set +x
 
 # Handle modules xtrace
 
@@ -287,7 +287,7 @@ ph_initialize_rollback
 
 if [[ -f "${PH_TMP_DIR}/.first_run" ]]
 then
-	clear
+	#clear
 	printf "\n\033[36m%s\033[0m\n\n" "- Configuring PieHelper '${PH_VERSION}'"
 	ph_configure_pieh
 	exit "$?"
