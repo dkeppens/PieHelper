@@ -5709,7 +5709,7 @@ then
 	return 0
 fi
 printf "%8s%s\n" "" "--> Checking the application state of ${PH_APP}"
-PH_APP_STATE="$(ph_check_app_state_validity -q -f -n "$PH_APP")"
+PH_APP_STATE="$(ph_check_app_state_validity -a "$PH_APP" -q -f -n)"
 case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 	ph_run_with_rollback -c true -m "Nothing to do" && \
 		return "$?" ;;
