@@ -144,7 +144,12 @@ for PH_i in $(nawk -v confdir="${PH_CONF_DIR}/" 'BEGIN { \
 		printf "%s%s", " " confdir, "Ctrls.conf " \
 	}' "${PH_CONF_DIR}/supported_apps" 2>/dev/null) "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf"
 do
-	source "$PH_i" >/dev/null 2>&1
+	if [[ -f "$PH_i" ]]
+	then
+		source "$PH_i" >/dev/null 2>&1
+	else
+		source "${PH_TEMPLATES_DIR}/${PH_i//./_}.template" >/dev/null 2>&1
+	fi
 done
 
 # Handle modules xtrace

@@ -31,14 +31,13 @@ declare -l PH_APPL=""
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 PH_APPL="${PH_APP:0:3}"
-printf "%8s%s\n" "" "--> Adding configure function for out-of-scope application '${PH_APP}' to codebase file '${PH_MAIN_DIR}/functions.user'"
+printf "%8s%s\n" "" "--> Adding configure function for application '${PH_APP}' to codebase file '${PH_MAIN_DIR}/functions.user'"
 if cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
 then
-	ph_set_result -m "${PH_APP} is not an out-of-scope application"
-	ph_run_with_rollback -c false -m "Could not add" || \
-		return 1
-fi
-cat >>"${PH_MAIN_DIR}/functions.user" 2>/dev/null <<EOF
+	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Nothing to do since ${PH_APP} is not an out-of-scope application"
+	ph_set_result -r 0
+else
+	if ! cat >>"${PH_MAIN_DIR}/functions.user" 2>/dev/null <<EOF
 
 function ph_configure_${PH_APPL} {
 
@@ -46,15 +45,15 @@ function ph_configure_${PH_APPL} {
 return 0
 }
 EOF
-if [[ "$?" -eq "0" ]]
 then
+	ph_set_result -m "An error occurred trying to add function 'ph_configure_${PH_APPL}' to codebase file '${PH_MAIN_DIR}/functions.user'"
+	ph_run_with_rollback -c false -c "Could not add" || \
+		return 1
+else
 	ph_add_value_to_param -p PH_REMOVE_OOS_APPS_CODE -v "$PH_APP"
 	ph_run_with_rollback -c true -m "Configuration code for ${PH_APP} can now be added to '${PH_MAIN_DIR}/functions.user'"
-else
-	ph_set_result -m "An error occurred trying to add function 'ph_configure_${PH_APPL}' to codebase file '${PH_MAIN_DIR}/functions.user'"
-	ph_run_with_rollback -c false -c "Could not add"
 fi
-return "$?"
+return 0
 }
 
 function ph_remove_oos_app_code {
@@ -66,35 +65,35 @@ declare -l PH_APPL=""
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 PH_APPL="${PH_APP:0:3}"
-printf "%8s%s\n" "" "--> Removing configure function for out-of-scope application '${PH_APP}' from codebase file '${PH_MAIN_DIR}/functions.user'"
+printf "%8s%s\n" "" "--> Removing configure function for application '${PH_APP}' from codebase file '${PH_MAIN_DIR}/functions.user'"
 if cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
 then
-	ph_set_result -m "${PH_APP} is not an out-of-scope application"
-	ph_run_with_rollback -c false -m "Could not remove" || \
-		return 1
-fi
-if nawk -v app="_${PH_APPL}$" 'BEGIN {
-		flag = "0" 
-	}
-	$1 ~ /^function$/ && $2 ~ app {
-		flag = "1" ;
-		while ($1 !~ /^}$/) {
-			getline
-		} ;
-		getline ;
-		flag = "0" ;
-		next
-	} {
-		if (flag == 0) {
-			print $0
+	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Nothing to do since ${PH_APP} is not an out-of-scope application"
+	ph_set_result -r 0
+else
+	if nawk -v app="_${PH_APPL}$" 'BEGIN {
+			flag = "0" 
 		}
-	}' "${PH_MAIN_DIR}/functions.user" >"${PH_TMP_DIR}/functions_user_tmp" 2>/dev/null
-then
-	if mv "${PH_TMP_DIR}/functions_user_tmp" "${PH_MAIN_DIR}/functions.user" 2>/dev/null
+		$1 ~ /^function$/ && $2 ~ app {
+			flag = "1" ;
+			while ($1 !~ /^}$/) {
+				getline
+			} ;
+			getline ;
+			flag = "0" ;
+			next
+		} {
+			if (flag == 0) {
+				print $0
+			}
+		}' "${PH_MAIN_DIR}/functions.user" >"${PH_TMP_DIR}/functions_user_tmp" 2>/dev/null
 	then
-		ph_add_value_to_param -p PH_CREATE_OOS_APPS_CODE -v "$PH_APP"
-		ph_run_with_rollback -c true && \
-			return "$?"
+		if mv "${PH_TMP_DIR}/functions_user_tmp" "${PH_MAIN_DIR}/functions.user" 2>/dev/null
+		then
+			ph_add_value_to_param -p PH_CREATE_OOS_APPS_CODE -v "$PH_APP"
+			ph_run_with_rollback -c true && \
+				return "$?"
+		fi
 	fi
 fi
 "$PH_SUDO" rm "${PH_TMP_DIR}/functions_user_tmp" 2>/dev/null
@@ -5654,14 +5653,11 @@ declare PH_APP_GRAPH=""
 declare PH_APP_PKG=""
 declare PH_APP_STATE=""
 declare PH_APP_INST_STATE=""
-declare PH_ANSWER2=""
 declare PH_OPTION=""
 declare PH_OLDOPTARG="$OPTARG"
 declare -i PH_OLDOPTIND="$OPTIND"
 declare -i PH_COUNT="0"
-declare -i PH_COUNT2="0"
 declare -i PH_ANSWER="0"
-declare -u PH_APPU=""
 declare -l PH_APPL=""
 
 OPTIND="1"
@@ -5711,7 +5707,6 @@ then
 	done
 	return 0
 fi
-PH_APPL="${PH_APP:0:4}"
 printf "%8s%s\n" "" "--> Checking the application state of ${PH_APP}"
 PH_APP_STATE="$(ph_check_app_state_validity -q -f -n "$PH_APP")"
 case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
@@ -5732,7 +5727,7 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 		printf "%8s%s\n" "" "--> Checking the package of ${PH_APP}"
 		if [[ -z "$PH_APP_PKG" ]]
 		then
-			ph_set_result -m "Cannot support out-of-scope application ${PH_APP} with an invalid package name '${PH_APP_PKG}'"
+			ph_set_result -m "Cannot support out-of-scope application ${PH_APP} without a valid package name"
 			ph_run_with_rollback -c false "Could not support" || \
 				return 1
 		else
@@ -5757,7 +5752,6 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 		printf "%8s%s\n" "" "--> Checking the package of ${PH_APP}"
 		if [[ "$PH_APP_PKG" != "$(ph_get_app_pkg_from_app_name "$PH_APP")" ]]
 		then
-			printf "%8s%s\n" "" "--> Checking the package parameter of application ${PH_APP}"
 			if [[ "$PH_APP_PKG" != "$(ph_get_app_pkg_from_app_name "$PH_APP")" ]]
 			then
 				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid package -> Setting to default"
@@ -5768,143 +5762,6 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 			ph_run_with_rollback -c true
 		fi
 	fi
-	if [[ "$PH_APP" != "PieHelper" ]]
-	then
-		printf "%8s%s\n" "" "--> Checking the executable location of ${PH_APP}"
-		while [[ "$PH_ANSWER" -eq "0" || "$PH_ANSWER" -ge "4" ]]
-		do
-			if [[ ! -f "$PH_APP_EXEC" ]]
-			then
-				[[ "$PH_COUNT" -eq "0" ]] && \
-					printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found"
-				[[ "$PH_COUNT" -gt "0" ]] && \
-					printf "\n%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Invalid response"
-				printf "%8s%s\n\n" "" "--> How do you wish to proceed ?"
-				printf "%12s\033[32m%s\033[0m\n" "" "1. Run a full system scan for '${PH_APP_EXEC##*/}'"
-				printf "%12s\033[32m%s\033[0m\n" "" "2. Enter the location for '${PH_APP_EXEC##*/}' manually"
-				printf "%12s\033[32m%s\033[0m\n\n" "" "3. Skip"
-				printf "%12s%s" "" "Your choice : "
-				read -r PH_ANSWER 2>/dev/null
-				ph_screen_input "$PH_ANSWER"
-				((PH_COUNT++))
-				case "$PH_ANSWER" in 1)
-					ph_run_with_rollback -c true
-					printf "%8s%s\n" "" "--> Scanning for executable '${PH_APP_EXEC##*/}' (This may take a while)"
-					if PH_APP_EXEC="$("$PH_SUDO" find / -type f -perm -o=x ! -fstype nfs -name "${PH_APP_EXEC##*/}" 2>/dev/null)"
-					then
-						ph_run_with_rollback -c true -m "Found '${PH_APP_EXEC}'"
-						break
-					else
-						printf "%10s\033[31m%s\033[0m\n" "" "Warning : Not found"
-						ph_set_result -r 0
-						PH_COUNT2="0"
-						PH_ANSWER2=""
-						printf "%8s%s\n" "" "--> Do you want to install ${PH_APP} (y/n) ('n' will return to previous menu) ?"
-						while [[ "$PH_ANSWER2" != @(y@(|es)|n@(|o)) ]]
-						do
-							[[ "$PH_COUNT2" -gt "0" ]] && \
-								printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
-							read -r PH_ANSWER2 2>/dev/null
-							ph_screen_input "$PH_ANSWER2"
-							[[ "$PH_ANSWER2" == y@(|es) ]] && \
-								ph_run_with_rollback -c true && \
-								break
-							[[ "$PH_ANSWER2" == n@(|o) ]] && \
-								ph_run_with_rollback -c true && \
-								continue 2
-							((PH_COUNT2++))
-						done
-						ph_run_with_rollback -c "ph_install_app -a '${PH_APP}'" || \
-							return 1
-						break
-					fi ;;
-						     2)
-					ph_run_with_rollback -c true
-					while true
-					do
-						printf "%8s%s" "" "--> Please enter the full pathname of executable '${PH_APP_EXEC##*/}' (Leave empty to skip) :"
-						read -r PH_APP_EXEC 2>/dev/null
-						ph_screen_input "$PH_APP_EXEC"
-						if [[ ! -f "$PH_APP_EXEC" ]]
-						then
-							if [[ -z "$PH_APP_EXEC" ]]
-							then
-								printf "%10s\033[33m%s\033[0m\n" "" "Warning : Skipping support of ${PH_APP}"
-								ph_set_result -r 0
-								return 0
-							fi
-							printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found"
-							ph_set_result -r 0
-							PH_COUNT2="0"
-							PH_ANSWER2=""
-							printf "%8s%s\n" "" "--> Do you want to install '${PH_APP}' (y/n) ('\"n\" will prompt again for path') ?"
-							while [[ "$PH_ANSWER2" != @(y@(|es)|n@(|o)) ]]
-							do
-								[[ "$PH_COUNT2" -gt "0" ]] && \
-									printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
-								read PH_ANSWER2 2>/dev/null
-								ph_screen_input "$PH_ANSWER2"
-								[[ "$PH_ANSWER2" == y@(|es) ]] && \
-									ph_run_with_rollback -c true && \
-									break
-								[[ "$PH_ANSWER2" == n@(|o) ]] && \
-									ph_run_with_rollback -c true && \
-									continue 2
-								((PH_COUNT2++))
-							done
-							ph_run_with_rollback -c "ph_install_app -a '${PH_APP}'" || \
-								return 1
-							break 2
-						else
-							printf "%10s\033[32m%s\033[0m\n" "" "OK : Found ('${PH_APP_EXEC}')"
-							ph_set_result -r 0
-							break 2
-						fi
-					done ;;
-						     3)
-					printf "%10s\033[33m%s\033[0m\n" "" "Warning : Skipping support of ${PH_APP}"
-					ph_set_result -r 0
-					return 0 ;;
-				esac
-			else
-				ph_run_with_rollback -c true -m "Found"
-				break
-			fi
-		done
-	fi
-	if [[ -n "$PH_APP_INST_STATE" ]]
-	then
-		printf "%8s%s\n" "" "--> Checking installation state of ${PH_APP}"
-		if ph_get_pkg_inst_state "$PH_APP_PKG"
-		then
-			PH_APP_INST_STATE="Packaged"
-		else
-			PH_APP_INST_STATE="Packageless"
-		fi
-		printf "%10s\033[32m%s\033[0m\n" "" "OK ('${PH_APP_INST_STATE}')"
-	else
-		printf "%8s%s\n" "" "--> Checking install state parameter"
-		if ph_get_pkg_inst_state "$PH_APP_PKG"
-		then
-			if [[ "$PH_APP_INST_STATE" == "Packageless" ]]
-			then
-				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid install state -> Setting to '${PH_APP_INST_STATE}'"
-			else
-				printf "%10s\033[32m%s\033[0m\n" "" "OK ('${PH_APP_INST_STATE}')"
-			fi
-		fi
-		if ! ph_get_pkg_inst_state "$PH_APP_PKG"
-		then
-			if [[ "$PH_APP_INST_STATE" == "Packaged" ]]
-			then
-				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid install state -> Setting to '${PH_APP_INST_STATE}'"
-			else
-				printf "%10s\033[32m%s\033[0m\n" "" "OK ('${PH_APP_INST_STATE}')"
-			fi
-		fi
-	fi
-	ph_set_result -r 0
-	printf "%8s%s\n" "" "--> Checking for ${PH_APP} dependencies"
 	PH_APP_GRAPH="$(echo -n "$PH_APP_CMD" | nawk -v app="$PH_APP" 'BEGIN { \
 			graph = "no" \
 		} { \
@@ -5929,6 +5786,90 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 				printf $1 \
 			} \
 		}')"
+	if [[ "$PH_APP" != "PieHelper" ]]
+	then
+		while true
+		do
+			PH_COUNT="0"
+			printf "%8s%s\n" "" "--> Checking the executable location of ${PH_APP}"
+			while true
+			do
+				PH_ANSWER="0"
+				if [[ ! -f "$PH_APP_EXEC" ]]
+				then
+					[[ "$PH_COUNT" -eq "0" ]] && \
+						printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found"
+					printf "%8s%s\n\n" "" "--> How do you wish to proceed ?"
+					printf "%12s\033[32m%s\033[0m\n" "" "1. Install ${PH_APP}"
+					printf "%12s\033[32m%s\033[0m\n" "" "2. Enter the full pathname of executable '${PH_APP_EXEC##*/}' manually"
+					printf "%12s\033[32m%s\033[0m\n" "" "3. Run a full system scan for '${PH_APP_EXEC##*/}'"
+					printf "%12s\033[32m%s\033[0m\n\n" "" "4. Skip"
+					printf "%12s%s" "" "Your choice : "
+					read -r PH_ANSWER 2>/dev/null
+					ph_screen_input "$PH_ANSWER"
+					((PH_COUNT++))
+					[[ "$PH_ANSWER" -ge "1" || "$PH_ANSWER" -le "3" ]] && \
+						ph_run_with_rollback -c true
+					case "$PH_ANSWER" in 1)
+						break ;;
+							     2)
+						printf "%8s%s" "" "--> Please enter the full pathname of '${PH_APP_EXEC##*/}' (Leave empty to return to the previous menu) :"
+						read -r PH_APP_EXEC 2>/dev/null
+						ph_screen_input "$PH_APP_EXEC" ;;
+						[[ -z "$PH_APP_EXEC" ]] && \
+							ph_run_with_rollback -c true && \
+							continue ;;
+							     3)
+						printf "%8s%s\n" "" "--> Scanning for executable '${PH_APP_EXEC##*/}' (This may take a while)"
+						PH_APP_EXEC="$("$PH_SUDO" find / -type f -perm -o=x ! -fstype nfs -name "${PH_APP_EXEC##*/}" 2>/dev/null)" ;;
+							     4)
+						printf "%10s\033[33m%s\033[0m\n" "" "Warning : Skipping support of ${PH_APP}"
+						ph_set_result -r 0 -w -m "Quit at user request"
+						ph_rollback_changes ;;
+							     *)
+						printf "\n%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Invalid response"
+						continue ;;
+					esac
+					if [[ -x "$PH_APP_EXEC" ]]
+					then
+						ph_run_with_rollback -c true -m "Found as and changing to '${PH_APP_EXEC}'"
+						PH_APP_CMD="$(echo "$PH_APP_CMD" | nawk -v app="$PH_APP" -v newpath="$PH_APP_EXEC" -v appgraph="$PH_APP_GRAPH" 'BEGIN { \
+								i = "2" \
+							} { \
+								if (appgraph == "yes") { \
+									if (app == "X11") { \
+										printf newpath \
+									} else { \
+										printf $1 " " newpath ; \
+										i++ \
+									} \
+								} else { \
+									printf newpath \
+								} ; \
+								for (j=i;j<=NF;j++) { \
+									printf " " $j \
+								} \
+							}')"
+						break 2
+					else
+						continue 2
+					fi
+				else
+					ph_run_with_rollback -c true -m "Found"
+					break 2
+				fi
+			done
+			ph_run_with_rollback -c "ph_install_app -a '${PH_APP}'" || \
+				return 1
+		done
+	fi
+	if [[ -n "$PH_APP_PKG" ]]
+	then
+		PH_APP_INST_STATE="Packaged"
+	else
+		PH_APP_INST_STATE="Packageless"
+	fi
+	printf "%8s%s\n" "" "--> Checking for ${PH_APP} dependencies"
 	if [[ "$PH_APP_GRAPH" == "yes" && "$PH_APP" != "X11" ]]
 	then
 		ph_run_with_rollback -c true -m "X11"
@@ -5936,7 +5877,7 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 		PH_APP_STATE="$(ph_get_app_state_from_app_name X11)"
 		if [[ "$PH_APP_STATE" == "Default" ]]
 		then
-			printf "%10s\033[33m%s\033[0m\n" "" "Warning : X11 is currently not supported -> Supporting"
+			printf "%10s\033[33m%s\033[0m\n" "" "Warning : X11 is currently unsupported -> Supporting"
 			ph_set_result -r 0
 			ph_run_with_rollback -c "ph_support_app -a X11" || \
 				return 1
@@ -5964,10 +5905,85 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 	ph_run_with_rollback -c true && \
 		return "$?" ;;
 			Reserved)
+	PH_APPL="${PH_APP:0:4}"
 	ph_set_result -m "Could not support ${PH_APP} since it is using a reserved shortname '${PH_APPL}'" ;;
 esac
 ph_run_with_rollback -c false -m "Could not support" || \
 	return 1
+}
+
+function ph_check_app_exec_file {
+
+declare PH_APP=""
+declare PH_ANSWER=""
+declare PH_APP_EXEC=""
+declare PH_OPTION=""
+declare PH_OLDOPTARG="$OPTARG"
+declare -i PH_OLDOPTIND="$OPTIND"
+declare -i PH_COUNT="0"
+
+while getopts a:f: PH_OPTION 2>/dev/null
+do
+	case "$PH_OPTION" in f)
+		[[ -n "$PH_APP_EXEC" ]] && \
+			OPTARG="$PH_OLDOPTARG" && \
+			OPTIND="$PH_OLDOPTIND" && \
+			return 1
+		PH_APP_EXEC="$OPTARG" ;;
+			     a)
+		[[ -n "$PH_APP" ]] && \
+			OPTARG="$PH_OLDOPTARG" && \
+			OPTIND="$PH_OLDOPTIND" && \
+			return 1
+		PH_APP="$OPTARG" ;;
+			     *)
+		OPTARG="$PH_OLDOPTARG"
+		OPTIND="$PH_OLDOPTIND"
+		phh_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+	esac
+done
+OPTARG="$PH_OLDOPTARG"
+OPTIND="$PH_OLDOPTIND"
+
+[[ -z "$PH_APP_EXEC" || -z "$PH_APP" || "$#" -ne "4" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+if [[ ! -f "$PH_APP_EXEC" ]]
+then
+	if [[ -z "$PH_APP_EXEC" ]]
+	then
+		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Skipping support of ${PH_APP}"
+		ph_set_result -r 0
+		return 1
+	fi
+	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found"
+	ph_set_result -r 0
+	PH_COUNT="0"
+	PH_ANSWER=""
+	printf "%8s%s\n" "" "--> Do you want to install ${PH_APP} (y/n) ('\"n\" will prompt again for path') ?"
+	while [[ "$PH_ANSWER" != @(y@(|es)|n@(|o)) ]]
+	do
+		[[ "$PH_COUNT" -gt "0" ]] && \
+			printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
+		read PH_ANSWER 2>/dev/null
+		ph_screen_input "$PH_ANSWER"
+		((PH_COUNT++))
+	done
+	if [[ "$PH_ANSWER" == y@(|es) ]]
+	then
+		ph_run_with_rollback -c "ph_install_app -a '${PH_APP}'" || \
+			return 1
+	else
+			ph_run_with_rollback -c true && \
+			break
+		[[ "$PH_ANSWER" == n@(|o) ]] && \
+			ph_run_with_rollback -c true && \
+			continue 2
+	break 2
+else
+	ph_run_with_rollback -c true -m "Found as '$PH_APP_EXEC'"
+fi
+return 0
 }
 
 function ph_modify_app_script {
@@ -7711,14 +7727,16 @@ printf "%2s%s\n\n" "" "This will :"
 printf "%4s%s\n" "" "- Configure '${PH_RUN_USER}' as the user account for the PieHelper application"
 printf "%4s%s\n" "" "- Install all required packages"
 printf "%4s%s\n" "" "- Detect and backup existing StartApp configurations made by Emulationstation (RetroPie)"
-printf "%4s%s\n" "" "- Change a few system related settings"
 printf "%4s%s\n" "" "- Create all base configuration files"
-printf "%4s%s\n" "" "- Setup all default applications as 'Supported' applications"
-printf "%4s%s\n" "" "- Setup PieHelper as an 'Integrated' application"
+printf "%4s%s\n" "" "- Install the PATH and LD_LIBRARY_PATH extension for PieHelper"
+printf "%4s%s\n" "" "- Setup PieHelper as a 'Supported' application"
 printf "%4s%s\n" "" "- Create the controller settings"
+printf "%4s%s\n" "" "- Change a few system related settings"
+printf "%4s%s\n" "" "- Setup PieHelper as an 'Integrated' application"
 printf "%4s%s\n" "" "- Configure PieHelper as the system's StartApp"
 printf "%4s%s\n" "" "- Disable the graphical environment"
-printf "%4s%s\n\n" "" "- Reboot your system into the PieHelper menu"
+printf "%4s%s\n" "" "- Allow you to update your system"
+printf "%4s%s\n\n" "" "- Reboot the system into the PieHelper menu"
 while [[ "$PH_ANSWER" != @(y@(es|)|n@(o|)) ]]
 do
 	[[ "$PH_COUNT" -gt "0" ]] && \
@@ -7806,13 +7824,6 @@ then
 				ph_run_with_rollback -c "ph_install_pkg '${PH_i}'" || \
 					return 1
 			done
-			ph_run_with_rollback -c "ph_blacklist_kernel_module xpad" || \
-				return 1
-			for PH_i in uinput joydev
-			do
-				ph_run_with_rollback -c "ph_load_kernel_module '${PH_i}'" || \
-					return 1
-			done
 			printf "%8s%s\n" "" "--> Checking for Emulationstation (RetroPie)"
 			if [[ -f /usr/bin/emulationstation ]]
 			then
@@ -7827,22 +7838,20 @@ then
 				ph_create_default_base_conf_file "$PH_i" || \
 					return 1
 			done
-			ph_support_app -a default || \
-				return 1
-			printf "%8s%s\n" "" "--> Loading configuration for all supported applications"
-			for PH_i in $(ph_get_app_list_by_state -s Supported -t exact)
-			do
-				if ! source "${PH_CONF_DIR}/${PH_i}.conf" >/dev/null 2>&1
-				then
-					ph_set_result -m "An error occurred trying to load configuration file '${PH_CONF_DIR}/${PH_i}.conf'"
-					ph_run_with_rollback -c false -m "Could not load" || \
-						return 1
-				fi
-			done
-			ph_run_with_rollback -c true
-			ph_run_with_rollback -c "ph_pieh_configured_logind_conf" || \
-				return 1
 			ph_run_with_rollback -c "ph_pieh_configured_path_conf" || \
+				return 1
+			ph_run_with_rollback -c "ph_support_app -a PieHelper" || \
+				return 1
+			ph_run_with_rollback -c "ph_create_app_items -a Ctrls -t support" || \
+				return 1
+			ph_run_with_rollback -c "ph_blacklist_kernel_module xpad" || \
+				return 1
+			for PH_i in uinput joydev
+			do
+				ph_run_with_rollback -c "ph_load_kernel_module '${PH_i}'" || \
+					return 1
+			done
+			ph_run_with_rollback -c "ph_pieh_configured_logind_conf" || \
 				return 1
 			for ((PH_COUNT=2;PH_COUNT<="${PH_PIEH_MAX_TTYS}";PH_COUNT++))
 			do
@@ -7854,8 +7863,6 @@ then
 			ph_run_with_rollback -c "ph_integrate_app -a PieHelper" || \
 				return 1
 			ph_run_with_rollback -c "ph_set_app_for_start PieHelper" || \
-				return 1
-			ph_run_with_rollback -c "ph_create_app_items -a Ctrls -t support" || \
 				return 1
 			ph_run_with_rollback -c "ph_set_bootenv multi-user.target" || \
 				return 1
