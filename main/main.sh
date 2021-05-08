@@ -13,6 +13,7 @@ declare PH_i=""
 declare PH_MOVE_SCRIPTS_REGEX=""
 declare PH_ALLOW_USERS=""
 declare -i PH_FLAG="1"
+declare -a PH_PARSE_FILES
 
 # Global variable declarations not related to rollback
 
@@ -140,7 +141,11 @@ source "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" >/dev/null 2>&1
 
 # Load controller settings and configuration of all supported and default applications
 
-set -x
+PH_PARSE_FILES+=("${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}")
+if [[ -f "${PH_CONF_DIR}/supported_apps" ]]
+then
+	PH_PARSE_FILES+=("${PH_CONF_DIR}/supported_apps")
+fi
 for PH_i in Ctrls $(nawk 'BEGIN { \
 		i = "1" \
 	} \
@@ -164,7 +169,7 @@ for PH_i in Ctrls $(nawk 'BEGIN { \
 				printf " " \
 			} \
 		} \
-	}' "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" "${PH_CONF_DIR}/supported_apps" 2>/dev/null)
+	}' "${PH_PARSE_FILES[@]}" 2>/dev/null)
 do
 	if [[ -f "${PH_CONF_DIR}/${PH_i}.conf" ]]
 	then
@@ -173,7 +178,6 @@ do
 		source "${PH_TEMPLATES_DIR}/${PH_i}_conf.template" >/dev/null 2>&1
 	fi
 done
-set +x
 
 # Handle modules xtrace
 
@@ -334,4 +338,4 @@ fi
 
 # Unset local variables
 
-unset PH_i PH_ALLOW_USERS PH_MOVE_SCRIPTS_REGEX PH_FLAG 2>/dev/null
+unset PH_i PH_ALLOW_USERS PH_MOVE_SCRIPTS_REGEX PH_FLAG PH_PARSE_FILES 2>/dev/null
