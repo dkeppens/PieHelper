@@ -941,7 +941,7 @@ do
        	printf "%4s%s\n" "" "- Default CIFS mountpoint '$PH_MNT_DIR/$PH_APP' is 'Present'" >>"$PH_TMP_DIR/reported_issues"
 	PH_RET_CODE="1"
 done
-for PH_i in $(find "${PH_SCRIPTS_DIR}" -type f ! -name "*_ph.sh" -print 2>/dev/null | nawk 'BEGIN { ORS =  " " } { print $1 }')
+for PH_i in $(find "${PH_SCRIPTS_DIR}" -maxdepth 1 -type f ! -name "*_ph.sh" -print 2>/dev/null | nawk 'BEGIN { ORS =  " " } { print $1 }')
 do
        	printf "%4s%s\n" "" "- Management script '${PH_i##*/}' is 'Present'" >>"$PH_TMP_DIR/reported_issues"
 	PH_RET_CODE="1"
