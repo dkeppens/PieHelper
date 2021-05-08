@@ -45,13 +45,14 @@ function ph_configure_${PH_APPL} {
 return 0
 }
 EOF
-then
-	ph_set_result -m "An error occurred trying to add function 'ph_configure_${PH_APPL}' to codebase file '${PH_MAIN_DIR}/functions.user'"
-	ph_run_with_rollback -c false -c "Could not add" || \
-		return 1
-else
-	ph_add_value_to_param -p PH_REMOVE_OOS_APPS_CODE -v "$PH_APP"
-	ph_run_with_rollback -c true -m "Configuration code for ${PH_APP} can now be added to '${PH_MAIN_DIR}/functions.user'"
+	then
+		ph_set_result -m "An error occurred trying to add function 'ph_configure_${PH_APPL}' to codebase file '${PH_MAIN_DIR}/functions.user'"
+		ph_run_with_rollback -c false -c "Could not add" || \
+			return 1
+	else
+		ph_add_value_to_param -p PH_REMOVE_OOS_APPS_CODE -v "$PH_APP"
+		ph_run_with_rollback -c true -m "Configuration code for ${PH_APP} can now be added to '${PH_MAIN_DIR}/functions.user'"
+	fi
 fi
 return 0
 }
