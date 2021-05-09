@@ -1,3 +1,4 @@
+* check if passing PH_APP_INST_STATE is still required between ph_support_app/ph_unsupport_app
 * When chosing to skip supporting ph_suppport_app (2 places) -> manually modify so far added rollback params etc or not ?
 * move default_apps* files + options.* files + VERSIONS + default_apps* files + TODO to files dir
 * move pre_cmds and post_cmds directories to scripts/app/ directory

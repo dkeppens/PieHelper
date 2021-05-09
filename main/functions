@@ -632,7 +632,7 @@ do
 done
 if [[ ! -f /etc/profile.d/PieHelper-path.sh ]]
 then
-        printf "%4s%s\n" "" "- PATH extension is 'Missing'" >>"$PH_TMP_DIR/reported_issues"
+        printf "%4s%s\n" "" "- The PATH and LD_LIBRARY_PATH extension is 'Missing'" >>"$PH_TMP_DIR/reported_issues"
 	PH_RET_CODE="1"
 else
 	PH_APP_USER="$(ph_get_app_user_from_app_name PieHelper)"
@@ -640,7 +640,7 @@ else
 	then
 		if [[ "$("$PH_SUDO" find /etc/profile.d/PieHelper-path.sh -exec ls -l {} \; 2>/dev/null | nawk '{ print $3 }')" != "root" ]]
 		then
-			printf "%4s%s\n" "" "- PATH extension has a 'Corrupted' value for ownership -> Fix by running '${PH_SUDO} chown root:root /etc/profile.d/PieHelper-path.sh'" >>"$PH_TMP_DIR/reported_issues"
+			printf "%4s%s\n" "" "- The PATH and LD_LIBRARY_PATH extension has a 'Corrupted' value for ownership -> Fix by running '${PH_SUDO} chown root:root /etc/profile.d/PieHelper-path.sh'" >>"$PH_TMP_DIR/reported_issues"
 			PH_RET_CODE="1"
 		fi
 	fi
@@ -914,7 +914,7 @@ do
 done
 if [[ -f /etc/profile.d/PieHelper-path.sh ]]
 then
-        printf "%4s%s\n" "" "- PATH extension is 'Present'" >>"$PH_TMP_DIR/reported_issues"
+        printf "%4s%s\n" "" "- The PATH and LD_LIBRARY_PATH extension is 'Present'" >>"$PH_TMP_DIR/reported_issues"
 	PH_RET_CODE="1"
 fi
 if [[ "$PH_DISTRO" == "Debian" ]]
@@ -2222,7 +2222,7 @@ then
 	if [[ ! -d "$(getent passwd "$PH_MOON_USER" 2>/dev/null | cut -d':' -f6)"/".cache" ]]
 	then
 		printf "%8s%s\n" "" "--> Pairing with '$PH_MOON_SRV'"
-		"$PH_SUDO" -E su "$PH_MOON_USER" -c "LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib $PH_MOON_PATH pair $PH_MOON_SRV" >/dev/null 2>&1
+		"$PH_SUDO" -E su "$PH_MOON_USER" -c "LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib ${PH_MOON_PATH} pair ${PH_MOON_SRV}" >/dev/null 2>&1
 		ph_set_result -r "$?"
 	fi
 fi
@@ -3387,7 +3387,7 @@ then
 		printf "%4s%s\n" "" "- Unintegrate all integrated applications"
 		printf "%4s%s\n" "" "- Unsupport all supported applications"
 		printf "%4s%s\n" "" "- Remove all base configuration files"
-		printf "%4s%s\n" "" "- Remove the PATH extension for PieHelper"
+		printf "%4s%s\n" "" "- Remove the PATH and LD_LIBRARY_PATH extension for PieHelper"
 		printf "%4s%s\n" "" "- Restore any system related settings and scripts modified by PieHelper to their original state"
 		printf "%4s%s\n" "" "- Enable the graphical environment"
 		[[ "$PH_ACTION" == "remove" ]] && \
@@ -3473,7 +3473,7 @@ function ph_pieh_unconfigured_path_conf {
 
 if [[ -f /etc/profile.d/PieHelper-path.sh ]]
 then
-	printf "%8s%s\n" "" "--> Removing the PATH extension for PieHelper"
+	printf "%8s%s\n" "" "--> Removing the PATH and LD_LIBRARY_PATH extension for PieHelper"
 	if ph_run_with_rollback -c "ph_store_file -r -f '/etc/profile.d/PieHelper-path.sh'"
 	then
 		ph_add_value_to_param -p PH_CONFIGURED_STATE -v path
@@ -7309,7 +7309,7 @@ ph_secure_pieh -t never
 if [[ "$PH_NEED_BOOT" == "yes" ]]
 then
 	ph_show_result
-	printf "\n%s\n\n" "" "A reboot is required since The PieHelper PATH extension has been reïnstalled"
+	printf "\n%s\n\n" "" "A reboot is required since the PATH and LD_LIBRARY_PATH extension was reinstalled"
 	printf "%s" "Press 'Enter' to reboot and continue"
 	read 2>/dev/null
 	chvt 1
@@ -7351,7 +7351,7 @@ function ph_pieh_configured_path_conf {
 [[ "$#" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Creating PieHelper PATH extension"
+printf "%8s%s\n" "" "--> Creating the PATH and LD_LIBRARY_PATH extension for PieHelper"
 if [[ ! -f /etc/profile.d/PieHelper-path.sh ]]
 then
 	if ph_run_with_rollback -c "ph_create_empty_file -r -q -t file -d '/etc/profile.d/PieHelper-path.sh'"
@@ -7827,7 +7827,6 @@ then
 				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not display"
 				ph_set_result -r 0
 			fi
-			ph_clean_tmp_dir
 			printf "\n%s" "Press Enter to reboot into the PieHelper menu"
 			read 2>/dev/null
 			"$PH_SUDO" init 6
@@ -8430,7 +8429,7 @@ case "$PH_ACTION" in start)
 		then
 			printf "%10s\033[32m%s\033[0m\n" "" "OK (Yes)"
 			printf "%8s%s\n" "" "--> Checking for '$PH_APP' configuration presence"
-			if ! "$PH_SUDO" -E su "$PH_APP_USER" -c "LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib $PH_MOON_PATH list $PH_MOON_SRV 2>/dev/null" >/dev/null 2>&1
+			if ! "$PH_SUDO" -E su "$PH_APP_USER" -c "LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib ${PH_MOON_PATH} list ${PH_MOON_SRV} 2>/dev/null" >/dev/null 2>&1
 			then
 				printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Not found"
 				ph_set_result -r 1 -m "Configuration is mandatory for '$PH_APP' $PH_ACTION"
@@ -8612,7 +8611,7 @@ case "$PH_ACTION" in start)
 	then
 		if [[ "$PH_APP" == "Moonlight" && "$PH_APP_USER" != "$(whoami 2>/dev/null)" ]]
 		then
-			"$PH_SUDO" -E su "$PH_APP_USER" -c "LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib eval $PH_APP_CMD $PH_APP_CMD_OPTS"
+			"$PH_SUDO" -E su "$PH_APP_USER" -c "LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib eval ${PH_APP_CMD} ${PH_APP_CMD_OPTS}"
 		else
 			eval "$PH_APP_CMD" "$PH_APP_CMD_OPTS"
 		fi
@@ -8664,7 +8663,7 @@ case "$PH_ACTION" in start)
 	then
 		while pgrep moonlight >/dev/null
 		do
-			"$PH_SUDO" -E su "$PH_APP_USER" -c "LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib ${PH_MOON_PATH} quit" >/dev/null 2>&1
+			"$PH_SUDO" -E su "$PH_APP_USER" -c "LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib ${PH_MOON_PATH} quit" >/dev/null 2>&1
 			sleep 3
 		done
 	fi
