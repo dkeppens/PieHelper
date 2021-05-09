@@ -5262,13 +5262,13 @@ then
 	ph_run_with_rollback -c "ph_set_app_for_start none" || \
 		return 1
 fi
-ph_run_with_rollback -c "ph_remove_app_items -a '${PH_APP}' -t unintegrate" || \
-	return 1
 if [[ "$PH_APP_TTY" -gt "1" ]]
 then
 	ph_run_with_rollback -c "ph_undo_setup_tty -a '${PH_APP}' -t '${PH_APP_TTY}' -u '${PH_APP_USER}'" || \
 		return 1
 fi
+ph_run_with_rollback -c "ph_remove_app_items -a '${PH_APP}' -t unintegrate" || \
+	return 1
 ph_run_with_rollback -c "ph_remove_app_from_integration_file -a '${PH_APP}'" || \
 	return 1
 ph_add_value_to_param -p PH_INT_APPS -v "${PH_APP}'${PH_APP_USER}'${PH_APP_TTY}"
@@ -6715,8 +6715,6 @@ then
 	if "$PH_SUDO" systemctl daemon-reload >/dev/null 2>&1
 	then
 		ph_run_with_rollback -c true
-		ph_run_with_rollback -c "ph_add_app_to_integration_file -a '${PH_APP}' -u '${PH_APP_USER}' -t '${PH_APP_TTY}'" || \
-			return 1
 		if [[ "$PH_FILE_SUFFIX" == "_GL" && "$PH_APP" == "Kodi" ]]
 		then
 			ph_run_with_rollback -c "ph_modify_app_script -a '${PH_APP}' -t '${PH_APP_TTY}'" || \
@@ -6731,9 +6729,11 @@ then
 			then
 				if "$PH_SUDO" chown "${PH_APP_USER}:$(id -gn "$PH_APP_USER" 2>/dev/null)" "/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh" 2>/dev/null
 				then
+					ph_run_with_rollback -c true
+					ph_run_with_rollback -c "ph_add_app_to_integration_file -a '${PH_APP}' -u '${PH_APP_USER}' -t '${PH_APP_TTY}'" || \
+						return 1
 					ph_add_value_to_param -p PH_UNDO_SETUP_TTYS -v "${PH_APP}'${PH_APP_USER}'${PH_APP_TTY}"
-					ph_run_with_rollback -c true && \
-						return "$?"
+					return 0
 				else
 					ph_set_result -m "An error occurred trying to set ownership of file '/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh' to '${PH_APP_USER}:$(id -gn "$PH_APP_USER" 2>/dev/null)'"
 				fi
