@@ -5911,11 +5911,6 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 		ph_run_with_rollback -c "ph_create_oos_app_code '${PH_APP}'" || \
 			return 1
 	fi
-	if [[ "$PH_APP" == "PieHelper" && -f "${PH_TMP_DIR}/.first_run" ]]
-	then
-		ph_run_with_rollback -c "ph_remove_empty_file -t file -d '${PH_TMP_DIR}/.first_run'" || \
-			return 1
-	fi
 	ph_add_value_to_param -p PH_UNSUP_APPS -v "${PH_APP}'${PH_APP_PKG}"
 	return 0 ;;
 			Reserved)
@@ -7805,6 +7800,8 @@ then
 			ph_run_with_rollback -c "ph_set_app_for_start PieHelper" || \
 				return 1
 			ph_run_with_rollback -c "ph_set_bootenv multi-user.target" || \
+				return 1
+			ph_run_with_rollback -c "ph_remove_empty_file -t file -d '${PH_TMP_DIR}/.first_run'" || \
 				return 1
 			ph_run_with_rollback -c "ph_remove_empty_file -t file -d '${PH_TMP_DIR}/.configure_in_progress'" || \
 				return 1
