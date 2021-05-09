@@ -907,7 +907,6 @@ declare PH_FILE=""
 declare -i PH_RET_CODE="0"
 declare -i PH_APP_TTY="0"
 
-set -x
 printf "%2s%s\n\n" "" "While PieHelper configuration state is 'Unconfigured' :" >>"${PH_TMP_DIR}/reported_issues"
 for PH_i in sup int cont os defaults alloweds
 do
@@ -993,7 +992,6 @@ then
 fi
 [[ "$PH_RET_CODE" -eq "0" ]] && \
 	"$PH_SUDO" rm "${PH_TMP_DIR}/reported_issues" 2>/dev/null
-set +x
 return "$PH_RET_CODE"
 }
 
@@ -1194,9 +1192,8 @@ if [[ ! ( -f "${PH_DIR}/${PH_FILE}" && "$PH_OBJECT_TYPE" != @(directory|link) ) 
 then
 	if [[ "$PH_TYPE" == "Unique" ]]
 	then
-		ph_set_result -a -m "'${PH_TYPE}' ${PH_OBJECT_TYPE} '${PH_DIR}/${PH_FILE}' is 'Missing' -> Reinstallation and reconfiguration of PieHelper is required"
+		ph_set_result -a -m "${PH_TYPE} ${PH_OBJECT_TYPE} '${PH_DIR}/${PH_FILE}' is missing -> Reinstallation and reconfiguration of PieHelper is required"
 	else
-		ph_set_result -w -m "'${PH_TYPE}' ${PH_OBJECT_TYPE} '${PH_DIR}/${PH_FILE}' is 'Missing'"
 		if [[ "$PH_QUIESCE" -eq "1" ]]
 		then
 			printf "%10s\033[33m%s\033[0m\n\n" "" "Warning : Not found"
