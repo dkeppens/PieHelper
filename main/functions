@@ -907,7 +907,7 @@ declare PH_FILE=""
 declare -i PH_RET_CODE="0"
 declare -i PH_APP_TTY="0"
 
-printf "%2s%s\n\n" "" "While PieHelper configuration state is 'Unconfigured' :" >>"$P{H_TMP_DIR}/reported_issues"
+printf "%2s%s\n\n" "" "While PieHelper configuration state is 'Unconfigured' :" >>"${PH_TMP_DIR}/reported_issues"
 for PH_i in sup int cont os defaults alloweds
 do
 	ph_check_default_base_conf_file_validity "$PH_i" || \
