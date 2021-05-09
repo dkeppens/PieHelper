@@ -7680,7 +7680,7 @@ while [[ "$PH_ANSWER" != @(y@(es|)|n@(o|)) ]]
 do
 	[[ "$PH_COUNT" -gt "0" ]] && \
 		printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Invalid response"
-	printf "%8s%s\033[33m%s\033[0m%s" "" "--> Continue configuring PieHelper under account " "'${PH_RUN_USER}'" " (y/n) ? "
+	printf "%8s%s\033[32m%s\033[0m%s" "" "--> Continue configuring PieHelper under account " "'${PH_RUN_USER}'" " (y/n) ? "
 	read PH_ANSWER 2>/dev/null
 	ph_screen_input "$PH_ANSWER"
 	((PH_COUNT++))
