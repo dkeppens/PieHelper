@@ -25,7 +25,7 @@ PH_APP_PKG="$(eval echo -n "$1")"
 [[ -z "$PH_APP_PKG" ]] && \
 	return 1
 
-printf "%8s%s\n" "" "--> Installing package '${PH_APP_PKG}' (This may take a while)"
+printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Installing package " "'${PH_APP_PKG}'" " (This may take a while)"
 if ! ph_get_pkg_inst_state "$PH_APP_PKG"
 then
 	if "$PH_SUDO" apt-get -qq install --no-install-recommends "$PH_APP_PKG" >/dev/null 2>&1
@@ -69,7 +69,7 @@ PH_APP_PKG="$(eval echo -n "$1")"
 
 ph_update_pkg_index || \
 	return 1
-printf "%8s%s\n" "" "--> Checking for package '${PH_APP_PKG}'"
+printf "%8s%s\033[32m%s\033[0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
 if ph_get_pkg_inst_state "$PH_APP_PKG"
 then
 	ph_run_with_rollback -c true -m "Found"
@@ -91,11 +91,11 @@ PH_APP_PKG="$(eval echo -n "$1")"
 [[ -z "$PH_APP_PKG" ]] && \
 	return 1
 
-printf "%8s%s\n" "" "--> Checking for package '${PH_APP_PKG}'"
+printf "%8s%s\033[32m%s\033[0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
 if ph_get_pkg_inst_state "$PH_APP_PKG"
 then
 	ph_run_with_rollback -c true -m "Found"
-	printf "%8s%s\n" "" "--> Uninstalling package '${PH_APP_PKG}' (This may take a while)"
+	printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Uninstalling package " "'${PH_APP_PKG}'" " (This may take a while)"
 	if "$PH_SUDO" apt-get -qq --auto-remove --purge remove "$PH_APP_PKG" >/dev/null 2>&1
 	then
 		ph_add_value_to_param -p PH_INSTALL_PKGS -v "$PH_APP_PKG"

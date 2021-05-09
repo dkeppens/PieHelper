@@ -806,19 +806,19 @@ then
 	PH_APP="$(ph_get_app_name_from_app_tty "$PH_APP_TTY")"
 	if [[ "$PH_PIEH_STARTAPP" == "none" ]]
 	then
-        	printf "%4s%s\n" "" "- 'TTY1' StartApp configuration is 'Present' while PH_PIEH_STARTAPP is set to 'none'" >>"$PH_TMP_DIR/reported_issues"
+        	printf "%4s%s\n" "" "- 'tty1' StartApp configuration is 'Present' while PH_PIEH_STARTAPP is set to 'none'" >>"$PH_TMP_DIR/reported_issues"
 		PH_RET_CODE="1"
 	else
 		if [[ "$PH_PIEH_STARTAPP" != "$PH_APP" ]]
 		then
-        		printf "%4s%s\n" "" "- 'TTY1' StartApp configuration is for '$PH_APP' while PH_PIEH_STARTAPP is set to '$PH_PIEH_STARTAPP'" >>"$PH_TMP_DIR/reported_issues"
+        		printf "%4s%s\n" "" "- 'tty1' StartApp configuration is for '$PH_APP' while PH_PIEH_STARTAPP is set to '$PH_PIEH_STARTAPP'" >>"$PH_TMP_DIR/reported_issues"
 			PH_RET_CODE="1"
 		fi
 	fi
 else
 	if [[ "$PH_PIEH_STARTAPP" != "none" ]]
 	then
-        	printf "%4s%s\n" "" "- PH_PIEH_STARTAPP is set to '$PH_PIEH_STARTAPP' while 'TTY1' StartApp configuration is 'Missing'" >>"$PH_TMP_DIR/reported_issues"
+        	printf "%4s%s\n" "" "- PH_PIEH_STARTAPP is set to '$PH_PIEH_STARTAPP' while 'tty1' StartApp configuration is 'Missing'" >>"$PH_TMP_DIR/reported_issues"
 		PH_RET_CODE="1"
 	fi
 fi
@@ -2821,7 +2821,7 @@ if [[ ! -f /etc/systemd/system/getty@tty1.service.d/autostart.conf ]]
 then
 	[[ "$PH_APP_TTY" -eq "0" ]] && \
 		return 0
-	printf "%8s%s\n" "" "--> Creating StartApp configuration for 'TTY${PH_APP_TTY}'"
+	printf "%8s%s\033[32m%s\033[0m\n" "" "--> Creating StartApp configuration for " "'tty${PH_APP_TTY}'"
 	if ph_run_with_rollback -c "ph_create_empty_file -r -q -t directory -d '/etc/systemd/system/getty@tty1.service.d'"
 	then
 		if ph_run_with_rollback -c "ph_create_empty_file -r -q -t file -d '/etc/systemd/system/getty@tty1.service.d/autostart.conf'"
@@ -3485,7 +3485,7 @@ function ph_pieh_unconfigured_path_conf {
 
 if [[ -f /etc/profile.d/PieHelper-path.sh ]]
 then
-	printf "%8s%s\n" "" "--> Removing the PATH and LD_LIBRARY_PATH extension for PieHelper"
+	printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Removing the " "PATH and LD_LIBRARY_PATH extension" " for PieHelper"
 	if ph_run_with_rollback -c "ph_store_file -r -f '/etc/profile.d/PieHelper-path.sh'"
 	then
 		ph_add_value_to_param -p PH_CONFIGURED_STATE -v path
@@ -3834,7 +3834,7 @@ then
 		[[ "$PH_RET_CODE" -ne "0" ]] && \
 			break
 	done
-	[[ "$PH_PKG_FLAG" -eq "0" ]] && \
+	[[ "$PH_PKG_FLAG" -eq "0" && "$PH_DISTRO" == "Debian" ]] && \
 		ph_apt_clean
 fi
 if [[ -n "$PH_RUN_ACLS" || -n "$PH_RUN_SECURE" || -n "$PH_RUN_GIT_ADD_LOCAL" || -n "$PH_RUN_GIT_TAG_LOCAL" || -n "$PH_RUN_GIT_COMMIT_LOCAL" || -n "$PH_RUN_GIT_COMMIT_MASTER" ]]
@@ -3874,7 +3874,7 @@ declare -i PH_APP_TTY="0"
 
 for PH_APP_TTY in ${PH_TTYS}
 do
-        printf "%8s%s\n" "" "--> Disabling 'tty${PH_APP_TTY}'"
+        printf "%8s%s\033[32m%s\033[0m\n" "" "--> Disabling " "'tty${PH_APP_TTY}'"
 	if systemctl is-disabled getty@tty1 >/dev/null 2>&1
 	then
 		ph_run_with_rollback -c true -m "Nothing to do"
@@ -3988,7 +3988,7 @@ function ph_pieh_configured_logind_conf {
 declare PH_i=""
 declare -i PH_VALUE="0"
 
-printf "%8s%s\n" "" "--> Changing settings in system file '/etc/systemd/logind.conf'"
+printf "%8s%s\033[32m%s\033[0m\n" "" "--> Changing settings in system file " "'/etc/systemd/logind.conf'"
 if [[ "$(grep -E "^NAutoVTs=${PH_PIEH_MAX_TTYS}$" /etc/systemd/logind.conf >/dev/null 2>&1 ; echo "$?")" -ne "0" && \
 	"$(grep -E "^ReserveVT=1$" /etc/systemd/logind.conf >/dev/null 2>&1 ; echo "$?")" -ne "0" ]]
 then
@@ -4547,7 +4547,7 @@ else
 		if [[ "$PH_i" == "autologin_conf" ]]
 		then
 			PH_MSG="tty ${PH_MSG}"
-			printf "%8s%s\n" "" "--> Restoring Emulationstation ${PH_MSG}"
+			printf "%8s%s\033[32m%s\033[0m\n" "" "--> Restoring Emulationstation " "${PH_MSG}"
 			if [[ ! -d /etc/systemd/system/getty@tty1.service.d ]]
 			then
 				if ! ph_run_with_rollback -c "ph_create_empty_file -r -q -t directory -d '/etc/systemd/system/getty@tty1.service.d'"
@@ -4566,7 +4566,7 @@ else
 			fi
 		else
 			PH_MSG="LoginScript ${PH_MSG}"
-			printf "%8s%s\n" "" "--> Restoring Emulationstation ${PH_MSG}"
+			printf "%8s%s\033[32m%s\033[0m\n" "" "--> Restoring Emulationstation " "${PH_MSG}"
 			if ph_run_with_rollback -c "ph_copy_file -r -m -q -s '${PH_FILES_DIR}/${PH_i}' -d '/etc/profile.d/$(sed 's/_/\./g' <<<"$PH_i")'"
 			then
 				ph_run_with_rollback -c true && \
@@ -4596,7 +4596,7 @@ do
 	if [[ "$PH_i" == "autologin.conf" ]]
 	then
 		PH_MSG="TTY ${PH_MSG}"
-		printf "%8s%s\n" "" "--> Backing up Emulationstation StartApp ${PH_MSG}"
+		printf "%8s%s\033[32m%s\033[0m\n" "" "--> Backing up Emulationstation " "StartApp ${PH_MSG}"
 		if ph_run_with_rollback -c "ph_copy_file -r -q -m -s '/etc/systemd/system/getty@tty1.service.d/${PH_i}' -d '${PH_FILES_DIR}/$(sed 's/\./_/g' <<<"$PH_i")'"
 		then
 			if ph_run_with_rollback -c "ph_remove_empty_file -r -q -t directory -d '/etc/systemd/system/getty@tty1.service.d'"
@@ -4613,7 +4613,7 @@ do
 		fi
 	else
 		PH_MSG="LoginScript ${PH_MSG}"
-		printf "%8s%s\n" "" "--> Backing up Emulationstation StartApp ${PH_MSG}"
+		printf "%8s%s\033[32m%s\033[0m\n" "" "--> Backing up Emulationstation " "StartApp ${PH_MSG}"
 		if ph_run_with_rollback -c "ph_copy_file -r -m -q -s '/etc/profile.d/${PH_i}' -d '${PH_FILES_DIR}/$(sed 's/\./_/g' <<<"$PH_i")'"
 		then
 			ph_run_with_rollback -c true
@@ -4692,7 +4692,8 @@ then
 	ph_run_with_rollback -c true -m "$PH_APP_PKG"
 	ph_run_with_rollback -c "ph_install_pkg '${PH_APP_PKG}'" || \
 		return 1
-	ph_apt_clean
+	[[ "$PH_DISTRO" == "Debian" ]] && \
+		ph_apt_clean
 	ph_add_value_to_param -p PH_UNINSTALL_APPS -v "$PH_APP"
 	return 0
 else
@@ -5009,7 +5010,8 @@ then
 		then
 			return 1
 		else
-			ph_apt_clean
+			[[ "$PH_DISTRO" == "Debian" ]] && \
+				ph_apt_clean
 			printf "%s\n" "- Cleaning up"
 		fi
 	else
@@ -5229,7 +5231,7 @@ if [[ -z "$PH_APP_STR_TTY" ]]
 then
 	PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
 else
-	printf "%8s%s\n" "" "--> Checking TTY parameter"
+	printf "%8s%s\n" "" "--> Checking the tty parameter"
 	if [[ "$PH_APP" != "$(ph_get_app_name_from_app_tty "$PH_APP_TTY")" ]]
 	then
 		PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
@@ -6473,21 +6475,21 @@ fi
 ph_set_result -r 0
 if [[ -n "$PH_APP_STR_TTY" ]]
 then
-	printf "%8s%s\n" "" "--> Checking TTY parameter"
+	printf "%8s%s\n" "" "--> Checking the tty parameter"
 	ph_set_result -r 0
 	if [[ "$PH_APP" == "PieHelper" ]]
 	then
 		if [[ "$PH_APP_TTY" -ne "2" ]]
 		then
 			PH_APP_TTY="2"
-			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid TTY -> Setting to 'TTY${PH_APP_TTY}'"
+			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid TTY -> Setting to 'tty${PH_APP_TTY}'"
 		else
-			printf "%10s\033[32m%s\033[0m\n" "" "OK ('TTY${PH_APP_TTY}')"
+			printf "%10s\033[32m%s\033[0m\n" "" "OK ('tty${PH_APP_TTY}')"
 		fi
 	else
 		if [[ "$PH_APP_TTY" -lt "3" || "$PH_APP_TTY" -gt "$PH_PIEH_MAX_TTYS" ]]
 		then
-			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid TTY -> Allocating new TTY"
+			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid tty -> Allocating new tty"
 			ph_allocate_new_tty "$PH_APP"
 			PH_APP_TTY="$?"
 			[[ "$PH_APP_TTY" -eq "1" ]] && \
@@ -6495,13 +6497,13 @@ then
 		else
 			if cut -f3 "${PH_CONF_DIR}/integrated_apps" 2>/dev/null | grep -E "^${PH_APP_TTY}$" >/dev/null
 			then
-				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid TTY -> Allocating new TTY"
+				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid tty -> Allocating new tty"
 				ph_allocate_new_tty "$PH_APP"
 				PH_APP_TTY="$?"
 				[[ "$PH_APP_TTY" -eq "1" ]] && \
 					return 1
 			else
-				printf "%10s\033[32m%s\033[0m\n" "" "OK ('TTY${PH_APP_TTY}')"
+				printf "%10s\033[32m%s\033[0m\n" "" "OK ('tty${PH_APP_TTY}')"
 			fi
 		fi
 	fi
@@ -6544,7 +6546,7 @@ declare -i PH_APP_TTY="0"
 	echo -n "1" && \
 	return 1
 
-printf "%8s%s\n" "" "--> Checking TTY of '${PH_APP}'"
+printf "%8s%s\n" "" "--> Checking the tty of ${PH_APP}"
 PH_APP_USER="$(ph_get_app_user_from_app_name "$PH_APP")"
 PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
 if [[ "$PH_APP_TTY" -eq "0" ]]
@@ -6611,7 +6613,7 @@ OPTARG="$PH_OLDOPTARG"
 	PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
 [[ -z "$PH_APP_USER" ]] && \
 	PH_APP_USER="$(ph_get_app_user_from_app_name "$PH_APP")"
-printf "%8s%s\n" "" "--> Deallocating 'tty${PH_APP_TTY}'"
+printf "%8s%s\033[32m%s\033[0m\n" "" "--> Deallocating " "'tty${PH_APP_TTY}'"
 if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/integrated_apps' -l '${PH_APP}\t${PH_APP_USER}\t${PH_APP_TTY}'"
 then
 	if ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/integrated_apps' -l '${PH_APP}\\t${PH_APP_USER}\\t-'"
@@ -7336,7 +7338,7 @@ declare -i PH_APP_TTY="0"
 
 for PH_APP_TTY in ${PH_TTYS}
 do
-	printf "%8s%s\n" "" "--> Enabling 'tty${PH_APP_TTY}'"
+	printf "%8s%s\033[32m%s\033[0m\n" "" "--> Enabling " "'tty${PH_APP_TTY}'"
 	if systemctl is-enabled getty@tty1 >/dev/null 2>&1
 	then
 		ph_run_with_rollback -c true -m "Nothing to do"
@@ -7358,7 +7360,7 @@ function ph_pieh_configured_path_conf {
 [[ "$#" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Creating the PATH and LD_LIBRARY_PATH extension for PieHelper"
+printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Creating the " "PATH and LD_LIBRARY_PATH extension" " for PieHelper"
 if [[ ! -f /etc/profile.d/PieHelper-path.sh ]]
 then
 	if ph_run_with_rollback -c "ph_create_empty_file -r -q -t file -d '/etc/profile.d/PieHelper-path.sh'"
@@ -7404,7 +7406,7 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-printf "%8s%s\n" "" "--> Setting secondary groups for user '${PH_APP_USER}'"
+printf "%8s%s\033[32m%s\033[0m\n" "" "--> Setting secondary groups for user " "'${PH_APP_USER}'"
 PH_APP_USER_CUR_GROUPS="$(groups "$PH_APP_USER" 2>/dev/null | nawk 'BEGIN { \
 		OFS = "," \
 	} { \
@@ -7445,7 +7447,7 @@ declare PH_MODULE="$1"
 [[ -z "$PH_MODULE" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Unblacklisting '${PH_MODULE}' kernel module"
+printf "%8s%s\033[32m%s\033[0m\n" "" "--> Unblacklisting kernel module " "'${PH_MODULE}'"
 if "$PH_SUDO" grep -E "^blacklist ${PH_MODULE}$" /etc/modprobe.d/xboxdrv-blacklist.conf >/dev/null 2>&1
 then
 	if ! ph_run_with_rollback -c "ph_remove_line_from_file -r -f '/etc/modprobe.d/xboxdrv-blacklist.conf' -l 'blacklist ${PH_MODULE}'"
@@ -7475,7 +7477,7 @@ then
 	ph_run_with_rollback -c "ph_unload_kernel_module '${PH_MODULE}'" || \
 		return 1
 fi
-printf "%8s%s\n" "" "--> Blacklisting '${PH_MODULE}' kernel module"
+printf "%8s%s\033[32m%s\033[0m\n" "" "--> Blacklisting kernel module " "'${PH_MODULE}'"
 if [[ ! -f /etc/modprobe.d/xboxdrv-blacklist.conf ]]
 then
 	if ! ph_run_with_rollback -c "ph_create_empty_file -r -q -t file -d '/etc/modprobe.d/xboxdrv-blacklist.conf'"
@@ -7507,7 +7509,7 @@ declare PH_MODULE="$1"
 [[ -z "$PH_MODULE" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Loading '${PH_MODULE}' kernel module"
+printf "%8s%s\033[32m%s\033[0m\n" "" "--> Loading kernel module " "'${PH_MODULE}'"
 if ! grep -E "^${PH_MODULE}([[:space:]])+.*$" /proc/modules >/dev/null 2>&1
 then
 	if ! "$PH_SUDO" modprobe "$PH_MODULE" >/dev/null 2>&1
@@ -7530,7 +7532,7 @@ declare PH_MODULE="$1"
 [[ -z "$PH_MODULE" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Unloading '${PH_MODULE}' kernel module"
+printf "%8s%s\033[32m%s\033[0m\n" "" "--> Unloading kernel module " "'${PH_MODULE}'"
 if grep -E "^${PH_MODULE}([[:space:]])+.*$" /proc/modules >/dev/null 2>&1
 then
 	if ! "$PH_SUDO" rmmod "$PH_MODULE" >/dev/null 2>&1
@@ -7825,7 +7827,8 @@ then
 				ph_update_system || \
 					return 1
 			else
-				ph_apt_clean
+				[[ "$PH_DISTRO" == "Debian" ]] && \
+					ph_apt_clean
 			fi
 			printf "%8s%s\n" "" "--> Displaying the user manual"
 			sleep 2

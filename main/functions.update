@@ -1185,15 +1185,15 @@ case "$PH_TYPE" in support)
 	PH_DEFAULTS="yes"
 	PH_MENUS="yes" ;;
 		   integrate)
-	PH_DIR="yes"
-	PH_SCRIPTS="yes" ;;
+	PH_SCRIPTS="yes"
+	PH_DIR="yes" ;;
 		   both)
 	PH_CONF_FILE="yes"
 	PH_ALLOWEDS="yes"
 	PH_DEFAULTS="yes"
 	PH_MENUS="yes"
-	PH_DIR="yes"
-	PH_SCRIPTS="yes" ;;
+	PH_SCRIPTS="yes"
+	PH_DIR="yes" ;;
 esac
 for PH_i in PH_CONF_FILE PH_ALLOWEDS PH_DEFAULTS PH_MENUS PH_SCRIPTS PH_DIR
 do
@@ -1463,35 +1463,35 @@ OPTARG="$PH_OLDOPTARG"
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 case "$PH_TYPE" in unsupport)
-	PH_CONF_FILE="yes"
-	PH_ALLOWEDS="yes"
+	PH_MENUS="yes"
 	PH_DEFAULTS="yes"
-	PH_MENUS="yes" ;;
+	PH_ALLOWEDS="yes"
+	PH_CONF_FILE="yes" ;;
 		   unintegrate)
 	PH_DIR="yes"
 	PH_SCRIPTS="yes" ;;
 		   both)
-	PH_CONF_FILE="yes"
-	PH_ALLOWEDS="yes"
-	PH_DEFAULTS="yes"
-	PH_MENUS="yes"
 	PH_DIR="yes"
-	PH_SCRIPTS="yes" ;;
+	PH_SCRIPTS="yes"
+	PH_MENUS="yes"
+	PH_DEFAULTS="yes"
+	PH_ALLOWEDS="yes"
+	PH_CONF_FILE="yes" ;;
 esac
 for PH_i in PH_DIR PH_SCRIPTS PH_MENUS PH_DEFAULTS PH_ALLOWEDS PH_CONF_FILE
 do
-	case "$PH_i" in *CONF_FILE)
-		PH_PARAM="-c" ;;
-			*ALLOWEDS)
-		PH_PARAM="-l" ;;
-			*DEFAULTS)
-		PH_PARAM="-d" ;;
-			*MENUS)
-		PH_PARAM="-m" ;;
-			*DIR)
+	case "$PH_i" in *DIR)
 		PH_PARAM="-k" ;;
 			*SCRIPTS)
 		PH_PARAM="-s" ;;
+			*MENUS)
+		PH_PARAM="-m" ;;
+			*DEFAULTS)
+		PH_PARAM="-d" ;;
+			*ALLOWEDS)
+		PH_PARAM="-l" ;;
+			*CONF_FILE)
+		PH_PARAM="-c" ;;
 	esac
 	if [[ "$(eval "echo -n \"\$${PH_i}\"")" == "yes" ]]
 	then
