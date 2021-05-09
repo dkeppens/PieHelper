@@ -3485,7 +3485,7 @@ function ph_pieh_unconfigured_path_conf {
 
 if [[ -f /etc/profile.d/PieHelper-path.sh ]]
 then
-	printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Removing the " "PATH and LD_LIBRARY_PATH extension" " for PieHelper"
+	printf "%8s%s\n" "" "--> Removing the PATH and LD_LIBRARY_PATH extension for PieHelper"
 	if ph_run_with_rollback -c "ph_store_file -r -f '/etc/profile.d/PieHelper-path.sh'"
 	then
 		ph_add_value_to_param -p PH_CONFIGURED_STATE -v path
@@ -5848,7 +5848,9 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 							     4)
 						printf "%10s\033[33m%s\033[0m\n" "" "Warning : Skipping support of ${PH_APP}"
 						ph_set_result -r 0 -w -m "Quit at user request"
-						ph_rollback_changes ;;
+						ph_show_result
+						ph_rollback_changes
+						return "$?" ;;
 							     *)
 						printf "\n%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Invalid response"
 						continue ;;
@@ -7360,7 +7362,7 @@ function ph_pieh_configured_path_conf {
 [[ "$#" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Creating the " "PATH and LD_LIBRARY_PATH extension" " for PieHelper"
+printf "%8s%s\n" "" "--> Creating the PATH and LD_LIBRARY_PATH extension for PieHelper"
 if [[ ! -f /etc/profile.d/PieHelper-path.sh ]]
 then
 	if ph_run_with_rollback -c "ph_create_empty_file -r -q -t file -d '/etc/profile.d/PieHelper-path.sh'"

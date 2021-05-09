@@ -893,7 +893,7 @@ then
 		fi
 	fi
 	[[ "$PH_QUIESCE" -eq "1" ]] && \
-		printf "%8s%s\n" "" "--> Creating sudo rights for user '${PH_APP_USER}'"
+		printf "%8s%s\033[32m%s\033[0m\n" "" "--> Creating sudo rights for user " "'${PH_APP_USER}'"
 	if ph_run_with_rollback -c "ph_create_empty_file -r -q -d '/etc/sudoers.d/020_pieh-${PH_APP_USER}'"
 	then
 		if ph_run_with_rollback -c "ph_add_line_to_file -r -f '/etc/sudoers.d/020_pieh-${PH_APP_USER}' -l '${PH_APP_USER} ALL=(ALL) NOPASSWD: ALL'"
@@ -957,7 +957,7 @@ OPTARG="$PH_OLDOPTARG"
 if [[ "$PH_APP_USER" != @(root|${PH_RUN_USER}) && -f "/etc/sudoers.d/020_pieh-${PH_APP_USER}" ]]
 then
 	[[ "$PH_QUIESCE" -eq "1" ]] && \
-		printf "%8s%s\n" "" "--> Removing sudo rights for user '${PH_APP_USER}'"
+		printf "%8s%s\033[32m%s\033[0m\n" "" "--> Removing sudo rights for user " "'${PH_APP_USER}'"
 	if ph_run_with_rollback -c "ph_store_file -r -f '/etc/sudoers.d/020_pieh-${PH_APP_USER}'"
 	then
 		ph_add_value_to_param -p PH_CREATE_RIGHTS_USERS -v "${PH_PARAMS}'${PH_APP_USER}'"
@@ -1205,10 +1205,10 @@ do
 		PH_PARAM="-d" ;;
 			*MENUS)
 		PH_PARAM="-m" ;;
-			*DIR)
-		PH_PARAM="-k" ;;
 			*SCRIPTS)
 		PH_PARAM="-s" ;;
+			*DIR)
+		PH_PARAM="-k" ;;
 	esac
 	if [[ "$(eval "echo -n \"\$${PH_i}\"")" == "yes" ]]
 	then
@@ -1236,7 +1236,7 @@ declare PH_APP_MPT=""
 PH_APP_MPT="$(ph_get_app_cifs_mpt -a "$PH_APP" -r)"
 if [[ -n "$PH_APP_MPT" ]]
 then
-	printf "%8s%s\n" "" "--> Removing CIFS mountpoint '${PH_APP_MPT}' for ${PH_APP}"
+	printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Removing CIFS mountpoint " "'${PH_APP_MPT}'" " for ${PH_APP}"
 	if [[ -e "$PH_APP_MPT" ]]
 	then
 		if [[ -d "$PH_APP_MPT" ]]
@@ -1340,7 +1340,7 @@ declare PH_APP_MPT=""
 PH_APP_MPT="$(ph_get_app_cifs_mpt -a "$PH_APP" -r)"
 if [[ -n "$PH_APP_MPT" ]]
 then
-	printf "%8s%s\n" "" "--> Creating CIFS mountpoint for ${PH_APP} as '${PH_APP_MPT}'"
+	printf "%8s%s\033[32m%s\033[0m\n" "" "--> Creating CIFS mountpoint for ${PH_APP} as " "'${PH_APP_MPT}'"
 	if [[ -d "$PH_APP_MPT" ]]
 	then
 		if [[ "$("$PH_SUDO" find "$PH_APP_MPT" -maxdepth 1 ! -wholename "$PH_APP_MPT" 2>/dev/null | wc -l)" -ne "0" ]]
@@ -1515,7 +1515,7 @@ declare PH_APP="$1"
 
 if [[ -f "${PH_CONF_DIR}/${PH_APP}.conf" ]]
 then
-	printf "%8s%s\n" "" "--> Removing ${PH_APP} config file '${PH_CONF_DIR}/${PH_APP}.conf'"
+	printf "%8s%s\033[32m%s\033[0m\n" "" "--> Removing ${PH_APP} config file " "'${PH_CONF_DIR}/${PH_APP}.conf'"
 	if ph_run_with_rollback -c "ph_store_file -f '${PH_CONF_DIR}/${PH_APP}.conf'"
 	then
 		ph_add_value_to_param -p PH_CREATE_APPS_CONF_FILE -v "$PH_APP"
@@ -1562,7 +1562,7 @@ do
 	if [[ -f "${PH_SCRIPTS_DIR}/${PH_i}" ]]
 	then
 		[[ "$PH_COUNT" -eq "0" ]] && \
-			printf "%8s%s\n" "" "--> Removing management scripts for ${PH_APP}"
+			printf "%8s%s\033[32m%s\033[0m\n" "" "--> Removing management scripts for " "'${PH_APP}'"
 		((PH_COUNT++))
 		if ! ph_run_with_rollback -c "ph_store_file -f '${PH_SCRIPTS_DIR}/${PH_i}'"
 		then
@@ -1591,7 +1591,7 @@ declare -u PH_APPU=""
 PH_APPU="${PH_APP:0:4}"
 if grep -E "^PH_${PH_APPU}_" "${PH_CONF_DIR}/options.alloweds" >/dev/null 2>&1
 then
-	printf "%8s%s\n" "" "--> Removing ${PH_APP} option alloweds from file '${PH_CONF_DIR}/options.alloweds'"
+	printf "%8s%s\033[32m%s\033[0m\n" "" "--> Removing ${PH_APP} option alloweds from file " "'${PH_CONF_DIR}/options.alloweds'"
 	if ph_run_with_rollback -c "ph_store_file -f '${PH_CONF_DIR}/options.alloweds'"
 	then
 		if PH_TMP_FILE="$("$PH_SUDO" ls -lAt "${PH_TMP_DIR}/options_alloweds_tmp."* 2>/dev/null | nawk '{ \
@@ -1637,7 +1637,7 @@ declare -u PH_APPU=""
 PH_APPU="${PH_APP:0:4}"
 if grep -E "^PH_${PH_APPU}_" "${PH_CONF_DIR}/options.defaults" >/dev/null 2>&1
 then
-	printf "%8s%s\n" "" "--> Removing ${PH_APP} option defaults from file '${PH_CONF_DIR}/options.defaults'"
+	printf "%8s%s\033[32m%s\033[0m\n" "" "--> Removing ${PH_APP} option defaults from file " "'${PH_CONF_DIR}/options.defaults'"
 	if ph_run_with_rollback -c "ph_store_file -f '${PH_CONF_DIR}/options.defaults'"
 	then
 		if PH_TMP_FILE="$("$PH_SUDO" ls -lAt "${PH_TMP_DIR}/options_defaults_tmp."* 2>/dev/null | nawk '{ \
@@ -1736,7 +1736,7 @@ declare PH_LINKED_MENU_APP="$1"
 
 [[ ! -L "${PH_MENUS_DIR}/TTYManagement.lst" && ! -L "${PH_MENUS_DIR}/AppManagement.lst" && ! -L "${PH_MENUS_DIR}/OptsManagement.lst" ]] && \
 	return 0
-printf "%8s%s\n" "" "--> Unlinking ${PH_LINKED_MENU_APP} from menu"
+printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Unlinking " "'${PH_LINKED_MENU_APP}'" " from menu"
 for PH_i in AppManagement TTYManagement OptsManagement
 do
 	if [[ -L "${PH_MENUS_DIR}/${PH_i}.lst" ]]
@@ -1774,7 +1774,7 @@ then
 			return 1
 	fi
 fi
-printf "%8s%s\n" "" "--> Linking ${PH_LINK_APP_TO_MENU} to menu"
+printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Linking " "'${PH_LINK_APP_TO_MENU}'" " to menu"
 for PH_i in AppManagement TTYManagement OptsManagement
 do
 	if ! ph_run_with_rollback -c "ph_create_empty_file -q -t link -s '${PH_MENUS_DIR}/${PH_i}_${PH_LINK_APP_TO_MENU}.lst' -d '${PH_MENUS_DIR}/${PH_i}.lst'"
@@ -1817,7 +1817,7 @@ do
 	if [[ -f "${PH_MENUS_DIR}/${PH_i}.lst" ]]
 	then
 		[[ "$PH_COUNT" -eq "0" ]] && \
-			printf "%8s%s\n" "" "--> Removing menu items for ${PH_APP}"
+			printf "%8s%s\033[32m%s\033[0m\n" "" "--> Removing menu items for " "'${PH_APP}'"
 		((PH_COUNT++))
 		if ! ph_run_with_rollback -c "ph_store_file -f '${PH_MENUS_DIR}/${PH_i}.lst'"
 		then
@@ -1851,7 +1851,7 @@ declare -l PH_APPL2=""
 	return 0
 ph_run_with_rollback -c "ph_remove_app_scripts '${PH_APP}'" || \
 	return 1
-printf "%8s%s\n" "" "--> Creating management scripts for ${PH_APP}"
+printf "%8s%s\033[32m%s\033[0m\n" "" "--> Creating management scripts for " "'${PH_APP}'"
 [[ "$PH_APP" == "PieHelper" ]] && \
 	PH_SCRIPT_SUFFIX="PieH"
 for PH_i in start stop restart
@@ -1925,22 +1925,20 @@ declare -u PH_APPU=""
         ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 PH_APPU="${PH_APP:0:4}"
-if [[ -f "${PH_CONF_DIR}/${PH_APP}.conf" ]]
-then
-	printf "%8s%s\n" "" "--> Backing up existing config file '${PH_CONF_DIR}/${PH_APP}.conf'"
-	if ! ph_run_with_rollback -c "ph_store_file -f '${PH_CONF_DIR}/${PH_APP}.conf'"
-	then
-		ph_run_with_rollback -c false -m "Could not backup" || \
-			return 1
-	else
-		ph_run_with_rollback -c true
-	fi
-fi
 PH_SOURCE_FILE="${PH_APP}_conf"
 [[ "$(cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null ; echo "$?")" -ne "0" && \
 	"$PH_APP" != "Ctrls" ]] && \
 	PH_SOURCE_FILE="OOSapp_conf"
-printf "%8s%s\n" "" "--> Creating config file for ${PH_APP} as '${PH_CONF_DIR}/${PH_APP}.conf'"
+printf "%8s%s\033[32m%s\033[0m\n" "" "--> Creating config file for ${PH_APP} as " "'${PH_CONF_DIR}/${PH_APP}.conf'"
+if [[ -f "${PH_CONF_DIR}/${PH_APP}.conf" ]]
+then
+	if ! ph_run_with_rollback -c "ph_store_file -f '${PH_CONF_DIR}/${PH_APP}.conf'"
+	then
+		ph_set_result -m "An error occurred backup existing conf file '${PH_CONF_DIR}/${PH_APP}.conf'"
+		ph_run_with_rollback -c false -m "Could not backup" || \
+			return 1
+	fi
+fi
 if ph_run_with_rollback -c "ph_copy_file -q -s '${PH_TEMPLATES_DIR}/${PH_SOURCE_FILE}.template' -d '${PH_CONF_DIR}/${PH_APP}.conf'"
 then
 	if sed -i "s/#PH_APPU#/${PH_APPU}/;s/#PH_APP#/${PH_APP}/" "${PH_CONF_DIR}/${PH_APP}.conf" 2>/dev/null
@@ -1974,7 +1972,7 @@ declare -l PH_APPL=""
 PH_APPL="${PH_APP:0:4}"
 ph_run_with_rollback -c "ph_remove_app_menus '${PH_APP}'" || \
 	return 1
-printf "%8s%s\n" "" "--> Creating menu items for ${PH_APP}"
+printf "%8s%s\033[32m%s\033[0m\n" "" "--> Creating menu items for " "'${PH_APP}'"
 for PH_i in "${PH_MENUS_DIR}/${PH_APP}.lst" "${PH_MENUS_DIR}/OptsManagement_${PH_APP}.lst" "${PH_MENUS_DIR}/TTYManagement_${PH_APP}.lst" "${PH_MENUS_DIR}/AppManagement_${PH_APP}.lst"
 do
 	ph_run_with_rollback -c "ph_create_empty_file -q -t file -d '${PH_i}'" || \
@@ -2074,7 +2072,7 @@ unset -n PH_OPTS
 ph_run_with_rollback -c "ph_remove_app_alloweds '${PH_APP}'" || \
 	return 1
 declare -n PH_OPTS="PH_${PH_APPU}_OPTS"
-printf "%8s%s\n" "" "--> Creating ${PH_APP} option alloweds in file '${PH_CONF_DIR}/options.alloweds'"
+printf "%8s%s\033[32m%s\033[0m\n" "" "--> Creating ${PH_APP} option alloweds in file " "'${PH_CONF_DIR}/options.alloweds'"
 for PH_i in ${PH_OPTS}
 do
 	case "$PH_i" in DIR|*_CMD)
@@ -2155,7 +2153,7 @@ unset -n PH_OPTS
 ph_run_with_rollback -c "ph_remove_app_defaults '${PH_APP}'" || \
 	return 1
 declare -n PH_OPTS="PH_${PH_APPU}_OPTS"
-printf "%8s%s\n" "" "--> Creating ${PH_APP} option defaults in file '${PH_CONF_DIR}/options.defaults'"
+printf "%8s%s\033[32m%s\033[0m\n" "" "--> Creating ${PH_APP} option defaults in file " "'${PH_CONF_DIR}/options.defaults'"
 for PH_i in ${PH_OPTS}
 do
         PH_OPT="PH_${PH_APPU}_${PH_i}"
