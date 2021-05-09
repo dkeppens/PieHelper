@@ -6621,11 +6621,11 @@ then
 	if ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/integrated_apps' -l '${PH_APP}\\t${PH_APP_USER}\\t-'"
 	then
 		ph_run_with_rollback -c true
-		printf "%8s%s\n" "" "--> Removing ${PH_APP} LoginScript '/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh'"
+		printf "%8s%s\033[32m%s\033[0m\n" "" "--> Removing ${PH_APP} LoginScript " "'/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh'"
 		if ph_run_with_rollback -c "ph_store_file -r -f '/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh'"
 		then
 			printf "%10s\033[32m%s\033[0m\n" "" "OK"
-			printf "%8s%s\n" "" "--> Removing ${PH_APP} autologin configuration '/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/autologin.conf'"
+			printf "%8s%s\033[32m%s\033[0m\n" "" "--> Removing ${PH_APP} autologin configuration " "'/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/autologin.conf'"
 			if ph_run_with_rollback -c "ph_store_file -r -f '/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/autologin.conf'"
 			then
 				if "$PH_SUDO" systemctl daemon-reload >/dev/null 2>&1
