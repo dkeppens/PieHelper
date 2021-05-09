@@ -3963,7 +3963,7 @@ OPTARG="$PH_OLDOPTARG"
 [[ "$PH_COPY_AS_ROOT" -eq "0" ]] && \
 	PH_CMD="${PH_SUDO} ${PH_CMD}"
 [[ "$PH_QUIESCE" -eq "1" ]] && \
-	printf "%8s%s\n" "" "--> ${PH_MSG} '${PH_FILE_SOURCE}' to '${PH_FILE_DEST}'"
+	printf "%8s%s\033[32m%s\033[0m\n" "" "--> ${PH_MSG} '${PH_FILE_SOURCE}' to " "'${PH_FILE_DEST}'"
 if ${PH_CMD} "$PH_FILE_SOURCE" "$PH_FILE_DEST" 2>/dev/null
 then
 	ph_add_value_to_param -p PH_COPY_FILES -v "${PH_FILE_SOURCE}'${PH_FILE_DEST}'${PH_PARAMS}"
@@ -5553,7 +5553,7 @@ OPTARG="$PH_OLDOPTARG"
 [[ -z "$PH_APP" || "$#" -lt "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Removing ${PH_APP} from configuration file '${PH_CONF_DIR}/supported_apps'"
+printf "%8s%s\033[32m%s\033[0m\n" "" "--> Removing ${PH_APP} from configuration file " "'${PH_CONF_DIR}/supported_apps'"
 PH_COUNT="$(nawk -v app="^${PH_APP}$" 'BEGIN { \
 		count = "0" \
 	} \
@@ -5626,7 +5626,7 @@ then
 	ph_run_with_rollback -c "ph_revoke_pieh_access -u '${PH_APP_USER}'" || \
 		return 1
 fi
-printf "%8s%s\n" "" "--> Removing application ${PH_APP} configuration from file '${PH_CONF_DIR}/integrated_apps'"
+printf "%8s%s\033[32m%s\033[0m\n" "" "--> Removing application ${PH_APP} configuration from file " "'${PH_CONF_DIR}/integrated_apps'"
 PH_COUNT="$(nawk -v app="^${PH_APP}$" 'BEGIN { \
 		count = "0" \
 	} \
@@ -6019,7 +6019,7 @@ OPTARG="$PH_OLDOPTARG"
 [[ -z "$PH_APP_INST_STATE" ]] && \
 	return 1
 
-printf "%8s%s\n" "" "--> Adding application ${PH_APP} to configuration file '${PH_CONF_DIR}/supported_apps'"
+printf "%8s%s\033[32m%s\033[0m\n" "" "--> Adding application ${PH_APP} to configuration file " "'${PH_CONF_DIR}/supported_apps'"
 PH_COUNT="$(nawk -v app="^${PH_APP}$" 'BEGIN { \
 		count = "0" \
 	} \
@@ -6098,7 +6098,7 @@ OPTARG="$PH_OLDOPTARG"
 [[ "$PH_APP_TTY" -eq "0" ]] && \
 	PH_APP_STR_TTY="-" || \
 	PH_APP_STR_TTY="$PH_APP_TTY"
-printf "%8s%s\n" "" "--> Adding application ${PH_APP} to configuration file '${PH_CONF_DIR}/integrated_apps'"
+printf "%8s%s\033[32m%s\033[0m\n" "" "--> Adding application ${PH_APP} to configuration file " "'${PH_CONF_DIR}/integrated_apps'"
 PH_COUNT="$(nawk -v app="^${PH_APP}$" 'BEGIN { count = "0" } $1 ~ app { count++ ; next } { next } END { print count }' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null)"
 case "$PH_COUNT" in 0)
 		if [[ ! -f "${PH_CONF_DIR}/integrated_apps" ]]
@@ -7680,7 +7680,7 @@ while [[ "$PH_ANSWER" != @(y@(es|)|n@(o|)) ]]
 do
 	[[ "$PH_COUNT" -gt "0" ]] && \
 		printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Invalid response"
-	printf "%8s%s" "" "--> Continue configuring PieHelper under account '${PH_RUN_USER}' (y/n) ? "
+	printf "%8s%s\033[33m%s\033[0m%s" "" "--> Continue configuring PieHelper under account " "'${PH_RUN_USER}'" " (y/n) ? "
 	read PH_ANSWER 2>/dev/null
 	ph_screen_input "$PH_ANSWER"
 	((PH_COUNT++))
@@ -7694,7 +7694,7 @@ then
 fi
 if [[ "$PH_RUN_USER" != "root" ]]
 then
-	printf "%8s%s\n" "" "--> Checking privilege elevation rights of user '${PH_RUN_USER}'"
+	printf "%8s%s\033[32m%s\033[0m\n" "" "--> Checking privilege elevation rights of user " "'${PH_RUN_USER}'"
 	if [[ -n "$PH_SUDO" ]]
 	then
 		ph_run_with_rollback -c true
