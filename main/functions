@@ -907,78 +907,91 @@ declare PH_FILE=""
 declare -i PH_RET_CODE="0"
 declare -i PH_APP_TTY="0"
 
-printf "%2s%s\n\n" "" "While PieHelper configuration state is 'Unconfigured' :" >>"$PH_TMP_DIR/reported_issues"
+printf "%2s%s\n\n" "" "While PieHelper configuration state is 'Unconfigured' :" >>"$P{H_TMP_DIR}/reported_issues"
 for PH_i in sup int cont os defaults alloweds
 do
-	ph_check_default_base_conf_file_validity "$PH_i" || PH_RET_CODE="1"
+	ph_check_default_base_conf_file_validity "$PH_i" || \
+		PH_RET_CODE="1"
 done
 if [[ -f /etc/profile.d/PieHelper-path.sh ]]
 then
-        printf "%4s%s\n" "" "- The PATH and LD_LIBRARY_PATH extension is 'Present'" >>"$PH_TMP_DIR/reported_issues"
+        printf "%4s%s\n" "" "- The PATH and LD_LIBRARY_PATH extension is 'Present'" >>"${PH_TMP_DIR}/reported_issues"
 	PH_RET_CODE="1"
 fi
 if [[ "$PH_DISTRO" == "Debian" ]]
 then
-	if ph_check_object_existence -q -o "$PH_CONF_DIR/distros/$PH_DISTRO.conf"
+	if ph_check_object_existence -q -o "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf"
 	then
-		printf "%4s%s\n" "" "- Debian release symbolic link is 'Present'" >>"$PH_TMP_DIR/reported_issues"
+		printf "%4s%s\n" "" "- Debian release symbolic link is 'Present'" >>"${PH_TMP_DIR}/reported_issues"
 		PH_RET_CODE="1"
 	fi
 fi
-if ph_check_object_existence -q -o "$PH_CONF_DIR/Ctrls.conf"
-then
-        printf "%4s%s\n" "" "- Configuration file 'Ctrls.conf' is 'Present'" >>"$PH_TMP_DIR/reported_issues"
-	PH_RET_CODE="1"
-fi
-for PH_i in $(ls "${PH_MENUS_DIR}/"!(@(Advanced|AppManagement|*_PieHelper|PieHelper|OptsManagement|XBOX*|TTYManagement|PS*|OS*|Settings|Controllers|Main).lst) 2>/dev/null | nawk 'BEGIN { ORS =  " " } { print $1 }')
+for PH_i in Ctrls $(nawk 'BEGIN { \
+		ORS =  " " \
+	} { \
+		print $1 \
+	}' "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null)
 do
-       	printf "%4s%s\n" "" "- Menu item '${PH_i##*/} is 'Present'" >>"$PH_TMP_DIR/reported_issues"
+	if ph_check_object_existence -q -o "${PH_CONF_DIR}/${PH_i}.conf"
+	then
+		printf "%4s%s\n" "" "- Configuration file '${PH_i}.conf' is 'Present'" >>"${PH_TMP_DIR}/reported_issues"
+		PH_RET_CODE="1"
+	fi
+done
+for PH_i in $(ls "${PH_MENUS_DIR}/"!(@(Advanced|*_PieHelper|PieHelper|XBOX*|PS*|OS|Settings|Controllers|Main).lst) 2>/dev/null | \
+	nawk 'BEGIN { \
+		ORS =  " " \
+	} { \
+		print $1 \
+	}')
+do
+       	printf "%4s%s\n" "" "- Menu item '${PH_i##*/}' is present" >>"${PH_TMP_DIR}/reported_issues"
 	PH_RET_CODE="1"
 done
-for PH_i in $("$PH_SUDO" find "$PH_MNT_DIR/*" -type d -mount 2>/dev/null | nawk 'BEGIN { ORS =  " " } { print }')
+for PH_i in $("$PH_SUDO" find "${PH_MNT_DIR}/*" -type d -mount 2>/dev/null | nawk 'BEGIN { \
+		ORS =  " " \
+	} { \
+		print \
+	}')
 do
 	PH_APP="${PH_i##*/}"
-       	printf "%4s%s\n" "" "- Default CIFS mountpoint '$PH_MNT_DIR/$PH_APP' is 'Present'" >>"$PH_TMP_DIR/reported_issues"
+       	printf "%4s%s\n" "" "- Default CIFS mountpoint '${PH_MNT_DIR}/${PH_APP}' is 'Present'" >>"${PH_TMP_DIR}/reported_issues"
 	PH_RET_CODE="1"
 done
-for PH_i in $(find "${PH_SCRIPTS_DIR}" -maxdepth 1 -type f ! -name "*_ph.sh" -print 2>/dev/null | nawk 'BEGIN { ORS =  " " } { print $1 }')
+for PH_i in $(find "${PH_SCRIPTS_DIR}" -maxdepth 1 -type f -regextype egrep ! -regex ".*/(start|stop|restart|.*_ph).*\.sh" -print 2>/dev/null | nawk 'BEGIN { \
+		ORS =  " " \
+	} { \
+		print $1 \
+	}')
 do
-       	printf "%4s%s\n" "" "- Management script '${PH_i##*/}' is 'Present'" >>"$PH_TMP_DIR/reported_issues"
+       	printf "%4s%s\n" "" "- Management script '${PH_i##*/}' is present" >>"${PH_TMP_DIR}/reported_issues"
 	PH_RET_CODE="1"
 done
 for ((PH_APP_TTY=2;PH_APP_TTY<="${PH_PIEH_MAX_TTYS}";PH_APP_TTY++))
 do
-        if [[ -f "/etc/profile.d/PieHelper_tty$PH_APP_TTY.sh" ]]
+        if [[ -f "/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh" ]]
         then
-                printf "%4s%s\n" "" "- LoginScript for 'TTY$PH_APP_TTY' is 'Present'" >>"$PH_TMP_DIR/reported_issues"
+                printf "%4s%s\n" "" "- LoginScript for 'tty${PH_APP_TTY}' is present" >>"${PH_TMP_DIR}/reported_issues"
 		PH_RET_CODE="1"
         fi
-        if [[ -f "/etc/systemd/system/getty@tty$PH_APP_TTY.service.d/autologin.conf" ]]
+        if [[ -f "/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/autologin.conf" ]]
         then
-                printf "%4s%s\n" "" "- Autologin configuration for 'TTY$PH_APP_TTY' is 'Present'" >>"$PH_TMP_DIR/reported_issues"
+                printf "%4s%s\n" "" "- Autologin configuration for 'tty${PH_APP_TTY}' is present" >>"${PH_TMP_DIR}/reported_issues"
 		PH_RET_CODE="1"
         fi
 done
 if [[ -f /etc/systemd/system/getty@tty1.service.d/autostart.conf ]]
 then
-        printf "%4s%s\n" "" "- 'TTY1' StartApp configuration is 'Present'" >>"$PH_TMP_DIR/reported_issues"
+        printf "%4s%s\n" "" "- StartApp configuration for 'tty1' is present" >>"${PH_TMP_DIR}/reported_issues"
 	PH_RET_CODE="1"
 fi
-if [[ "$PH_PIEH_STARTAPP" != "none" ]]
+if [[ ! -f "${PH_TMP_DIR}/.first_run" ]]
 then
-        printf "%4s%s\n" "" "- PH_PIEH_STARTAPP is set to '$PH_PIEH_STARTAPP' -> Should be 'none'" >>"$PH_TMP_DIR/reported_issues"
+	printf "%4s%s\n" "" "- Temporary file '${PH_TMP_DIR}/.first_run' is 'Missing'" >>"${PH_TMP_DIR}/reported_issues"
 	PH_RET_CODE="1"
 fi
-if [[ "$PH_RET_CODE" -ne "0" ]]
-then
-	if [[ ! -f "${PH_TMP_DIR}/.first_run" ]]
-	then
-		printf "%4s%s\n" "" "- File '${PH_TMP_DIR}/.first_run' is 'Missing'" >>"${PH_TMP_DIR}/reported_issues"
-		PH_RET_CODE="1"
-	fi
-else
+[[ "$PH_RET_CODE" -eq "0" ]] && \
 	"$PH_SUDO" rm "${PH_TMP_DIR}/reported_issues" 2>/dev/null
-fi
 return "$PH_RET_CODE"
 }
 
