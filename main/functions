@@ -907,6 +907,7 @@ declare PH_FILE=""
 declare -i PH_RET_CODE="0"
 declare -i PH_APP_TTY="0"
 
+set -x
 printf "%2s%s\n\n" "" "While PieHelper configuration state is 'Unconfigured' :" >>"${PH_TMP_DIR}/reported_issues"
 for PH_i in sup int cont os defaults alloweds
 do
@@ -992,6 +993,7 @@ then
 fi
 [[ "$PH_RET_CODE" -eq "0" ]] && \
 	"$PH_SUDO" rm "${PH_TMP_DIR}/reported_issues" 2>/dev/null
+set +x
 return "$PH_RET_CODE"
 }
 
