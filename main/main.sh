@@ -32,7 +32,7 @@ PH_TEMPLATES_DIR="${PH_FILES_DIR}/templates"
 PH_EXCLUDES_DIR="${PH_FILES_DIR}/excludes"
 PH_SUPPORTED_DISTROS=("Archlinux" "Debian")
 PH_SUPPORTED_DEBIAN_RELS=("jessie" "stretch" "buster" "bullseye")
-PH_CHECK_SUPPORTED=("${PH_SUPPORTED_DISTROS[@]//Debian/"${PH_SUPPORTED_DEBIAN_RELS[@]}"}")
+PH_CHECK_SUPPORTED=(${PH_SUPPORTED_DISTROS[@]//Debian/"${PH_SUPPORTED_DEBIAN_RELS[@]}"})
 PH_VERSION=""
 PH_DISTRO=""
 PH_DISTRO_REL=""
@@ -121,7 +121,7 @@ done
 
 # Load distribution configuration
 
-for PH_i in "${PH_CHECK_SUPPORTED[*]}"
+for PH_i in "${PH_CHECK_SUPPORTED[@]}"
 do
         if [[ ! -f "${PH_CONF_DIR}/distros/${PH_i}.conf" || ! -r "${PH_CONF_DIR}/distros/${PH_i}.conf" ]]
         then
