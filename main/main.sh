@@ -104,7 +104,7 @@ export LD_LIBRARY_PATH PATH
 
 # Load all relevant module declarations
 
-for PH_i in functions functions.user functions.update $(echo -n "${PH_SUPPORTED_DISTROS[@]}" | nawk '{ for (i=1;i<=NF;i++) { printf "functions." $i ; if (i<NF) { printf " " }}}')
+for PH_i in functions functions.user functions.update $(echo -n "${PH_SUPPORTED_DISTROS[@]}" | nawk '{ for (i=1;i<=NF;i++) { printf "distros/functions." $i ; if (i<NF) { printf " " }}}')
 do
 	if [[ -f "${PH_MAIN_DIR}/${PH_i}" && -r "${PH_MAIN_DIR}/${PH_i}" ]]
 	then
