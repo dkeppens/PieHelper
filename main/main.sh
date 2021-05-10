@@ -30,10 +30,12 @@ PH_FILES_DIR="${PH_SCRIPTS_DIR}/../files"
 PH_MENUS_DIR="${PH_FILES_DIR}/menus"
 PH_TEMPLATES_DIR="${PH_FILES_DIR}/templates"
 PH_EXCLUDES_DIR="${PH_FILES_DIR}/excludes"
-PH_SUPPORTED_DISTROS+=("Archlinux" "jessie" "stretch" "buster" "bullseye")
+PH_SUPPORTED_DISTROS=("Archlinux" "Debian")
+PH_SUPPORTED_DEBIAN_RELS=("jessie" "stretch" "buster" "bullseye")
+PH_CHECK_SUPPORTED=("${PH_SUPPORTED_DISTROS[@]//Debian/"${PH_SUPPORTED_DEBIAN_RELS[@]}"}")
 PH_VERSION=""
 PH_DISTRO=""
-PH_SPEC_DISTRO=""
+PH_DISTRO_REL=""
 PH_RUN_USER=""
 PH_SUDO=""
 PH_PI_MODEL="$(nawk '$0 ~ /Raspberry Pi/ { \
@@ -47,7 +49,7 @@ PH_PI_MODEL="$(nawk '$0 ~ /Raspberry Pi/ { \
 
 if [[ "$(dtoverlay -l 2>/dev/null | grep -E "vc4-(f)*kms-v3d" >/dev/null ; echo "$?")" -eq "0" || \
 	( "$PH_PI_MODEL" == "pi4" && "$(dtoverlay -l 2>/dev/null | grep -E "vc4-kms-v3d-pi4" >/dev/null ; echo "$?")" -eq "0" ) || \
-	"$(ls -ld /sys/firmware/devicetree/base/chosen/framebuffer\@* 2>/dev/null | wc -l)" -gt "0" ]]
+	"$(find /sys/firmware/devicetree/base/chosen -type d -name "framebuffer@*" 2>/dev/null | wc -l)" -gt "0" ]]
 then
 	PH_FILE_SUFFIX="_GL"
 else
@@ -55,7 +57,7 @@ else
 fi
 
 export PH_SCRIPTS_DIR PH_INST_DIR PH_BASE_DIR PH_BUILD_DIR PH_SNAPSHOT_DIR PH_MNT_DIR PH_CONF_DIR PH_MAIN_DIR PH_TMP_DIR PH_FILES_DIR PH_MENUS_DIR PH_EXCLUDES_DIR PH_TEMPLATES_DIR
-export PH_VERSION PH_DISTRO PH_SPEC_DISTRO PH_RUN_USER PH_SUDO PH_PI_MODEL PH_FILE_SUFFIX PH_SUPPORTED_DISTROS
+export PH_VERSION PH_DISTRO PH_DISTRO_REL PH_RUN_USER PH_SUDO PH_PI_MODEL PH_FILE_SUFFIX PH_SUPPORTED_DISTROS PH_SUPPORTED_DEBIAN_RELS PH_CHECK_SUPPORTED
 
 # Global variable declarations related to rollback
 
@@ -85,11 +87,11 @@ declare -ix PH_ROLLBACK_DEPTH="0"
 if [[ -f /usr/bin/pacman ]]
 then
 	PH_DISTRO="Archlinux"
-	PH_SPEC_DISTRO="Archlinux"
+	PH_DISTRO_REL="Archlinux"
 else
 	PH_DISTRO="Debian"
 	[[ -L "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" ]] && \
-		PH_SPEC_DISTRO="$(find "${PH_CONF_DIR}/distros" -name "${PH_DISTRO}.conf" -mount -exec ls -l {} \; 2>/dev/null | nawk -F"/" '{ \
+		PH_DISTRO_REL="$(find "${PH_CONF_DIR}/distros" -name "${PH_DISTRO}.conf" -mount -exec ls -l {} \; 2>/dev/null | nawk -F"/" '{ \
 				print substr($NF,1,length($NF)-5) \
 			}')"
 fi
@@ -119,7 +121,7 @@ done
 
 # Load distribution configuration
 
-for PH_i in "${PH_SUPPORTED_DISTROS[@]}"
+for PH_i in "${PH_CHECK_SUPPORTED[@]}"
 do
         if [[ ! -f "${PH_CONF_DIR}/distros/${PH_i}.conf" || ! -r "${PH_CONF_DIR}/distros/${PH_i}.conf" ]]
         then
@@ -129,10 +131,10 @@ done
 
 # Set version
 
-PH_VERSION="$(cat "${PH_FILES_DIR}/VERSION" 2>/dev/null)"
+PH_VERSION="$(cat "${PH_CONF_DIR}/VERSION" 2>/dev/null)"
 if [[ "$PH_VERSION" != +([[:digit:]])\.+([[:digit:]]) ]]
 then
-	ph_set_result -a -m "Reinstallation of PieHelper is required (Missing or corrupted critical config file '${PH_FILES_DIR}/VERSION')"
+	ph_set_result -a -m "Reinstallation of PieHelper is required (Missing or corrupted critical config file '${PH_CONF_DIR}/VERSION')"
 fi
 
 # Load distro-specific configuration
@@ -141,7 +143,7 @@ source "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" >/dev/null 2>&1
 
 # Load controller settings and configuration of all supported and default applications
 
-PH_PARSE_FILES+=("${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}")
+PH_PARSE_FILES+=("${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}")
 if [[ -f "${PH_CONF_DIR}/supported_apps" ]]
 then
 	PH_PARSE_FILES+=("${PH_CONF_DIR}/supported_apps")

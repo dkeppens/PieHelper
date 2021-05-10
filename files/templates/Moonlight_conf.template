@@ -65,7 +65,8 @@ PH_MOON_CMD_OPTS='-${PH_MOON_RES} -bitrate ${PH_MOON_BITRATE} -packetsize ${PH_M
 											#   to the application's option determining the controller amount unless all event device parameters are being removed
 											#   For Moonlight, the number of event-based input devices cannot be zero
 											# - PH_MOON_SRV should always be the last option passed
-											# - Default is '-${PH_MOON_RES} -bitrate ${PH_MOON_BITRATE} -packetsize ${PH_MOON_PCKTSIZE} -width ${PH_MOON_WIDTH} -height ${PH_MOON_HEIGHT} -app "$PH_MOON_GAME" -input /dev/input/eventPH_CTRL1 ${PH_MOON_SRV}'
+											# - Default is '-${PH_MOON_RES} -bitrate ${PH_MOON_BITRATE} -packetsize ${PH_MOON_PCKTSIZE} -width ${PH_MOON_WIDTH} -height ${PH_MOON_HEIGHT}
+											#   -app "$PH_MOON_GAME" -input /dev/input/eventPH_CTRL1 ${PH_MOON_SRV}'
 PH_MOON_RES='1080'									# - This maps to one of the resolution-specific parameters of Moonlight and determines your output resolution
 											# - Default is '1080'
 											# - Allowed values are '720' '1080' and '4k'

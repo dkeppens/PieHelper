@@ -32,7 +32,7 @@ declare -l PH_APPL=""
 
 PH_APPL="${PH_APP:0:3}"
 printf "%8s%s\n" "" "--> Adding configure function for application '${PH_APP}' to codebase file '${PH_MAIN_DIR}/functions.user'"
-if cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
+if ph_check_app_state_validity -a "$PH_APP" -q -d
 then
 	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Nothing to do since ${PH_APP} is not an out-of-scope application"
 	ph_set_result -r 0
@@ -67,7 +67,7 @@ declare -l PH_APPL=""
 
 PH_APPL="${PH_APP:0:3}"
 printf "%8s%s\n" "" "--> Removing configure function for application '${PH_APP}' from codebase file '${PH_MAIN_DIR}/functions.user'"
-if cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
+if ph_check_app_state_validity -a "$PH_APP" -q -d
 then
 	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Nothing to do since ${PH_APP} is not an out-of-scope application"
 	ph_set_result -r 0
@@ -596,7 +596,7 @@ do
 done
 for PH_i in GL X
 do
-	if ! ph_check_object_existence -q -o "${PH_CONF_DIR}/default_apps_${PH_i}"
+	if ! ph_check_object_existence -q -o "${PH_FILES_DIR}/default_apps_${PH_i}"
 	then
 		ph_show_result
 		exit "$?"
@@ -647,7 +647,7 @@ else
 fi
 if [[ ! -L "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" && "$PH_DISTRO" == "Debian" ]]
 then
-        printf "%4s%s\n" "" "- Debian release symbolic link is 'Missing'" >>"${PH_TMP_DIR}/reported_issues"
+        printf "%4s%s\n" "" "- ${PH_DISTRO} release symbolic link is 'Missing'" >>"${PH_TMP_DIR}/reported_issues"
 	PH_RET_CODE="1"
 fi
 if [[ -f "$PH_FILES_DIR/auto_update_denied" ]]
@@ -922,7 +922,7 @@ if [[ "$PH_DISTRO" == "Debian" ]]
 then
 	if ph_check_object_existence -q -o "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf"
 	then
-		printf "%4s%s\n" "" "- Debian release symbolic link is 'Present'" >>"${PH_TMP_DIR}/reported_issues"
+		printf "%4s%s\n" "" "- ${PH_DISTRO} release symbolic link is 'Present'" >>"${PH_TMP_DIR}/reported_issues"
 		PH_RET_CODE="1"
 	fi
 fi
@@ -930,7 +930,7 @@ for PH_i in Ctrls $(nawk 'BEGIN { \
 		ORS =  " " \
 	} { \
 		print $1 \
-	}' "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null)
+	}' "${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null)
 do
 	if ph_check_object_existence -q -o "${PH_CONF_DIR}/${PH_i}.conf"
 	then
@@ -1138,7 +1138,7 @@ else
 		PH_DIR="$PH_CONF_DIR"
 		PH_FILE="controller_cli_ids" ;;
 			*/default_apps_*)
-		PH_DIR="$PH_CONF_DIR"
+		PH_DIR="$PH_FILES_DIR"
 		PH_TYPE="Unique"
 		PH_FILE="default_apps_${PH_OBJECT##*_}" ;;
 			int)
@@ -1152,10 +1152,12 @@ else
 		PH_FILE="options.${PH_OBJECT}" ;;
 			*/VERSION)
 		PH_TYPE="Unique" ;;
-			*/buster.*|*/jessie.*|*/stretch.*|*/bullseye.*|*/Archlinux.*)
+			`echo -n "${PH_CHECK_SUPPORTED[@]}" | nawk '{ for (i=1;i<=NF;i++) { printf "%s%s", "*/" $i, ".*" ; if (i<NF) { printf "|" }}}'`)
 		PH_TYPE="Unique" ;;
-			*/Debian.conf)
-		PH_OBJECT_TYPE="link" ;;
+			`echo -n "${PH_SUPPORTED_DISTROS[@]}" | nawk '{ for (i=1;i<=NF;i++) { printf "%s%s", "*/" $i, ".conf" ; if (i<NF) { printf "|" }}}'`)
+		[[ "$(declare -p "PH_SUPPORTED_$(echo "$(sed 's/\.conf//'<<<"${PH_OBJECT//"${PH_CONF_DIR}/distros/"/}_RELS")" | \
+			tr "[:lower:]" "[:upper:]")" 2>/dev/null)" == "declare -ax"* ]] && \
+			PH_OBJECT_TYPE="link" ;;
 			*.conf)
 		: ;;
 			*/PieHelper.lst|*/OptsManagement_PieHelper.lst|*/AppManagement_PieHelper.lst|*/TTYManagement_PieHelper.lst)
@@ -1452,16 +1454,16 @@ then
 	ph_run_with_rollback -c "ph_git_clone_master -d '${PH_UPDATE_DIR}' -n PieHelper -r 'https://github.com/dkeppens/PieHelper.git'" || \
 		return 1
 	printf "%8s%s\n" "" "--> Checking for available PieHelper updates"
-	PH_NEW_VERSION="$(cat "${PH_UPDATE_DIR}/PieHelper${PH_FILES_DIR##*PieHelper}/VERSION" 2>/dev/null)"
+	PH_NEW_VERSION="$(cat "${PH_UPDATE_DIR}/PieHelper${PH_CONF_DIR##*PieHelper}/VERSION" 2>/dev/null)"
 	if [[ "$PH_VERSION" == "$PH_NEW_VERSION" ]]
 	then
 		printf "%10s\033[32m%s\033[0m\n" "" "OK (No available updates)"
 		ph_run_with_rollback -l -c "ph_undo_git_clone_master -d '${PH_UPDATE_DIR}' -n PieHelper -r 'https://github.com/dkeppens/PieHelper.git'"
 		return "$?"
 	else
-		printf "%10s\033[32m%s\033[0m\n" "" "OK (Found update '$PH_NEW_VERSION')"
+		printf "%10s\033[32m%s\033[0m\n" "" "OK (Found update '${PH_NEW_VERSION}')"
 	fi
-	printf "%8s%s\n" "" "--> Checking for allowed 'auto_update'"
+	printf "%8s%s\n" "" "--> Checking if auto_update is allowed"
 	if ph_check_object_existence -q -o "${PH_UPDATE_DIR}/PieHelper${PH_FILES_DIR##*PieHelper}/auto_update_denied"
 	then
 		printf "%10s\033[33m%s\033[0m\n" "" "Warning : No"
@@ -1481,9 +1483,35 @@ then
 	else
 		printf "%10s\033[32m%s\033[0m\n" "" "OK (Yes)"
 		printf "%8s%s\n\n" "" "--> Listing new changes since last update"
-		nawk -v oldver="^VERSION ${PH_VERSION} -" -v newver="^VERSION ${PH_NEW_VERSION} -" 'BEGIN { flag = 0 } $0 ~ oldver { getline ; while ($0 !~ /^VERSION /) { getline } ; flag = 1 ; print ; next }	
-														$0 ~ newver { print $0 ; getline ; while ($0 !~ /^VERSION /) { print ; if (getline<=0) { exit 0 }}}
-														{ if (flag==1) { print ; next } else { next }}' "${PH_UPDATE_DIR}/PieHelper/VERSIONS" 2>/dev/null | more
+		nawk -v oldver="^VERSION ${PH_VERSION} -" -v newver="^VERSION ${PH_NEW_VERSION} -" 'BEGIN {
+				flag = 0
+			}
+			$0 ~ oldver {
+				getline ;
+				while ($0 !~ /^VERSION /) {
+					getline
+				} ;
+				flag = 1 ;
+				print ;
+				next
+			}	
+			$0 ~ newver {
+				print $0 ;
+				getline ;
+				while ($0 !~ /^VERSION /) {
+					print ;
+					if (getline<=0) {
+						exit 0
+					}
+				}
+			} {
+				if (flag==1) {
+					print ;
+					 next
+				} else {
+					next
+				}
+			}' "${PH_UPDATE_DIR}/PieHelper${PH_FILES_DIR##*PieHelper}/VERSIONS" 2>/dev/null | more
 		printf "\n\033[36m%s\033[0m\n\n" "Important : - Updating will stop all running applications"
 		while [[ "$PH_ANSWER" != @(y|n) ]]
 		do
@@ -1502,17 +1530,28 @@ then
 			((PH_COUNT++))
 		done
 	fi
-	for PH_APP in $(nawk 'BEGIN { ORS = " " } $1 !~ /^PieHelper$/ && $3 !~ /^-$/ { print $1 }' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null)
+	for PH_APP in $(nawk 'BEGIN { \
+			ORS = " " \
+		} \
+		$1 !~ /^PieHelper$/ && $3 !~ /^-$/ { \
+			print $1 \
+		}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null)
 	do
 		printf "%8s%s\n" "" "--> Checking ${PH_APP} application state"
 		PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
 		PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
 		PH_APP_CMD="$(sed "s/#PH_TTY#/${PH_APP_TTY}/g" <<<"$PH_APP_CMD")"
-		[[ "$PH_APP" == "Bash" ]] && PH_APP_CMD="bash"
+		[[ "$PH_APP" == "Bash" ]] && \
+			PH_APP_CMD="bash"
 		if pgrep -t "tty${PH_APP_TTY}" -f "$PH_APP_CMD" >/dev/null
 		then
 			printf "%10s\033[33m%s\033[0m\n" "" "Warning : ${PH_APP} is running on it's allocated TTY -> Stopping"
-			ph_do_app_action stop "$PH_APP" force || (printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; "$PH_SUDO" rm -r /tmp/PieHelper 2>/dev/null ; return 1) || return 1
+			if ! ph_do_app_action stop "$PH_APP" force
+			then
+				printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED"
+				"$PH_SUDO" rm -r /tmp/PieHelper 2>/dev/null
+				return 1
+			fi
 		else
 			printf "%10s\033[32m%s\033[0m\n" "" "OK (Not 'Running')"
 		fi
@@ -1524,16 +1563,23 @@ then
 		if [[ ! -d "${PH_BASE_DIR}/${PH_i##*/update}" && "${PH_BASE_DIR}/${PH_i##*/update}" != "${PH_BASE_DIR}/PieHelper/mnt/"* ]]
 		then
 			mkdir -p "${PH_BASE_DIR}/${PH_i##*/update}" 2>/dev/null
-			[[ -z "$PH_NEW_DIRS" ]] && PH_NEW_DIRS="${PH_i##*/update}/" || PH_NEW_DIRS="${PH_NEW_DIRS} ${PH_i##*/update}/"
+			[[ -z "$PH_NEW_DIRS" ]] && \
+				PH_NEW_DIRS="${PH_i##*/update}/" || \
+				PH_NEW_DIRS="${PH_NEW_DIRS} ${PH_i##*/update}/"
 		fi
 	done
 	printf "%10s\033[32m%s\033[0m\n" "" "OK"
 	printf "%8s%s\n" "" "--> Updating 'Unique' and optional non-codebase files"
-	for PH_i in /PieHelper/ /PieHelper/mnt/ /PieHelper/tmp/ /PieHelper/builds/ /PieHelper/snapshots/ /PieHelper/conf/ /PieHelper/conf/distros/ /PieHelper/files/ /PieHelper/files/templates/ /PieHelper/files/excludes/ /PieHelper/files/menus/
+	for PH_i in /PieHelper/ /PieHelper${PH_MNT_DIR##*PieHelper}/ /PieHelper${PH_TMP_DIR##*PieHelper}/ /PieHelper${PH_BUILD_DIR##*PieHelper}/ \
+		/PieHelper${PH_SNAPSHOT_DIR##*PieHelper}/ /PieHelper${PH_CONF_DIR##*PieHelper}/ /PieHelper${PH_CONF_DIR##*PieHelper}/distros/ \
+		/PieHelper${PH_FILES_DIR##*PieHelper}/ /PieHelper${PH_TEMPLATES_DIR##*PieHelper}/ /PieHelper${PH_EXCLUDES_DIR##*PieHelper}/ \
+		/PieHelper${PH_MENUS_DIR##*PieHelper}/
 	do
 		for PH_j in $(ls "${PH_UPDATE_DIR}${PH_i}" 2>/dev/null)
 		do
-			[[ -d "${PH_UPDATE_DIR}${PH_i}${PH_j}" || "${PH_j}" == @(*!(PieHelper).lst|*.conf|@(integrated|supported)_apps|OS.defaults|controller_cli_ids|options.alloweds|options.defaults) ]] && continue
+			[[ -d "${PH_UPDATE_DIR}${PH_i}${PH_j}" || \
+				"${PH_j}" == @(*!(PieHelper).lst|*.conf|@(integrated|supported)_apps|OS.defaults|controller_cli_ids|options.@(allowed|default)s) ]] && \
+				continue
 			cp -p "${PH_UPDATE_DIR}${PH_i}${PH_j}" "${PH_BASE_DIR}${PH_i}${PH_j##*/}" 2>/dev/null
 		done
 	done
@@ -1541,17 +1587,20 @@ then
 	do
 		for PH_j in $(ls "${PH_UPDATE_DIR}${PH_i}" 2>/dev/null)
 		do
-			[[ -d "${PH_BASE_DIR}${PH_i}${PH_j}" ]] && continue
+			[[ -d "${PH_BASE_DIR}${PH_i}${PH_j}" ]] && \
+				continue
 			cp -p "${PH_UPDATE_DIR}${PH_i}${PH_j}" "${PH_BASE_DIR}${PH_i}${PH_j}" 2>/dev/null
 		done
 	done
 	printf "%10s\033[32m%s\033[0m\n" "" "OK"
 	printf "%8s%s\n" "" "--> Updating 'Unique' codebase files"
-	for PH_i in /PieHelper/pre_cmds/ /PieHelper/post_cmds/ /PieHelper/main/ /PieHelper/main/distros/ /PieHelper/scripts/app/expect/
+	for PH_i in /PieHelper${PH_SCRIPTS_DIR##*PieHelper}/app/pre_cmds/ /PieHelper${PH_SCRIPTS_DIR##*PieHelper}/app/post_cmds/ \
+		/PieHelper${PH_MAIN_DIR##*PieHelper}/ /PieHelper${PH_MAIN_DIR##*PieHelper}/distros/ /PieHelper${PH_SCRIPTS_DIR##*PieHelper}/app/expect/
 	do
 		for PH_j in $(ls "${PH_UPDATE_DIR}${PH_i}" 2>/dev/null)
 		do
-			[[ -d "${PH_UPDATE_DIR}${PH_i}${PH_j}" || "$PH_i" == functions.user ]] && continue
+			[[ -d "${PH_UPDATE_DIR}${PH_i}${PH_j}" || "$PH_i" == functions.user ]] && \
+				continue
 			cp -p "${PH_UPDATE_DIR}${PH_i}${PH_j}" "${PH_BASE_DIR}${PH_i}${PH_j}" 2>/dev/null
 		done
 	done
@@ -1567,8 +1616,14 @@ then
 	printf "%8s%s\n" "" "--> Updating 'Unique' menus"
 	for PH_i in $(ls "${PH_UPDATE_DIR}/PieHelper${PH_MENUS_DIR##*PieHelper}/" 2>/dev/null)
 	do
-		[[ -d "${PH_BASE_DIR}/PieHelper${PH_MENUS_DIR##*PieHelper}/${PH_i}" ]] && continue
-		if [[ "$PH_i" != @(OptsManagement.lst|TTYManagement.lst|AppManagement.lst|$(nawk 'BEGIN { ORS = "|" } $1 !~ /^PieHelper$/ { print $1 ".lst|" "OptsManagement_" $1 ".lst|" "TTYManagement_" $1 ".lst|" "AppManagement_" $1 ".lst" }' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)) ]]
+		[[ -d "${PH_BASE_DIR}/PieHelper${PH_MENUS_DIR##*PieHelper}/${PH_i}" ]] && \
+			continue
+		if [[ "$PH_i" != @(OptsManagement.lst|TTYManagement.lst|AppManagement.lst|$(nawk 'BEGIN { \
+				ORS = "|" \
+			} \
+			$1 !~ /^PieHelper$/ { \
+				print $1 ".lst|" "OptsManagement_" $1 ".lst|" "TTYManagement_" $1 ".lst|" "AppManagement_" $1 ".lst" \
+			}' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)) ]]
 		then
 			cp -p "${PH_UPDATE_DIR}/PieHelper${PH_MENUS_DIR##*PieHelper}/${PH_i}" "${PH_MENUS_DIR}/${PH_i}" 2>/dev/null
 		fi
@@ -1577,30 +1632,21 @@ then
 	printf "%8s%s\n" "" "--> Sourcing new 'Shared' codebase"
 	source "${PH_MAIN_DIR}/functions.update" 2>/dev/null
 	printf "%10s\033[32m%s\033[0m\n" "" "OK"
-	for PH_APP in $(nawk 'BEGIN { ORS = " " } { print $1 } END { printf " Ctrls" }' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)
+	for PH_APP in $(ph_get_app_list_by_state -s Supported -t minimum)
 	do
-		ph_create_app_conf_file "$PH_APP" >/dev/null
+		ph_run_with_rollback -c "ph_create_app_items -a '${PH_APP}' -t support" || \
+			return 1
 	done
-	ph_run_with_rollback -c "ph_retrieve_stored_options"
-	for PH_APP in $(nawk 'BEGIN { ORS = " " } $1 !~ /^PieHelper$/ { print $1 }' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)
+	ph_run_with_rollback -c "ph_retrieve_stored_options" || \
+		return 1
+	for PH_APP in $(ph_get_app_list_by_state -s Integrated -t minimum)
 	do
-		ph_create_app_menus "$PH_APP" >/dev/null
-	done
-	for PH_APP in $(nawk 'BEGIN { ORS = " " } { print $1 }' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null)
-	do
-		ph_create_app_scripts "$PH_APP" >/dev/null
-	done
-	for PH_i in alloweds defaults
-	do
-		>"${PH_FILES_DIR}/options.${PH_i}" 2>/dev/null
-		for PH_APP in $(nawk 'BEGIN { ORS = " " } { print $1 } END { print "Ctrls" }' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)
-		do
-			eval "ph_create_app_${PH_i}" "$PH_APP" >/dev/null
-		done
+		ph_run_with_rollback -c "ph_create_app_items -a '${PH_APP}' -t integrate" || \
+			return 1
 	done
 	ph_secure_pieh -t delayed
 	printf "%8s%s\n" "" "--> Cleaning up"
-	"$PH_SUDO" rm -r /tmp/PieHelper 2>/dev/null
+	"$PH_SUDO" rm -r /${PH_UPDATE_DIR}/PieHelper 2>/dev/null
 	"$PH_SUDO" rm "${PH_TMP_DIR}/.first_run" 2>/dev/null
 	"$PH_SUDO" rm "${PH_FILES_DIR}/auto_update_denied" 2>/dev/null
 	printf "%10s\033[32m%s\033[0m\n\n" "" "OK"
@@ -1836,9 +1882,9 @@ declare PH_NEW_VERSION="$1"
 printf "%8s%s\n" "" "--> Updating PieHelper version to '${PH_NEW_VERSION}'"
 if [[ "$PH_VERSION" != "$PH_NEW_VERSION" ]]
 then
-	if ph_run_with_rollback -c "ph_remove_line_from_file -r -f '${PH_FILES_DIR}/VERSION' -l '${PH_VERSION}"
+	if ph_run_with_rollback -c "ph_remove_line_from_file -r -f '${PH_CONF_DIR}/VERSION' -l '${PH_VERSION}"
 	then
-		if ph_run_with_rollback -c "ph_add_line_to_file -r -f '${PH_FILES_DIR}/VERSION' -l '${PH_NEW_VERSION}"
+		if ph_run_with_rollback -c "ph_add_line_to_file -r -f '${PH_CONF_DIR}/VERSION' -l '${PH_NEW_VERSION}"
 		then
 			PH_VERSION="$PH_NEW_VERSION"
 			ph_add_value_to_param -p PH_PIEH_VERSION -v "$PH_VERSION"
@@ -1871,7 +1917,7 @@ then
 	echo -n "$PH_APP_CMD"
 	return 0
 fi
-PH_APP_CMD="$(nawk -v app=^"$PH_APP"$ 'BEGIN { ORS=" " } $1 ~ app { for (i=3;i<=NF;i++) { if (i==NF) { ORS="" ; print $i } else { print $i }}}' "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null)"
+PH_APP_CMD="$(nawk -v app=^"$PH_APP"$ 'BEGIN { ORS=" " } $1 ~ app { for (i=3;i<=NF;i++) { if (i==NF) { ORS="" ; print $i } else { print $i }}}' "${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null)"
 [[ -z "$PH_APP_CMD" ]] && \
 	return 1
 [[ "$PH_APP" == "PieHelper" ]] && \
@@ -1889,7 +1935,7 @@ declare PH_APP=""
 
 PH_APP="$(nawk -v appcmd="$PH_APP_CMD"$ 'BEGIN { storevar = "" } { storevar = $1 ; $1 = "" ; $2 = "" ; if ($0~appcmd) { print storevar ; exit 0 } { next }}' "$PH_CONF_DIR/supported_apps" 2>/dev/null)"
 [[ -n "$PH_APP" ]] && echo -n "$PH_APP" && return 0
-PH_APP="$(nawk -v appcmd="$PH_APP_CMD"$ 'BEGIN { storevar = "" } { storevar = $1 ; $1 = "" ; $2 = "" ; if ($0~appcmd) { print storevar ; exit 0 } { next }}' "$PH_CONF_DIR/default_apps$PH_FILE_SUFFIX" 2>/dev/null)"
+PH_APP="$(nawk -v appcmd="$PH_APP_CMD"$ 'BEGIN { storevar = "" } { storevar = $1 ; $1 = "" ; $2 = "" ; if ($0~appcmd) { print storevar ; exit 0 } { next }}' "$PH_FILES_DIR/default_apps$PH_FILE_SUFFIX" 2>/dev/null)"
 [[ -z "$PH_APP" ]] && return 1 
 echo -n "$PH_APP"
 return 0
@@ -2332,7 +2378,8 @@ OPTARG="$PH_OLDOPTARG"
 ph_configure_"$PH_APPL" 2>/dev/null
 if [[ "$?" -ne "0" ]]
 then
-	if (! cut -f1 "$PH_CONF_DIR"/default_apps"$PH_FILE_SUFFIX" 2>/dev/null | grep -E ^"$PH_APP"$ >/dev/null) && (! functions 2>&1 | grep -E "function ph_configure_""$PH_APPL"' {' >/dev/null)
+	if [[ "$(ph_check_app_state_validity -a "$PH_APP" -q -d ; echo "$?")" -ne "0" && \
+		"$(functions 2>&1 | grep -E "function ph_configure_${PH_APPL} {" >/dev/null ; echo "$?")" -ne "0" ]]
 	then
 		ph_set_result -r 1 -m "User-side development is mandatory for configuration routines of 'Out-of-scope' applications"
 	fi
@@ -2656,7 +2703,7 @@ case "$PH_APP_TYPE" in Unused)
 	then
 		PH_APP_STATE="Reserved"
 	else
-		if ! cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
+		if ! ph_check_app_state_validity -a "$PH_APP" -q -d
 		then
 			[[ "$PH_APPL" == @(x11|kodi|moon|emul|bash|pieh) ]] && \
 				PH_APP_STATE="Reserved"
@@ -2667,7 +2714,7 @@ case "$PH_APP_TYPE" in Unused)
 		PH_APP_STATE="Unused" || \
 		PH_RET_CODE="1" ;;
 		       Default)
-	cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null && \
+	ph_check_app_state_validity -a "$PH_APP" -q -d && \
 		PH_APP_STATE="Default" ;;
 		       *)
 	PH_APP_STATE="$(ph_check_app_state_validity -a "$PH_APP" -q -f -d)"
@@ -5337,7 +5384,7 @@ then
 				ORS = " " \
 			} { \
 				print $1 \
-			}' "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null)
+			}' "${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null)
 		do
 			ph_unsupport_app -a "$PH_APP}" || \
 				return 1
@@ -5500,7 +5547,7 @@ then
 			##### prompt whether to and possibly ph_uninstall_app
 			##### plus add getopts param for passing it, also in confapps_ph.sh
 		fi
-		if ! cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
+		if ! ph_check_app_state_validity -a "$PH_APP" -q -d
 		then
 			ph_run_with_rollback -c "ph_remove_oos_app_code '${PH_APP}'" || \
 				return 1
@@ -5730,7 +5777,7 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 			Unused)
 	ph_run_with_rollback -c true -m "$PH_APP_STATE"
 	printf "%8s%s\n" "" "--> Checking the start command of ${PH_APP}"
-	if ! cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
+	if ! ph_check_app_state_validity -a "$PH_APP" -q -d
 	then
 		if [[ -z "$PH_APP_CMD" ]]
 		then
@@ -5771,7 +5818,7 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 	else
 		PH_APP_INST_STATE="Packageless"
 	fi
-	if [[ "$(cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null ; echo "$?")" -eq "0" && \
+	if [[ "$(ph_check_app_state_validity -a "$PH_APP" -q -d ; echo "$?")" -eq "0" && \
 		"$PH_APP_PKG" != "$(ph_get_app_pkg_from_app_name "$PH_APP")" ]]
 	then
 		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid package -> Setting to default"
@@ -5910,7 +5957,7 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 		return 1
 	ph_run_with_rollback -c "ph_add_app_to_support_file -a '${PH_APP}' -c '${PH_APP_CMD}' -s '${PH_APP_INST_STATE}'" || \
 		return 1
-	if ! cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
+	if ! ph_check_app_state_validity -a "$PH_APP" -q -d
 	then
 		ph_run_with_rollback -c "ph_create_oos_app_code '${PH_APP}'" || \
 			return 1
@@ -7034,58 +7081,75 @@ then
 	return "$?"
 fi
 "$PH_SUDO" rm "${PH_TMP_DIR}/.first_run" 2>/dev/null
-for PH_i in "$PH_SCRIPTS_DIR" "${PH_SCRIPTS_DIR}/../app/expect" "$PH_FILES_DIR" "$PH_MENUS_DIR" "$PH_CONF_DIR" "${PH_CONF_DIR}/distros" "${PH_MAIN_DIR}" "${PH_MAIN_DIR}/distros" "${PH_BASE_DIR}/post_cmds" "${PH_BASE_DIR}/pre_cmds" "$PH_MNT_DIR" "$PH_TMP_DIR" "$PH_BUILD_DIR" "$PH_SNAPSHOT_DIR" "$PH_TEMPLATES_DIR" "$PH_EXCLUDES_DIR"
+for PH_i in "$PH_SCRIPTS_DIR" "${PH_SCRIPTS_DIR}/../app/expect" "$PH_FILES_DIR" "$PH_MENUS_DIR" "$PH_CONF_DIR" "${PH_CONF_DIR}/distros" \
+	"${PH_MAIN_DIR}" "${PH_MAIN_DIR}/distros" "${PH_SCRIPTS_DIR}/app/post_cmds" "${PH_SCRIPTS_DIR}/app/pre_cmds" "$PH_MNT_DIR" \
+	"$PH_TMP_DIR" "$PH_BUILD_DIR" "$PH_SNAPSHOT_DIR" "$PH_TEMPLATES_DIR" "$PH_EXCLUDES_DIR"
 do
-	ph_check_object_existence -o "$PH_i" || return 1
+	ph_check_object_existence -o "$PH_i" || \
+		return 1
 done
-for PH_i in LoginScript StartScript StopScript RestartScript StartScriptPieH StopScriptPieH RestartScriptPieH MovetoPieHScript MovefromPieHScript MoveScript Kodi_conf Moonlight_conf PieHelper_conf Emulationstation_conf Bash_conf X11_conf Ctrls_conf OOSapp_conf
+for PH_i in LoginScript StartScript StopScript RestartScript StartScriptPieH StopScriptPieH RestartScriptPieH MovetoPieHScript \
+	MovefromPieHScript MoveScript Kodi_conf Moonlight_conf PieHelper_conf Emulationstation_conf Bash_conf X11_conf Ctrls_conf \
+	OOSapp_conf
 do
-	ph_check_object_existence -o "${PH_TEMPLATES_DIR}/${PH_i}.template" || return 1
+	ph_check_object_existence -o "${PH_TEMPLATES_DIR}/${PH_i}.template" || \
+		return 1
 done
 for PH_i in default_apps_X default_apps_GL
 do
-	ph_check_object_existence -o "${PH_CONF_DIR}/${PH_i}" || return 1
+	ph_check_object_existence -o "${PH_FILES_DIR}/${PH_i}" || \
+		return 1
 done
-for PH_i in Advanced Controllers Main PieHelper OptsManagement_PieHelper AppManagement_PieHelper TTYManagement_PieHelper OS PS3 PS4 OSdefaults Settings XBOX360
+for PH_i in Advanced Controllers Main PieHelper OptsManagement_PieHelper AppManagement_PieHelper TTYManagement_PieHelper OS PS3 \
+	PS4 OSdefaults Settings XBOX360
 do
-	ph_check_object_existence -o "${PH_MENUS_DIR}/${PH_i}.lst" || return 1
+	ph_check_object_existence -o "${PH_MENUS_DIR}/${PH_i}.lst" || \
+		return 1
 done
-for PH_i in confopts_ph confoper_ph confapps_ph confctrl_ph listblue_ph listmoon_ph confgena_ph confpieh_ph ../post_cmds/Kodi-POST ../post_cmds/PieHelper-POST ../pre_cmds/PieHelper-PRE ../pre_cmds/Kodi-PRE
+for PH_i in confopts_ph confoper_ph confapps_ph confctrl_ph listblue_ph listmoon_ph confgena_ph confpieh_ph app/post_cmds/Kodi-POST \
+	app/post_cmds/PieHelper-POST app/pre_cmds/PieHelper-PRE app/pre_cmds/Kodi-PRE
 do
-	ph_check_object_existence -o "${PH_SCRIPTS_DIR}/${PH_i}.sh" || return 1
+	ph_check_object_existence -o "${PH_SCRIPTS_DIR}/${PH_i}.sh" || \
+		return 1
 done
-for PH_i in Archlinux buster stretch jessie
+for PH_i in "${PH_CHECK_SUPPORTED[@]}"
 do
-	ph_check_object_existence -o "${PH_CONF_DIR}/distros/${PH_i}.conf" || return 1
+	ph_check_object_existence -o "${PH_CONF_DIR}/distros/${PH_i}.conf" || \
+		return 1
 done
-for PH_i in Archlinux Debian
+for PH_i in "${PH_SUPPORTED_DISTROS[@]}"
 do
-	ph_check_object_existence -o "${PH_MAIN_DIR}/distros/functions.${PH_i}" || return 1
+	ph_check_object_existence -o "${PH_MAIN_DIR}/distros/functions.${PH_i}" || \
+		return 1
 done
 for PH_i in functions functions.update functions.user
 do
-	ph_check_object_existence -o "${PH_MAIN_DIR}/${PH_i}" || return 1
+	ph_check_object_existence -o "${PH_MAIN_DIR}/${PH_i}" || \
+		return 1
 done
-ph_check_object_existence -o "${PH_SCRIPTS_DIR}/../app/expect/confctrls.expect" || return 1
-for PH_i in README.md TODO CODE_OF_CONDUCT.md INSTALL LICENSE VERSIONS
+ph_check_object_existence -o "${PH_SCRIPTS_DIR}/../app/expect/confctrls.expect" || \
+	return 1
+for PH_i in README.md TODO CODE_OF_CONDUCT.md INSTALL LICENSE
 do
 	ph_check_object_existence -o "${PH_BASE_DIR}/${PH_i}"
 done
 PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
-"$PH_SUDO" rm "${PH_BASE_DIR}/"!(@(README.md|TODO|CODE_OF_CONDUCT.md|INSTALL|HOWTO|LICENSE|VERSIONS|builds|snapshots|tmp|mnt|main|conf|files|post_cmds|pre_cmds|.git|.github|scripts)) 2>/dev/null
-"$PH_SUDO" rm "${PH_SCRIPTS_DIR}/"!(@(conf*_ph|list_ph|@(re|)start*|stop*|${PH_MOVE_SCRIPTS_REGEX}).sh) 2>/dev/null
+"$PH_SUDO" rm "${PH_BASE_DIR}/"!(@(README.md|TODO|CODE_OF_CONDUCT.md|INSTALL|HOWTO|LICENSE|builds|snapshots|tmp|mnt|main|conf|files|.git|.github|scripts)) 2>/dev/null
+"$PH_SUDO" rm "${PH_SCRIPTS_DIR}/"!(@(conf*_ph|list_ph|@(re|)start*|stop*|${PH_MOVE_SCRIPTS_REGEX})\.sh) 2>/dev/null
 "$PH_SUDO" rm "${PH_SCRIPTS_DIR}/../"!(@(app|user)) 2>/dev/null
-"$PH_SUDO" rm "${PH_SCRIPTS_DIR}/../app/"!(expect) 2>/dev/null
-"$PH_SUDO" rm -r "${PH_SCRIPTS_DIR}/../app/expect/"!(confctrls.expect) 2>/dev/null
-"$PH_SUDO" rm "${PH_MAIN_DIR}/"!(@(distros|functions@(|.@(user|update)))) 2>/dev/null
-"$PH_SUDO" rm -r "${PH_MAIN_DIR}/distros/"!(functions.@(Archlinux|Debian)) 2>/dev/null
-"$PH_SUDO" rm "${PH_FILES_DIR}/"!(@(menus|excludes|templates|VERSION)) 2>/dev/null
-"$PH_SUDO" rm -r "${PH_EXCLUDES_DIR}/"!(@(tar|kodi).excludes) 2>/dev/null
-"$PH_SUDO" rm -r "${PH_TEMPLATES_DIR}/"!(@(LoginScript|StartScript|StopScript|RestartScript|StartScriptPieH|StopScriptPieH|RestartScriptPieH|MovetoPieHScript|MovefromPieHScript|MoveScript|@(Kodi|Moonlight|PieHelper|Emulationstation|Bash|X11|Ctrls|OOSapp)_conf).template) 2>/dev/null
-"$PH_SUDO" rm "${PH_CONF_DIR}/"!(@(distros|@(supported|integrated)_apps|default_apps@(X|GL)|OS.defaults|controller_cli_ids)) 2>/dev/null
-"$PH_SUDO" rm -r "${PH_CONF_DIR}/distros/"!(@(Archlinux|Debian|buster|jessie|stretch|bullseye).conf) 2>/dev/null
+"$PH_SUDO" rm "${PH_SCRIPTS_DIR}/../app/"!(@(expect|@(pre|post)_cmds)) 2>/dev/null
+"$PH_SUDO" rm -r "${PH_SCRIPTS_DIR}/../app/expect/"!(confctrls\.expect) 2>/dev/null
+"$PH_SUDO" rm -r "${PH_SCRIPTS_DIR}/../app/pre_cmds/"!(@(Kodi|PieHelper)-PRE\.sh) 2>/dev/null
+"$PH_SUDO" rm -r "${PH_SCRIPTS_DIR}/../app/post_cmds/"!(@(Kodi|PieHelper)-POST\.sh) 2>/dev/null
+"$PH_SUDO" rm "${PH_MAIN_DIR}/"!(@(distros|functions@(|\.@(user|update)))) 2>/dev/null
+"$PH_SUDO" rm -r "${PH_MAIN_DIR}/distros/"!(functions\.@($(sed 's/ /\|/g'<<<"${PH_SUPPORTED_DISTROS[@]}"))) 2>/dev/null
+"$PH_SUDO" rm "${PH_FILES_DIR}/"!(@(menus|excludes|templates|VERSIONS|default_apps_@(X|GL))) 2>/dev/null
+"$PH_SUDO" rm -r "${PH_EXCLUDES_DIR}/"!(@(tar|kodi)\.excludes) 2>/dev/null
+"$PH_SUDO" rm -r "${PH_TEMPLATES_DIR}/"!(@(@(Login|@(S|Res)tart|Stop|Move@(to|from)PieH|Move)Script|@(@(Res|S)tart|Stop)ScriptPieH|@(Kodi|Moonlight|PieHelper|Emulationstation|Bash|X11|Ctrls|OOSapp)_conf)\.template) 2>/dev/null
+"$PH_SUDO" rm "${PH_CONF_DIR}/"!(@(distros|@(supported|integrated)_apps|OS.defaults|VERSION|controller_cli_ids)) 2>/dev/null
+"$PH_SUDO" rm -r "${PH_CONF_DIR}/distros/"!(@($(sed 's/ /\|/g'<<<${PH_CHECK_SUPPORTED[@]})).conf) 2>/dev/null
 "$PH_SUDO" rm -r "${PH_MENUS_DIR}/"!(*.lst) 2>/dev/null
-"$PH_SUDO" rm -r "${PH_TMP_DIR}/"!(.first_run) 2>/dev/null
+"$PH_SUDO" rm -r "${PH_TMP_DIR}/"!(.@(first_run|gitignore)) 2>/dev/null
 "$PH_SUDO" rm -r "${PH_BUILD_DIR}/"!(@(PieHelper*.tar|.gitignore)) 2>/dev/null
 "$PH_SUDO" rm -r "${PH_SNAPSHOT_DIR}/"!(@(PieHelper*.tar|.gitignore)) 2>/dev/null
 "$PH_SUDO" rm "${PH_MNT_DIR}/"!(.gitignore) 2>/dev/null
@@ -7236,10 +7300,10 @@ do
 done
 if [[ "$PH_DISTRO" == "Debian" ]]
 then
-        PH_SPEC_DISTRO="$(lsb_release -a 2>/dev/null | nawk '$1 ~ /^Codename:/ { printf $2 }')"
+        PH_DISTRO_REL="$(lsb_release -a 2>/dev/null | nawk '$1 ~ /^Codename:/ { printf $2 }')"
 	if [[ ! -L "$PH_CONF_DIR/distros/$PH_DISTRO.conf" ]]
 	then
-		ph_create_empty_file -t link -s "$PH_CONF_DIR/distros/$PH_SPEC_DISTRO.conf" -d "$PH_CONF_DIR/distros/$PH_DISTRO.conf"
+		ph_create_empty_file -t link -s "$PH_CONF_DIR/distros/$PH_DISTRO_REL.conf" -d "$PH_CONF_DIR/distros/$PH_DISTRO.conf"
 	fi
 fi
 for PH_i in cont os defaults alloweds
@@ -7606,7 +7670,7 @@ for PH_APP in $(nawk 'BEGIN { \
 		ORS = " " \
 	} { \
 		print $1 \
-	}' "${PH_CONF_DIR}/supported_apps" "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null)
+	}' "${PH_CONF_DIR}/supported_apps" "${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null)
 do
 	for PH_i in "${PH_APP_LIST[@]}"
 	do
@@ -7715,27 +7779,27 @@ ph_run_with_rollback -c "ph_install_pkg lsb-release" || \
 	return 1
 if [[ "$PH_DISTRO" == "Debian" ]]
 then
-	printf "%8s%s\n" "" "--> Determining currently installed Debian release"
-        PH_SPEC_DISTRO="$(lsb_release -a 2>/dev/null | nawk '$1 ~ /^Codename:/ { \
+	printf "%8s%s\n" "" "--> Determining currently installed ${PH_DISTRO} release"
+        PH_DISTRO_REL="$(lsb_release -a 2>/dev/null | nawk '$1 ~ /^Codename:/ { \
 			printf $2 \
 		}')"
-	if [[ -z "$PH_SPEC_DISTRO" ]]
+	if [[ -z "$PH_DISTRO_REL" ]]
 	then
-		ph_set_result -m "Unable to determine the currently installed Debian release"
+		ph_set_result -m "Unable to determine the currently installed ${PH_DISTRO} release"
 		ph_run_with_rollback -c false -m "Could not determine" || \
 			return 1
 	fi
-	if [[ ! -f "${PH_CONF_DIR}/distros/${PH_SPEC_DISTRO}.conf" ]]
+	if [[ ! -f "${PH_CONF_DIR}/distros/${PH_DISTRO_REL}.conf" ]]
 	then
-		ph_set_result -m "Debian release '${PH_SPEC_DISTRO}' is currently not supported"
-		ph_run_with_rollback -c false -m "$PH_SPEC_DISTRO" || \
+		ph_set_result -m "${PH_DISTRO} release '${PH_DISTRO_REL}' is currently not supported"
+		ph_run_with_rollback -c false -m "$PH_DISTRO_REL" || \
 			return 1
 	else
-		ph_run_with_rollback -c true -m "${PH_SPEC_DISTRO}"
+		ph_run_with_rollback -c true -m "${PH_DISTRO_REL}"
 	fi
 	if [[ ! -L "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" ]]
 	then
-		ph_run_with_rollback -c "ph_create_empty_file -t link -s '${PH_CONF_DIR}/distros/${PH_SPEC_DISTRO}.conf' -d '${PH_CONF_DIR}/distros/${PH_DISTRO}.conf'" || \
+		ph_run_with_rollback -c "ph_create_empty_file -t link -s '${PH_CONF_DIR}/distros/${PH_DISTRO_REL}.conf' -d '${PH_CONF_DIR}/distros/${PH_DISTRO}.conf'" || \
 			return 1
 	fi
 	printf "%8s%s\n" "" "--> Loading release-dependent codebase"
@@ -8065,7 +8129,7 @@ then
 fi
 case "$PH_KEYWORD" in def)
 		PH_DISP_APP_STATE="Default"
-		PH_FILE=default_apps"$PH_FILE_SUFFIX" ;;
+		PH_FILE="default_apps${PH_FILE_SUFFIX}" ;;
 		      sup)
 		PH_DISP_APP_STATE="Supported"
 		PH_FILE="supported_apps" ;;
@@ -8256,7 +8320,7 @@ do
 		then
 			if [[ "$PH_APP_SCOPE" == "Out-of-scope" ]]
 			then
-				if cut -f1 "$PH_CONF_DIR"/default_apps"$PH_FILE_SUFFIX" 2>/dev/null | grep -E ^"$PH_i" >/dev/null
+				if ph_check_app_state_validity -a "$PH_i" -q -d
 				then
 					printf "\n"
 					printf "%4s\033[33m%s\033[0m\n" "" "'$PH_i' not an 'Out-of-scope' application -> Skipping"
@@ -8267,7 +8331,7 @@ do
 			fi
 			if [[ "$PH_APP_SCOPE" == "Default" ]]
 			then
-				if ! cut -f1 "$PH_CONF_DIR"/default_apps"$PH_FILE_SUFFIX" 2>/dev/null | grep -E ^"$PH_i" >/dev/null
+				if ! ph_check_app_state_validity -a "$PH_i" -q -d
 				then
 					printf "\n"
 					printf "%4s\033[33m%s\033[0m\n" "" "'$PH_i' not a 'Default' application -> Skipping"
@@ -8419,18 +8483,18 @@ declare -i PH_RET_CODE="0"
 set +o pipefail
 PH_APPU="${PH_APP:0:4}"
 PH_APPL="${PH_APP:0:4}"
-declare -n PH_APPU_POST_CMD="PH_""$PH_APPU""_POST_CMD"
-declare -n PH_APPU_PRE_CMD="PH_""$PH_APPU""_PRE_CMD"
-declare -n PH_APPU_CMD_OPTS="PH_""$PH_APPU""_CMD_OPTS"
-declare -n PH_APPU_NUM_CTRL="PH_""$PH_APPU""_NUM_CTRL"
-declare -n PH_APPU_USE_CTRL="PH_""$PH_APPU""_USE_CTRL"
-declare -n PH_APPU_CIFS_SRV="PH_""$PH_APPU""_CIFS_SRV"
-declare -n PH_APPU_CIFS_SHARE="PH_""$PH_APPU""_CIFS_SHARE"
-declare -n PH_APPU_CIFS_DIR="PH_""$PH_APPU""_CIFS_DIR"
-declare -n PH_APPU_CIFS_SUBDIR="PH_""$PH_APPU""_CIFS_SUBDIR"
-declare -n PH_APPU_PERSISTENT="PH_""$PH_APPU""_PERSISTENT"
+declare -n PH_APPU_POST_CMD="PH_${PH_APPU}_POST_CMD"
+declare -n PH_APPU_PRE_CMD="PH_${PH_APPU}_PRE_CMD"
+declare -n PH_APPU_CMD_OPTS="PH_${PH_APPU}_CMD_OPTS"
+declare -n PH_APPU_NUM_CTRL="PH_${PH_APPU}_NUM_CTRL"
+declare -n PH_APPU_USE_CTRL="PH_${PH_APPU}_USE_CTRL"
+declare -n PH_APPU_CIFS_SRV="PH_${PH_APPU}_CIFS_SRV"
+declare -n PH_APPU_CIFS_SHARE="PH_${PH_APPU}_CIFS_SHARE"
+declare -n PH_APPU_CIFS_DIR="PH_${PH_APPU}_CIFS_DIR"
+declare -n PH_APPU_CIFS_SUBDIR="PH_${PH_APPU}_CIFS_SUBDIR"
+declare -n PH_APPU_PERSISTENT="PH_${PH_APPU}_PERSISTENT"
 
-PH_MOON_PATH="$(nawk '$1 ~ /^Moonlight$/ { printf $3 }' "$PH_CONF_DIR/supported_apps" 2>/dev/null)"
+PH_MOON_PATH="$(nawk '$1 ~ /^Moonlight$/ { printf $3 }' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)"
 PH_APP_USER="$(ph_get_app_user_from_app_name "$PH_APP")"
 PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
 PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"

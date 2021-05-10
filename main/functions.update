@@ -1926,7 +1926,7 @@ declare -u PH_APPU=""
 
 PH_APPU="${PH_APP:0:4}"
 PH_SOURCE_FILE="${PH_APP}_conf"
-[[ "$(cut -f1 "${PH_CONF_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null ; echo "$?")" -ne "0" && \
+[[ "$(cut -f1 "${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null ; echo "$?")" -ne "0" && \
 	"$PH_APP" != "Ctrls" ]] && \
 	PH_SOURCE_FILE="OOSapp_conf"
 printf "%8s%s\033[32m%s\033[0m\n" "" "--> Creating config file for ${PH_APP} as " "'${PH_CONF_DIR}/${PH_APP}.conf'"
@@ -2189,9 +2189,9 @@ do
 	esac
 	case "$PH_APP" in Kodi)
 		case "$PH_i" in PRE_CMD)
-                	PH_LINE='${PH_SCRIPTS_DIR}/../pre_cmds/Kodi-PRE.sh' ;;
+                	PH_LINE='${PH_SCRIPTS_DIR}/app/pre_cmds/Kodi-PRE.sh' ;;
 				POST_CMD)
-                	PH_LINE='${PH_SCRIPTS_DIR}/../post_cmds/Kodi-POST.sh' ;;
+                	PH_LINE='${PH_SCRIPTS_DIR}/app/post_cmds/Kodi-POST.sh' ;;
 				PKG_NAME)
                 	PH_LINE='kodi' ;;
 		esac ;;
@@ -2243,9 +2243,9 @@ do
 		case "$PH_i" in CMD_OPTS)
                 	PH_LINE='Main' ;;
 				PRE_CMD)
-                	PH_LINE='${PH_SCRIPTS_DIR}/../pre_cmds/PieHelper-PRE.sh' ;;
+                	PH_LINE='${PH_SCRIPTS_DIR}/app/pre_cmds/PieHelper-PRE.sh' ;;
 				POST_CMD)
-                	PH_LINE='${PH_SCRIPTS_DIR}/../post_cmds/PieHelper-POST.sh' ;;
+                	PH_LINE='${PH_SCRIPTS_DIR}/app/post_cmds/PieHelper-POST.sh' ;;
 				PKG_NAME)
                 	PH_LINE='' ;;
 				SANITY)

@@ -1,9 +1,8 @@
 * check if passing PH_APP_INST_STATE is still required between ph_support_app/ph_unsupport_app
+* Make use of ph_check_app_state_validity and ph_get_app_list_by_state functions where possible
 * When chosing to skip supporting ph_suppport_app (2 places) -> manually modify so far added rollback params etc or not ?
-* move default_apps* files + options.* files + VERSIONS + default_apps* files + TODO to files dir
-* move pre_cmds and post_cmds directories to scripts/app/ directory
+* move options.* files to files dir
 * check what to do with auto_update_denied
-* implement use of newly defined array holding all supported distros/specdistros
 * check if PH_MOVE_SCRIPTS_REGEX and function for it are still required. Remove if not
 * remove all references to ph_total_result stuff
 * remove ph_set_variable stuff

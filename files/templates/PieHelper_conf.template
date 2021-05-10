@@ -100,26 +100,26 @@ PH_PIEH_CIFS_MPT='${PH_MNT_DIR}/PieHelper'						# - This is the full pathname of
 											# - Default is '${PH_MNT_DIR}/PieHelper'
 											# - Allowed values are values starting with '/' and an empty string
 											# - Variables can be used as part of or instead of the normal value
-PH_PIEH_PRE_CMD='${PH_SCRIPTS_DIR}/../pre_cmds/PieHelper-PRE.sh'			# - This is the full command to run before starting PieHelper
+PH_PIEH_PRE_CMD='${PH_SCRIPTS_DIR}/app/pre_cmds/PieHelper-PRE.sh'			# - This is the full command to run before starting PieHelper
 											# - PRE-commands are always executed as the run account for the application being started which should be granted adequate
 											#   permissions
 											# - PRE-commands that fail will only generate a warning and not block further PieHelper startup
 											# - In case PH_PIEH_PRE_CMD makes use of default PieHelper CIFS configuration, PieHelper's run account should be present on PH_PIEH_CIFS_SRV with
 											#   share permissions required by PH_PIEH_PRE_CMD
-											# - Default is '${PH_SCRIPTS_DIR}/../pre_cmds/PieHelper-PRE.sh' which will restore a backup copy of the 'OS.defaults' file,
+											# - Default is '${PH_SCRIPTS_DIR}/app/pre_cmds/PieHelper-PRE.sh' which will restore a backup copy of the 'OS.defaults' file,
 											#   which stores all previously configured default values for 'confoper_ph.sh' OS configuration functions,
 											#   from PH_PIEH_CIFS_SUBDIR on PH_PIEH_CIFS_SRV if one is found and CIFS for PieHelper is correctly configured
 											#   with a user for PieHelper's run account having read-write access to the share
 											# - Allowed values are an empty string and valid pathnames of scripts, sourceable scripts or executables
 											# - Variables can be used as part of or instead of the normal value
 											#   Sourceable scripts can use variable names known to PieHelper
-PH_PIEH_POST_CMD='${PH_SCRIPTS_DIR}/../post_cmds/PieHelper-POST.sh'			# - This is the full command to run after stopping PieHelper
+PH_PIEH_POST_CMD='${PH_SCRIPTS_DIR}/app/post_cmds/PieHelper-POST.sh'			# - This is the full command to run after stopping PieHelper
 											# - POST-commands are always executed as the run account for PieHelper '${PH_RUN_USER}' which should be granted adequate
 											#   permissions
 											# - POST-commands that fail will only generate a warning
 											# - In case PH_PIEH_POST_CMD makes use of default PieHelper CIFS configuration, PieHelper's run account should be present on PH_PIEH_CIFS_SRV with
 											#   share permissions required by PH_PIEH_POST_CMD
-											# - Default is '${PH_SCRIPTS_DIR}/../post_cmds/PieHelper-POST.sh' which will create a backup copy of the 'OS.defaults' file,
+											# - Default is '${PH_SCRIPTS_DIR}/app/post_cmds/PieHelper-POST.sh' which will create a backup copy of the 'OS.defaults' file,
 											#   which stores all previously configured default values for 'confoper_ph.sh' OS configuration functions,
 											#   in PH_PIEH_CIFS_SUBDIR on PH_PIEH_CIFS_SRV if any configured defaults are found and CIFS for PieHelper is correctly configured
 											#   with a user for PieHelper's run account having read-write access to the share
