@@ -121,7 +121,7 @@ done
 
 # Load distribution configuration
 
-for PH_i in "${PH_CHECK_SUPPORTED[@]}"
+for PH_i in "${PH_CHECK_SUPPORTED[*]}"
 do
         if [[ ! -f "${PH_CONF_DIR}/distros/${PH_i}.conf" || ! -r "${PH_CONF_DIR}/distros/${PH_i}.conf" ]]
         then
