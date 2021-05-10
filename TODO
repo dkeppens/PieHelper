@@ -1,3 +1,4 @@
+* fix eternal loop with calls replaced with calls to ph_check_app_state_validity function
 * check if passing PH_APP_INST_STATE is still required between ph_support_app/ph_unsupport_app
 * Make use of ph_check_app_state_validity and ph_get_app_list_by_state functions where possible
 * When chosing to skip supporting ph_suppport_app (2 places) -> manually modify so far added rollback params etc or not ?
