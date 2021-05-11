@@ -878,7 +878,7 @@ case "$PH_i" in cont)
 		alloweds)
 	: ;;
 		sup)
-	if ! ph_check_app_state_validity -a PieHelper -s
+	if ! ph_check_app_state_validity -a PieHelper -q -s
 	then
         	printf "%4s%s\n" "" "- PieHelper is not a supported application" >>"${PH_TMP_DIR}/reported_issues"
 		return 1
@@ -896,7 +896,7 @@ case "$PH_i" in cont)
 		fi
 	done ;;
 		int)
-	if ! ph_check_app_state_validity -a PieHelper -i
+	if ! ph_check_app_state_validity -a PieHelper -q -i
 	then
         	printf "%4s%s\n" "" "- PieHelper is not an integrated application" >>"${PH_TMP_DIR}/reported_issues"
 		return 1
@@ -1066,11 +1066,11 @@ declare -i PH_APP_TTY="0"
 	echo -n "1" && \
 	return 1
 
-printf "%8s%s\n" "" "--> Allocating first available TTY to ${PH_APP}"
+printf "%8s%s\n" "" "--> Allocating the first free tty to ${PH_APP}"
 if [[ "$PH_APP" == "PieHelper" ]]
 then
 	PH_APP_TTY="2"
-	ph_run_with_rollback -c true -m "TTY${PH_APP_TTY}"
+	ph_run_with_rollback -c true -m "tty${PH_APP_TTY}"
 else
 	for ((PH_APP_TTY=3;PH_APP_TTY<="$((PH_PIEH_MAX_TTYS+1))";PH_APP_TTY++))
 	do
@@ -1082,11 +1082,11 @@ else
 	done
 	if [[ "$PH_APP_TTY" -eq "$(("$PH_PIEH_MAX_TTYS"+1))" ]]
 	then
-		ph_set_result -m "Could not allocate a TTY to ${PH_APP} since all TTYs have already been allocated"
+		ph_set_result -m "Could not allocate a tty to ${PH_APP} since the maximum number of $((PH_PIEH_MAX_TTYS-1)) ttys has been allocated"
 		ph_run_with_rollback -c false -m "Could not allocate" || \
 			return 1
 	else
-		ph_run_with_rollback -c true -m "TTY${PH_APP_TTY}"
+		ph_run_with_rollback -c true -m "tty${PH_APP_TTY}"
 	fi
 fi
 return "$PH_APP_TTY"
@@ -2119,9 +2119,9 @@ OPTARG="$PH_OLDOPTARG"
 
 if [[ -f "${PH_TMP_DIR}/.first_run" ]]
 then
-	PH_CONF_STATE="Unconfigured"
+	PH_CONF_STATE="unconfigured"
 else
-	PH_CONF_STATE="Configured"
+	PH_CONF_STATE="configured"
 fi
 if [[ "$PH_QUIESCE" -ne "0" ]]
 then
@@ -2702,7 +2702,7 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_APP" || -z "$PH_APP_TYPE" || "$#" -lt "4" ]] && \
+[[ -z "$PH_APP" || -z "$PH_APP_TYPE" || "$#" -lt "3" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 [[ "$PH_QUIESCE" -eq "1" ]] && \
@@ -3437,13 +3437,13 @@ PH_ROLLBACK_USED="yes"
 PH_CONF_STATE="$(ph_get_pieh_conf_state -q)"
 if [[ "$PH_MODE" == "normal" ]]
 then
-	if [[ "$PH_CONF_STATE" == "Unconfigured" && "$PH_ACTION" == "unconfigure" ]]
+	if [[ "$PH_CONF_STATE" == "unconfigured" && "$PH_ACTION" == "unconfigure" ]]
 	then
-		ph_set_result -r 0 -w -m "PieHelper is already unconfigured"
+		ph_set_result -r 0 -w -m "PieHelper is already ${PH_CONF_STATE}"
 		return 0
 	fi
 fi
-if [[ "$PH_CONF_STATE" == "Configured" ]]
+if [[ "$PH_CONF_STATE" == "configured" ]]
 then
 	if [[ "$PH_MODE" == "normal" ]]
 	then
@@ -6467,11 +6467,7 @@ OPTARG="$PH_OLDOPTARG"
 
 if [[ "$PH_APP" == "supported" ]]
 then
-	for PH_APP in $(nawk 'BEGIN { \
-			ORS = " " \
-		} { \
-			print $1 \
-		}' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)
+	for PH_APP in $(ph_get_app_list_by_state -s Supported -t exact)
 	do
 		ph_integrate_app -a "$PH_APP" || \
 			return 1
@@ -6494,8 +6490,11 @@ else
 			esac
 			unset -n PH_VAR
 		done
-		[[ -n "$PH_PARAMS" ]] && \
-			PH_APP="$(ph_get_app_name_from_base_conf_file ${PH_PARAMS})"
+		if [[ -n "$PH_PARAMS" ]]
+		then
+			! PH_APP="$(ph_get_app_name_from_base_conf_file ${PH_PARAMS})" && \
+				return 1
+		fi
 	fi
 fi
 [[ "$PH_APP" == "Emulationstation" ]] && \
@@ -7729,9 +7728,9 @@ declare -i PH_COUNT="0"
 
 PH_ROLLBACK_USED="yes"
 PH_CONF_STATE="$(ph_get_pieh_conf_state -q)"
-if [[ "$PH_CONF_STATE" == "Configured" ]]
+if [[ "$PH_CONF_STATE" == "configured" ]]
 then
-	ph_set_result -r 0 -w -m "PieHelper is already configured"
+	ph_set_result -r 0 -w -m "PieHelper is already ${PH_CONF_STATE}"
 	return 0
 fi
 [[ -z "$PH_RUN_USER" ]] && \

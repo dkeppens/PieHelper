@@ -34,20 +34,20 @@ declare -i PH_COUNT="0"
 printf "\033[36m%s\033[0m\n\n" "- Using interactive mode"
 while [[ -z "$PH_MODULES" || "$PH_MODULES" == "prompt" ]]
 do
-	[[ "$PH_COUNT" -gt "0" ]] && printf "\n%10s\033[31m%s\033[0m\n\n" "" "ERROR : Invalid response"
+	[[ "$PH_COUNT" -gt "0" ]] && \
+		printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
 	printf "%8s%s\n\n" "" "--> Enter a comma-separated list of relevant PieHelper modules"
 	printf "%12s%s\n" "" "- The keyword 'all' can be used to select all relevant modules"
-	printf "%12s%s\n" "" "- The keyword 'disabled' can be used to select relevant modules with debug state 'Disabled'"
-	printf "%12s%s\n" "" "- The keyword 'enabled' can be used to select relevant modules with debug state 'Enabled'"
+	printf "%12s%s\n" "" "- The keyword 'disabled' can be used to select all relevant modules for which debug is currently disabled"
+	printf "%12s%s\n" "" "- The keyword 'enabled' can be used to select all relevant modules for which debug is currently enabled"
 	printf "%12s%s\n\n" "" "- The keyword 'prompt' is invalid in interactive mode"
 	printf "%8s%s" "" "Your choice : "
 	read -r PH_MODULES >/dev/null 2>&1
 	((PH_COUNT++))
 done
-printf "\n%10s\033[32m%s\033[0m\n" "" "OK"
-ph_set_result -r 0
+ph_run_with_rollback -c true
 ph_show_result
-return 0
+return "$?"
 }
 
 function ph_check_module_validity {
@@ -57,53 +57,66 @@ declare PH_FOUND=""
 declare -i PH_RET_CODE="0"
 declare -i PH_COUNT="0"
 
-PH_COUNT="$(echo -n "$PH_MODULES" | nawk 'BEGIN { RS = "," } END { print NR }')"
+PH_COUNT="$(echo -n "$PH_MODULES" | nawk 'BEGIN { \
+		RS = "," \
+	} END { \
+		print NR \
+	}')"
 printf "\033[36m%s\033[0m\n\n" "- Checking module(s) validity"
-for PH_i in $(echo -n "$PH_MODULES" | sed 's/,/ /g')
+for PH_i in ${PH_MODULES//,/ }
 do
-	printf "%8s%s\n" "" "--> Checking module '$PH_i' validity"
+	printf "%8s%s\n" "" "--> Checking validity of module '${PH_i}'"
 	((PH_COUNT++))
-	[[ "$PH_i" == @(enabled|disabled|prompt|all) ]] && PH_FOUND="$PH_i"
+	[[ "$PH_i" == @(@(en|dis)abled|prompt|all) ]] && \
+		PH_FOUND="$PH_i"
 	if [[ -n "$PH_FOUND" && "$PH_COUNT" -gt "1" ]]
 	then
-		ph_set_result -m "Keyword '$PH_FOUND' cannot be combined with other modules"
+		ph_set_result -m "Keyword '${PH_FOUND}' cannot be specified together with module names"
 		PH_RET_CODE="1"
 	else
 		if [[ "$PH_ACTION" == "debug" ]]
 		then
 			if [[ "$PH_i" == "confpieh_ph.sh" ]]
 			then
-				ph_set_result -m "Module '$PH_i' debug should be handled manually"
+				ph_set_result -m "Debug for module '${PH_i}' should be handled manually"
 				PH_RET_CODE="1"
 			fi
 			if [[ "$PH_i" == *.expect ]]
 			then
+				ph_set_result -m "Debug for module '${PH_i}' is not supported"
 				PH_RET_CODE="1"
 			fi
 		fi
 		case "$PH_i" in *.sh|*.expect)
-			if ! "$PH_SUDO" find "${PH_MAIN_DIR}/.." \( ! -name 10-retropie.sh -and -name "$PH_i" \) >/dev/null 2>&1
+			if ! "$PH_SUDO" find "${PH_BASE_DIR}/" -mount -name "$PH_i" >/dev/null 2>&1
 			then
+				ph_set_result -m "The specified module name '${PH_i}' does not exist"
 				PH_RET_CODE="1"
 			fi ;;
 				*)
-			if ! functions 2>/dev/null | nawk '$1 ~ /^function$/ { print $2 }' | grep -E "^${PH_i}$" >/dev/null
+			if ! functions 2>/dev/null | nawk '$1 ~ /^function$/ {
+					print $2
+				}' | grep -E "^${PH_i}$" >/dev/null
 			then
+				ph_set_result -m "The specified module name '${PH_i}' does not exist"
 				PH_RET_CODE="1"
 			fi ;;
 		esac
 	fi
-	[[ "$PH_RET_CODE" -eq "1" ]] && break
-	printf "%10s\033[32m%s\033[0m\n" "" "OK"
-	ph_set_result -r 0
+	[[ "$PH_RET_CODE" -eq "1" ]] && \
+		break
+	ph_run_with_rollback -c true
 done
 if [[ "$PH_RET_CODE" -ne "0" ]]
 then
-	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid module name"
-	[[ -z "$PH_RESULT_MSG" ]] && ph_set_result -m "Invalid module '$PH_i'"
-	ph_set_result -r 1
+	ph_run_with_rollback -c false -m "Invalid module"
+else
+	if [[ -z "$PH_MODULES" ]]
+	then
+		printf "%10s\033[33m%s\033[0m\n" "" "Warning : No modules selected"
+		ph_set_result -r 0 -w -m "No modules selected"
+	fi
 fi
-[[ -z "$PH_MODULES" ]] && ph_set_result -r 0 -w -m "No module(s) selected"
 ph_show_result
 return "$?"
 }
@@ -113,31 +126,61 @@ OPTIND="1"
 while getopts p:m:gcrvuqh PH_OPTION 2>/dev/null
 do
 	case "$PH_OPTION" in p)
-		! ph_screen_input "$OPTARG" && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
-		[[ "$OPTARG" != @(list|debug) ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
-		[[ -n "$PH_ACTION" ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+		ph_screen_input "$OPTARG"
+		[[ -n "$PH_ACTION" || "$OPTARG" != @(list|debug) ]] && \
+			OPTARG="$PH_OLDOPTARG" && \
+			OPTIND="$PH_OLDOPTIND" && \
+			(! confpieh_ph.sh -h) && \
+			exit 1
 		PH_ACTION="$OPTARG" ;;
 			     m)
-		[[ "$PH_ACTION" != @(debug|list|) ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
-		[[ -n "$PH_MODULES" ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+		[[ -n "$PH_MODULES" ]] && \
+			OPTARG="$PH_OLDOPTARG" && \
+			OPTIND="$PH_OLDOPTIND" && \
+			(! confpieh_ph.sh -h) && \
+			exit 1
 		PH_MODULES="$OPTARG" ;;
 			     g)
-		[[ -n "$PH_ACTION" ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+		[[ -n "$PH_ACTION" ]] && \
+			OPTARG="$PH_OLDOPTARG" && \
+			OPTIND="$PH_OLDOPTIND" && \
+			(! confpieh_ph.sh -h) && \
+			exit 1
 		PH_ACTION="getstate" ;;
 		             c)
-		[[ -n "$PH_ACTION" ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+		[[ -n "$PH_ACTION" ]] && \
+			OPTARG="$PH_OLDOPTARG" && \
+			OPTIND="$PH_OLDOPTIND" && \
+			(! confpieh_ph.sh -h) && \
+			exit 1
 		PH_ACTION="configure" ;;
 		             r)
-		[[ -n "$PH_ACTION" ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+		[[ -n "$PH_ACTION" ]] && \
+			OPTARG="$PH_OLDOPTARG" && \
+			OPTIND="$PH_OLDOPTIND" && \
+			(! confpieh_ph.sh -h) && \
+			exit 1
 		PH_ACTION="remove" ;;
 		             v)
-		[[ -n "$PH_ACTION" ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+		[[ -n "$PH_ACTION" ]] && \
+			OPTARG="$PH_OLDOPTARG" && \
+			OPTIND="$PH_OLDOPTIND" && \
+			(! confpieh_ph.sh -h) && \
+			exit 1
 		PH_ACTION="repair" ;;
 		             u)
-		[[ -n "$PH_ACTION" ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+		[[ -n "$PH_ACTION" ]] && \
+			OPTARG="$PH_OLDOPTARG" && \
+			OPTIND="$PH_OLDOPTIND" && \
+			(! confpieh_ph.sh -h) && \
+			exit 1
 		PH_ACTION="unconfigure" ;;
 		             q)
-		[[ -n "$PH_ACTION" ]] && (! confpieh_ph.sh -h) && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+		[[ -n "$PH_ACTION" ]] && \
+			OPTARG="$PH_OLDOPTARG" && \
+			OPTIND="$PH_OLDOPTIND" && \
+			(! confpieh_ph.sh -h) && \
+			exit 1
 		PH_ACTION="update" ;;
 			     *)
 		>&2 printf "\n"
@@ -194,13 +237,16 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -n "$PH_MODULES" && "$PH_ACTION" != @(debug|list) ]] && (! confpieh_ph.sh -h) && exit 1
-[[ -z "$PH_MODULES" && "$PH_ACTION" == @(debug|list) ]] && (! confpieh_ph.sh -h) && exit 1
+[[ ( -n "$PH_MODULES" && "$PH_ACTION" != @(debug|list) ) || \
+	( -z "$PH_MODULES" && "$PH_ACTION" == @(debug|list) ) ]] && \
+	(! confpieh_ph.sh -h) && exit 1
 if [[ "$PH_ACTION" == @(debug|list|getstate|unconfigure) ]]
 then
-	[[ "$("$PH_SUDO" cat /proc/"$PPID"/comm 2>/dev/null)" != "confpieh_ph.sh" ]] && printf "\n"
+	[[ "$("$PH_SUDO" cat "/proc/${PPID}/comm" 2>/dev/null)" != "confpieh_ph.sh" ]] && \
+		printf "\n"
 fi
-[[ "$(ps -o args "$PPID" 2>/dev/null | tail -1)" == *confpieh_ph.sh*-p*"$PH_ACTION"* ]] && PH_CHILD="yes"
+[[ "$(ps -o args "$PPID" 2>/dev/null | tail -1)" == *confpieh_ph.sh*-p*"${PH_ACTION}"* ]] && \
+	PH_CHILD="yes"
 case "$PH_ACTION" in repair)
 		ph_repair_pieh
 		exit "$?" ;;
@@ -213,7 +259,7 @@ case "$PH_ACTION" in repair)
 		confapps_ph.sh -p conf -a PieHelper
 		exit "$?" ;;
 	        unconfigure)
-		printf "\033[36m%s\033[0m\n\n" "- Unconfiguring '$PH_APP'"
+		printf "\033[36m%s\033[0m\n\n" "- Unconfiguring ${PH_APP}"
 		ph_unconfigure_pieh -u
 		exit "$?" ;;
 		     remove)
@@ -223,9 +269,15 @@ case "$PH_ACTION" in repair)
 		confapps_ph.sh -p update -a PieHelper
 		exit "$?" ;;
 		      debug)
-		[[ "$PH_MODULES" == @(all|enabled|disabled) ]] && PH_REQUESTED="$PH_MODULES"
+		[[ "$PH_MODULES" == @(all|enabled|disabled) ]] && \
+			PH_REQUESTED="$PH_MODULES"
                 case "$PH_MODULES" in all)
-                        PH_MODULES="$(confpieh_ph.sh -p list -m "$PH_MODULES" | nawk 'BEGIN { ORS = "," } $2 ~ /^debug_state=/ && $1 !~ /.expect$/ && $1 !~ /confpieh_ph.sh$/ { print $1 }')" ;;
+                        PH_MODULES="$(confpieh_ph.sh -p list -m "$PH_MODULES" | nawk 'BEGIN { \
+					ORS = "," \
+				} \
+				$2 ~ /^debug_state=/ && $1 !~ /.expect$/ && $1 !~ /confpieh_ph.sh$/ { \
+					print $1 \
+				}')" ;;
 				   prompt)
 			ph_prompt_module_input
 			ph_set_result -t -r "$?"
@@ -234,14 +286,25 @@ case "$PH_ACTION" in repair)
 			ph_show_result -t
 			exit "$?" ;;
 				   enabled)
-			PH_MODULES="$(confpieh_ph.sh -p list -m "$PH_MODULES" | nawk -v comp=^"debug_state=Enabled"$ 'BEGIN { ORS = "," } $2 ~ comp && $1 !~ /^confpieh_ph.sh$/ { print $1 }')" ;;
+			PH_MODULES="$(confpieh_ph.sh -p list -m "$PH_MODULES" | nawk -v comp="^debug_state=enabled$" 'BEGIN { \
+					ORS = "," \
+				} \
+				$2 ~ comp && $1 !~ /^confpieh_ph.sh$/ { \
+					print $1 \
+				}')" ;;
 				   disabled)
-			PH_MODULES="$(confpieh_ph.sh -p list -m "$PH_MODULES" | nawk -v comp=^"debug_state=Disabled"$ 'BEGIN { ORS = "," } $2 ~ comp && $1 !~ /.expect$/ && $1 !~ /^confpieh_ph.sh$/ { print $1 }')" ;;
+			PH_MODULES="$(confpieh_ph.sh -p list -m "$PH_MODULES" | nawk -v comp="^debug_state=disabled$" 'BEGIN { \
+					ORS = "," \
+				} \
+				$2 ~ comp && $1 !~ /.expect$/ && $1 !~ /^confpieh_ph.sh$/ { \
+					print $1 \
+				}')" ;;
 				   *)
 			PH_REQUESTED="requested"
 			if ph_check_module_validity
 			then
-				[[ -z "$PH_MODULES" ]] && exit 0
+				[[ -z "$PH_MODULES" ]] && \
+					exit 0
 				ph_set_result -t -r 0
 			else
 				exit 1
@@ -254,106 +317,105 @@ case "$PH_ACTION" in repair)
 			ph_show_result
 			exit "$?"
 		fi
-                for PH_i in $(echo -n "$PH_MODULES" | sed 's/,/ /g')
+                for PH_i in ${PH_MODULES//,/ }
                 do
 			PH_RET_CODE="0"
 			((PH_COUNT++))
-			[[ "$PH_COUNT" -eq "1" ]] && printf "\n"
+			[[ "$PH_COUNT" -eq "1" ]] && \
+				printf "\n"
                         case "$PH_i" in *.sh)
 				PH_j="$PH_i"
-				PH_DEBUGSTATE="$(echo -n "$PH_PIEH_DEBUG" | nawk -v func=^"$PH_j"$ 'BEGIN { RS = "," ; flag = 0 } $1 ~ func { print "Disabled" ; flag = 1 ; exit } END { if (flag==0) { print "Enabled" }}')"
-				printf "%8s%s\n" "" "--> Setting module '$PH_j' debug state to '$PH_DEBUGSTATE'"
-				if [[ "$PH_DEBUGSTATE" == "Disabled" ]]
+				PH_DEBUGSTATE="$(echo -n "$PH_PIEH_DEBUG" | nawk -v func="^${PH_j}$" 'BEGIN { \
+						RS = "," ; \
+						flag = 0 \
+					} \
+					$1 ~ func { \
+						print "Disabled" ; \
+						flag = 1 ; \
+						exit \
+					} END { \
+						if (flag==0) { \
+							print "Enabled" \
+						} \
+					}')"
+				printf "%8s%s\n" "" "--> Setting the debug state of module '${PH_j}' to '${PH_DEBUGSTATE}'"
+				if [[ "$PH_DEBUGSTATE" == "disabled" ]]
 				then
 					if echo "$PH_PIEH_DEBUG" | grep ',' >/dev/null
 					then
-						PH_VALUE="$(echo -n "$PH_PIEH_DEBUG" | sed "s/^""$PH_j""$//;s/^""$PH_j"",//;s/,""$PH_j"",/,/;s/,""$PH_j""$//")"
+						PH_VALUE="$(sed "s/^${PH_j}$//;s/^${PH_j},//;s/,${PH_j},/,/;s/,${PH_j}$//"<<<"$PH_PIEH_DEBUG")"
 					else
 						PH_VALUE=""
 					fi
 					PH_SSTRING='set -x'
 					PH_STRING='#set -x'
 				else
-					[[ -z "$PH_PIEH_DEBUG" ]] && PH_VALUE="$PH_j" || PH_VALUE="$PH_PIEH_DEBUG,$PH_j"
+					[[ -z "$PH_PIEH_DEBUG" ]] && \
+						PH_VALUE="$PH_j" || \
+						PH_VALUE="${PH_PIEH_DEBUG},${PH_j}"
 					PH_SSTRING='#set -x'
 					PH_STRING='set -x'
 				fi
-				if ! ph_set_option_to_value PieHelper -r "PH_PIEH_DEBUG'$PH_VALUE" >/dev/null
+				if ph_run_with_rollback -c "ph_set_option_to_value PieHelper -r \"PH_PIEH_DEBUG'${PH_VALUE}\"" >/dev/null 2>&1
 				then
-					printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not change state"
-					((PH_ERR_COUNT++))
-					ph_set_result -r 1 -m "$PH_ERR_COUNT errors occurred changing module(s) state"
-					continue
-				else
-                                	PH_i="$("$PH_SUDO" -E find "$PH_BASE_DIR" -name "$PH_i" 2>/dev/null)"
-					PH_TMP_NAME="$(echo -n "$PH_j" | sed 's/\./_/g')"_tmp
-                                       	if sed "s/^""$PH_SSTRING""/""$PH_STRING""/g" "$PH_i" >"$PH_TMP_DIR"/"$PH_TMP_NAME" 2>/dev/null
-                                       	then
-						"$PH_SUDO" chown "$PH_RUN_USER":"$("$PH_SUDO" id -gn "$PH_RUN_USER" 2>/dev/null)" "$PH_TMP_DIR"/"$PH_TMP_NAME" 2>/dev/null || PH_RET_CODE="1"
-						if [[ "$PH_RET_CODE" -eq "0" ]]
-						then
-							"$PH_SUDO" chmod 770 "$PH_TMP_DIR"/"$PH_TMP_NAME" 2>/dev/null || PH_RET_CODE="1"
-						fi
-						if [[ "$PH_RET_CODE" -eq "0" ]]
-						then
-                                               		mv "$PH_TMP_DIR"/"$PH_TMP_NAME" "$PH_i" 2>/dev/null || PH_RET_CODE="1"
-						fi
-					else
-						PH_RET_CODE="1"
-					fi
-					if [[ "$PH_RET_CODE" -eq "0" ]]
+                                	if PH_i="$("$PH_SUDO" find "$PH_BASE_DIR" -mount -name "$PH_i" 2>/dev/null)"
 					then
-						ph_set_result -r "$PH_RET_CODE"
-						printf "%10s\033[32m%s\033[0m\n" "" "OK"
-					else
-						printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not change state"
-						((PH_ERR_COUNT++))
-						ph_set_result -r "$PH_RET_CODE" -m "$PH_ERR_COUNT errors occurred changing module(s) state"
-						"$PH_SUDO" rm "$PH_TMP_DIR"/"$PH_TMP_NAME" 2>/dev/null
-						if [[ "$PH_DEBUGSTATE" == "Enabled" ]]
-						then
-                                               		if echo "$PH_PIEH_DEBUG" | grep ',' >/dev/null
-                                               		then
-                                               			PH_VALUE="$(echo -n "$PH_PIEH_DEBUG" | sed "s/^""$PH_j""$//;s/^""$PH_j"",//;s/,""$PH_j"",/,/;s/,""$PH_j""$//")"
-                                               		else
-                                                      			PH_VALUE=""
-                                               		fi
-                                               	else
-                                                       	[[ -z "$PH_PIEH_DEBUG" ]] && PH_VALUE="$PH_j" || PH_VALUE="$PH_PIEH_DEBUG,$PH_j"
+                                       		if sed -i "s/^${PH_SSTRING}/${PH_STRING}/g" "$PH_i" 2>/dev/null
+                                       		then
+							ph_run_with_rollback -c true
 						fi
-						ph_set_option_to_value PieHelper -r "PH_PIEH_DEBUG'$PH_VALUE" >/dev/null
 					fi
-                                fi ;;
+				fi
+				((PH_ERR_COUNT++))
+				ph_set_result -w -m "${PH_ERR_COUNT} errors occurred while trying to change module state(s)"
+				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not ${PH_DEBUGSTATE%.} debug on module '${PH_i}'"
+				continue ;;
                                         *)
-                                PH_DEBUGSTATE="$(echo -n "$PH_PIEH_DEBUG" | nawk -v func=^"$PH_i"$ 'BEGIN { RS = "," ; flag = 0 } $1 ~ func { print "Disabled" ; flag = 1 ; exit } END { if (flag==0) { print "Enabled" }}')"
-				printf "%8s%s\n" "" "--> Setting module '$PH_i' debug state to '$PH_DEBUGSTATE'"
-				if [[ "$PH_DEBUGSTATE" == "Enabled" ]]
+                                PH_DEBUGSTATE="$(echo "$PH_PIEH_DEBUG" | nawk -v func="^${PH_i}$" 'BEGIN { \
+						RS = "," ; \
+						flag = 0 \
+					} \
+					$1 ~ func { \
+						printf "disabled" ; \
+						flag = 1 ; \
+						exit \
+					} END { \
+						if (flag==0) { \
+							printf "enabled" \
+						} \
+					}')"
+				printf "%8s%s\n" "" "--> Setting the debug state of module '${PH_i}' to '${PH_DEBUGSTATE}'"
+				if [[ "$PH_DEBUGSTATE" == "enabled" ]]
 				then
-					[[ -z "$PH_PIEH_DEBUG" ]] && PH_VALUE="$PH_i" || PH_VALUE="$PH_PIEH_DEBUG,$PH_i"
+					[[ -z "$PH_PIEH_DEBUG" ]] && \
+						PH_VALUE="$PH_i" || \
+						PH_VALUE="${PH_PIEH_DEBUG},${PH_i}"
 				else
 					if echo "$PH_PIEH_DEBUG" | grep ',' >/dev/null
 					then
-						PH_VALUE="$(echo -n "$PH_PIEH_DEBUG" | sed "s/^""$PH_i""$//;s/^""$PH_i"",//;s/,""$PH_i"",/,/;s/,""$PH_i""$//")"
+						PH_VALUE="$(sed "s/^${PH_i}$//;s/^${PH_i},//;s/,${PH_i},/,/;s/,${PH_i}$//"<<<"$PH_PIEH_DEBUG")"
 					else
 						PH_VALUE=""
 					fi
 				fi
-				if ph_set_option_to_value PieHelper -r "PH_PIEH_DEBUG'$PH_VALUE" >/dev/null
+				if ! ph_run_with_rollback -c "ph_set_option_to_value PieHelper -r \"PH_PIEH_DEBUG'${PH_VALUE}\"" >/dev/null 2>&1
 				then
-					printf "%10s\033[32m%s\033[0m\n" "" "OK"
-					ph_set_result -r 0
-				else
-					printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not change state"
 					((PH_ERR_COUNT++))
-					ph_set_result -r 1 -m "$PH_ERR_COUNT errors occurred changing module(s) state"
+					ph_set_result -w -m "${PH_ERR_COUNT} errors occurred while trying to change module state(s)"
+					printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not ${PH_DEBUGSTATE%.} debug on module '${PH_i}'"
                                 fi ;;
                         esac
                 done
-		ph_secure_pieh "$PH_CONF_DIR"/PieHelper.conf >/dev/null
+		ph_secure_pieh "${PH_CONF_DIR}/PieHelper.conf"
 		ph_show_result
 		PH_RET_CODE="$?"
-		[[ "$PH_CHILD" == "yes" ]] && exit "$PH_RET_CODE"
-		if [[ "$(echo -n "$PH_MODULES" | nawk 'BEGIN { RS = "," } END { print NR }')" -gt "1" || "$PH_REQUESTED" == "requested" ]]
+		[[ "$PH_CHILD" == "yes" ]] && \
+			exit "$PH_RET_CODE"
+		if [[ "$(echo "$PH_MODULES" | nawk 'BEGIN { \
+				RS = "," \
+			} END { \
+				printf NR \
+			}')" -gt "1" || "$PH_REQUESTED" == "requested" ]]
 		then
                 	ph_set_result -t -r "$PH_RET_CODE"
 			ph_show_result -t
@@ -372,55 +434,97 @@ case "$PH_ACTION" in repair)
 			if [[ "$PH_MODULES" == @(all|enabled|disabled) ]]
 			then
 				PH_REQUESTED="$PH_MODULES"
-				PH_MODULES="$(echo -n "$PH_MODULES" | cut -c1 | tr "[:lower:]" "[:upper:]")""$(echo -n "$PH_MODULES" | cut -c2-)"
-				for PH_i in $("$PH_SUDO" -E find "$PH_BASE_DIR" ! -name 10-retropie.sh \( -name "*.sh" -or -name "*.expect" \) 2>/dev/null | sort)
+				PH_MODULES="$(echo -n "$PH_MODULES" | cut -c1 | tr "[:lower:]" "[:upper:]")$(echo -n "$PH_MODULES" | cut -c2-)"
+				for PH_i in $("$PH_SUDO" -E find "$PH_BASE_DIR" -mount \( -name "*.sh" -or -name "*.expect" \) 2>/dev/null | sort)
 				do
 					PH_i="${PH_i##*/}"
 					if [[ "$PH_i" == *.expect ]]
 					then
-						PH_DEBUGSTATE="Disabled"
+						PH_DEBUGSTATE="disabled"
 					else
-						PH_DEBUGSTATE="$(echo -n "$PH_PIEH_DEBUG" | nawk -v func=^"$PH_i"$ 'BEGIN { RS = "," ; flag = 0 } $1 ~ func { print "Enabled" ; flag = 1 ; exit } END { if (flag==0) { print "Disabled" }}')"
+						PH_DEBUGSTATE="$(echo "$PH_PIEH_DEBUG" | nawk -v func="^${PH_i}$" 'BEGIN { \
+								RS = "," ; \
+								flag = 0 \
+							} \
+							$1 ~ func { \
+								printf "enabled" ; \
+								flag = 1 ; \
+								exit \
+							} END { \
+								if (flag==0) { \
+									printf "disabled" \
+								} \
+							}')"
 					fi
 					if [[ "$PH_MODULES" == "All" || "$PH_DEBUGSTATE" == "$PH_MODULES" ]]
 					then
-						[[ -z "$PH_LIST_MODULES" ]] && PH_LIST_MODULES="$PH_i" || PH_LIST_MODULES="$PH_LIST_MODULES,$PH_i"
+						[[ -z "$PH_LIST_MODULES" ]] && \
+							PH_LIST_MODULES="$PH_i" || \
+							PH_LIST_MODULES="${PH_LIST_MODULES},${PH_i}"
 					fi
 				done
-				for PH_i in $(echo $(nawk '$1 ~ /^function$/ { print $2 }' "$PH_MAIN_DIR"/functions 2>/dev/null ; \
-					nawk '$1 ~ /^function$/ { print $2 }' "$PH_MAIN_DIR"/functions.update 2>/dev/null ; \
-					nawk '$1 ~ /^function$/ { print $2 }' "$PH_MAIN_DIR"/distros/functions."$PH_DISTRO" 2>/dev/null ; \
-					nawk '$1 ~ /^function$/ { print $2 }' "$PH_MAIN_DIR"/functions.user 2>/dev/null) | sed 's/ /\n/g' | sort | paste -d" " -s)
+				for PH_i in $(echo $(nawk '$1 ~ /^function$/ { \
+						print $2 \
+					}' "${PH_MAIN_DIR}/functions" "${PH_MAIN_DIR}/functions.update" "${PH_MAIN_DIR}/functions.user" "${PH_MAIN_DIR}/distros/functions.${PH_DISTRO}" 2>/dev/null | \
+					sed 's/ /\n/g' | sort | paste -d" " -s)
 				do
-					PH_DEBUGSTATE="$(echo -n "$PH_PIEH_DEBUG" | nawk -v func=^"$PH_i"$ 'BEGIN { RS = "," ; flag = 0 } $1 ~ func { print "Enabled" ; flag = 1 ; exit } END { if (flag==0) { print "Disabled" }}')"
+					PH_DEBUGSTATE="$(echo "$PH_PIEH_DEBUG" | nawk -v func="^${PH_i}$" 'BEGIN { \
+							RS = "," ; \
+							flag = 0 \
+						} \
+						$1 ~ func { \
+							printf "enabled" ; \
+							flag = 1 ; \
+							exit \
+						} END { \
+							if (flag==0) { \
+								printf "disabled" \
+							} \
+						}')"
 					if [[ "$PH_MODULES" == "All" || "$PH_DEBUGSTATE" == "$PH_MODULES" ]]
 					then
-						[[ -z "$PH_LIST_MODULES" ]] && PH_LIST_MODULES="$PH_i" || PH_LIST_MODULES="$PH_LIST_MODULES,$PH_i"
+						[[ -z "$PH_LIST_MODULES" ]] && \
+							PH_LIST_MODULES="$PH_i" || \
+							PH_LIST_MODULES="${PH_LIST_MODULES},${PH_i}"
 					fi
 				done
 				PH_MODULES="$PH_LIST_MODULES"
 			else
 				if ph_check_module_validity
 				then
-					[[ -z "$PH_MODULES" ]] && exit 0
+					[[ -z "$PH_MODULES" ]] && \
+						exit 0
 					ph_set_result -t -r 0
 				else
 					exit 1
 				fi
 				PH_REQUESTED="requested"
 			fi
-			printf "\033[36m%s\033[0m\n" "- Listing relevant PieHelper module(s) : '$PH_REQUESTED'"
+			printf "\033[36m%s\033[0m\n" "- Listing relevant PieHelper modules : '${PH_REQUESTED}'"
 			if [[ -z "$PH_MODULES" ]]
 			then
 				ph_set_result -r 0 -w -m "No module(s) selected"
 				ph_show_result
 				exit "$?"
 			fi
-			for PH_i in $(echo -n "$PH_MODULES" | sed 's/,/ /g')
+			for PH_i in ${PH_MODULES//,/ }
 			do
 				((PH_COUNT++))
-				[[ "$PH_COUNT" -eq "1" ]] && printf "\n"
-				PH_DEBUGSTATE="$(echo -n "$PH_PIEH_DEBUG" | nawk -v func=^"$PH_i"$ 'BEGIN { RS = "," ; flag = 0 } $1 ~ func { print "Enabled" ; flag = 1 ; exit } END { if (flag==0) { print "Disabled" }}')"
+				[[ "$PH_COUNT" -eq "1" ]] && \
+					printf "\n"
+				PH_DEBUGSTATE="$(echo "$PH_PIEH_DEBUG" | nawk -v func="^${PH_i}$" 'BEGIN { \
+						RS = "," ; \
+						flag = 0 \
+					} \
+					$1 ~ func { \
+						printf "enabled" ; \
+						flag = 1 ; \
+						exit \
+					} END { \
+						if (flag==0) { \
+							printf "disabled" \
+						} \
+					}')"
 				if printf "%4s%-60s%s\n" "" "$PH_i" "debug_state=$PH_DEBUGSTATE"
 				then
 					ph_set_result -r 0
@@ -431,8 +535,13 @@ case "$PH_ACTION" in repair)
 			done
 			ph_show_result
 			PH_RET_CODE="$?"
-			[[ "$PH_CHILD" == "yes" ]] && exit "$PH_RET_CODE"
-			if [[ "$(echo -n "$PH_MODULES" | nawk 'BEGIN { RS = "," } END { print NR }')" -gt "1" || "$PH_REQUESTED" == "requested" ]]
+			[[ "$PH_CHILD" == "yes" ]] && exit \
+				"$PH_RET_CODE"
+			if [[ "$(echo -n "$PH_MODULES" | nawk 'BEGIN { \
+					RS = "," \
+				} END { \
+					print NR \
+				}')" -gt "1" || "$PH_REQUESTED" == "requested" ]]
 			then
                 		ph_set_result -t -r "$PH_RET_CODE"
 				ph_show_result -t
@@ -441,4 +550,5 @@ case "$PH_ACTION" in repair)
                 	exit "$PH_RET_CODE" ;;
 		esac ;;
 esac
-confpieh_ph.sh -h || exit "$?"
+confpieh_ph.sh -h
+exit "$?"
