@@ -660,7 +660,7 @@ then
         printf "%4s%s\n" "" "- Configuration file 'Ctrls.conf' is 'Missing'" >>"$PH_TMP_DIR/reported_issues"
 	PH_RET_CODE="1"
 fi
-for PH_APP in $(nawk 'BEGIN { ORS =  " " } { print $1 }' "$PH_CONF_DIR/supported_apps" 2>/dev/null)
+for PH_APP in $(ph_get_app_list_by_state -s Supported -t minimum)
 do
 	PH_APPU="${PH_APP:0:4}"
 	if ! ph_check_object_existence -q -o "$PH_CONF_DIR/$PH_APP.conf"
@@ -842,18 +842,29 @@ declare PH_APP=""
 declare PH_FILE=""
 
 PH_FILE="$(ph_get_filename_from_shortname "$PH_i")"
-if ! ph_check_object_existence -q -o "$PH_CONF_DIR/$PH_FILE"
+if ! ph_check_object_existence -q -o "${PH_CONF_DIR}/${PH_FILE}"
 then
-	printf "%4s%s\n" "" "- 'Unique' configuration file '$PH_FILE' is 'Missing'" >>"$PH_TMP_DIR/reported_issues"
+	printf "%4s%s\n" "" "- Unique configuration file '${PH_FILE}' is missing" >>"${PH_TMP_DIR}/reported_issues"
 	return 1
 fi
 if [[ "$PH_i" == @(sup|int) ]]
 then
-	for PH_APP in $(nawk 'BEGIN { ORS = " " } { print $1 }' "$PH_CONF_DIR/$PH_FILE" 2>/dev/null)
+	for PH_APP in $(nawk 'BEGIN { \
+			ORS = " " \
+		} { \
+			print $1 \
+		}' "${PH_CONF_DIR}/${PH_FILE}" 2>/dev/null)
 	do
-		if [[ "$(nawk -v app=^"$PH_APP"$ 'BEGIN { count = "0" } $1 ~ app { count++ } END { printf count }' "$PH_CONF_DIR/$PH_FILE" 2>/dev/null)" -gt "1" ]]
+		if [[ "$(nawk -v app="^${PH_APP}$"$ 'BEGIN { \
+				count = "0" \
+			} \
+			$1 ~ app { \
+				count++ \
+			} END { \
+				printf count \
+			}' "${PH_CONF_DIR}/${PH_FILE}" 2>/dev/null)" -gt "1" ]]
 		then
-			printf "%4s%s\n" "" "- 'Unique' configuration file '$PH_FILE' is 'Corrupted' -> Multiple instances of '$PH_APP'" >>"$PH_TMP_DIR/reported_issues"
+			printf "%4s%s\n" "" "- Unique configuration file '${PH_FILE}' is corrupted -> Multiple instances of '${PH_APP}'" >>"${PH_TMP_DIR}/reported_issues"
 			return 1
 		fi
 	done
@@ -867,30 +878,38 @@ case "$PH_i" in cont)
 		alloweds)
 	: ;;
 		sup)
-	if ! cut -f1 "$PH_CONF_DIR/supported_apps" 2>/dev/null | grep -E ^"PieHelper"$ >/dev/null
+	if ! ph_check_app_state_validity -a PieHelper -s
 	then
-        	printf "%4s%s\n" "" "- 'PieHelper' is not a 'Supported' application" >>"$PH_TMP_DIR/reported_issues"
+        	printf "%4s%s\n" "" "- PieHelper is not a supported application" >>"${PH_TMP_DIR}/reported_issues"
 		return 1
 	fi
-	for PH_APP in $(nawk 'BEGIN { ORS = " " } { print $1 }' "$PH_CONF_DIR/$PH_FILE" 2>/dev/null)
+	for PH_APP in $(nawk 'BEGIN { \
+			ORS = " " \
+		} { \
+			print $1 \
+		}' "${PH_CONF_DIR}/${PH_FILE}" 2>/dev/null)
 	do
 		if ! ph_check_app_support_data_validity "$PH_APP"
 		then
-			printf "%4s%s\n" "" "- 'Unique' configuration file '$PH_FILE' is 'Corrupted' for '$PH_APP' -> Corrupted data integrity " >>"$PH_TMP_DIR/reported_issues"
+			printf "%4s%s\n" "" "- Unique configuration file '${PH_FILE}' has corrupted data for ${PH_APP}" >>"${PH_TMP_DIR}/reported_issues"
 			return 1
 		fi
 	done ;;
 		int)
-	if ! cut -f1 "$PH_CONF_DIR/integrated_apps" 2>/dev/null | grep -E ^"PieHelper"$ >/dev/null
+	if ! ph_check_app_state_validity -a PieHelper -i
 	then
-        	printf "%4s%s\n" "" "- 'PieHelper' is not an 'Integrated' application" >>"$PH_TMP_DIR/reported_issues"
+        	printf "%4s%s\n" "" "- PieHelper is not an integrated application" >>"${PH_TMP_DIR}/reported_issues"
 		return 1
 	fi
-	for PH_APP in $(nawk 'BEGIN { ORS = " " } { print $1 }' "$PH_CONF_DIR/$PH_FILE" 2>/dev/null)
+	for PH_APP in $(nawk 'BEGIN { \
+			ORS = " " \
+		} { \
+			print $1 \
+		}' "${PH_CONF_DIR}/${PH_FILE}" 2>/dev/null)
 	do
 		if ! ph_check_app_integration_data_validity "$PH_APP"
 		then
-			printf "%4s%s\n" "" "- 'Unique' configuration file '$PH_FILE' is 'Corrupted' for '$PH_APP' -> Corrupted data integrity" >>"$PH_TMP_DIR/reported_issues"
+			printf "%4s%s\n" "" "- Unique configuration file '${PH_FILE}' has corrupted data for ${PH_APP}" >>"${PH_TMP_DIR}/reported_issues"
 			return 1
 		fi
 	done ;;
@@ -907,7 +926,7 @@ declare PH_FILE=""
 declare -i PH_RET_CODE="0"
 declare -i PH_APP_TTY="0"
 
-printf "%2s%s\n\n" "" "While PieHelper configuration state is 'Unconfigured' :" >>"${PH_TMP_DIR}/reported_issues"
+printf "%2s%s\n\n" "" "While PieHelper is unconfigured' :" >>"${PH_TMP_DIR}/reported_issues"
 for PH_i in sup int cont os defaults alloweds
 do
 	ph_check_default_base_conf_file_validity "$PH_i" || \
@@ -915,26 +934,22 @@ do
 done
 if [[ -f /etc/profile.d/PieHelper-path.sh ]]
 then
-        printf "%4s%s\n" "" "- The PATH and LD_LIBRARY_PATH extension is 'Present'" >>"${PH_TMP_DIR}/reported_issues"
+        printf "%4s%s\n" "" "- The PATH and LD_LIBRARY_PATH extension is present" >>"${PH_TMP_DIR}/reported_issues"
 	PH_RET_CODE="1"
 fi
 if [[ "$PH_DISTRO" == "Debian" ]]
 then
 	if ph_check_object_existence -q -o "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf"
 	then
-		printf "%4s%s\n" "" "- ${PH_DISTRO} release symbolic link is 'Present'" >>"${PH_TMP_DIR}/reported_issues"
+		printf "%4s%s\n" "" "- ${PH_DISTRO} release symbolic link is present" >>"${PH_TMP_DIR}/reported_issues"
 		PH_RET_CODE="1"
 	fi
 fi
-for PH_i in Ctrls $(nawk 'BEGIN { \
-		ORS =  " " \
-	} { \
-		print $1 \
-	}' "${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null)
+for PH_i in Ctrls $(ph_get_app_list_by_state -s Default -t minimum)
 do
 	if ph_check_object_existence -q -o "${PH_CONF_DIR}/${PH_i}.conf"
 	then
-		printf "%4s%s\n" "" "- Configuration file '${PH_i}.conf' is 'Present'" >>"${PH_TMP_DIR}/reported_issues"
+		printf "%4s%s\n" "" "- Configuration file '${PH_CONF_DIR}/${PH_i}.conf' is present" >>"${PH_TMP_DIR}/reported_issues"
 		PH_RET_CODE="1"
 	fi
 done
@@ -955,7 +970,7 @@ for PH_i in $("$PH_SUDO" find "${PH_MNT_DIR}/*" -type d -mount 2>/dev/null | naw
 	}')
 do
 	PH_APP="${PH_i##*/}"
-       	printf "%4s%s\n" "" "- Default CIFS mountpoint '${PH_MNT_DIR}/${PH_APP}' is 'Present'" >>"${PH_TMP_DIR}/reported_issues"
+       	printf "%4s%s\n" "" "- Default CIFS mountpoint '${PH_MNT_DIR}/${PH_APP}' is present" >>"${PH_TMP_DIR}/reported_issues"
 	PH_RET_CODE="1"
 done
 for PH_i in $(find "${PH_SCRIPTS_DIR}" -maxdepth 1 -type f -regextype egrep ! -regex ".*/(start|stop|restart|.*_ph).*\.sh" -print 2>/dev/null | nawk 'BEGIN { \
@@ -987,7 +1002,7 @@ then
 fi
 if [[ ! -f "${PH_TMP_DIR}/.first_run" ]]
 then
-	printf "%4s%s\n" "" "- Temporary file '${PH_TMP_DIR}/.first_run' is 'Missing'" >>"${PH_TMP_DIR}/reported_issues"
+	printf "%4s%s\n" "" "- Temporary file '${PH_TMP_DIR}/.first_run' is missing" >>"${PH_TMP_DIR}/reported_issues"
 	PH_RET_CODE="1"
 fi
 [[ "$PH_RET_CODE" -eq "0" ]] && \
@@ -1005,45 +1020,39 @@ declare PH_APP_STATE=""
 declare PH_APP_INST_STATE=""
 declare -i PH_APP_TTY="0"
 declare -u PH_APPU="${PH_APP:0:4}"
-declare -n PH_APP_PERSISTENCE=PH_"$PH_APPU"_PERSISTENT
+declare -n PH_APP_PERSISTENCE="PH_${PH_APPU}_PERSISTENT"
 
 PH_APP_USER="$(ph_get_app_user_from_app_name "$PH_APP")"
-[[ -z "$PH_APP_USER" ]] && PH_APP_USER="-"
+[[ -z "$PH_APP_USER" ]] && \
+	PH_APP_USER="-"
 PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
 PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
 PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_name "$PH_APP")"
 PH_APP_PKG="$(ph_get_app_pkg_from_app_name "$PH_APP")"
-[[ -z "$PH_APP_PKG" ]] && PH_APP_PKG="-"
+[[ -z "$PH_APP_PKG" ]] && \
+	PH_APP_PKG="-"
 PH_APP_STATE="$(ph_get_app_state_from_app_name "$PH_APP")"
-printf "\n%10s%-20s%s\n" "" "App name" ": $PH_APP"
-ph_set_result -r "$?"
+printf "\n%10s%-20s%s\n" "" "App name" ": ${PH_APP}"
 if [[ "$PH_APP_TTY" -eq "0" ]]
 then
 	printf "%10s%-20s%s\n" "" "App TTY" ": -"
 else
-	printf "%10s%-20s%s\n" "" "App TTY" ": $PH_APP_TTY"
+	printf "%10s%-20s%s\n" "" "App TTY" ": ${PH_APP_TTY}"
 fi
-ph_set_result -r "$?"
-printf "%10s%-20s%s\n" "" "App run account" ": $PH_APP_USER"
-ph_set_result -r "$?"
-printf "%10s%-20s%s\n" "" "App start command" ": $PH_APP_CMD"
-ph_set_result -r "$?"
-printf "%10s%-20s%s\n" "" "App state" ": $PH_APP_STATE"
-ph_set_result -r "$?"
-printf "%10s%-20s%s\n" "" "App package name" ": $PH_APP_PKG"
-ph_set_result -r "$?"
-printf "%10s%-20s%s\n" "" "App install state" ": $PH_APP_INST_STATE"
-ph_set_result -r "$?"
+printf "%10s%-20s%s\n" "" "App run account" ": ${PH_APP_USER}"
+printf "%10s%-20s%s\n" "" "App start command" ": ${PH_APP_CMD}"
+printf "%10s%-20s%s\n" "" "App state" ": ${PH_APP_STATE}"
+printf "%10s%-20s%s\n" "" "App package name" ": ${PH_APP_PKG}"
+printf "%10s%-20s%s\n" "" "App install state" ": ${PH_APP_INST_STATE}"
 printf "%10s%-20s%s\n" "" "App persistence" ": $(echo -n "$PH_APP_PERSISTENCE" | cut -c1 | tr "[:lower:]" "[:upper:]")$(echo -n "$PH_APP_PERSISTENCE" | cut -c2-)"
-ph_set_result -r "$?"
-if [[ "$PH_APP" == "PieHelper" ]] && (pgrep -f ^"/bin/bash $PH_SCRIPTS_DIR/startpieh.sh.*-p$|$PH_SCRIPTS_DIR/startpieh.sh[[:space:]]*-p[[:space:]].*$" >/dev/null)
+if [[ "$PH_APP" == "PieHelper" && \
+	"$(pgrep -f "^/bin/bash ${PH_SCRIPTS_DIR}/startpieh.sh.*-p$|${PH_SCRIPTS_DIR}/startpieh.sh[[:space:]]*-p[[:space:]].*$" >/dev/null 2>&1 ; echo "$?")" -eq "0" ]]
 then
 	PH_APP_STATE="Yes"
 else
 	PH_APP_STATE="No"
 fi
-printf "%10s%-20s%s\n" "" "Active on pts" ": $PH_APP_STATE"
-ph_set_result -r "$?"
+printf "%10s%-20s%s\n" "" "Active on pts" ": ${PH_APP_STATE}"
 unset -n PH_APP_PERSISTENCE
 return 0
 }
@@ -2714,7 +2723,7 @@ case "$PH_APP_TYPE" in Unused)
 		PH_APP_STATE="Unused" || \
 		PH_RET_CODE="1" ;;
 		       Default)
-	ph_check_app_state_validity -a "$PH_APP" -q -d && \
+	cut -f1 "${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null && \
 		PH_APP_STATE="Default" ;;
 		       *)
 	PH_APP_STATE="$(ph_check_app_state_validity -a "$PH_APP" -q -f -d)"
@@ -3476,7 +3485,7 @@ then
 	fi
 	ph_run_with_rollback -c "ph_create_empty_file -t file -d '${PH_TMP_DIR}/.unconfigure_in_progress'" || \
 		return 1
-	if [[ -f "${PH_FILES_DIR}/10-retropie_sh" ]]
+	if [[ -f "${PH_FILES_DIR}/stored/10-retropie_sh" ]]
 	then
 		ph_run_with_rollback -c "ph_pieh_unconfigured_emul_conf" || \
 			return 1
@@ -4039,7 +4048,7 @@ printf "%8s%s\033[32m%s\033[0m\n" "" "--> Changing settings in system file " "'/
 if [[ "$(grep -E "^NAutoVTs=${PH_PIEH_MAX_TTYS}$" /etc/systemd/logind.conf >/dev/null 2>&1 ; echo "$?")" -ne "0" && \
 	"$(grep -E "^ReserveVT=1$" /etc/systemd/logind.conf >/dev/null 2>&1 ; echo "$?")" -ne "0" ]]
 then
-	if ph_run_with_rollback -c "ph_copy_file -q -r -s '/etc/systemd/logind.conf' -d '${PH_FILES_DIR}/logind_conf'"
+	if ph_run_with_rollback -c "ph_copy_file -q -r -s '/etc/systemd/logind.conf' -d '${PH_FILES_DIR}/stored/logind_conf'"
 	then
 		for PH_i in NAutoVTs ReserveVT
 		do
@@ -4092,7 +4101,7 @@ function ph_pieh_unconfigured_logind_conf {
 [[ ! -f "${PH_FILES_DIR}/logind_conf" ]] && \
 	return 0
 
-ph_run_with_rollback -c "ph_copy_file -r -s '${PH_FILES_DIR}/logind_conf' -d '/etc/systemd/logind.conf'" || \
+ph_run_with_rollback -c "ph_copy_file -r -m -s '${PH_FILES_DIR}/stored/logind_conf' -d '/etc/systemd/logind.conf'" || \
 	return 1
 ph_add_value_to_param -p PH_CONFIGURED_STATE -v logind
 return 0
@@ -4585,7 +4594,7 @@ declare PH_MSG="configuration"
 [[ "$#" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-if [[ ! -e "${PH_FILES_DIR}/10-retropie_sh" && ! -e "${PH_FILES_DIR}/autologin_conf" ]]
+if [[ ! -e "${PH_FILES_DIR}/stored/10-retropie_sh" && ! -e "${PH_FILES_DIR}/stored/autologin_conf" ]]
 then
 	return 0
 else
@@ -4603,7 +4612,7 @@ else
 						return 1
 				fi
 			fi
-			if ph_run_with_rollback -c "ph_copy_file -r -m -q -s '${PH_FILES_DIR}/${PH_i}' -d '/etc/systemd/system/getty@tty1.service.d/${PH_i//_/\.}'"
+			if ph_run_with_rollback -c "ph_copy_file -r -m -q -s '${PH_FILES_DIR}/stored/${PH_i}' -d '/etc/systemd/system/getty@tty1.service.d/${PH_i//_/\.}'"
 			then
 				if ph_run_with_rollback -c "ph_enable_app_tty 1"
 				then
@@ -4614,7 +4623,7 @@ else
 		else
 			PH_MSG="LoginScript ${PH_MSG}"
 			printf "%8s%s\033[32m%s\033[0m\n" "" "--> Restoring Emulationstation " "${PH_MSG}"
-			if ph_run_with_rollback -c "ph_copy_file -r -m -q -s '${PH_FILES_DIR}/${PH_i}' -d '/etc/profile.d/$(sed 's/_/\./g' <<<"$PH_i")'"
+			if ph_run_with_rollback -c "ph_copy_file -r -m -q -s '${PH_FILES_DIR}/stored/${PH_i}' -d '/etc/profile.d/$(sed 's/_/\./g' <<<"$PH_i")'"
 			then
 				ph_run_with_rollback -c true && \
 					continue
@@ -4644,7 +4653,7 @@ do
 	then
 		PH_MSG="TTY ${PH_MSG}"
 		printf "%8s%s\033[32m%s\033[0m\n" "" "--> Backing up Emulationstation " "StartApp ${PH_MSG}"
-		if ph_run_with_rollback -c "ph_copy_file -r -q -m -s '/etc/systemd/system/getty@tty1.service.d/${PH_i}' -d '${PH_FILES_DIR}/$(sed 's/\./_/g' <<<"$PH_i")'"
+		if ph_run_with_rollback -c "ph_copy_file -r -q -m -s '/etc/systemd/system/getty@tty1.service.d/${PH_i}' -d '${PH_FILES_DIR}/stored/$(sed 's/\./_/g' <<<"$PH_i")'"
 		then
 			if ph_run_with_rollback -c "ph_remove_empty_file -r -q -t directory -d '/etc/systemd/system/getty@tty1.service.d'"
 			then
@@ -4661,7 +4670,7 @@ do
 	else
 		PH_MSG="LoginScript ${PH_MSG}"
 		printf "%8s%s\033[32m%s\033[0m\n" "" "--> Backing up Emulationstation " "StartApp ${PH_MSG}"
-		if ph_run_with_rollback -c "ph_copy_file -r -m -q -s '/etc/profile.d/${PH_i}' -d '${PH_FILES_DIR}/$(sed 's/\./_/g' <<<"$PH_i")'"
+		if ph_run_with_rollback -c "ph_copy_file -r -m -q -s '/etc/profile.d/${PH_i}' -d '${PH_FILES_DIR}/stored/$(sed 's/\./_/g' <<<"$PH_i")'"
 		then
 			ph_run_with_rollback -c true
 			continue
@@ -7083,7 +7092,7 @@ fi
 "$PH_SUDO" rm "${PH_TMP_DIR}/.first_run" 2>/dev/null
 for PH_i in "$PH_SCRIPTS_DIR" "${PH_SCRIPTS_DIR}/../app/expect" "$PH_FILES_DIR" "$PH_MENUS_DIR" "$PH_CONF_DIR" "${PH_CONF_DIR}/distros" \
 	"${PH_MAIN_DIR}" "${PH_MAIN_DIR}/distros" "${PH_SCRIPTS_DIR}/app/post_cmds" "${PH_SCRIPTS_DIR}/app/pre_cmds" "$PH_MNT_DIR" \
-	"$PH_TMP_DIR" "$PH_BUILD_DIR" "$PH_SNAPSHOT_DIR" "$PH_TEMPLATES_DIR" "$PH_EXCLUDES_DIR"
+	"$PH_TMP_DIR" "$PH_BUILD_DIR" "$PH_SNAPSHOT_DIR" "$PH_TEMPLATES_DIR" "$PH_EXCLUDES_DIR" "${PH_FILES_DIR}/stored"
 do
 	ph_check_object_existence -o "$PH_i" || \
 		return 1
@@ -7143,7 +7152,8 @@ PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
 "$PH_SUDO" rm -r "${PH_SCRIPTS_DIR}/../app/post_cmds/"!(@(Kodi|PieHelper)-POST\.sh) 2>/dev/null
 "$PH_SUDO" rm "${PH_MAIN_DIR}/"!(@(distros|functions@(|\.@(user|update)))) 2>/dev/null
 "$PH_SUDO" rm -r "${PH_MAIN_DIR}/distros/"!(functions\.@($(sed 's/ /\|/g'<<<"${PH_SUPPORTED_DISTROS[@]}"))) 2>/dev/null
-"$PH_SUDO" rm "${PH_FILES_DIR}/"!(@(menus|excludes|templates|VERSIONS|default_apps_@(X|GL))) 2>/dev/null
+"$PH_SUDO" rm "${PH_FILES_DIR}/"!(@(menus|excludes|templates|stored|VERSIONS|default_apps_@(X|GL))) 2>/dev/null
+"$PH_SUDO" rm "${PH_FILES_DIR}/stored/"!(@(autologin|logind)_conf|10-retropie_sh) 2>/dev/null
 "$PH_SUDO" rm -r "${PH_EXCLUDES_DIR}/"!(@(tar|kodi)\.excludes) 2>/dev/null
 "$PH_SUDO" rm -r "${PH_TEMPLATES_DIR}/"!(@(@(Login|@(S|Res)tart|Stop|Move@(to|from)PieH|Move)Script|@(@(Res|S)tart|Stop)ScriptPieH|@(Kodi|Moonlight|PieHelper|Emulationstation|Bash|X11|Ctrls|OOSapp)_conf)\.template) 2>/dev/null
 "$PH_SUDO" rm "${PH_CONF_DIR}/"!(@(distros|@(supported|integrated)_apps|OS.defaults|VERSION|controller_cli_ids)) 2>/dev/null
@@ -7159,7 +7169,7 @@ then
 	ph_support_app -a PieHelper
 else
 	printf "%8s%s\n" "" "--> Checking support for application 'PieHelper'"
-	if ! nawk -v app=^"PieHelper"$ '$1 ~ app { exit 1 } { next }' "$PH_CONF_DIR/supported_apps" 2>/dev/null
+	if ! nawk -v app="^PieHelper$" '$1 ~ app { exit 1 } { next }' "$PH_CONF_DIR/supported_apps" 2>/dev/null
 	then
 		printf "%10s\033[32m%s\033[0m\n" "" "OK (Yes)"
 		printf "%8s%s\n" "" "--> Checking 'PieHelper' support data integrity"
@@ -7327,10 +7337,10 @@ cat >"${PH_EXCLUDES_DIR}/tar.excludes" <<EOF
 ./.github
 ./builds/PieHelper*
 ./snapshots/PieHelper*
-./files/autologin_conf
+./files/stored/autologin_conf
 ./files/stored_options
-./files/logind_conf
-./files/10-retropie_sh
+./files/stored/logind_conf
+./files/stored/10-retropie_sh
 ./tmp/*
 ./mnt/*/*
 EOF
@@ -8027,7 +8037,7 @@ OPTARG="$PH_OLDOPTARG"
 
 if [[ -n "$PH_LIST" ]]
 then
-	PH_CMD="ph_do_app_routine -p \"$PH_ACTION\" -k \"\$PH_i\" -s \"$PH_APP_SCOPE\" -o \"$PH_ROUTINE_OPTS\""
+	PH_CMD="ph_do_app_routine -p '${PH_ACTION}' -k '${PH_i}' -s '${PH_APP_SCOPE}' -o '${PH_ROUTINE_OPTS}'"
 fi
 if [[ -n "$PH_APP" ]]
 then
@@ -8036,52 +8046,52 @@ then
 	case "$PH_ACTION" in list)
 			PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_name "$PH_APP")"
 			case "$PH_APP_INST_STATE" in -|"")
-				PH_CMD="printf \"%4s%s\\n\" \"\" \"'$PH_APP' ('Unknown')\"" ;;
+				PH_CMD="printf \"%4s%s\\n\" \"\" \"${PH_APP} : Unknown\"" ;;
 						     *)
-				PH_CMD="printf \"%4s%s\\n\" \"\" \"'$PH_APP' ('$PH_APP_INST_STATE')\"" ;;
+				PH_CMD="printf \"%4s%s\\n\" \"\" \"${PH_APP} : ${PH_APP_INST_STATE}\"" ;;
 			esac ;;
 			     tty)
 			PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
 			if [[ "$PH_APP_TTY" -eq "1" ]]
 			then
-				PH_CMD="printf \"%4s%s\\n\" \"\" \"'$PH_APP' : None\""
+				PH_CMD="printf \"%4s%s\\n\" \"\" \"${PH_APP} : None\""
 			else
-				PH_CMD="printf \"%4s%s\\n\" \"\" \"'$PH_APP' : 'TTY$PH_APP_TTY'\""
+				PH_CMD="printf \"%4s%s\\n\" \"\" \"${PH_APP} : tty${PH_APP_TTY}\""
 			fi ;;
 			     info)
-			PH_CMD="ph_show_app_info \"$PH_APP\"" ;;
+			PH_CMD="ph_show_app_info '${PH_APP}'" ;;
 			     sup)
-			PH_CMD="ph_support_app -a \"$PH_APP\" $PH_ROUTINE_OPTS" ;;
+			PH_CMD="ph_support_app -a '${PH_APP}' ${PH_ROUTINE_OPTS}" ;;
 			     unsup)
-			PH_CMD="ph_unsupport_app -a \"$PH_APP\" $PH_ROUTINE_OPTS" ;;
+			PH_CMD="ph_unsupport_app -a '${PH_APP}' ${PH_ROUTINE_OPTS}" ;;
 			     int)
-			PH_CMD="ph_integrate_app -a \"$PH_APP\" $PH_ROUTINE_OPTS" ;;
+			PH_CMD="ph_integrate_app -a '${PH_APP}' ${PH_ROUTINE_OPTS}" ;;
 			     unint)
-			PH_CMD="ph_unintegrate_app -a \"$PH_APP\" $PH_ROUTINE_OPTS" ;;
+			PH_CMD="ph_unintegrate_app -a '${PH_APP}' ${PH_ROUTINE_OPTS}" ;;
 			     inst)
-			PH_CMD="ph_install_app -a \"$PH_APP\"" ;;
+			PH_CMD="ph_install_app -a '${PH_APP}'" ;;
 			     uninst)
-			PH_CMD="ph_uninstall_app -a \"$PH_APP\"" ;;
+			PH_CMD="ph_uninstall_app -a '${PH_APP}'" ;;
 			     update)
-			PH_CMD="ph_update_app -a \"$PH_APP\"" ;;
+			PH_CMD="ph_update_app -a '${PH_APP}'" ;;
 			     conf)
-			PH_CMD="ph_configure_app -a \"$PH_APP\"" ;;
+			PH_CMD="ph_configure_app -a '${PH_APP}'" ;;
 			     move)
-			PH_CMD="ph_move_app -a \"$PH_APP\" $PH_ROUTINE_OPTS" ;;
+			PH_CMD="ph_move_app -a '${PH_APP}' ${PH_ROUTINE_OPTS}" ;;
 			     start)
-			PH_CMD="ph_set_app_for_start \"$PH_APP\"" ;;
+			PH_CMD="ph_set_app_for_start '${PH_APP}'" ;;
 			     mk_conf)
-			PH_CMD="ph_create_app_conf_file \"$PH_APP\"" ;;
+			PH_CMD="ph_create_app_conf_file '${PH_APP}'" ;;
 			     mk_defaults)
-			PH_CMD="ph_create_app_defaults \"$PH_APP\"" ;;
+			PH_CMD="ph_create_app_defaults '${PH_APP}'" ;;
 			     mk_alloweds)
-			PH_CMD="ph_create_app_alloweds \"$PH_APP\"" ;;
+			PH_CMD="ph_create_app_alloweds '${PH_APP}'" ;;
 			     mk_menus)
-			PH_CMD="ph_create_app_menus \"$PH_APP\"" ;;
+			PH_CMD="ph_create_app_menus '${PH_APP}'" ;;
 			     mk_scripts)
-			PH_CMD="ph_create_app_scripts \"$PH_APP\"" ;;
+			PH_CMD="ph_create_app_scripts '${PH_APP}'" ;;
 			     mk_dir)
-			PH_CMD="ph_create_app_dir \"$PH_APP\"" ;;
+			PH_CMD="ph_create_app_dir '${PH_APP}'" ;;
 			     mk_all)
 			if [[ "$PH_APP_STATE" == "Integrated" ]]
 			then
@@ -8090,17 +8100,17 @@ then
 				PH_ITEMS="conf,defaults,alloweds,menus"
 			fi ;;
 			     rm_conf)
-			PH_CMD="ph_remove_app_conf_file \"$PH_APP\"" ;;
+			PH_CMD="ph_remove_app_conf_file '${PH_APP}'" ;;
 			     rm_defaults)
-			PH_CMD="ph_remove_app_defaults \"$PH_APP\"" ;;
+			PH_CMD="ph_remove_app_defaults '${PH_APP}'" ;;
 			     rm_alloweds)
-			PH_CMD="ph_remove_app_alloweds \"$PH_APP\"" ;;
+			PH_CMD="ph_remove_app_alloweds '${PH_APP}'" ;;
 			     rm_menus)
-			PH_CMD="ph_remove_app_menus \"$PH_APP\"" ;;
+			PH_CMD="ph_remove_app_menus '${PH_APP}'" ;;
 			     rm_scripts)
-			PH_CMD="ph_remove_app_scripts \"$PH_APP\"" ;;
+			PH_CMD="ph_remove_app_scripts '${PH_APP}'" ;;
 			     rm_dir)
-			PH_CMD="ph_remove_app_dir \"$PH_APP\"" ;;
+			PH_CMD="ph_remove_app_dir '${PH_APP}'" ;;
 			     rm_all)
 			if [[ "$PH_APP_STATE" == "Integrated" ]]
 			then
@@ -8112,10 +8122,10 @@ then
 fi
 if [[ -n "$PH_ITEMS" && -n "$PH_APP" ]]
 then
-	for PH_i in $(echo -n "$PH_ITEMS" | sed 's/,/ /g')
+	for PH_i in ${PH_ITEMS//,/ }
 	do
 		((PH_COUNT++))
-		confapps_ph.sh -p "${PH_ACTION:0:3}""$PH_i" -a "$PH_APP"
+		confapps_ph.sh -p "${PH_ACTION:0:3}${PH_i}" -a "$PH_APP"
 		ph_set_result -t -r "$?"
 	done
 	unset PH_ROUTINE_DEPTH PH_ROUTINE_FLAG PH_SKIP_DEPTH_MEMBERS
@@ -8204,37 +8214,42 @@ case "$PH_REQ_APP_STATE" in Integrated)
 			    Unknown)
 	PH_REQ_APP_STATE_PARAM="-u" ;;
 esac
-[[ "$PH_KEYWORD" == "start" ]] && PH_LIST="$PH_PIEH_STARTAPP"
+[[ "$PH_KEYWORD" == "start" ]] && \
+	PH_LIST="$PH_PIEH_STARTAPP"
 if [[ -z "$PH_APP" && -z "$PH_LIST" ]]
 then
 	case "$PH_KEYWORD" in halt)
-		for PH_i in $(nawk 'BEGIN { ORS = " " } $3 !~ /^-$/ { print $1 }' "$PH_CONF_DIR"/integrated_apps 2>/dev/null)
+		for PH_i in $(ph_get_app_list_by_state -s Halted -t exact)
 		do
-			if ! ph_check_app_state_validity -a "$PH_i" -q -r
-			then
-				[[ -z "$PH_LIST" ]] && PH_LIST="$PH_i" || PH_LIST="$PH_LIST,$PH_i"
-			fi
+			[[ -z "$PH_LIST" ]] && \
+				PH_LIST="$PH_i" || \
+				PH_LIST="${PH_LIST},${PH_i}"
 		done ;;
 			      run)
-		for PH_i in $(nawk 'BEGIN { ORS = " " } $3 !~ /^-$/ { print $1 }' "$PH_CONF_DIR"/integrated_apps 2>/dev/null)
+		for PH_i in $(ph_get_app_list_by_state -s Running -t exact)
 		do
-			if ph_check_app_state_validity -a "$PH_i" -q -r
-			then
-				[[ -z "$PH_LIST" ]] && PH_LIST="$PH_i" || PH_LIST="$PH_LIST,$PH_i"
-			fi
+			[[ -z "$PH_LIST" ]] && \
+				PH_LIST="$PH_i" || \
+				PH_LIST="${PH_LIST},${PH_i}"
 		done ;;
 	esac
 	if [[ -z "$PH_LIST" ]]
 	then
-		PH_LIST="$(nawk 'BEGIN { ORS = "," } { print $1 }' "$PH_CONF_DIR"/"$PH_FILE" 2>/dev/null)"
+		PH_LIST="$(nawk 'BEGIN { \
+				ORS = "," \
+			} { \
+				print $1 \
+			}' "${PH_CONF_DIR}/${PH_FILE}" 2>/dev/null)"
 	fi
 fi
 if [[ -z "$PH_CMD" ]]
 then
-	PH_CMD="ph_do_app_routine -a \"\$PH_i\" -p \"$PH_ACTION\" -k \"$PH_KEYWORD\" -s \"$PH_APP_SCOPE\" -o \"$PH_ROUTINE_OPTS\""
+	PH_CMD="ph_do_app_routine -a '\${PH_i}' -p '${PH_ACTION}' -k '${PH_KEYWORD}' -s '${PH_APP_SCOPE}' -o '${PH_ROUTINE_OPTS}'"
 fi
-PH_TOT_LIST_MEMBERS="$(echo -n "$PH_LIST" | sed 's/,/ /g' 2>/dev/null | nawk '{ printf NF }')"
-for PH_i in $(echo -n "$PH_LIST" | sed 's/,/ /g')
+PH_TOT_LIST_MEMBERS="$(echo ${PH_LIST//,/ } | nawk '{ \
+		printf NF \
+	}')"
+for PH_i in ${PH_LIST//,/ }
 do
 	PH_HEADER=""
 	PH_ROUTINE_FLAG="1"
@@ -8246,14 +8261,15 @@ do
 		then
 			PH_HEADER="-"
 		else
-			if [[ -z "$PH_APP" && -n "$PH_KEYWORD" ]] && [[ "$PH_COUNT" -eq "0" ]]
+			if [[ -z "$PH_APP" && -n "$PH_KEYWORD" && "$PH_COUNT" -eq "0" ]]
 			then
 				PH_HEADER="-"
-				PH_STRING="'$PH_DISP_APP_STATE' applications"
+				PH_STRING="'${PH_DISP_APP_STATE}' applications"
 			fi
 		fi
 	else
-		[[ -n "$PH_APP" ]] && PH_HEADER="-"
+		[[ -n "$PH_APP" ]] && \
+			PH_HEADER="-"
 	fi
 	if [[ -n "$PH_HEADER" ]]
 	then
@@ -8269,57 +8285,63 @@ do
 				PH_ITEMS="${PH_ACTION:3:7} option values" ;;
 		esac
 		case "$PH_ACTION" in list)
-			PH_HEADER="$PH_HEADER Listing $PH_STRING" ;;
+			PH_HEADER="${PH_HEADER} Listing ${PH_STRING}" ;;
 				     tty)
-			PH_HEADER="$PH_HEADER Displaying $PH_STRING TTY" ;;
+			PH_HEADER="${PH_HEADER} Displaying ${PH_STRING} tty" ;;
 				     info)
-			PH_HEADER="$PH_HEADER Displaying $PH_STRING info" ;;
+			PH_HEADER="${PH_HEADER} Displaying ${PH_STRING} info" ;;
 				     sup)
-			PH_HEADER="$PH_HEADER Supporting $PH_STRING" ;;
+			PH_HEADER="${PH_HEADER} Supporting ${PH_STRING}" ;;
 				     unsup)
-			PH_HEADER="$PH_HEADER Unsupporting $PH_STRING" ;;
+			PH_HEADER="${PH_HEADER} Unsupporting ${PH_STRING}" ;;
 				     int)
-			PH_HEADER="$PH_HEADER Integrating $PH_STRING" ;;
+			PH_HEADER="${PH_HEADER} Integrating ${PH_STRING}" ;;
 				     unint)
-			PH_HEADER="$PH_HEADER Unintegrating $PH_STRING" ;;
+			PH_HEADER="${PH_HEADER} Unintegrating ${PH_STRING}" ;;
 				     inst)
-			PH_HEADER="$PH_HEADER Installing $PH_STRING" ;;
+			PH_HEADER="${PH_HEADER} Installing ${PH_STRING}" ;;
 				     uninst)
-			PH_HEADER="$PH_HEADER Uninstalling $PH_STRING" ;;
+			PH_HEADER="${PH_HEADER} Uninstalling ${PH_STRING}" ;;
 				     update)
-			PH_HEADER="$PH_HEADER Updating $PH_STRING" ;;
+			PH_HEADER="${PH_HEADER} Updating ${PH_STRING}" ;;
 				     conf)
 			clear
-			PH_HEADER="$PH_HEADER Configuring $PH_STRING"
-			[[ "$PH_APP" == "PieHelper" ]] && PH_HEADER="$PH_HEADER version '$PH_VERSION'" ;;
+			PH_HEADER="${PH_HEADER} Configuring ${PH_STRING}"
+			[[ "$PH_APP" == "PieHelper" ]] && \
+				PH_HEADER="${PH_HEADER} version '${PH_VERSION}'" ;;
 				     move)
-			PH_HEADER="$PH_HEADER Moving $PH_STRING" ;;
+			PH_HEADER="${PH_HEADER} Moving ${PH_STRING}" ;;
 				     start)
-			PH_HEADER="$PH_HEADER Setting StartApp $PH_STRING" ;;
+			PH_HEADER="${PH_HEADER} Setting StartApp ${PH_STRING}" ;;
 				     mk_*)
-			PH_HEADER="$PH_HEADER Creating $PH_ITEMS for $PH_STRING" ;;
+			PH_HEADER="${PH_HEADER} Creating ${PH_ITEMS} for ${PH_STRING}" ;;
 				     rm_*)
-			PH_HEADER="$PH_HEADER Removing $PH_ITEMS for $PH_STRING" ;;
+			PH_HEADER="${PH_HEADER} Removing ${PH_ITEMS} for ${PH_STRING}" ;;
 		esac
-		[[ "$PH_APP_SCOPE" != "all" ]] && PH_HEADER="$PH_HEADER (Filtering on '$PH_APP_SCOPE' apps)"
-		[[ "$PH_ACTION" == @(mk_|rm_)* ]] && printf "\n"
+		[[ "$PH_APP_SCOPE" != "all" ]] && \
+			PH_HEADER="${PH_HEADER} (Filtering on '${PH_APP_SCOPE}' apps)"
+		[[ "$PH_ACTION" == @(mk_|rm_)* ]] && \
+			printf "\n"
 	fi
 	if [[ -n "$PH_HEADER" ]]
 	then
 		printf "\033[36m%s\033[0m\n" "$PH_HEADER"
-		[[ "$PH_ACTION" != @(list|tty) ]] && printf "\n"
+		[[ "$PH_ACTION" != @(list|tty) ]] && \
+			printf "\n"
 	fi
 	if [[ -n "$PH_APP" ]]
 	then
-		if ! [[ "$PH_i" == "Ctrls" ]] && ! [[ "$PH_ACTION" == "start" && "$PH_i" == "prompt" ]] && ! [[ "$PH_ACTION" == "list" && "$PH_KEYWORD" == "start" && "$PH_i" == "none" ]]
+		if [[ ! ( "$PH_i" == "Ctrls" && ! ( "$PH_ACTION" == "start" && "$PH_i" == "prompt" ) && \
+			! ( "$PH_ACTION" == "list" && "$PH_KEYWORD" == "start" && "$PH_i" == "none" )) ]]
 		then
 			if [[ "$PH_APP_SCOPE" == "Out-of-scope" ]]
 			then
 				if ph_check_app_state_validity -a "$PH_i" -q -d
 				then
 					printf "\n"
-					printf "%4s\033[33m%s\033[0m\n" "" "'$PH_i' not an 'Out-of-scope' application -> Skipping"
-					[[ "$PH_ACTION" != @(list|tty) ]] && PH_ROUTINE_FLAG="0"
+					printf "%4s\033[33m%s\033[0m\n" "" "${PH_i} is not an out-of-scope application -> Skipping"
+					[[ "$PH_ACTION" != @(list|tty) ]] && \
+						PH_ROUTINE_FLAG="0"
 					((PH_SKIP_LIST_MEMBERS++))
 					continue
 				fi
@@ -8329,71 +8351,89 @@ do
 				if ! ph_check_app_state_validity -a "$PH_i" -q -d
 				then
 					printf "\n"
-					printf "%4s\033[33m%s\033[0m\n" "" "'$PH_i' not a 'Default' application -> Skipping"
-					[[ "$PH_ACTION" != @(list|tty) ]] && PH_ROUTINE_FLAG="0"
+					printf "%4s\033[33m%s\033[0m\n" "" "${PH_i} not a default application -> Skipping"
+					[[ "$PH_ACTION" != @(list|tty) ]] && \
+						PH_ROUTINE_FLAG="0"
 					((PH_SKIP_LIST_MEMBERS++))
 					continue
 				fi
 			fi
 			if ! ph_check_app_state_validity -a "$PH_i" -q ${PH_REQ_APP_STATE_PARAM}
 			then
-				if [[ "$PH_ACTION" != mk_* ]] && ! [[ "$PH_i" == "PieHelper" && "$PH_ACTION" == "conf" ]] 
+				if [[ "$PH_ACTION" != mk_* && ! ( "$PH_i" == "PieHelper" && "$PH_ACTION" == "conf" ) ]] 
 				then
 					printf "\n"
-					printf "%4s\033[33m%s\033[0m\n" "" "'$PH_i' : Not '$PH_REQ_APP_STATE' -> Skipping"
-					[[ "$PH_ACTION" != @(list|tty) ]] && PH_ROUTINE_FLAG="0"
+					printf "%4s\033[33m%s\033[0m\n" "" "${PH_i} is not '${PH_REQ_APP_STATE}' -> Skipping"
+					[[ "$PH_ACTION" != @(list|tty) ]] && \
+						PH_ROUTINE_FLAG="0"
 					((PH_SKIP_LIST_MEMBERS++))
 					continue
 				fi
 			fi
 			PH_APP_STATE="$(ph_get_app_state_from_app_name "$PH_i")"
 			case "$PH_ACTION" in conf|move|mk_*|rm_*)
-						[[ "$PH_APP_STATE" == "Running" && "$PH_ACTION" != "move" ]] && PH_SKIPPING="yes"
-						[[ "$PH_i" == "PieHelper" && "$PH_ACTION" == @(move|mk_menus|rm_menus) ]] && PH_SKIPPING="yes" && PH_APP_STATE="PieHelper" ;;
+						[[ "$PH_APP_STATE" == "Running" && "$PH_ACTION" != "move" ]] && \
+							PH_SKIPPING="yes"
+						[[ "$PH_i" == "PieHelper" && "$PH_ACTION" == @(move|mk_menus|rm_menus) ]] && \
+							PH_SKIPPING="yes" && \
+							PH_APP_STATE="PieHelper" ;;
 					     unsup|int)
-						[[ "$PH_APP_STATE" != "$PH_REQ_APP_STATE" ]] && PH_SKIPPING="yes"
-						[[ "$PH_i" == "PieHelper" && "$PH_ACTION" == "unsup" ]] && PH_SKIPPING="yes" && PH_APP_STATE="PieHelper" ;;
+						[[ "$PH_APP_STATE" != "$PH_REQ_APP_STATE" ]] && \
+							PH_SKIPPING="yes"
+						[[ "$PH_i" == "PieHelper" && "$PH_ACTION" == "unsup" ]] && \
+							PH_SKIPPING="yes" && \
+							PH_APP_STATE="PieHelper" ;;
 					     unint|update)
-						[[ "$PH_APP_STATE" == "Running" ]] && PH_SKIPPING="yes"
-						[[ "$PH_i" == "PieHelper" && "$PH_ACTION" == "unint" ]] && PH_SKIPPING="yes" && PH_APP_STATE="PieHelper" ;;
+						[[ "$PH_APP_STATE" == "Running" ]] && \
+							PH_SKIPPING="yes"
+						[[ "$PH_i" == "PieHelper" && "$PH_ACTION" == "unint" ]] && \
+							PH_SKIPPING="yes" && \
+							PH_APP_STATE="PieHelper" ;;
 			esac
 			PH_APPU="${PH_i:0:4}"
-			[[ "$PH_ACTION" == @(mk|rm)_dir && "$(eval "echo -n \$PH_""$PH_APPU""_CIFS_MPT")" == "\$PH_MNT_DIR/$PH_APP" ]] && PH_SKIPPING="yes" && PH_APP_STATE="Customized mountpoint"
+			[[ "$PH_ACTION" == @(mk|rm)_dir && "$(eval "echo -n \"\$PH_${PH_APPU}_CIFS_MPT\"")" == "\${PH_MNT_DIR}/${PH_APP}" ]] && \
+				PH_SKIPPING="yes" && \
+				PH_APP_STATE="Customized mountpoint"
 			if [[ "$PH_SKIPPING" == "yes" ]]
 			then
 				printf "\n"
-				printf "%4s\033[33m%s\033[0m\n" "" "'$PH_APP_STATE' -> Skipping"
-				[[ "$PH_ACTION" != @(list|tty) ]] && PH_ROUTINE_FLAG="0"
+				printf "%4s\033[33m%s\033[0m\n" "" "${PH_APP_STATE} -> Skipping"
+				[[ "$PH_ACTION" != @(list|tty) ]] && \
+					PH_ROUTINE_FLAG="0"
 				((PH_SKIP_LIST_MEMBERS++))
 				continue
 			fi
 		fi
 	fi
 	((PH_COUNT++))
-	if [[ "$PH_SKIP_DEPTH_MEMBERS" -ge "1" ]] && [[ -n "$PH_KEYWORD" && -z "$PH_APP" ]]
+	if [[ "$PH_SKIP_DEPTH_MEMBERS" -ge "1" && -n "$PH_KEYWORD" && -z "$PH_APP" ]]
 	then
 		printf "\n"
 	fi
-	[[ "$PH_CMD" == ph_do_app_routine* ]] && ((PH_ROUTINE_DEPTH++))
+	[[ "$PH_CMD" == ph_do_app_routine* ]] && \
+		((PH_ROUTINE_DEPTH++))
 	if [[ "$PH_ACTION" == @(list|tty) && "$PH_COUNT" -eq "1" ]]
 	then
-		if [[ ( "$PH_CMD" == printf* && "$PH_ROUTINE_DEPTH" -eq "0" ) || ( -z "$PH_APP" ) ]]
+		if [[ ( "$PH_CMD" == printf* && "$PH_ROUTINE_DEPTH" -eq "0" ) || -z "$PH_APP" ]]
 		then
 			printf "\n"
 		fi
 	fi
 	eval "$PH_CMD"
 	PH_RET_CODE="$?"
-	[[ "$PH_CMD" == printf* ]] && ph_set_result -r "$PH_RET_CODE"
+	[[ "$PH_CMD" == printf* ]] && \
+		ph_set_result -r "$PH_RET_CODE"
 done
 if [[ "$PH_ACTION" == @(list|tty) ]]
 then
 	if [[ -n "$PH_APP" && -n "$PH_KEYWORD" ]]
 	then
-		PH_SKIP_DEPTH_MEMBERS="$((PH_SKIP_DEPTH_MEMBERS+"$PH_SKIP_LIST_MEMBERS"))"
-		[[ "$PH_TOT_LIST_MEMBERS" -eq "$PH_SKIP_LIST_MEMBERS" ]] && PH_ROUTINE_FLAG="0"
+		PH_SKIP_DEPTH_MEMBERS="$((PH_SKIP_DEPTH_MEMBERS+"${PH_SKIP_LIST_MEMBERS}"))"
+		[[ "$PH_TOT_LIST_MEMBERS" -eq "$PH_SKIP_LIST_MEMBERS" ]] && \
+			PH_ROUTINE_FLAG="0"
 	else
-		[[ "$PH_TOT_LIST_MEMBERS" -eq "$PH_SKIP_DEPTH_MEMBERS" ]] && PH_ROUTINE_FLAG="0"
+		[[ "$PH_TOT_LIST_MEMBERS" -eq "$PH_SKIP_DEPTH_MEMBERS" ]] && \
+			PH_ROUTINE_FLAG="0"
 	fi
 	if [[ -n "$PH_KEYWORD" && -z "$PH_APP" ]]
 	then
@@ -8404,7 +8444,7 @@ then
 		ph_show_result
 		ph_set_result -t -r "$?"
 	fi
-	if [[ -n "$PH_KEYWORD" && -n "$PH_APP" ]] && [[ "$PH_ROUTINE_DEPTH" -eq "0" ]]
+	if [[ -n "$PH_KEYWORD" && -n "$PH_APP" && "$PH_ROUTINE_DEPTH" -eq "0" ]]
 	then
 		if [[ "$PH_SKIP_LIST_MEMBERS" -eq "1" ]]
 		then
@@ -8426,7 +8466,8 @@ else
 	fi
 	if [[ -n "$PH_KEYWORD" && -z "$PH_APP" ]]
 	then
-		[[ "$PH_ROUTINE_DEPTH" -ne "0" ]] && PH_ROUTINE_FLAG="$((PH_ROUTINE_FLAG+"$PH_TOT_LIST_MEMBERS"))"
+		[[ "$PH_ROUTINE_DEPTH" -ne "0" ]] && \
+			PH_ROUTINE_FLAG="$((PH_ROUTINE_FLAG+"${PH_TOT_LIST_MEMBERS}"))"
 	fi
 	if [[ -n "$PH_KEYWORD" && -n "$PH_APP" ]]
 	then
@@ -8437,17 +8478,21 @@ else
 		ph_show_result
 		if [[ "$?" -eq "0" ]]
 		then
-			[[ $"("$PH_SUDO" cat /proc/"$PPID"/comm 2>/dev/null)" != "confapps_ph.sh" ]] && ph_set_result -t -r 0
+			[[ "$("$PH_SUDO" cat "/proc/${PPID}/comm" 2>/dev/null)" != "confapps_ph.sh" ]] && \
+				ph_set_result -t -r 0
 		else
-			[[ $"("$PH_SUDO" cat /proc/"$PPID"/comm 2>/dev/null)" != "confapps_ph.sh" ]] && ph_set_result -t -r 1
+			[[ "$("$PH_SUDO" cat "/proc/${PPID}/comm" 2>/dev/null)" != "confapps_ph.sh" ]] && \
+				ph_set_result -t -r 1
 		fi
 	fi
-	if [[ $"("$PH_SUDO" cat /proc/"$PPID"/comm 2>/dev/null)" != "confapps_ph.sh" ]]
+	if [[ "$("$PH_SUDO" cat "/proc/${PPID}/comm" 2>/dev/null)" != "confapps_ph.sh" ]]
 	then
-		[[ "$PH_ROUTINE_DEPTH" -eq "0" && "$PH_TOT_LIST_MEMBERS" -gt "1" ]] && ph_show_result -t
+		[[ "$PH_ROUTINE_DEPTH" -eq "0" && "$PH_TOT_LIST_MEMBERS" -gt "1" ]] && \
+			ph_show_result -t
 	fi
 fi
-[[ -z "$PH_APP" ]] && PH_SKIP_DEPTH_MEMBERS="0"
+[[ -z "$PH_APP" ]] && \
+	PH_SKIP_DEPTH_MEMBERS="0"
 if [[ "$PH_ROUTINE_DEPTH" -ne "0" ]]
 then
 	((PH_ROUTINE_DEPTH--))
@@ -8489,7 +8534,9 @@ declare -n PH_APPU_CIFS_DIR="PH_${PH_APPU}_CIFS_DIR"
 declare -n PH_APPU_CIFS_SUBDIR="PH_${PH_APPU}_CIFS_SUBDIR"
 declare -n PH_APPU_PERSISTENT="PH_${PH_APPU}_PERSISTENT"
 
-PH_MOON_PATH="$(nawk '$1 ~ /^Moonlight$/ { printf $3 }' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)"
+PH_MOON_PATH="$(nawk '$1 ~ /^Moonlight$/ { \
+		printf $3 \
+	}' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)"
 PH_APP_USER="$(ph_get_app_user_from_app_name "$PH_APP")"
 PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
 PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
@@ -8499,7 +8546,7 @@ PH_FG_CONSOLE="$("$PH_SUDO" fgconsole 2>/dev/null)"
 case "$PH_ACTION" in start)
 	if [[ "$PH_FG_CONSOLE" -eq "$PH_APP_TTY" ]]
 	then
-		printf "%8s%s\n" "" "--> Checking for '$PH_APP' configuration requirement"
+		printf "%8s%s\n" "" "--> Checking the configuration requirement of ${PH_APP}"
 		ph_set_result -r 0
 		if [[ "$PH_APP" == "Moonlight" ]]
 		then
