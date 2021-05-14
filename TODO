@@ -1,3 +1,4 @@
+* continue with rollback function ph_create_app_user (and add vars to main.sh + create counteraction function) + reflect changes related to use of ph_grant_pieh_access etc + create function for quit with auto rollback and adapt calls where quit is used + verify quit with warning code in ph_check_app_user + reflect other changes to unintegrate, integrate, unsupport app and add/remove to/from support/integrate files functions + change verify code of other functions calling to changed ph_check_app_user function
 * check if passing PH_APP_INST_STATE is still required between ph_support_app/ph_unsupport_app
 * Make use of ph_check_app_state_validity and ph_get_app_list_by_state functions where possible
 * When chosing to skip supporting ph_suppport_app (2 places) -> manually modify so far added rollback params etc or not ?
@@ -20,6 +21,7 @@
 * scan code for evals and other occurences of _CIFS_MPT and change code to use new ph_get_app_cifs_mpt function
 * create option for selection of Xserver
 * implement option for limit menu size on screen to 1080p
+* implement option of default app to start on other app exit or start piehelper on exit of default app or do nothing if the default app is also piehelper : also check doing so only if calling script is not move/restart/stop script
 * add ph_remove_default_base_conf_file function + rollback
 ***
 * do away with ph_store_options shit in confapps_ph.sh
