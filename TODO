@@ -1,3 +1,5 @@
+* handle ph_install_app paramaters for user better : (optional since can also come from supported_apps)
+* handle changes of *_PKG options by ph_set_option_to_value -> auto change application installation state in supported_apps and run ph_uninstall_app (+ ph_install_app or not ??) when required
 * continue with rollback function ph_create_app_user (and add vars to main.sh + create counteraction function) + reflect changes related to use of ph_grant_pieh_access etc + create function for quit with auto rollback and adapt calls where quit is used + verify quit with warning code in ph_check_app_user + reflect other changes to unintegrate, integrate, unsupport app and add/remove to/from support/integrate files functions + change verify code of other functions calling to changed ph_check_app_user function
 * check if passing PH_APP_INST_STATE is still required between ph_support_app/ph_unsupport_app
 * Make use of ph_check_app_state_validity and ph_get_app_list_by_state functions where possible

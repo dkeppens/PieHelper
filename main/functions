@@ -2050,6 +2050,7 @@ return 0
 function ph_get_app_name_from_base_conf_file {
 
 declare PH_i
+declare PH_j
 declare PH_APP
 declare PH_APP_USER
 declare PH_APP_CMD
@@ -2102,7 +2103,8 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ "$#" -lt "2" ]] && \
+[[ -z "$PH_APP_USER" && -z "$PH_APP_CMD" && -z "$PH_APP_INST_STATE" && \
+	( "$PH_APP_TTY" -le "1" || "$PH_APP_TTY" -gt "$PH_PIEH_MAX_TTYS" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 for PH_i in USER TTY CMD INST_STATE
@@ -2124,36 +2126,43 @@ do
 		unset -n PH_VAR
 		continue
 	fi
-	PH_COUNT="$(nawk -v comp="$PH_il" -v mstring="^()*${PH_VAR}()*$" 'BEGIN { \
-			count = 0 ; \
-			$1 = "" ; \
-			if (comp == "user") { \
-				$3 = "" \
-			} elif (comp == "cmd") { \
-				$2 = "" ; \
-				$3 = "" \
-			} elif (comp == "inst_state") { \
-				$2 = "" \
-			} ; \
-			if (comp != "cmd") { \
-				for (i=4;i<=NF;i++) { \
-					$i = "" \
+	for PH_j in 1 2
+	do
+		[[ "$PH_j" == "2" ]] && \
+			PH_FILE="${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}"
+		PH_COUNT="$(nawk -v comp="$PH_il" -v mstring="^()*${PH_VAR}()*$" 'BEGIN { \
+				count = 0 ; \
+				$1 = "" ; \
+				if (comp == "user") { \
+					$3 = "" \
+				} elif (comp == "cmd") { \
+					$2 = "" ; \
+					$3 = "" \
+				} elif (comp == "inst_state") { \
+					$2 = "" \
+				} ; \
+				if (comp != "cmd") { \
+					for (i=4;i<=NF;i++) { \
+						$i = "" \
+					} \
 				} \
 			} \
-		} \
-		$0 ~ mstring { \
-			count++ ; \
-			next \
-		} { \
-			next \
-		} END { \
-			printf "%s", count \
-		}' "${PH_FILE}" 2>/dev/null)"
+			$0 ~ mstring { \
+				count++ ; \
+				next \
+			} { \
+				next \
+			} END { \
+				printf "%s", count \
+			}' "${PH_FILE}" 2>/dev/null)"
+		[[ "$PH_COUNT" -gt "0" || "$PH_i" != "CMD" ]] && \
+			break
+	done
 	case "$PH_COUNT" in 0)
 		unset -n PH_VAR
 		continue ;;
 			    1)
-		PH_APP="$(eval "ph_get_app_name_from_app_${PH_il}" \""${PH_VAR}\"")" ;;
+		PH_APP="$(eval "ph_get_app_name_from_app_${PH_il} \"${PH_VAR}\"")" ;;
 			    *)
 		unset -n PH_VAR
 		return 1 ;;
@@ -3925,8 +3934,8 @@ then
 				  PH_ADD_APPS_TO_SUP_FILE)
 			PH_APP="$(echo -n "$PH_VALUE" | cut -f1 -d\')"
 			PH_APP_USER="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
-			PH_APP_CMD="$(echo -n "$PH_VALUE" | cut -f3 -d\')"
-			PH_APP_INST_STATE="$(echo -n "$PH_VALUE" | cut -f4 -d\')"
+			PH_APP_INST_STATE="$(echo -n "$PH_VALUE" | cut -f3 -d\')"
+			PH_APP_CMD="$(echo -n "$PH_VALUE" | cut -f4 -d\')"
 			PH_PARAMS="-a '${PH_APP}' -u '${PH_APP_USER}' -c '${PH_APP_CMD}'"
 			[[ -n "$PH_APP_INST_STATE" ]] && \
 				PH_PARAMS="${PH_PARAMS} -i '${PH_APP_INST_STATE}'"
@@ -4089,11 +4098,20 @@ then
 			PH_APP_CMD="$(echo -n "$PH_VALUE" | cut -f3 -d\')"
 			PH_APP_PKG="$(echo -n "$PH_VALUE" | cut -f4 -d\')"
 			PH_APP_INST_STATE="$(echo -n "$PH_VALUE" | cut -f5 -d\')"
-			PH_PARAMS="-a '${PH_APP}'"
-			for PH_i in USER INST_STATE CMD PKG
+			PH_PARAMS=""
+			for PH_i in "" _USER _CMD _PKG _INST_STATE
 			do
-				[[ -n "$(eval "echo -n \"\$PH_APP_${PH_i}\"")" ]] && \
-					PH_PARAMS="${PH_PARAMS} -$(cut -c1 "$PH_i" | tr "[:upper:]" "[:lower:]") '\${PH_APP_${PH_i}'"
+				declare -n PH_VAR="PH_APP${PH_i}"
+				if [[ -n "$PH_VAR" ]]
+				then
+					if [[ -z "$PH_i" ]]
+					then
+						PH_PARAMS="-a '${PH_VAR}'"
+					else
+						PH_PARAMS="${PH_PARAMS} -$(cut -c2 "$PH_i" | tr "[:upper:]" "[:lower:]") '${PH_VAR}'"
+					fi
+				fi
+				unset -n PH_VAR
 			done
 			PH_CMD="ph_unsupport_app ${PH_PARAMS}" ;;
 				PH_UNINT_APPS)
@@ -4108,11 +4126,20 @@ then
 			PH_APP_USER="$(echo -n "$PH_VALUE" | cut -f2 -d\')"
 			PH_APP_CMD="$(echo -n "$PH_VALUE" | cut -f3 -d\')"
 			PH_APP_PKG="$(echo -n "$PH_VALUE" | cut -f4 -d\')"
-			PH_PARAMS="-a '${PH_APP}'"
-			for PH_i in USER CMD PKG
+			PH_PARAMS=""
+			for PH_i in "" _USER _CMD _PKG
 			do
-				[[ -n "$(eval "echo -n \"\$PH_APP_${PH_i}\"")" ]] && \
-					PH_PARAMS="${PH_PARAMS} -$(cut -c1 "$PH_i" | tr "[:upper:]" "[:lower:]") '\${PH_APP_${PH_i}'"
+				declare -n PH_VAR="PH_APP${PH_i}"
+				if [[ -n "$PH_VAR" ]]
+				then
+					if [[ -z "$PH_i" ]]
+					then
+						PH_PARAMS="-a '${PH_VAR}'"
+					else
+						PH_PARAMS="${PH_PARAMS} -$(cut -c2 "$PH_i" | tr "[:upper:]" "[:lower:]") '${PH_VAR}'"
+					fi
+				fi
+				unset -n PH_VAR
 			done
 			PH_CMD="ph_support_app ${PH_PARAMS}" ;;
 				PH_RESTORE_FILES)
@@ -5088,6 +5115,24 @@ case "$PH_APP" in Moonlight)
 						printf "%8s%s\n" "" "--> Installing files"
 						if "$PH_SUDO" make install >/dev/null 2>&1
 						then
+							ph_run_with_rollback -c true
+							if ph_check_object_existence -q -o sup
+							then
+								while true
+								do
+									PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
+									printf "%8s%s\n" "" "--> Updating the installation state of ${PH_APP} in configuration file '${PH_CONF_DIR}/supported_apps'"
+									if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\\t${PH_APP_USER}\\tAbsent\\t${PH_APP_CMD}}'"
+									then
+										if ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\\t${PH_APP_USER}\\tPackageless\\t${PH_APP_CMD}}'"
+										then
+											break
+										fi
+									fi
+									ph_run_with_rollback -c false -m "Could not update" || \
+										return 1
+								done
+							fi
 							if [[ -z "$PH_APP_USER" ]]
 							then
 								ph_add_value_to_param -p PH_UNINSTALL_APPS -v "${PH_APP}'"
@@ -5098,7 +5143,7 @@ case "$PH_APP" in Moonlight)
 								return "$?"
 					
 						else
-							ph_set_result -m "Could not deploy compiled version of '${PH_APP}'"
+							ph_set_result -m "Could not deploy the compiled version of '${PH_APP}'"
 						fi
 					else
 						ph_set_result -m "Could not change directory to '${HOME}/moonlight-embedded/build'"
@@ -5605,11 +5650,11 @@ function ph_unsupport_app {
 
 declare PH_i=""
 declare PH_APP=""
-declare PH_APP_CMD=""
 declare PH_APP_USER=""
+declare PH_APP_CMD=""
 declare PH_APP_PKG=""
-declare PH_APP_STATE=""
 declare PH_APP_INST_STATE=""
+declare PH_APP_STATE=""
 declare PH_APP_GRAPH=""
 declare PH_APP_EXEC=""
 declare PH_OPTION=""
@@ -5662,7 +5707,7 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_APP" && -z "$PH_APP_CMD" && -z "$PH_APP_USER" ]] && \
+[[ -z "$PH_APP" && -z "$PH_APP_USER" && -z "$PH_APP_CMD" && -z "$PH_APP_INST_STATE" && -z "$PH_APP_PKG" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 if [[ "$PH_APP" == @(default|supported) ]]
@@ -6040,8 +6085,33 @@ fi
 return "$?"
 }
 
+function ph_get_app_name_from_app_pkg {
+
+declare PH_APP
+declare PH_APP_PKG
+declare -u PH_APPU
+
+PH_APP_PKG="$1"
+
+[[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+for PH_APP in $(ph_get_app_list_by_state -s Default -t exact) $(ph_get_app_list_by_state -s Supported -t minimum)
+do
+	PH_APPU="$PH_APP"
+	declare -n PH_PKG="PH_${APPU:0:4}_PKG"
+	if [[ "$PH_APP_PKG" == "$PH_PKG" ]]
+	then
+		echo -n "$PH_APP"
+		return 0
+	fi
+done
+return 1
+}
+
 function ph_support_app {
 
+declare PH_i=""
 declare PH_APP=""
 declare PH_APP_EXEC=""
 declare PH_APP_CMD=""
@@ -6056,32 +6126,31 @@ declare -i PH_OLDOPTIND="$OPTIND"
 declare -i PH_COUNT="0"
 declare -i PH_ANSWER="0"
 declare -l PH_APPL=""
-declare -a PH_PARAMS
 
 OPTIND="1"
 
 while getopts a:c:u:p: PH_OPTION 2>/dev/null
 do
         case "$PH_OPTION" in a)
-		[[ -n "$PH_APP" ]] && \
+		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
                 PH_APP="$OPTARG" ;;
                              c)
-		[[ -n "$PH_APP_CMD" ]] && \
+		[[ -n "$PH_APP_CMD" || -z "$OPTARG" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
                 PH_APP_CMD="$OPTARG" ;;
                              u)
-		[[ -n "$PH_APP_USER" ]] && \
+		[[ -n "$PH_APP_USER" || -z "$OPTARG" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
                 PH_APP_USER="$OPTARG" ;;
                              p)
-		[[ -n "$PH_APP_PKG" ]] && \
+		[[ -n "$PH_APP_PKG" || -z "$OPTARG" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -6095,7 +6164,7 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_APP" || "$#" -lt "2" ]] && \
+[[ -z "$PH_APP" && -z "$PH_APP_PKG" && -z "$PH_APP_CMD" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 if [[ "$PH_APP" == "default" ]]
@@ -6106,8 +6175,34 @@ then
 			return 1
 	done
 	return 0
+else
+	if [[ -z "$PH_APP" ]]
+	then
+		printf "%8s%s\n" "" "--> Attempting to determine missing arguments"
+		for PH_i in CMD PKG
+		do
+			if [[ -n "$(eval "echo -n \"\$PH_APP_${PH_i}\"")" ]]
+			then
+				case "$PH_i" in CMD)
+					PH_APP="$(ph_get_app_name_from_base_conf_file -c "$PH_APP_CMD")" ;;
+						PKG)	
+					PH_APP="$(ph_get_app_name_from_app_pkg "$PH_APP_PKG")" ;;
+				esac
+			fi
+			[[ -n "$PH_APP" ]] && \
+				break
+		done
+		if [[ -n "$PH_APP" ]]
+		then
+			ph_run_with_rollback -c true
+		else
+			ph_set_result -m "Function '${FUNCNAME[0]}' requires an application name but could not determine it automatically"
+			ph_run_with_rollback -c false -m "Could not determine" || \
+				return 1
+		fi
+	fi
 fi
-PH_APP_INST_STATE="Packaged"
+PH_APP_INST_STATE="Absent"
 printf "%8s%s\n" "" "--> Checking the application state of ${PH_APP}"
 PH_APP_STATE="$(ph_get_app_state_from_app_name "$PH_APP")"
 case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
@@ -6137,7 +6232,7 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 		if [[ -n "$PH_APP_CMD" && "$PH_APP_CMD" != "$(ph_get_app_cmd_from_app_name "$PH_APP")" ]]
 		then
 			PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
-			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Mismatch with known start command -> Set to default of '${PH_APP_CMD}'"
+			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Mismatch with known start command -> Set to '${PH_APP_CMD}'"
 			ph_set_result -r 0
 		else
 			[[ -z "$PH_APP_CMD" ]] && \
@@ -6145,17 +6240,19 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 			ph_run_with_rollback -c true -m "'${PH_APP_CMD}'"
 		fi
 		printf "%8s%s\n" "" "--> Checking the package of ${PH_APP}"
-		if [[ "$PH_APP_PKG" != "$(ph_get_app_pkg_from_app_conf "$PH_APP")" ]]
+		if [[ -n "$PH_APP_PKG" && "$PH_APP_PKG" != "$(ph_get_app_pkg_from_app_conf "$PH_APP")" ]]
 		then
 			PH_APP_PKG="$(ph_get_app_pkg_from_app_conf "$PH_APP")"
 			if [[ -n "$PH_APP_PKG" ]]
 			then
-				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Mismatch with known package -> Set to default of '${PH_APP_PKG}'"
+				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Mismatch with known package -> Set to '${PH_APP_PKG}'"
 			else
-				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Mismatch with known installation method -> Set to Packageless" 
+				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Mismatch with known installation method -> Set to no package" 
 			fi
 			ph_set_result -r 0
 		else
+			[[ -z "$PH_APP_PKG" ]] && \
+				PH_APP_PKG="$(ph_get_app_pkg_from_app_conf "$PH_APP")"
 			if [[ -z "$PH_APP_PKG" ]]
 			then
 				ph_run_with_rollback -c true -m "Packageless"
@@ -6164,20 +6261,25 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 			fi
 		fi
 	fi
+	declare -a PH_PARAMS
 	if [[ -z "$PH_APP_PKG" ]]
 	then
 		PH_APP_INST_STATE="Packageless"
 	else
-		PH_APP_INST_STATE="Packaged"
+		ph_get_pkg_inst_state "$PH_APP_PKG" && \
+			PH_APP_INST_STATE="Packaged"
 		PH_PARAMS+=("-p" "'${PH_APP_PKG}'")
 	fi
-	[[ -n "$PH_APP_USER" ]] && \
-		PH_PARAMS+=("-u" "'${PH_APP_USER}'")
-	if [[ "${#PH_PARAMS[@]}" -gt "0" ]]
-	then 
-		ph_check_app_user -a "$PH_APP" -i "$PH_APP_INST_STATE" "${PH_PARAMS[@]}"
-	else
-		ph_check_app_user -a "$PH_APP" -i "$PH_APP_INST_STATE"
+	for PH_i in USER PKG
+	do
+		declare PH_VAR="PH_APP_${PH_i}"
+		[[ -n "$PH_VAR" ]] && \
+			PH_PARAMS+=("-$(cut -c1 "$PH_i" | tr "[:upper:]" "[:lower:]")" "'${PH_VAR}'")
+	done
+	if ! ph_check_app_user -a "$PH_APP" -i "$PH_APP_INST_STATE" "${PH_PARAMS[@]}"
+	then
+		unset PH_PARAMS
+		return 1
 	fi
 	unset PH_PARAMS
 	PH_APP_GRAPH="$(echo -n "$PH_APP_CMD" | nawk -v app="$PH_APP" 'BEGIN { \
@@ -6221,11 +6323,8 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 					printf "%12s\033[32m%s\033[0m\n" "" "1. Install ${PH_APP}"
 					printf "%12s\033[32m%s\033[0m\n" "" "2. Enter the full pathname of executable '${PH_APP_EXEC##*/}' manually"
 					printf "%12s\033[32m%s\033[0m\n" "" "3. Run a full system scan for '${PH_APP_EXEC##*/}'"
-					printf "%12s\033[32m%s\033[0m\n\n" "" "4. Quit and rollback changes"
-					if [[ "$PH_APP" != "PieHelper" ]]
-					then
-						printf "%12s\033[32m%s\033[0m\n\n" "" "5. Skip the support for ${PH_APP}"
-					fi
+					printf "%12s\033[32m%s\033[0m\n" "" "4. Skip installation of ${PH_APP} for now"
+					printf "%12s\033[32m%s\033[0m\n\n" "" "5. Quit and rollback changes"
 					printf "%12s%s" "" "Your choice : "
 					read -r PH_ANSWER 2>/dev/null
 					ph_screen_input "$PH_ANSWER"
@@ -6246,11 +6345,12 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 						printf "%8s%s\n" "" "--> Scanning for executable '${PH_APP_EXEC##*/}' (This may take a while)"
 						PH_APP_EXEC="$("$PH_SUDO" find / -type f -perm -o=x ! -fstype nfs -name "${PH_APP_EXEC##*/}" 2>/dev/null)" ;;
 							     4)
-						ph_quit_with_rollback ;;
-							     5)
-						printf "%10s\033[33m%s\033[0m\n" "" "Warning : Skipping support of ${PH_APP}"
+						printf "%10s\033[33m%s\033[0m\n" "" "Warning : Skipping installation but ${PH_APP} will not function until it is installed"
 						ph_set_result -r 0
-						return 0 ;;
+						PH_APP_INST_STATE=""
+						break 2 ;;
+							     5)
+						ph_quit_with_rollback ;;
 							     *)
 						printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
 						continue ;;
@@ -6287,6 +6387,15 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 			ph_run_with_rollback -c "ph_install_app -a '${PH_APP}' -u '${PH_APP_USER}'" || \
 				return 1
 		done
+	fi
+	if [[ "$PH_ANSWER" -ne "4" ]]
+	then
+		if [[ -z "$PH_APP_PKG" ]]
+		then
+			PH_APP_INST_STATE="Packageless"
+		else
+			PH_APP_INST_STATE="Packaged"
+		fi
 	fi
 	printf "%8s%s\n" "" "--> Checking for ${PH_APP} dependencies"
 	if [[ "$PH_APP_GRAPH" == "yes" && "$PH_APP" != "X11" ]]
@@ -6612,6 +6721,7 @@ return 0
 
 function ph_check_app_user {
 
+declare PH_i=""
 declare PH_APP=""
 declare PH_APP_PKG=""
 declare PH_APP_USER=""
@@ -6627,19 +6737,19 @@ OPTIND="1"
 while getopts a:p:u:i: PH_OPTION 2>/dev/null
 do
         case "$PH_OPTION" in a)
-		[[ -n "$PH_APP" ]] && \
+		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
                 PH_APP="$OPTARG" ;;
 			     p)
-		[[ -n "$PH_APP_PKG" ]] && \
+		[[ -n "$PH_APP_PKG" || -z "$OPTARG" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
                 PH_APP_PKG="$OPTARG" ;;
 			     u)
-		[[ -n "$PH_APP_USER" ]] && \
+		[[ -n "$PH_APP_USER" || -z "$OPTARG" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -6659,21 +6769,51 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_APP" || -z "$PH_APP_INST_STATE" || ( "$PH_APP_INST_STATE" == "Packageless" && \
-	( -n "$PH_APP_PKG" || ( "$#" -ne "6" && -n "$PH_APP_USER" ) || ( "$#" -ne "4" && -z "$PH_APP_USER" ))) || \
-	( "$PH_APP_INST_STATE" == "Packaged" && ( -z "$PH_APP_PKG" || ( "$#" -ne "8" && -n "$PH_APP_USER" ) || ( "$#" -ne "6" && -z "$PH_APP_USER" ))) ]] && \
+[[ ( -z "$PH_APP" && -z "$PH_APP_PKG" ) || -z "$PH_APP_INST_STATE" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
+if [[ -z "$PH_APP" || ( -z "$PH_APP_PKG" && "$PH_APP_INST_STATE" != "Packageless" ) ]]
+then
+	printf "%8s%s\n" "" "--> Attempting to determine missing arguments"
+	for PH_i in 1 2
+	do
+		if [[ "$PH_i" == "1" ]]
+		then
+			if [[ -n "$PH_APP_PKG" && -z "$PH_APP" ]]
+			then
+				PH_APP="$(ph_get_app_name_from_app_pkg "$PH_APP_PKG")"
+			fi
+		else
+			if [[ -z "$PH_APP" ]]
+			then
+				ph_set_result -m "Function '${FUNCNAME[0]}' requires an application name but could not determine it automatically"
+				ph_run_with_rollback -c false -m "Could not determine" || \
+					return 1
+			else
+				if [[ -z "$PH_APP_PKG" && "$PH_APP_INST_STATE" != "Packageless" ]]
+				then
+					PH_APP_PKG="$(ph_get_app_pkg_from_app_conf "$PH_APP")"
+					if [[ -z "$PH_APP_PKG" ]]
+					then
+						ph_set_result -m "Function '${FUNCNAME[0]}' requires an application package but could not determine it automatically"
+						ph_run_with_rollback -c false -m "Could not determine" || \
+							return 1
+					fi
+					
+				fi
+			fi
+		fi
+	done
+	ph_run_with_rollback -c true
+fi
 if [[ "$PH_APP" == "PieHelper" ]]
 then
 	PH_APP_USER="$PH_RUN_USER"
 else
 	if [[ -z "$PH_APP_USER" ]]
 	then
-		printf "%8s%s\n" "" "--> Checking install state of ${PH_APP}"
 		if [[ "$PH_APP_INST_STATE" == "Packaged" ]]
 		then
-			ph_run_with_rollback -c true -m "${PH_APP_INST_STATE} as '${PH_APP_PKG}'"
 			printf "%8s%s\n" "" "--> Attempting to determine the ${PH_APP} user from package '${PH_APP_PKG}'"
 			PH_APP_USER="$(systemctl show "$PH_APP_PKG" 2>/dev/null | nawk -F'=' '$1 ~ /^User$/ { \
 					printf $2 \
@@ -6685,8 +6825,6 @@ else
 				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not determine"
 				ph_set_result -r 0
 			fi
-		else
-			ph_run_with_rollback -c true -m "$PH_APP_INST_STATE"
 		fi
 	fi
 	printf "%8s%s\n" "" "--> Checking the user account for ${PH_APP}"
@@ -7820,11 +7958,11 @@ else
 			printf "%10s\033[32m%s\033[0m\n" "" "OK"
 		else
 			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Corrupted support data found -> Resupporting"
-			ph_support_app -a "PieHelper"
+			ph_support_app -a PieHelper
 		fi
 	else
 		printf "%10s\033[33m%s\033[0m\n" "" "Warning : No -> Supporting"
-		ph_support_app -a "PieHelper"
+		ph_support_app -a PieHelper
 	fi
 fi
 . "$PH_CONF_DIR"/PieHelper.conf >/dev/null 2>&1
