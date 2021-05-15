@@ -1381,10 +1381,10 @@ do
 	then
 		ph_do_app_action stop "$PH_APP" force || return 1
 	else
-		if [[ "$PH_APP" == "PieHelper" ]] && (pgrep -f ^"/bin/bash $PH_SCRIPTS_DIR/startpieh.sh.*-p$|$PH_SCRIPTS_DIR/startpieh.sh[[:space:]]*-p[[:space:]].*$" >/dev/null 2>&1)
+		if [[ "$PH_APP" == "PieHelper" ]] && (pgrep -f ^"/bin/bash ${PH_SCRIPTS_DIR}/startpieh.sh.*-p$|${PH_SCRIPTS_DIR}/startpieh.sh[[:space:]]*-p[[:space:]].*$" >/dev/null 2>&1)
 		then
 			printf "%8s%s\n" "" "--> Stopping 'PieHelper' on a pseudo-terminal"
-			if "$PH_SUDO" kill -9 "$(pgrep -f ^"/bin/bash $PH_SCRIPTS_DIR/startpieh.sh.*-p$|$PH_SCRIPTS_DIR/startpieh.sh[[:space:]]*-p[[:space:]].*$" 2>/dev/null)"
+			if "$PH_SUDO" kill -9 "$(pgrep -f ^"/bin/bash ${PH_SCRIPTS_DIR}/startpieh.sh.*-p$|${PH_SCRIPTS_DIR}/startpieh.sh[[:space:]]*-p[[:space:]].*$" 2>/dev/null)"
 			then
 				ph_run_with_rollback -c "true"
 			else
@@ -8507,10 +8507,10 @@ PH_APP_USER_CUR_GROUPS="$(groups "$PH_APP_USER" 2>/dev/null | nawk 'BEGIN { \
 			} \
 		} \
 	}')"
-if [[ "$((for PH_i in ${PH_APP_USER_CUR_GROUPS//,/ }; \
+if [[ "$( (for PH_i in ${PH_APP_USER_CUR_GROUPS//,/ }; \
 do \
 	echo "$PH_i"; \
-done) | sort)" != "$((for PH_i in ${PH_APP_USER_GROUPS//,/ }; \
+done) | sort)" != "$( (for PH_i in ${PH_APP_USER_GROUPS//,/ }; \
 	do \
 		echo "$PH_i"; \
 	done) | sort)" ]]
