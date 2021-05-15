@@ -3107,19 +3107,19 @@ then
 	case "$PH_APP_STATE" in Unknown)
 			PH_RET_CODE="1" ;;
 				Default)
-			[[ "$PH_APP_TYPE" == @(Halted|Running|Integrated|Supported|Unknown) ]] && \
+			[[ "$PH_APP_TYPE" == @(Halted|Running|Integrated|Supported) ]] && \
 				PH_RET_CODE="1" ;;
 				Supported)
-			[[ "$PH_APP_TYPE" == @(Halted|Running|Integrated|Unknown) ]] && \
+			[[ "$PH_APP_TYPE" == @(Halted|Running|Integrated) ]] && \
 				PH_RET_CODE="1" ;;
 				Integrated)
-			[[ "$PH_APP_TYPE" == @(Halted|Running|Unknown) ]] && \
+			[[ "$PH_APP_TYPE" == @(Halted|Running) ]] && \
 				PH_RET_CODE="1" ;;
 				Running)
-			[[ "$PH_APP_TYPE" == @(Halted|Unknown) ]] && \
+			[[ "$PH_APP_TYPE" == @(Halted) ]] && \
 				PH_RET_CODE="1" ;;
 				Halted)
-			[[ "$PH_APP_TYPE" == @(Running|Unknown) ]] && \
+			[[ "$PH_APP_TYPE" == @(Running) ]] && \
 				PH_RET_CODE="1" ;;
 	esac
 fi
