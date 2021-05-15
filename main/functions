@@ -6360,7 +6360,7 @@ PH_APP_STATE="$(ph_get_app_state_from_app_name "$PH_APP")"
 case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 	ph_run_with_rollback -c true -m "Nothing to do" && \
 		return "$?" ;;
-			Unused)
+			Unknown|Default)
 	ph_run_with_rollback -c true -m "$PH_APP_STATE"
 	printf "%8s%s\n" "" "--> Checking the start command of ${PH_APP}"
 	if ! ph_check_app_state_validity -a "$PH_APP" -q -d
@@ -6577,7 +6577,7 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 	fi
 	ph_add_value_to_param -p PH_UNSUP_APPS -v "${PH_APP}'${PH_APP_USER}'${PH_APP_CMD}'${PH_APP_PKG}'${PH_APP_INST_STATE}"
 	return 0 ;;
-			Reserved)
+			*)
 	PH_APPL="${PH_APP:0:4}"
 	ph_set_result -m "Could not support ${PH_APP} since it is using a reserved shortname '${PH_APPL}'" ;;
 esac
