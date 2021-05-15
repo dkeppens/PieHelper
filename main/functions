@@ -57,6 +57,120 @@ fi
 return 0
 }
 
+function ph_get_app_executable {
+
+declare PH_APP
+declare PH_APP_EXEC
+declare PH_APP_GRAPH
+declare PH_APP_CMD
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+
+PH_OLDOPTARG="$OPTARG"
+PH_OLDOPTIND="$OPTIND"
+
+OPTIND="1"
+
+while getopts a:c: PH_OPTION 2>/dev/null
+do
+	case "$PH_OPTION" in a)
+		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_APP="$OPTARG" ;;
+			     c)
+		[[ -n "$PH_APP_CMD" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_APP_CMD="$OPTARG" ;;
+			     *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+	esac
+done
+OPTIND="$PH_OLDOPTIND"
+OPTARG="$PH_OLDOPTARG"
+
+[[ -z "$PH_APP" || -z "$PH_APP_CMD" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+PH_APP_GRAPH="$(ph_get_app_graphical_prop -a "$PH_APP" -c "$PH_APP_CMD")"
+PH_APP_EXEC="$(echo -n "$PH_APP_CMD" | nawk -v app="$PH_APP" -v appgraph="$PH_APP_GRAPH" '{ \
+		if (appgraph == "yes") { \
+			if (app == "X11") { \
+				printf $1 \
+			} else { \
+				printf $2 \
+			} \
+		} else { \
+			printf $1 \
+		} \
+	}')"
+echo -n "$PH_APP_EXEC"
+return 0
+}
+
+function ph_get_app_graphical_prop {
+
+declare PH_APP
+declare PH_APP_GRAPH
+declare PH_APP_CMD
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+
+PH_OLDOPTARG="$OPTARG"
+PH_OLDOPTIND="$OPTIND"
+
+OPTIND="1"
+
+while getopts a:c: PH_OPTION 2>/dev/null
+do
+	case "$PH_OPTION" in a)
+		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_APP="$OPTARG" ;;
+			     c)
+		[[ -n "$PH_APP_CMD" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_APP_CMD="$OPTARG" ;;
+			     *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+	esac
+done
+OPTIND="$PH_OLDOPTIND"
+OPTARG="$PH_OLDOPTARG"
+
+[[ -z "$PH_APP" || -z "$PH_APP_CMD" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+PH_APP_GRAPH="$(echo -n "$PH_APP_CMD" | nawk -v app="$PH_APP" 'BEGIN { \
+		graph = "no" \
+	} { \
+		if (app == "X11") { \
+			graph = "yes" \
+		} else { \
+			if ($1 ~ /^\/usr\/bin\/xinit$/ || $1 ~ /^\/usr\/bin\/startx$/) { \
+				graph = "yes" \
+			} \
+		} \
+	} END { \
+		printf "%s", graph \
+	}')"
+echo -n "$PH_APP_GRAPH"
+return 0
+}
+
 function ph_remove_oos_app_code {
 
 declare PH_APP="$1"
@@ -5051,20 +5165,8 @@ then
 		ph_apt_clean
 	if ph_check_object_existence -q -o sup
 	then
-		while true
-		do
-			PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
-			printf "%8s%s\n" "" "--> Updating the installation state of ${PH_APP} in configuration file '${PH_CONF_DIR}/supported_apps'"
-			if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\\t${PH_APP_USER}\\tPA\\t${PH_APP_CMD}}'"
-			then
-				if ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\\t${PH_APP_USER}\\tPI\\t${PH_APP_CMD}}'"
-				then
-					break
-				fi
-			fi
-			ph_run_with_rollback -c false -m "Could not update" || \
-				return 1
-		done
+		ph_update_base_conf_file -a "$PH_APP" -f sup -c 3 -v PI || \
+			return 1
 	fi
 	if [[ -z "$PH_APP_USER" ]]
 	then
@@ -5135,20 +5237,8 @@ case "$PH_APP" in Moonlight)
 							ph_run_with_rollback -c true
 							if ph_check_object_existence -q -o sup
 							then
-								while true
-								do
-									PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
-									printf "%8s%s\n" "" "--> Updating the installation state of ${PH_APP} in configuration file '${PH_CONF_DIR}/supported_apps'"
-									if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\\t${PH_APP_USER}\\tUA\\t${PH_APP_CMD}}'"
-									then
-										if ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\\t${PH_APP_USER}\\tUI\\t${PH_APP_CMD}}'"
-										then
-											break
-										fi
-									fi
-									ph_run_with_rollback -c false -m "Could not update" || \
-										return 1
-								done
+								ph_update_base_conf_file -a "$PH_APP" -f sup -c 3 -v UI || \
+									return 1
 							fi
 							if [[ -z "$PH_APP_USER" ]]
 							then
@@ -5234,20 +5324,8 @@ case "$PH_APP" in Moonlight)
 						fi
 						if ph_check_object_existence -q -o sup
 						then
-							while true
-							do
-								PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
-								printf "%8s%s\n" "" "--> Updating the installation state of ${PH_APP} in configuration file '${PH_CONF_DIR}/supported_apps'"
-								if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\\t${PH_APP_USER}\\tUA\\t${PH_APP_CMD}}'"
-								then
-									if ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\\t${PH_APP_USER}\\tUI\\t${PH_APP_CMD}}'"
-									then
-										break
-									fi
-								fi
-								ph_run_with_rollback -c false -m "Could not update" || \
-									return 1
-							done
+							ph_update_base_conf_file -a "$PH_APP" -f sup -c 3 -v UI || \
+								return 1
 						fi
 						ph_show_emul_info "$PH_APP_USER"
 						ph_add_value_to_param -p PH_UNINSTALL_APPS -v "${PH_APP}'${PH_APP_USER}"
@@ -5690,7 +5768,6 @@ declare PH_APP_CMD=""
 declare PH_APP_PKG=""
 declare PH_APP_INST_STATE=""
 declare PH_APP_STATE=""
-declare PH_APP_GRAPH=""
 declare PH_APP_EXEC=""
 declare PH_OPTION=""
 declare PH_OLDOPTARG="$OPTARG"
@@ -5836,30 +5913,7 @@ then
 		else
 			ph_run_with_rollback -c true -m "$PH_APP_CMD"
 		fi
-		PH_APP_GRAPH="$(echo -n "$PH_APP_CMD" | nawk -v app="$PH_APP" 'BEGIN { \
-				graph = "no" \
-			} { \
-				if (app == "X11") { \
-					graph = "yes" \
-				} else { \
-					if ($1 ~ /^\/usr\/bin\/xinit$/ || $1 ~ /^\/usr\/bin\/startx$/) { \
-						graph = "yes" \
-					} \
-				} \
-			} END { \
-				printf "%s", graph \
-			}')"
-		PH_APP_EXEC="$(echo -n "$PH_APP_CMD" | nawk -v app="$PH_APP" -v appgraph="$PH_APP_GRAPH" '{ \
-				if (appgraph == "yes") { \
-					if (app == "X11") { \
-						printf $1 \
-					} else { \
-						printf $2 \
-					} \
-				} else { \
-					printf $1 \
-				} \
-			}')"
+		PH_APP_EXEC="$(ph_get_app_executable -a "$PH_APP" -c "$PH_APP_CMD")"
 		PH_APPU="${PH_APP:0:4}"
 		printf "%8s%s\n" "" "--> Checking package parameter"
 		if [[ "$PH_APP_PKG" != "$(eval "echo -n \"\$PH_${PH_APPU}_PKG_NAME\"")" ]]
@@ -6296,30 +6350,8 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 			fi
 		fi
 	fi
-	PH_APP_GRAPH="$(echo -n "$PH_APP_CMD" | nawk -v app="$PH_APP" 'BEGIN { \
-			graph = "no" \
-		} { \
-			if (app == "X11") { \
-				graph = "yes" \
-			} else { \
-				if ($1 ~ /^\/usr\/bin\/xinit$/ || $1 ~ /^\/usr\/bin\/startx$/) { \
-					graph = "yes" \
-				} \
-			} \
-		} END { \
-			printf "%s", graph \
-		}')"
-	PH_APP_EXEC="$(echo -n "$PH_APP_CMD" | nawk -v app="$PH_APP" -v appgraph="$PH_APP_GRAPH" '{ \
-			if (appgraph == "yes") { \
-				if (app == "X11") { \
-					printf $1 \
-				} else { \
-					printf $2 \
-				} \
-			} else { \
-				printf $1 \
-			} \
-		}')"
+	PH_APP_GRAPH="$(ph_get_app_graphical_prop -a "$PH_APP" -c "$PH_APP_CMD")"
+	PH_APP_EXEC="$(ph_get_app_executable -a "$PH_APP" -c "$PH_APP_CMD")"
 	declare -a PH_PARAMS
 	if [[ -z "$PH_APP_PKG" ]]
 	then
@@ -6557,7 +6589,6 @@ function ph_get_app_inst_state_from_app_conf {
 declare PH_APP
 declare PH_APP_PKG
 declare PH_APP_CMD
-declare PH_APP_GRAPH
 declare PH_APP_EXEC
 declare PH_APP_INST_STATE
 declare PH_OPTION=""
@@ -6612,30 +6643,7 @@ else
 		PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
 	if [[ -n "$PH_APP_CMD" ]]
 	then
-		PH_APP_GRAPH="$(echo -n "$PH_APP_CMD" | nawk -v app="$PH_APP" 'BEGIN { \
-				graph = "no" \
-			} { \
-				if (app == "X11") { \
-					graph = "yes" \
-				} else { \
-					if ($1 ~ /^\/usr\/bin\/xinit$/ || $1 ~ /^\/usr\/bin\/startx$/) { \
-						graph = "yes" \
-					} \
-				} \
-			} END { \
-				printf "%s", graph \
-			}')"
-		PH_APP_EXEC="$(echo -n "$PH_APP_CMD" | nawk -v app="$PH_APP" -v appgraph="$PH_APP_GRAPH" '{ \
-				if (appgraph == "yes") { \
-					if (app == "X11") { \
-						printf $1 \
-					} else { \
-						printf $2 \
-					} \
-				} else { \
-					printf $1 \
-				} \
-			}')"
+		PH_APP_EXEC="$(ph_get_app_executable -a "$PH_APP" -c "$PH_APP_CMD")"
 	else
 		ph_set_result -m "Could not determine the application's installation state without a valid start command"
 		return 1
@@ -6686,7 +6694,7 @@ do
 			return 1
                 PH_APP_CMD="$OPTARG" ;;
                              i)
-		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(Absent|Package@(d|less)) ]] && \
+		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(P|U)@(I|A) ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -6737,6 +6745,109 @@ esac
 ph_add_value_to_param -p PH_REMOVE_APPS_FROM_SUP_FILE -v "${PH_APP}'${PH_APP_USER}'${PH_APP_INST_STATE}'${PH_APP_CMD}"
 ph_run_with_rollback -c true && \
 	return "$?"
+}
+
+function ph_update_base_conf_file {
+
+declare PH_APP
+declare PH_APP_USER
+declare PH_APP_INST_STATE
+declare PH_APP_CMD
+declare PH_FILE
+declare PH_VALUE
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+declare -i PH_COLUMN
+declare -i PH_APP_TTY
+
+PH_OLDOPTARG="$OPTARG"
+PH_OLDOPTIND="$OPTIND"
+
+OPTIND="1"
+
+while getopts a:f:c:v: PH_OPTION 2>/dev/null
+do
+        case "$PH_OPTION" in a)
+		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+                PH_APP="$OPTARG" ;;
+                             f)
+		[[ -n "$PH_FILE" || "$OPTARG" != @(sup|int) ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+                PH_FILE="$OPTARG" ;;
+                             c)
+		[[ "$PH_COLUMN" -gt "0" || "$OPTARG" -lt "1" || "$OPTARG" -gt "4" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+                PH_COLUMN="$OPTARG" ;;
+                             v)
+		[[ -n "$PH_VALUE" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+                PH_VALUE="$OPTARG" ;;
+                             *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+        esac
+done
+OPTIND="$PH_OLDOPTIND"
+OPTARG="$PH_OLDOPTARG"
+
+[[ -z "$PH_APP" || -z "$PH_FILE" || -z "$PH_VALUE" || "$PH_COLUMN" -lt "2" || \
+	( "$PH_COLUMN" -gt "4" && "$PH_FILE" == "sup" ) || ( "$PH_COLUMN" -ne "2" && "$PH_FILE" == "int" ) ]] && \
+	return 1
+
+PH_FILE="$(ph_get_filename_from_shortname "$PH_FILE")"
+if [[ "$PH_FILE" == "supported_apps" ]]
+then
+	PH_APP_USER="$(ph_get_app_user_from_app_name "$PH_APP")"
+	PH_APP_INST_STATE="$(ph_get_app_user_from_app_name "$PH_APP")"
+	PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
+else
+	PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
+fi
+printf "%8s%s\n" "" "--> Updating the information for ${PH_APP} in configuration file '${PH_CONF_DIR}/${PH_FILE}'"
+while true
+do
+	if [[ "$PH_FILE" == "supported_apps" ]]
+	then
+		if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/${PH_FILE}' -l '${PH_APP}\\t${PH_APP_USER}\\t${PH_APP_INST_STATE}\\t${PH_APP_CMD}'"
+		then
+			case "$PH_COLUMN" in 2)
+				PH_APP_USER="$PH_VALUE" ;;
+					     3)
+				PH_APP_INST_STATE="$PH_VALUE" ;;
+					     4)
+				PH_APP_CMD="$PH_VALUE" ;;
+			esac
+			if ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/${PH_FILE}' -l '${PH_APP}\\t${PH_APP_USER}\\t${PH_APP_INST_STATE}\\t${PH_APP_CMD}'"
+			then
+				break
+			fi
+		fi
+	else
+		if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/${PH_FILE}' -l '${PH_APP}\\t${PH_APP_TTY}'"
+		then
+			if ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/${PH_FILE}' -l '${PH_APP}\\t${PH_VALUE}'"
+			then
+				break
+			fi
+		fi
+	fi
+	ph_run_with_rollback -c false -m "Could not update" || \
+		return 1
+done
+ph_run_with_rollback -c true && \
+	return "$?"
+return 0
 }
 
 function ph_add_app_to_integration_file {
