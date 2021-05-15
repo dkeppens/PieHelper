@@ -693,8 +693,6 @@ PH_APP="$1"
 
 set -x
 PH_APP_STATE="$(ph_check_app_state_validity -a "$PH_APP" -q -f -u)"
-[[ "$PH_APP_STATE" == "Unknown" ]] && \
-	PH_APP_STATE="$(ph_check_app_state_validity -a "$PH_APP" -q -f -n)"
 echo -n "$PH_APP_STATE"
 set +x
 return 0
@@ -743,22 +741,25 @@ declare -l PH_APPL=""
 declare -i PH_RET_CODE="0"
 declare -i PH_APP_TTY="0"
 
-printf "%2s%s\n\n" "" "While PieHelper configuration state is 'Configured' :" >>"$PH_TMP_DIR/reported_issues"
+printf "%2s%s\n\n" "" "While PieHelper is configured :" >>"${PH_TMP_DIR}/reported_issues"
 for PH_i in sup int cont os defaults alloweds
 do
-	ph_check_base_conf_file_validity "$PH_i" || PH_RET_CODE="1"
+	ph_check_base_conf_file_validity "$PH_i" || \
+		PH_RET_CODE="1"
 done
 if [[ ! -f /etc/profile.d/PieHelper-path.sh ]]
 then
-        printf "%4s%s\n" "" "- The PATH and LD_LIBRARY_PATH extension is 'Missing'" >>"$PH_TMP_DIR/reported_issues"
+        printf "%4s%s\n" "" "- The PATH and LD_LIBRARY_PATH extension is missing" >>"${PH_TMP_DIR}/reported_issues"
 	PH_RET_CODE="1"
 else
 	PH_APP_USER="$(ph_get_app_user_from_app_name PieHelper)"
 	if [[ -n "$PH_APP_USER" ]]
 	then
-		if [[ "$("$PH_SUDO" find /etc/profile.d/PieHelper-path.sh -exec ls -l {} \; 2>/dev/null | nawk '{ print $3 }')" != "root" ]]
+		if [[ "$("$PH_SUDO" find /etc/profile.d/PieHelper-path.sh -exec ls -l {} \; 2>/dev/null | nawk '{ \
+				print $3 \
+			}')" != "root" ]]
 		then
-			printf "%4s%s\n" "" "- The PATH and LD_LIBRARY_PATH extension has a 'Corrupted' value for ownership -> Fix by running '${PH_SUDO} chown root:root /etc/profile.d/PieHelper-path.sh'" >>"$PH_TMP_DIR/reported_issues"
+			printf "%4s%s\n" "" "- The PATH and LD_LIBRARY_PATH extension has a 'Corrupted' value for ownership -> Fix by running '${PH_SUDO} chown root:root /etc/profile.d/PieHelper-path.sh'" >>"${PH_TMP_DIR}/reported_issues"
 			PH_RET_CODE="1"
 		fi
 	fi
@@ -770,95 +771,105 @@ then
 fi
 if [[ -f "$PH_FILES_DIR/auto_update_denied" ]]
 then
-        printf "%4s%s\n" "" "- Temporary file 'auto_update_denied' is 'Present'" >>"$PH_TMP_DIR/reported_issues"
+        printf "%4s%s\n" "" "- Temporary file 'auto_update_denied' is present" >>"${PH_TMP_DIR}/reported_issues"
 	PH_RET_CODE="1"
 fi
-if ! ph_check_object_existence -q -o "$PH_CONF_DIR/Ctrls.conf"
+if ! ph_check_object_existence -q -o "${PH_CONF_DIR}/Ctrls.conf"
 then
-        printf "%4s%s\n" "" "- Configuration file 'Ctrls.conf' is 'Missing'" >>"$PH_TMP_DIR/reported_issues"
+        printf "%4s%s\n" "" "- Configuration file 'Ctrls.conf' is missing" >>"${PH_TMP_DIR}/reported_issues"
 	PH_RET_CODE="1"
 fi
 for PH_APP in $(ph_get_app_list_by_state -s Supported -t minimum)
 do
 	PH_APPU="${PH_APP:0:4}"
-	if ! ph_check_object_existence -q -o "$PH_CONF_DIR/$PH_APP.conf"
+	if ! ph_check_object_existence -q -o "${PH_CONF_DIR}/${PH_APP}.conf"
 	then
-       		printf "%4s%s\n" "" "- Supported application '$PH_APP' configuration file '$PH_APP.conf' is 'Missing'" >>"$PH_TMP_DIR/reported_issues"
+       		printf "%4s%s\n" "" "- Supported application ${PH_APP} configuration file '${PH_APP}.conf' is missing" >>"${PH_TMP_DIR}/reported_issues"
 		PH_RET_CODE="1"
 	fi
 	if [[ "$PH_APP" != "PieHelper" ]]
 	then
-		for PH_i in AppManagement_"$PH_APP" OptsManagement_"$PH_APP" TTYManagement_"$PH_APP" "$PH_APP"
+		for PH_i in "AppManagement_${PH_APP}" "OptsManagement_${PH_APP}" "TTYManagement_${PH_APP}" "$PH_APP"
 		do
-			if [[ ! -f "$PH_MENUS_DIR/$PH_i.lst" ]]
+			if [[ ! -f "${PH_MENUS_DIR}/${PH_i}.lst" ]]
 			then
-       			 	printf "%4s%s\n" "" "- Integrated application '$PH_APP' menu item '$PH_i.lst' is 'Missing'" >>"$PH_TMP_DIR/reported_issues"
+       			 	printf "%4s%s\n" "" "- Integrated application ${PH_APP} menu item '${PH_i}.lst' is missing" >>"${PH_TMP_DIR}/reported_issues"
 				PH_RET_CODE="1"
 			fi
 		done
 	fi
 	for PH_i in alloweds defaults
 	do
-		if ph_check_object_existence -q -o "$PH_CONF_DIR/options.$PH_i"
+		if ph_check_object_existence -q -o "${PH_CONF_DIR}/options.${PH_i}"
 		then
-			if ! grep -E ^PH_"$PH_APPU"_ "$PH_CONF_DIR/options.$PH_i" >/dev/null 2>&1
+			if ! grep -E "^PH_${PH_APPU}_" "${PH_CONF_DIR}/options.${PH_i}" >/dev/null 2>&1
 			then
-       				printf "%4s%s\n" "" "- Supported application '$PH_APP' ${PH_i%?} option values are 'Missing'" >>"$PH_TMP_DIR/reported_issues"
+       				printf "%4s%s\n" "" "- Supported application ${PH_APP} ${PH_i%?} option values are missing" >>"${PH_TMP_DIR}/reported_issues"
 				PH_RET_CODE="1"
 			fi
 		fi
 	done
 done
-for PH_i in $("$PH_SUDO" find "$PH_MNT_DIR/*" -type d 2>/dev/null | nawk 'BEGIN { ORS = " " } { print }')
+for PH_i in $("$PH_SUDO" find "${PH_MNT_DIR}/*" -type d 2>/dev/null | nawk 'BEGIN { \
+		ORS = " " \
+	} { \
+		print \
+	}')
 do
 	PH_APP="${PH_i##*/}"
-	if ! cut -f1 "$PH_CONF_DIR/integrated_apps" 2>&1 | egrep -E ^"$PH_APP"$ >/dev/null
+	if ! cut -f1 "${PH_CONF_DIR}/integrated_apps" 2>&1 | grep -E "^${PH_APP}$" >/dev/null
 	then
-        	printf "%4s%s\n" "" "- Default CIFS mountpoint '$PH_MNT_DIR/$PH_APP' is 'Present' while '$PH_APP' application state is not 'Integrated'" >>"$PH_TMP_DIR/reported_issues"
+        	printf "%4s%s\n" "" "- Default CIFS mountpoint '${PH_MNT_DIR}/${PH_APP}' is present while ${PH_APP} application state is not 'Integrated'" >>"${PH_TMP_DIR}/reported_issues"
 		PH_RET_CODE="1"
 	fi
 done
-for PH_APP in $(nawk 'BEGIN { ORS = " " } { print $1 }' "$PH_CONF_DIR/integrated_apps" 2>/dev/null)
+for PH_APP in $(ph_get_app_list_by_state -s Integrated -t minimum)
 do
 	PH_APPU="${PH_APP:0:4}"
-	PH_APPU_CIFS_MPT="$(eval "echo -n \$PH_""$PH_APPU""_CIFS_MPT")"
-	if ! cut -f1 "$PH_CONF_DIR/supported_apps" 2>/dev/null | grep -E ^"$PH_APP"$ >/dev/null
+	PH_APPU_CIFS_MPT="$(eval "echo -n \"\$PH_${PH_APPU}_CIFS_MPT\"")"
+	if ! cut -f1 "${PH_CONF_DIR}/supported_apps" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
 	then
-        	printf "%4s%s\n" "" "- Integrated application '$PH_APP' is 'Missing' in configuration file 'supported_apps'" >>"$PH_TMP_DIR/reported_issues"
+        	printf "%4s%s\n" "" "- Integrated application ${PH_APP} is missing in configuration file '${PH_CONF_DIR}/supported_apps'" >>"${PH_TMP_DIR}/reported_issues"
 		PH_RET_CODE="1"
 	fi
-	if [[ ! -d "$(eval echo -n "$PH_APPU_CIFS_MPT")" ]]
+	if [[ ! -d "$(eval "echo -n \"${PH_APPU_CIFS_MPT}\"")" ]]
 	then
-        	printf "%4s%s\n" "" "- Integrated application '$PH_APP' CIFS mountpoint '$(eval echo -n "$PH_APPU_CIFS_MPT")' is 'Missing'" >>"$PH_TMP_DIR/reported_issues"
+        	printf "%4s%s\n" "" "- Integrated application ${PH_APP} CIFS mountpoint '$(eval "echo -n \"${PH_APPU_CIFS_MPT}\"")' is missing" >>"${PH_TMP_DIR}/reported_issues"
 		PH_RET_CODE="1"
 	fi
 done
-for PH_APP in $(nawk 'BEGIN { ORS = " " } $3 !~ /^-$/ { print $1 }' "$PH_CONF_DIR/integrated_apps" 2>/dev/null)
+for PH_APP in $(ph_get_app_list_by_state -s Integrated -t minimum)
 do
 	PH_APPL="${PH_APP:0:4}"
 	PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
-	if [[ ! -f "/etc/profile.d/PieHelper_tty$PH_APP_TTY.sh" ]]
+	if [[ ! -f "/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh" ]]
 	then
-        	printf "%4s%s\n" "" "- Integrated application '$PH_APP' on 'TTY$PH_APP_TTY' LoginScript is 'Missing'" >>"$PH_TMP_DIR/reported_issues"
+        	printf "%4s%s\n" "" "- Integrated application ${PH_APP} on 'tty${PH_APP_TTY}' LoginScript is missing" >>"${PH_TMP_DIR}/reported_issues"
 		PH_RET_CODE="1"
 	fi
-	if [[ ! -f "/etc/systemd/system/getty@tty$PH_APP_TTY.service.d/autologin.conf" ]]
+	if [[ ! -f "/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/autologin.conf" ]]
 	then
-        	printf "%4s%s\n" "" "- Integrated application '$PH_APP' on 'TTY$PH_APP_TTY' autologin is 'Missing'" >>"$PH_TMP_DIR/reported_issues"
+        	printf "%4s%s\n" "" "- Integrated application ${PH_APP} on 'tty${PH_APP_TTY}' autologin is missing" >>"${PH_TMP_DIR}/reported_issues"
 		PH_RET_CODE="1"
 	fi
-	for PH_i in $(nawk -v app=^"$PH_APP"$ -v appl="$PH_APPL" -v scriptsdir="$PH_SCRIPTS_DIR" 'BEGIN { ORS = " " }
-			$1 !~ app { appl2 = tolower(substr($1,1,4)) ; print scriptsdir "/" appl "to" appl2 ".sh " scriptsdir "/" appl2 "to" appl ".sh " }
-			END { print scriptsdir "/start" appl ".sh " scriptsdir "/stop" appl ".sh " scriptsdir "/restart" appl ".sh" }' "$PH_CONF_DIR/integrated_apps" 2>/dev/null)
+	for PH_i in $(nawk -v app="^${PH_APP}$" -v appl="${PH_APPL}" -v scriptsdir="${PH_SCRIPTS_DIR}" 'BEGIN { \
+			ORS = " " \
+		} \
+		$1 !~ app { \
+			appl2 = tolower(substr($1,1,4)) ; \
+			print scriptsdir "/" appl "to" appl2 ".sh " scriptsdir "/" appl2 "to" appl ".sh " \
+		} END { \
+			print scriptsdir "/start" appl ".sh " scriptsdir "/stop" appl ".sh " scriptsdir "/restart" appl ".sh" \
+		}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null)
 	do
-		if [[ ! -f "$PH_i" ]]
+		if [[ ! -f "${PH_i}" ]]
 		then
-        		printf "%4s%s\n" "" "- Integrated application '$PH_APP' management script '$PH_i' is 'Missing'" >>"$PH_TMP_DIR/reported_issues"
+        		printf "%4s%s\n" "" "- Integrated application ${PH_APP} management script '${PH_i}' is missing" >>"${PH_TMP_DIR}/reported_issues"
 			PH_RET_CODE="1"
 		else
-			if [[ ! -x "$PH_i" ]]
+			if [[ ! -x "${PH_i}" ]]
 			then
-        			printf "%4s%s\n" "" "- Integrated application '$PH_APP' management script '$PH_i' is not executable -> Should be '0770'" >>"$PH_TMP_DIR/reported_issues"
+        			printf "%4s%s\n" "" "- Integrated application ${PH_APP} management script '${PH_i}' is not executable -> Should be '0770'" >>"${PH_TMP_DIR}/reported_issues"
 				PH_RET_CODE="1"
 			fi
 		fi
@@ -869,74 +880,76 @@ do
 	PH_APP="$(ph_get_app_name_from_app_tty "$PH_APP_TTY")"
 	PH_APPL="${PH_APP:0:4}"
 	PH_APP_USER="$(ph_get_app_user_from_app_tty "$PH_APP_TTY")"
-	if [[ -f "/etc/systemd/system/getty@tty$PH_APP_TTY.service.d/autologin.conf" ]]
+	if [[ -f "/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/autologin.conf" ]]
 	then
-		if cut -f3 "$PH_CONF_DIR/integrated_apps" 2>/dev/null | grep -E ^"$PH_APP_TTY"$ >/dev/null
+		if cut -f3 "${PH_CONF_DIR}/integrated_apps" 2>/dev/null | grep -E "^${PH_APP_TTY}$" >/dev/null
 		then
 			if [[ "$(ph_get_app_user_from_autologin "$PH_APP_TTY")" != "$PH_APP_USER" ]]
 			then
-        			printf "%4s%s\n" "" "- Autologin for 'TTY$PH_APP_TTY' has a 'Corrupted' value for PH_APP_USER -> Should be '$PH_APP_USER'" >>"$PH_TMP_DIR/reported_issues"
+        			printf "%4s%s\n" "" "- Autologin for 'tty${PH_APP_TTY}' has a corrupted value for PH_APP_USER -> Should be '${PH_APP_USER}'" >>"${PH_TMP_DIR}/reported_issues"
 				PH_RET_CODE="1"
 			fi
 			if [[ "$PH_APP_TTY" -ne "$(ph_get_app_tty_from_autologin "$PH_APP_TTY")" ]]
 			then
-        			printf "%4s%s\n" "" "- Autologin for 'TTY$PH_APP_TTY' has a 'Corrupted' value for PH_APP_TTY -> Should be '$PH_APP_TTY'" >>"$PH_TMP_DIR/reported_issues"
+        			printf "%4s%s\n" "" "- Autologin for 'tty${PH_APP_TTY}' has a corrupted value for PH_APP_TTY -> Should be '${PH_APP_TTY}'" >>"${PH_TMP_DIR}/reported_issues"
 				PH_RET_CODE="1"
 			fi
 		else
-        		printf "%4s%s\n" "" "- Autologin configuration for 'TTY$PH_APP_TTY' is 'Present' while TTY$PH_APP_TTY is unallocated" >>"$PH_TMP_DIR/reported_issues"
+        		printf "%4s%s\n" "" "- Autologin configuration for 'tty${PH_APP_TTY}' is present while tty${PH_APP_TTY} is unallocated" >>"${PH_TMP_DIR}/reported_issues"
 			PH_RET_CODE="1"
 		fi
 	fi
-	if [[ -f "/etc/profile.d/PieHelper_tty$PH_APP_TTY.sh" ]]
+	if [[ -f "/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh" ]]
 	then
-		if cut -f3 "$PH_CONF_DIR/integrated_apps" 2>/dev/null | grep -E ^"$PH_APP_TTY"$ >/dev/null
+		if cut -f3 "${PH_CONF_DIR}/integrated_apps" 2>/dev/null | grep -E "^${PH_APP_TTY}$" >/dev/null
 		then
 			if [[ "$(ph_get_app_user_from_login_script_owner "$PH_APP_TTY")" != "$PH_APP_USER" ]]
 			then
-        			printf "%4s%s\n" "" "- LoginScript for 'TTY$PH_APP_TTY' has a 'Corrupted' value for ownership -> Should be '$PH_APP_USER'" >>"$PH_TMP_DIR/reported_issues"
+        			printf "%4s%s\n" "" "- LoginScript for 'tty${PH_APP_TTY}' has a corrupted value for ownership -> Should be '${PH_APP_USER}'" >>"${PH_TMP_DIR}/reported_issues"
 				PH_RET_CODE="1"
 			fi
 			if [[ "$(ph_get_app_user_from_login_script "$PH_APP_TTY")" != "$PH_APP_USER" ]]
 			then
-        			printf "%4s%s\n" "" "- LoginScript for 'TTY$PH_APP_TTY' has a 'Corrupted' value for PH_APP_USER -> Should be '$PH_APP_USER'" >>"$PH_TMP_DIR/reported_issues"
+        			printf "%4s%s\n" "" "- LoginScript for 'tty${PH_APP_TTY}' has a corrupted value for PH_APP_USER -> Should be '${PH_APP_USER}'" >>"${PH_TMP_DIR}/reported_issues"
 				PH_RET_CODE="1"
 			fi
 			if [[ "$(ph_get_app_tty_from_login_script "$PH_APP_TTY")" -ne "$PH_APP_TTY" ]]
 			then
-        			printf "%4s%s\n" "" "- LoginScript for 'TTY${PH_APP_TTY}' has a 'Corrupted' value for PH_APP_TTY -> Should be 'tty${PH_APP_TTY}'" >>"${PH_TMP_DIR}/reported_issues"
+        			printf "%4s%s\n" "" "- LoginScript for 'tty${PH_APP_TTY}' has a corrupted value for PH_APP_TTY -> Should be 'tty${PH_APP_TTY}'" >>"${PH_TMP_DIR}/reported_issues"
 				PH_RET_CODE="1"
 			fi
 			if [[ "$(ph_get_app_name_from_login_script "$PH_APP_TTY")" != "$PH_APP" ]]
 			then
-        			printf "%4s%s\n" "" "- LoginScript for 'TTY$PH_APP_TTY' has a 'Corrupted' value for PH_APP_CMD -> Should be '$PH_SCRIPTS_DIR/start$PH_APPL.sh'" >>"$PH_TMP_DIR/reported_issues"
+        			printf "%4s%s\n" "" "- LoginScript for 'tty${PH_APP_TTY}' has a corrupted value for PH_APP_CMD -> Should be '${PH_SCRIPTS_DIR}/start${PH_APPL}.sh'" >>"${PH_TMP_DIR}/reported_issues"
 				PH_RET_CODE="1"
 			fi
 		else
-        		printf "%4s%s\n" "" "- LoginScript for 'TTY$PH_APP_TTY' is 'Present' while TTY$PH_APP_TTY is unallocated" >>"$PH_TMP_DIR/reported_issues"
+        		printf "%4s%s\n" "" "- LoginScript for 'tty${PH_APP_TTY}' is present while tty${PH_APP_TTY} is unallocated" >>"${PH_TMP_DIR}/reported_issues"
 			PH_RET_CODE="1"
 		fi
 	fi
 done
 if [[ -f /etc/systemd/system/getty@tty1.service.d/autostart.conf ]]
 then
-	PH_APP_TTY="$(nawk '$0 ~ /^ExecStartPost=\+\/bin\/chvt/ { printf $2 }' /etc/systemd/system/getty@tty1.service.d/autostart.conf 2>/dev/null)"
+	PH_APP_TTY="$(nawk '$0 ~ /^ExecStartPost=\+\/bin\/chvt/ { \
+			printf $2 \
+		}' /etc/systemd/system/getty@tty1.service.d/autostart.conf 2>/dev/null)"
 	PH_APP="$(ph_get_app_name_from_app_tty "$PH_APP_TTY")"
 	if [[ "$PH_PIEH_STARTAPP" == "none" ]]
 	then
-        	printf "%4s%s\n" "" "- 'tty1' StartApp configuration is 'Present' while PH_PIEH_STARTAPP is set to 'none'" >>"$PH_TMP_DIR/reported_issues"
+        	printf "%4s%s\n" "" "- 'tty1' StartApp configuration is present while PH_PIEH_STARTAPP is set to 'none'" >>"${PH_TMP_DIR}/reported_issues"
 		PH_RET_CODE="1"
 	else
 		if [[ "$PH_PIEH_STARTAPP" != "$PH_APP" ]]
 		then
-        		printf "%4s%s\n" "" "- 'tty1' StartApp configuration is for '$PH_APP' while PH_PIEH_STARTAPP is set to '$PH_PIEH_STARTAPP'" >>"$PH_TMP_DIR/reported_issues"
+        		printf "%4s%s\n" "" "- 'tty1' StartApp configuration is for ${PH_APP} while PH_PIEH_STARTAPP is set to '${PH_PIEH_STARTAPP}'" >>"${PH_TMP_DIR}/reported_issues"
 			PH_RET_CODE="1"
 		fi
 	fi
 else
 	if [[ "$PH_PIEH_STARTAPP" != "none" ]]
 	then
-        	printf "%4s%s\n" "" "- PH_PIEH_STARTAPP is set to '$PH_PIEH_STARTAPP' while 'tty1' StartApp configuration is 'Missing'" >>"$PH_TMP_DIR/reported_issues"
+        	printf "%4s%s\n" "" "- PH_PIEH_STARTAPP is set to '${PH_PIEH_STARTAPP}' while 'tty1' StartApp configuration is missing" >>"${PH_TMP_DIR}/reported_issues"
 		PH_RET_CODE="1"
 	fi
 fi
@@ -944,7 +957,7 @@ if [[ "$PH_RET_CODE" -ne "0" ]]
 then
 	if [[ -f "${PH_TMP_DIR}/.first_run" ]]
 	then
-		printf "%4s%s\n" "" "- File '${PH_TMP_DIR}/.first_run' is 'Present'" >>"${PH_TMP_DIR}/reported_issues"
+		printf "%4s%s\n" "" "- File '${PH_TMP_DIR}/.first_run' is present" >>"${PH_TMP_DIR}/reported_issues"
 		PH_RET_CODE="1"
 	fi
 else
@@ -1044,7 +1057,7 @@ declare PH_FILE=""
 declare -i PH_RET_CODE="0"
 declare -i PH_APP_TTY="0"
 
-printf "%2s%s\n\n" "" "While PieHelper is unconfigured' :" >>"${PH_TMP_DIR}/reported_issues"
+printf "%2s%s\n\n" "" "While PieHelper is unconfigured :" >>"${PH_TMP_DIR}/reported_issues"
 for PH_i in sup int cont os defaults alloweds
 do
 	ph_check_default_base_conf_file_validity "$PH_i" || \
@@ -2968,7 +2981,7 @@ declare -l PH_APPL=""
 
 OPTIND="1"
 
-while getopts a:isuhnrdqf PH_OPTION 2>/dev/null
+while getopts a:isuhrdqfv PH_OPTION 2>/dev/null
 do
 	case "$PH_OPTION" in i)
 		[[ -n "$PH_APP_TYPE" ]] && \
@@ -2988,18 +3001,18 @@ do
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
 		PH_APP_TYPE="Default" ;;
-			     n)
-		[[ -n "$PH_APP_TYPE" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
-			return 1
-		PH_APP_TYPE="Unused" ;;
 			     h)
 		[[ -n "$PH_APP_TYPE" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
 		PH_APP_TYPE="Halted" ;;
+			     v)
+		[[ -n "$PH_APP_TYPE" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_APP_TYPE="Reserved" ;;
 			     r)
 		[[ -n "$PH_APP_TYPE" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
@@ -3011,7 +3024,7 @@ do
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
-		PH_APP_TYPE="Unknown" ;;
+		PH_APP_TYPE="Unused" ;;
 			     f)
 		[[ "$PH_FORCE_PRINT_FLAG" -eq "0" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
@@ -3025,7 +3038,7 @@ do
 			return 1
 		PH_QUIESCE="0" ;;
 			     a)
-		[[ -n "$PH_APP" ]] && \
+		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -3045,7 +3058,10 @@ OPTARG="$PH_OLDOPTARG"
 
 [[ "$PH_QUIESCE" -eq "1" ]] && \
 	printf "%8s%s\n" "" "--> Checking the application state of ${PH_APP}"
-case "$PH_APP_TYPE" in Unused)
+case "$PH_APP_TYPE" in Default)
+	cut -f1 "${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null && \
+		PH_APP_STATE="Default" ;;
+		       *)
 	if [[ "$PH_APPL" == @(none|all|prom) ]]
 	then
 		PH_APP_STATE="Reserved"
@@ -3054,17 +3070,10 @@ case "$PH_APP_TYPE" in Unused)
 		then
 			[[ "$PH_APPL" == @(x11|kodi|moon|emul|bash|pieh) ]] && \
 				PH_APP_STATE="Reserved"
+		else
+			PH_APP_STATE="Default"
 		fi
-		PH_APP_STATE="$(ph_get_app_state_from_app_name "$PH_APP")"
 	fi
-	[[ "$PH_APP_STATE" == @(Unknown|Default) ]] && \
-		PH_APP_STATE="Unused" || \
-		PH_RET_CODE="1" ;;
-		       Default)
-	cut -f1 "${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null && \
-		PH_APP_STATE="Default" ;;
-		       *)
-	PH_APP_STATE="$(ph_check_app_state_validity -a "$PH_APP" -q -f -d)"
 	if cut -f1 "${PH_CONF_DIR}/supported_apps" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
 	then
 		PH_APP_STATE="Supported"
@@ -3105,23 +3114,36 @@ esac
 if [[ "$PH_APP_TYPE" != "$PH_APP_STATE" ]]
 then
 	case "$PH_APP_STATE" in Unknown)
-			PH_RET_CODE="1" ;;
+			if [[ "$PH_APP_TYPE" != "Unused" ]]
+			then
+				PH_RET_CODE="1"
+			else
+				PH_APP_TYPE="Unknown"
+			fi ;;
+				Reserved)
+			[[ "$PH_APP_TYPE" != "Default" ]] && \
+				PH_RET_CODE="1" ;;
 				Default)
-			[[ "$PH_APP_TYPE" == @(Halted|Running|Integrated|Supported) ]] && \
+			[[ "$PH_APP_TYPE" == @(Halted|Running|Integrated|Unused|Reserved) ]] && \
 				PH_RET_CODE="1" ;;
 				Supported)
-			[[ "$PH_APP_TYPE" == @(Halted|Running|Integrated) ]] && \
+			[[ "$PH_APP_TYPE" == @(Halted|Running|Integrated|Unused) ]] && \
 				PH_RET_CODE="1" ;;
 				Integrated)
-			[[ "$PH_APP_TYPE" == @(Halted|Running) ]] && \
+			[[ "$PH_APP_TYPE" == @(Halted|Running|Unused) ]] && \
 				PH_RET_CODE="1" ;;
 				Running)
-			[[ "$PH_APP_TYPE" == @(Halted) ]] && \
+			[[ "$PH_APP_TYPE" == @(Halted|Unused) ]] && \
 				PH_RET_CODE="1" ;;
 				Halted)
-			[[ "$PH_APP_TYPE" == @(Running) ]] && \
+			[[ "$PH_APP_TYPE" == @(Running|Unused) ]] && \
 				PH_RET_CODE="1" ;;
 	esac
+	if [[ "$PH_APP_STATE" == @(@(Support|Integrat|Halt)ed|Running) && "$PH_APP_TYPE" == "Default" ]]
+	then
+		ph_check_app_state_validity -a "$PH_APP" -q -d && \
+			PH_RET_CODE="0"
+	fi
 fi
 if [[ "$PH_QUIESCE" -eq "1" || "$PH_FORCE_PRINT_FLAG" -eq "0" ]]
 then
@@ -5687,7 +5709,7 @@ OPTARG="$PH_OLDOPTARG"
 
 if [[ "$PH_APP" == "integrated" ]]
 then
-	for PH_APP in $(ph_get_app_list_by_state -s Integrated -t exact)
+	for PH_APP in $(ph_get_app_list_by_state -s Integrated -t exact) $(ph_get_app_list_by_state -s Halted -t exact)
 	do
 		ph_unintegrate_app -a "$PH_APP" || \
 			return 1
@@ -8701,7 +8723,7 @@ OPTIND="1"
 while getopts s:t: PH_OPTION 2>/dev/null
 do
 	case "$PH_OPTION" in s)
-		[[ -n "$PH_REQ_APP_STATE" || "$OPTARG" != @(Integrated|Supported|Default|Running|Halted) ]] && \
+		[[ -n "$PH_REQ_APP_STATE" || "$OPTARG" != @(Integrated|Supported|Default|Running|Halted|Unknown|Reserved) ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -8735,6 +8757,10 @@ case "$PH_REQ_APP_STATE" in Integrated)
 	PH_REQ_APP_STATE_PARAM="-h" ;;
 			    Running)
 	PH_REQ_APP_STATE_PARAM="-r" ;;
+			    Unknown)
+	PH_REQ_APP_STATE_PARAM="-u" ;;
+			    Reserved)
+	PH_REQ_APP_STATE_PARAM="-v" ;;
 esac
 for PH_APP in $(nawk 'BEGIN { \
 		ORS = " " \
