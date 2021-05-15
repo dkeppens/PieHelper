@@ -1670,7 +1670,7 @@ else
 	PH_APP_PKG="$(ph_get_app_pkg_from_app_conf "$PH_APP")"
 	PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
 	printf "%8s%s\n" "" "--> Checking ${PH_APP} application state"
-	if [[ "$(ph_get_app_inst_state_from_app_name "$PH_APP")" == "Packaged" ]]
+	if [[ "$(ph_get_app_inst_state_from_app_name "$PH_APP")" == "PI" ]]
 	then
 		case "$PH_APP_STATE" in Running)
 				ph_set_result -r 1
@@ -1683,7 +1683,7 @@ else
 		esac
 	else
 		ph_set_result -r 1
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Updating requires package state 'Packaged'"
+		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Updating requires installation state 'PI'"
 	fi
 fi
 [[ "$PH_RESULT" != @(SUCCESS|Warning) ]] && \
@@ -2089,7 +2089,7 @@ do
 			return 1
                 PH_APP_CMD="$OPTARG" ;;
                              i)
-		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(Absent|Package@(d|less)) ]] && \
+		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(P|U)@(I|A) ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -2184,7 +2184,7 @@ declare PH_APP_INST_STATE
 
 PH_APP_INST_STATE="$1"
 
-[[ "$PH_APP_INST_STATE" != @(Absent|Package@(d|less)) || "$#" -ne "1" ]] && \
+[[ "$PH_APP_INST_STATE" != @(P|U)@(I|A) || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 PH_APP="$(nawk -v inst_state="^${PH_APP_INST_STATE}$" 'BEGIN { \
@@ -5049,6 +5049,23 @@ then
 		return 1
 	[[ "$PH_DISTRO" == "Debian" ]] && \
 		ph_apt_clean
+	if ph_check_object_existence -q -o sup
+	then
+		while true
+		do
+			PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
+			printf "%8s%s\n" "" "--> Updating the installation state of ${PH_APP} in configuration file '${PH_CONF_DIR}/supported_apps'"
+			if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\\t${PH_APP_USER}\\tPA\\t${PH_APP_CMD}}'"
+			then
+				if ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\\t${PH_APP_USER}\\tPI\\t${PH_APP_CMD}}'"
+				then
+					break
+				fi
+			fi
+			ph_run_with_rollback -c false -m "Could not update" || \
+				return 1
+		done
+	fi
 	if [[ -z "$PH_APP_USER" ]]
 	then
 		ph_add_value_to_param -p PH_UNINSTALL_APPS -v "${PH_APP}'"
@@ -5060,7 +5077,7 @@ else
 	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not determine"
 	ph_set_result -r 0
 fi
-printf "%8s%s\n" "" "--> Attempting packageless installation"
+printf "%8s%s\n" "" "--> Attempting unpackaged installation"
 case "$PH_APP" in Moonlight)
 		ph_run_with_rollback -c true -m "$PH_APP"
 		cd ~ >/dev/null 2>&1
@@ -5122,9 +5139,9 @@ case "$PH_APP" in Moonlight)
 								do
 									PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
 									printf "%8s%s\n" "" "--> Updating the installation state of ${PH_APP} in configuration file '${PH_CONF_DIR}/supported_apps'"
-									if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\\t${PH_APP_USER}\\tAbsent\\t${PH_APP_CMD}}'"
+									if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\\t${PH_APP_USER}\\tUA\\t${PH_APP_CMD}}'"
 									then
-										if ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\\t${PH_APP_USER}\\tPackageless\\t${PH_APP_CMD}}'"
+										if ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\\t${PH_APP_USER}\\tUI\\t${PH_APP_CMD}}'"
 										then
 											break
 										fi
@@ -5139,8 +5156,7 @@ case "$PH_APP" in Moonlight)
 							else
 								ph_add_value_to_param -p PH_UNINSTALL_APPS -v "${PH_APP}'${PH_APP_USER}"
 							fi
-							ph_run_with_rollback -c true && \
-								return "$?"
+							return 0
 					
 						else
 							ph_set_result -m "Could not deploy the compiled version of '${PH_APP}'"
@@ -5175,7 +5191,7 @@ case "$PH_APP" in Moonlight)
 			else
 				if [[ "$PH_i" == "APP_USER" ]]
 				then
-					PH_EMUL_HOME="$(getent passwd "$PH_APP_USER" 2>/dev/null | cut -d':' -f6)"
+					PH_EMUL_HOME="$(getent passwd "$PH_APP_USER" 2>/dev/null | head -1 | cut -d':' -f6)"
 				fi
 			fi
 		done
@@ -5216,6 +5232,23 @@ case "$PH_APP" in Moonlight)
 							ph_run_with_rollback -c "ph_pieh_configured_emul_conf" || \
 								return 1
 						fi
+						if ph_check_object_existence -q -o sup
+						then
+							while true
+							do
+								PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
+								printf "%8s%s\n" "" "--> Updating the installation state of ${PH_APP} in configuration file '${PH_CONF_DIR}/supported_apps'"
+								if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\\t${PH_APP_USER}\\tUA\\t${PH_APP_CMD}}'"
+								then
+									if ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\\t${PH_APP_USER}\\tUI\\t${PH_APP_CMD}}'"
+									then
+										break
+									fi
+								fi
+								ph_run_with_rollback -c false -m "Could not update" || \
+									return 1
+							done
+						fi
 						ph_show_emul_info "$PH_APP_USER"
 						ph_add_value_to_param -p PH_UNINSTALL_APPS -v "${PH_APP}'${PH_APP_USER}"
 						cd ~ >/dev/null 2>&1
@@ -5233,7 +5266,7 @@ case "$PH_APP" in Moonlight)
 			ph_set_result -m "Could not change directory to '${PH_EMUL_HOME}'"
 		fi ;;
 	*)
-		ph_set_result -m "Packageless installation is not supported for '${PH_APP}' (Set '${PH_APP}' option 'PH_${PH_APPU}_PKG_NAME' to the correct package name and try again)" ;;
+		ph_set_result -m "Unpackaged installation is not supported for '${PH_APP}' (Set '${PH_APP}' option 'PH_${PH_APPU}_PKG_NAME' to the correct package name and try again)" ;;
 esac
 cd ~ >/dev/null 2>&1
 ph_run_with_rollback -c false -m "Could not complete installation" || \
@@ -5379,8 +5412,7 @@ if [[ "$PH_APP" != "Bash" ]]
 then
 	printf "%8s%s\n" "" "--> Checking '$PH_APP' install state"
 	PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_name "$PH_APP")"
-	if [[ "$PH_APP_INST_STATE" == "Packaged" ]]
-	then
+	case "$PH_APP_INST_STATE" in PI)
 		printf "%10s%s\n" "" "OK (Yes)"
 		PH_APP_PKG="$(ph_get_app_pkg_from_app_conf "$PH_APP")"
 		ph_update_pkg_index || \
@@ -5392,8 +5424,11 @@ then
 			[[ "$PH_DISTRO" == "Debian" ]] && \
 				ph_apt_clean
 			printf "%s\n" "- Cleaning up"
-		fi
-	else
+		fi ;;
+				     PA|UA)
+		ph_run_with_rollback -c true -m "Nothing to do" && \
+			return "$?" ;;
+				     *)
 		printf "%10s%s\n" "" "OK (No)"
 		printf "%8s%s\n" "" "--> Attempting packageless removal"
 		case "$PH_APP" in Moonlight)
@@ -5444,8 +5479,8 @@ then
 			"$PH_SUDO" "$PH_PATH"/retropie_setup.sh
 			printf "%s\n" "- Cleaning up"
 			"$PH_SUDO" rm -r "$PH_PATH" 2>/dev/null ;;
-		esac
-	fi
+		esac ;;
+	esac
 fi
 if [[ "$PH_APP" == "Kodi" ]]
 then
@@ -5517,7 +5552,7 @@ do
 			return 1 
                 PH_APP_CMD="$OPTARG" ;;
                              i)
-		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(Absent|Package@(d|less)) ]] && \
+		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(P|U)@(I|A) ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1 
@@ -5693,7 +5728,7 @@ do
 			return 1
                 PH_APP_PKG="$OPTARG" ;;
                              i)
-		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(Absent|Package@(d|less)) ]] && \
+		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(P|U)@(I|A) ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -5942,7 +5977,7 @@ do
 			return 1
                 PH_APP_CMD="$OPTARG" ;;
 			     i)
-		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(Absent|Package@(d|less)) ]] && \
+		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(P|U)@(I|A) ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -6202,7 +6237,7 @@ else
 		fi
 	fi
 fi
-PH_APP_INST_STATE="Absent"
+PH_APP_INST_STATE=""
 printf "%8s%s\n" "" "--> Checking the application state of ${PH_APP}"
 PH_APP_STATE="$(ph_get_app_state_from_app_name "$PH_APP")"
 case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
@@ -6261,27 +6296,6 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 			fi
 		fi
 	fi
-	declare -a PH_PARAMS
-	if [[ -z "$PH_APP_PKG" ]]
-	then
-		PH_APP_INST_STATE="Packageless"
-	else
-		ph_get_pkg_inst_state "$PH_APP_PKG" && \
-			PH_APP_INST_STATE="Packaged"
-		PH_PARAMS+=("-p" "'${PH_APP_PKG}'")
-	fi
-	for PH_i in USER PKG
-	do
-		declare PH_VAR="PH_APP_${PH_i}"
-		[[ -n "$PH_VAR" ]] && \
-			PH_PARAMS+=("-$(cut -c1 "$PH_i" | tr "[:upper:]" "[:lower:]")" "'${PH_VAR}'")
-	done
-	if ! ph_check_app_user -a "$PH_APP" -i "$PH_APP_INST_STATE" "${PH_PARAMS[@]}"
-	then
-		unset PH_PARAMS
-		return 1
-	fi
-	unset PH_PARAMS
 	PH_APP_GRAPH="$(echo -n "$PH_APP_CMD" | nawk -v app="$PH_APP" 'BEGIN { \
 			graph = "no" \
 		} { \
@@ -6306,6 +6320,36 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 				printf $1 \
 			} \
 		}')"
+	declare -a PH_PARAMS
+	if [[ -z "$PH_APP_PKG" ]]
+	then
+		if [[ "$PH_APP" == "PieHelper" || -x "$PH_APP_EXEC" ]]
+		then
+			PH_APP_INST_STATE="UI"
+		else
+			PH_APP_INST_STATE="UA"
+		fi
+	else
+		if ph_get_pkg_inst_state "$PH_APP_PKG"
+		then
+			PH_APP_INST_STATE="PI"
+		else
+			PH_APP_INST_STATE="PA"
+		fi
+		PH_PARAMS+=("-p" "'${PH_APP_PKG}'")
+	fi
+	for PH_i in USER PKG
+	do
+		declare PH_VAR="PH_APP_${PH_i}"
+		[[ -n "$PH_VAR" ]] && \
+			PH_PARAMS+=("-$(cut -c1 "$PH_i" | tr "[:upper:]" "[:lower:]")" "'${PH_VAR}'")
+	done
+	if ! ph_check_app_user -a "$PH_APP" -i "$PH_APP_INST_STATE" "${PH_PARAMS[@]}"
+	then
+		unset PH_PARAMS
+		return 1
+	fi
+	unset PH_PARAMS
 	if [[ "$PH_APP" != "PieHelper" ]]
 	then
 		while true
@@ -6315,7 +6359,7 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 			while true
 			do
 				PH_ANSWER="0"
-				if [[ ! -f "$PH_APP_EXEC" ]]
+				if [[ ! -x "$PH_APP_EXEC" ]]
 				then
 					[[ "$PH_COUNT" -eq "0" ]] && \
 						printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found"
@@ -6387,14 +6431,21 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 			ph_run_with_rollback -c "ph_install_app -a '${PH_APP}' -u '${PH_APP_USER}'" || \
 				return 1
 		done
-	fi
-	if [[ "$PH_ANSWER" -ne "4" ]]
-	then
-		if [[ -z "$PH_APP_PKG" ]]
+		if [[ "$PH_ANSWER" -ne "4" ]]
 		then
-			PH_APP_INST_STATE="Packageless"
+			if [[ -z "$PH_APP_PKG" ]]
+			then
+				PH_APP_INST_STATE="UI"
+			else
+				PH_APP_INST_STATE="PI"
+			fi
 		else
-			PH_APP_INST_STATE="Packaged"
+			if [[ -z "$PH_APP_PKG" ]]
+			then
+				PH_APP_INST_STATE="UA"
+			else
+				PH_APP_INST_STATE="PA"
+			fi
 		fi
 	fi
 	printf "%8s%s\n" "" "--> Checking for ${PH_APP} dependencies"
@@ -6505,11 +6556,40 @@ function ph_get_app_inst_state_from_app_conf {
 
 declare PH_APP
 declare PH_APP_PKG
+declare PH_APP_CMD
+declare PH_APP_GRAPH
+declare PH_APP_EXEC
 declare PH_APP_INST_STATE
+declare PH_OPTION=""
+declare PH_OLDOPTARG="$OPTARG"
+declare -i PH_OLDOPTIND="$OPTIND"
 
-PH_APP="$1"
+OPTIND="1"
 
-[[ -z "$PH_APP" || "$#" -ne "1" ]] && \
+while getopts a:c: PH_OPTION 2>/dev/null
+do
+        case "$PH_OPTION" in a)
+		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+                PH_APP="$OPTARG" ;;
+                             c)
+		[[ -n "$PH_APP_CMD" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+                PH_APP_CMD="$OPTARG" ;;
+                             *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+        esac
+done
+OPTIND="$PH_OLDOPTIND"
+OPTARG="$PH_OLDOPTARG"
+
+[[ -z "$PH_APP" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 PH_APP_PKG="$(ph_get_app_pkg_from_app_conf "$PH_APP")"
@@ -6519,16 +6599,53 @@ then
 	then
 		if ph_get_pkg_inst_state "$PH_APP"
 		then
-			PH_APP_INST_STATE="Packaged"
+			PH_APP_INST_STATE="PI"
 		else
-			PH_APP_INST_STATE="Absent"
+			PH_APP_INST_STATE="PA"
 		fi
 	else
 		ph_set_result -m "Configuration file '${PH_CONF_DIR}/${PH_APP}.conf' contains an invalid package name '${PH_APP_PKG}'"
 		return 1
 	fi
 else
-	PH_APP_INST_STATE="Packageless"
+	[[ -z "$PH_APP_CMD" ]] && \
+		PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
+	if [[ -n "$PH_APP_CMD" ]]
+	then
+		PH_APP_GRAPH="$(echo -n "$PH_APP_CMD" | nawk -v app="$PH_APP" 'BEGIN { \
+				graph = "no" \
+			} { \
+				if (app == "X11") { \
+					graph = "yes" \
+				} else { \
+					if ($1 ~ /^\/usr\/bin\/xinit$/ || $1 ~ /^\/usr\/bin\/startx$/) { \
+						graph = "yes" \
+					} \
+				} \
+			} END { \
+				printf "%s", graph \
+			}')"
+		PH_APP_EXEC="$(echo -n "$PH_APP_CMD" | nawk -v app="$PH_APP" -v appgraph="$PH_APP_GRAPH" '{ \
+				if (appgraph == "yes") { \
+					if (app == "X11") { \
+						printf $1 \
+					} else { \
+						printf $2 \
+					} \
+				} else { \
+					printf $1 \
+				} \
+			}')"
+	else
+		ph_set_result -m "Could not determine the application's installation state without a valid start command"
+		return 1
+	fi
+	if [[ -x "$PH_APP_EXEC" ]]
+	then
+		PH_APP_INST_STATE="UI"
+	else
+		PH_APP_INST_STATE="UA"
+	fi
 fi
 echo -n "$PH_APP_INST_STATE"
 return 0
@@ -6590,7 +6707,7 @@ OPTARG="$PH_OLDOPTARG"
 printf "%8s%s\033[32m%s\033[0m\n" "" "--> Adding application ${PH_APP} to configuration file " "'${PH_CONF_DIR}/supported_apps'"
 if [[ -z "$PH_APP_INST_STATE" ]]
 then
-	if ! PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_conf "$PH_APP")"
+	if ! PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_conf -a "$PH_APP" -c "$PH_APP_CMD")"
 	then
 		ph_run_with_rollback -c false -m "Could not add" || \
 			return 1
@@ -6755,7 +6872,7 @@ do
 			return 1
                 PH_APP_USER="$OPTARG" ;;
 			     i)
-		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(Absent|Package@(d|less)) ]] && \
+		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(PU)@(IA) ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -6772,7 +6889,7 @@ OPTARG="$PH_OLDOPTARG"
 [[ ( -z "$PH_APP" && -z "$PH_APP_PKG" ) || -z "$PH_APP_INST_STATE" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-if [[ -z "$PH_APP" || ( -z "$PH_APP_PKG" && "$PH_APP_INST_STATE" != "Packageless" ) ]]
+if [[ -z "$PH_APP" || ( -z "$PH_APP_PKG" && "$PH_APP_INST_STATE" == P* ) ]]
 then
 	printf "%8s%s\n" "" "--> Attempting to determine missing arguments"
 	for PH_i in 1 2
@@ -6790,7 +6907,7 @@ then
 				ph_run_with_rollback -c false -m "Could not determine" || \
 					return 1
 			else
-				if [[ -z "$PH_APP_PKG" && "$PH_APP_INST_STATE" != "Packageless" ]]
+				if [[ -z "$PH_APP_PKG" && "$PH_APP_INST_STATE" == P* ]]
 				then
 					PH_APP_PKG="$(ph_get_app_pkg_from_app_conf "$PH_APP")"
 					if [[ -z "$PH_APP_PKG" ]]
@@ -6812,14 +6929,19 @@ then
 else
 	if [[ -z "$PH_APP_USER" ]]
 	then
-		if [[ "$PH_APP_INST_STATE" == "Packaged" ]]
+		if [[ "$PH_APP_INST_STATE" == "PI" ]]
 		then
 			printf "%8s%s\n" "" "--> Attempting to determine the ${PH_APP} user from package '${PH_APP_PKG}'"
-			PH_APP_USER="$(systemctl show "$PH_APP_PKG" 2>/dev/null | nawk -F'=' '$1 ~ /^User$/ { \
-					printf $2 \
+			PH_APP_USER="$(systemctl show "$PH_APP_PKG" 2>/dev/null | nawk -F'=' '$1 ~ /^U(ser|ID)$/ && $2 !~ /\[not set\]/ { \
+					printf $2 ; \
+					exit 0 \
 				}')"
 			if [[ -n "$PH_APP_USER" ]]
 			then
+				if [[ "$PH_APP_USER" == +([[:digit:]]) ]]
+				then
+					PH_APP_USER="$(getent passwd "$PH_APP_USER" 2>/dev/null | head -1 | cut -d':' -f1)"
+				fi
 				ph_run_with_rollback -c true -m "$PH_APP_USER"
 			else
 				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not determine"
