@@ -4612,6 +4612,22 @@ do
 			ph_run_with_rollback -c true -m "Nothing to do"
 			continue
 		fi
+		if [[ "$PH_OPTARG_VAR" == "PH_${PH_APPU}_PKG" ]]
+		then
+			if ! ph_check_pkg_validity "$PH_OPTARG_VAL"
+			then
+				printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Setting option '${PH_OPTARG_VAR}' to " "'${PH_OPTARG_VAL}'" " in '${PH_CONF_DIR}/${PH_APP}.conf'"
+				if [[ "$PH_MSG_TYPE" == "ERROR" ]]
+				then
+					((PH_RET_CODE++))
+					ph_set_result -m "The new value '${PH_OPTARG_VAL}' for option '${PH_OPTARG_VAR}' is invalid since '${PH_OPTARG_VAL}' is not a valid package"
+				else
+					printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set ('${PH_OPTARG_VAL}' is not a valid package) -> Skipping"
+					ph_set_result -r 0
+				fi
+				continue
+			fi
+		fi
 		if [[ "$PH_OPTARG_VAR" == "PH_MOON_USE_CTRL" && "$PH_OPTARG_VAL" == "no" ]]
 		then
 			printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Setting option '${PH_OPTARG_VAR}' to " "'${PH_OPTARG_VAL}'" " in '${PH_CONF_DIR}/${PH_APP}.conf'"
@@ -4882,6 +4898,26 @@ do
 				then
 					((PH_RET_CODE++))
 					break
+				fi
+			fi
+		fi
+		if [[ "$PH_OPTARG_VAR" == "PH_${PH_APPU}_PKG" ]]
+		then
+			if ph_check_object_existence -q -o sup
+			then
+				if ph_get_pkg_inst_state "$PH_OPTARG_VAL"
+				then
+					if ! ph_update_base_conf_file -a "$PH_APP" -f sup -c 3 -v PI
+					then
+						((PH_RET_CODE++))
+						break
+					fi
+				else
+					if ! ph_update_base_conf_file -a "$PH_APP" -f sup -c 3 -v PA
+					then
+						((PH_RET_CODE++))
+						break
+					fi
 				fi
 			fi
 		fi
@@ -6187,8 +6223,8 @@ PH_APP_PKG="$1"
 
 for PH_APP in $(ph_get_app_list_by_state -s Default -t exact) $(ph_get_app_list_by_state -s Supported -t minimum)
 do
-	PH_APPU="$PH_APP"
-	declare -n PH_PKG="PH_${APPU:0:4}_PKG"
+	PH_APPU="${PH_APP:0:4}"
+	declare -n PH_PKG="PH_${PH_APPU}_PKG"
 	if [[ "$PH_APP_PKG" == "$PH_PKG" ]]
 	then
 		echo -n "$PH_APP"
@@ -6353,11 +6389,13 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 			fi
 		fi
 	fi
+	printf "%8s%s\n" "" "--> Checking the installation state of ${PH_APP}"
 	if ! PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_conf -a "$PH_APP" -c "$PH_APP_CMD")"
 	then
 		ph_run_with_rollback -c false -m "Could not support" || \
 			return 1
 	fi
+	ph_run_with_rollback -c true -m "$PH_APP_INST_STATE"
 	declare -a PH_PARAMS
 	[[ "$PH_APP_INST_STATE" == P* ]] && \
 		PH_PARAMS+=("-p" "'${PH_APP_PKG}'")
@@ -6397,9 +6435,8 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 					printf "%12s%s" "" "Your choice : "
 					read -r PH_ANSWER 2>/dev/null
 					ph_screen_input "$PH_ANSWER"
-					((PH_COUNT++))
-					[[ "$PH_ANSWER" -ge "1" && (( "$PH_APP" == "PieHelper" && "$PH_ANSWER" -le "4" ) || \
-						( "$PH_APP" != "PieHelper" && "$PH_ANSWER" -le "5" )) ]] && \
+					PH_COUNT="$((PH_COUNT+1))"
+					[[ "$PH_ANSWER" -ge "1" && "$PH_ANSWER" -le "5" ]] && \
 						ph_run_with_rollback -c true
 					case "$PH_ANSWER" in 1)
 						break ;;
@@ -6412,11 +6449,10 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 							continue ;;
 							     3)
 						printf "%8s%s\n" "" "--> Scanning for executable '${PH_APP_EXEC##*/}' (This may take a while)"
-						PH_APP_EXEC="$("$PH_SUDO" find / -type f -perm -o=x ! -fstype nfs -name "${PH_APP_EXEC##*/}" 2>/dev/null)" ;;
+						PH_APP_EXEC="$("$PH_SUDO" find / -type f -perm -o=x \( ! -fstype nfs -a ! -fstype cifs \) -name "${PH_APP_EXEC##*/}" 2>/dev/null)" ;;
 							     4)
 						printf "%10s\033[33m%s\033[0m\n" "" "Warning : Skipping installation but ${PH_APP} will not function until it is installed"
 						ph_set_result -r 0
-						PH_APP_INST_STATE="$(cut -c1<<<"$PH_APP_INST_STATE")A"
 						break 2 ;;
 							     5)
 						ph_quit_with_rollback ;;
@@ -6468,22 +6504,13 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 			ph_run_with_rollback -c "ph_install_app -a '${PH_APP}' -u '${PH_APP_USER}'" || \
 				return 1
 		done
-		if [[ "$PH_ANSWER" -ne "4" ]]
+		printf "%8s%s\n" "" "--> Rechecking the installation state of ${PH_APP}"
+		if ! PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_conf -a "$PH_APP" -c "$PH_APP_CMD")"
 		then
-			if [[ -z "$PH_APP_PKG" ]]
-			then
-				PH_APP_INST_STATE="UI"
-			else
-				PH_APP_INST_STATE="PI"
-			fi
-		else
-			if [[ -z "$PH_APP_PKG" ]]
-			then
-				PH_APP_INST_STATE="UA"
-			else
-				PH_APP_INST_STATE="PA"
-			fi
+			ph_run_with_rollback -c false -m "Could not support" || \
+				return 1
 		fi
+		ph_run_with_rollback -c true -m "$PH_APP_INST_STATE"
 	fi
 	printf "%8s%s\n" "" "--> Checking for ${PH_APP} dependencies"
 	if [[ "$PH_APP_GRAPH" == "yes" && "$PH_APP" != "X11" ]]
@@ -6507,8 +6534,8 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 		return 1
 	if [[ "$PH_APP_PKG_CHANGED_FLAG" -eq "0" ]]
 	then
-		PH_APPU="$PH_APP"
-		ph_run_with_rollback -c "ph_set_option_to_value '${PH_APP}' -r \"PH_${PH_APPU:0:4}_PKG'${PH_APP_NEW_PKG}\"" || \
+		PH_APPU="${PH_APP:0:4}"
+		ph_run_with_rollback -c "ph_set_option_to_value '${PH_APP}' -r \"PH_${PH_APPU}_PKG'${PH_APP_NEW_PKG}\"" || \
 			return 1
 	fi
 	if [[ -n "$PH_APP_INST_STATE" ]]
