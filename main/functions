@@ -6206,6 +6206,7 @@ declare PH_APP_EXEC=""
 declare PH_APP_CMD=""
 declare PH_APP_GRAPH=""
 declare PH_APP_PKG=""
+declare PH_APP_NEW_PKG=""
 declare PH_APP_USER=""
 declare PH_APP_STATE=""
 declare PH_APP_INST_STATE=""
@@ -6214,7 +6215,9 @@ declare PH_OLDOPTARG="$OPTARG"
 declare -i PH_OLDOPTIND="$OPTIND"
 declare -i PH_COUNT="0"
 declare -i PH_ANSWER="0"
+declare -i PH_APP_PKG_CHANGED_FLAG="1"
 declare -l PH_APPL=""
+declare -u PH_APPU=""
 
 OPTIND="1"
 
@@ -6336,7 +6339,7 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 			then
 				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Mismatch with known package -> Set to '${PH_APP_PKG}'"
 			else
-				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Mismatch with known installation method -> Set to no package" 
+				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Mismatch with known installation method -> Set to none" 
 			fi
 			ph_set_result -r 0
 		else
@@ -6350,26 +6353,14 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 			fi
 		fi
 	fi
-	PH_APP_GRAPH="$(ph_get_app_graphical_prop -a "$PH_APP" -c "$PH_APP_CMD")"
-	PH_APP_EXEC="$(ph_get_app_executable -a "$PH_APP" -c "$PH_APP_CMD")"
-	declare -a PH_PARAMS
-	if [[ -z "$PH_APP_PKG" ]]
+	if ! PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_conf -a "$PH_APP" -c "$PH_APP_CMD")"
 	then
-		if [[ "$PH_APP" == "PieHelper" || -x "$PH_APP_EXEC" ]]
-		then
-			PH_APP_INST_STATE="UI"
-		else
-			PH_APP_INST_STATE="UA"
-		fi
-	else
-		if ph_get_pkg_inst_state "$PH_APP_PKG"
-		then
-			PH_APP_INST_STATE="PI"
-		else
-			PH_APP_INST_STATE="PA"
-		fi
-		PH_PARAMS+=("-p" "'${PH_APP_PKG}'")
+		ph_run_with_rollback -c false -m "Could not support" || \
+			return 1
 	fi
+	declare -a PH_PARAMS
+	[[ "$PH_APP_INST_STATE" == P* ]] && \
+		PH_PARAMS+=("-p" "'${PH_APP_PKG}'")
 	for PH_i in USER PKG
 	do
 		declare PH_VAR="PH_APP_${PH_i}"
@@ -6382,6 +6373,8 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 		return 1
 	fi
 	unset PH_PARAMS
+	PH_APP_GRAPH="$(ph_get_app_graphical_prop -a "$PH_APP" -c "$PH_APP_CMD")"
+	PH_APP_EXEC="$(ph_get_app_executable -a "$PH_APP" -c "$PH_APP_CMD")"
 	if [[ "$PH_APP" != "PieHelper" ]]
 	then
 		while true
@@ -6423,7 +6416,7 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 							     4)
 						printf "%10s\033[33m%s\033[0m\n" "" "Warning : Skipping installation but ${PH_APP} will not function until it is installed"
 						ph_set_result -r 0
-						PH_APP_INST_STATE=""
+						PH_APP_INST_STATE="$(cut -c1<<<"$PH_APP_INST_STATE")A"
 						break 2 ;;
 							     5)
 						ph_quit_with_rollback ;;
@@ -6451,6 +6444,18 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 									printf " " $j \
 								} \
 							}')"
+						if PH_APP_NEW_PKG="$(dpkg -S "$PH_APP_EXEC" 2>/dev/null | cut -d':' -f1)"
+						then
+							if [[ "$PH_APP_NEW_PKG" != "$PH_APP_PKG" ]]
+							then
+								PH_APP_PKG="$PH_APP_NEW_PKG"
+								PH_APP_PKG_CHANGED_FLAG="0"
+							fi
+						else
+							ph_set_result -m "An error occurred trying to determine the package name of file '${PH_APP_EXEC}'"
+							ph_run_with_rollback -c false -m "Could not change" || \
+								return 1
+						fi
 						break 2
 					else
 						continue 2
@@ -6500,6 +6505,12 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 	fi
 	ph_run_with_rollback -c "ph_create_app_items -a '${PH_APP}' -t support" || \
 		return 1
+	if [[ "$PH_APP_PKG_CHANGED_FLAG" -eq "0" ]]
+	then
+		PH_APPU="$PH_APP"
+		ph_run_with_rollback -c "ph_set_option_to_value '${PH_APP}' -r \"PH_${PH_APPU:0:4}_PKG'${PH_APP_NEW_PKG}\"" || \
+			return 1
+	fi
 	if [[ -n "$PH_APP_INST_STATE" ]]
 	then
 		ph_run_with_rollback -c "ph_add_app_to_support_file -a '${PH_APP}' -u '${PH_APP_USER}' -c '${PH_APP_CMD}' -i '${PH_APP_INST_STATE}'" || \
@@ -6639,20 +6650,25 @@ then
 		return 1
 	fi
 else
-	[[ -z "$PH_APP_CMD" ]] && \
-		PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
-	if [[ -n "$PH_APP_CMD" ]]
-	then
-		PH_APP_EXEC="$(ph_get_app_executable -a "$PH_APP" -c "$PH_APP_CMD")"
-	else
-		ph_set_result -m "Could not determine the application's installation state without a valid start command"
-		return 1
-	fi
-	if [[ -x "$PH_APP_EXEC" ]]
+	if [[ "$PH_APP" == "PieHelper" ]]
 	then
 		PH_APP_INST_STATE="UI"
 	else
-		PH_APP_INST_STATE="UA"
+		[[ -z "$PH_APP_CMD" ]] && \
+			PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
+		if [[ -n "$PH_APP_CMD" ]]
+		then
+			PH_APP_EXEC="$(ph_get_app_executable -a "$PH_APP" -c "$PH_APP_CMD")"
+		else
+			ph_set_result -m "Could not determine the application's installation state without a valid start command"
+			return 1
+		fi
+		if [[ -x "$PH_APP_EXEC" ]]
+		then
+			PH_APP_INST_STATE="UI"
+		else
+			PH_APP_INST_STATE="UA"
+		fi
 	fi
 fi
 echo -n "$PH_APP_INST_STATE"
@@ -7034,35 +7050,14 @@ then
 	done
 	ph_run_with_rollback -c true
 fi
+printf "%8s%s\n" "" "--> Checking the user account for ${PH_APP}"
 if [[ "$PH_APP" == "PieHelper" ]]
 then
 	PH_APP_USER="$PH_RUN_USER"
 else
-	if [[ -z "$PH_APP_USER" ]]
-	then
-		if [[ "$PH_APP_INST_STATE" == "PI" ]]
-		then
-			printf "%8s%s\n" "" "--> Attempting to determine the ${PH_APP} user from package '${PH_APP_PKG}'"
-			PH_APP_USER="$(systemctl show "$PH_APP_PKG" 2>/dev/null | nawk -F'=' '$1 ~ /^U(ser|ID)$/ && $2 !~ /\[not set\]/ { \
-					printf $2 ; \
-					exit 0 \
-				}')"
-			if [[ -n "$PH_APP_USER" ]]
-			then
-				if [[ "$PH_APP_USER" == +([[:digit:]]) ]]
-				then
-					PH_APP_USER="$(getent passwd "$PH_APP_USER" 2>/dev/null | head -1 | cut -d':' -f1)"
-				fi
-				ph_run_with_rollback -c true -m "$PH_APP_USER"
-			else
-				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not determine"
-				ph_set_result -r 0
-			fi
-		fi
-	fi
-	printf "%8s%s\n" "" "--> Checking the user account for ${PH_APP}"
 	while true
 	do
+		PH_COUNT="$((PH_COUNT+1))"
 		if ! ph_check_user_validity "$PH_APP_USER"
 		then
 			if [[ -n "$PH_APP_USER" ]]
@@ -7070,12 +7065,31 @@ else
 				printf "%10s\033[33m%s\033[0m\n" "" "Warning : User account '${PH_APP_USER}' does not exist -> Creating"
 			else
 				printf "%10s\033[33m%s\033[0m\n" "" "Warning : " "No user provided"
+				if [[ "$PH_COUNT" -eq "1" && "$PH_APP_INST_STATE" == "PI" ]]
+				then
+					ph_set_result -r 0
+					printf "%8s%s\n" "" "--> Attempting to determine the user for ${PH_APP} from package '${PH_APP_PKG}'"
+					PH_APP_USER="$(systemctl show "$PH_APP_PKG" 2>/dev/null | nawk -F'=' '$1 ~ /^U(ser|ID)$/ && $2 !~ /\[not set\]/ { \
+							printf $2 ; \
+							exit 0 \
+						}')"
+					if [[ -n "$PH_APP_USER" ]]
+					then
+						if [[ "$PH_APP_USER" == +([[:digit:]]) ]]
+						then
+							PH_APP_USER="$(getent passwd "$PH_APP_USER" 2>/dev/null | head -1 | cut -d':' -f1)"
+						fi
+						break
+					else
+						printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not determine"
+					fi
+				fi
 			fi
 			ph_set_result -r 0
 		fi
 		if [[ -z "$PH_APP_USER" ]]
 		then
-			printf "%8s%s\033[32m%s\033[0m\n\n" "" "--> Please enter a valid user account for application " "'${PH_APP}'"
+			printf "%8s%s\n\n" "" "--> Please enter a valid user account for application ${PH_APP}"
 			printf "%10s%s\n" "" "- Entering an existing account will update the account's secondary group membership to include the following groups : 'tty,audio,video,input'"
 			printf "%10s%s\n" "" "- Entering an non-existent account will create a user and corresponding UPG (User Private Group)"
 			printf "%10s%s\n" "" "- Usernames must be alphanumeric and can optionally contain dash and underscore characters as well as a trailing dollar sign"
@@ -8510,11 +8524,15 @@ PH_APP_USER_CUR_GROUPS="$(groups "$PH_APP_USER" 2>/dev/null | nawk 'BEGIN { \
 if [[ "$( (for PH_i in ${PH_APP_USER_CUR_GROUPS//,/ }; \
 do \
 	echo "$PH_i"; \
-done) | sort)" != "$( (for PH_i in ${PH_APP_USER_GROUPS//,/ }; \
+done) | sort -u)" != "$( (for PH_i in ${PH_APP_USER_GROUPS//,/ } ${PH_APP_USER_CUR_GROUPS//,/ }; \
 	do \
 		echo "$PH_i"; \
-	done) | sort)" ]]
+	done) | sort -u)" ]]
 then
+	PH_APP_USER_GROUPS="$( (for PH_i in ${PH_APP_USER_GROUPS//,/ } ${PH_APP_USER_CUR_GROUPS//,/ }; \
+	do \
+		echo "$PH_i"; \
+	done) | sort -u)"
 	if "$PH_SUDO" usermod -G "$PH_APP_USER_GROUPS" "$PH_APP_USER" >/dev/null 2>&1
 	then
 		ph_add_value_to_param -p PH_GROUPS -v "${PH_APP_USER}'${PH_APP_USER_CUR_GROUPS}"
