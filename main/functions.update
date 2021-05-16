@@ -2077,7 +2077,7 @@ do
 			"${PH_MENUS_DIR}/AppManagement_${PH_APP}.lst")
 		if [[ "$PH_APP" == "PieHelper" ]]
 		then
-			for PH_j in "Start PieHelper:echo \"*Sigh* I'm already running ! Stop buggering me...\"" \
+			for PH_j in "Start PieHelper:echo '*Sigh* I'm already running ! Stop buggering me...'" \
 				"Update ${PH_APP}:confapps_ph.sh -p update -a \"${PH_APP}\"" \
 				"Stop ${PH_APP}:break" \
 				"Unconfigure ${PH_APP}:confpieh_ph.sh -u" \
