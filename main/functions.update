@@ -1749,7 +1749,12 @@ then
 	printf "%8s%s\n" "" "--> Determining the application currently linked to the menu"
 	if PH_LINKED_MENU_APP="$(ph_get_linked_menu_app)"
 	then
-		ph_run_with_rollback -c true -m "$PH_LINKED_MENU_APP"
+		if [[ -n "$PH_LINKED_MENU_APP" ]]
+		then
+			ph_run_with_rollback -c true -m "$PH_LINKED_MENU_APP"
+		else
+			ph_run_with_rollback -c true -m "Nothing currently linked"
+		fi
 	else
 		if [[ -n "$PH_LINKED_MENU_APP" ]]
 		then
@@ -1799,8 +1804,13 @@ then
 	printf "%8s%s\n" "" "--> Determining the application currently linked to the menu"
 	if PH_LINKED_MENU_APP="$(ph_get_linked_menu_app)"
 	then
-		ph_run_with_rollback -c true -m "$PH_LINKED_MENU_APP"
-		if [[ "$PH_LINKED_MENU_APP" != "$PH_LINK_APP_TO_MENU" ]]
+		if [[ -n "$PH_LINKED_MENU" ]]
+		then
+			ph_run_with_rollback -c true -m "$PH_LINKED_MENU_APP"
+		else
+			ph_run_with_rollback -c true -m "Nothing currently linked"
+		fi
+		if [[ -n "$PH_LINKED_MENU_APP" && "$PH_LINKED_MENU_APP" != "$PH_LINK_APP_TO_MENU" ]]
 		then
 			ph_run_with_rollback -c "ph_unlink_app_from_menu '${PH_LINKED_TO_MENU}'" || \
 				return 1
