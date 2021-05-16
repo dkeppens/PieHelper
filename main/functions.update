@@ -1801,11 +1801,10 @@ declare -i PH_COUNT="0"
 
 if [[ -L "${PH_MENUS_DIR}/TTYManagement.lst" || -L "${PH_MENUS_DIR}/AppManagement.lst" || -L "${PH_MENUS_DIR}/OptsManagement.lst" ]]
 then
-set -x
 	printf "%8s%s\n" "" "--> Determining the application currently linked to the menu"
 	if PH_LINKED_MENU_APP="$(ph_get_linked_menu_app)"
 	then
-		if [[ -n "$PH_LINKED_MENU" ]]
+		if [[ -n "$PH_LINKED_MENU_APP" ]]
 		then
 			ph_run_with_rollback -c true -m "$PH_LINKED_MENU_APP"
 		else
@@ -2367,6 +2366,7 @@ then
 		return 1
 fi
 ph_add_value_to_param -p PH_REMOVE_APPS_DEFAULTS -v "$PH_APP"
+set -x
 ph_run_with_rollback -c true && \
 	return "$?"
 }
