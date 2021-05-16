@@ -1185,37 +1185,36 @@ return 0
 
 function ph_allocate_new_tty {
 
-declare PH_APP="$1"
-declare -i PH_APP_TTY="0"
+declare PH_APP
+declare PH_APP_STR_TTY
 
-[[ -z "$PH_APP" ]] && \
-	echo -n "1" && \
-	return 1
+PH_APP="$1"
+
+[[ -z "$PH_APP" || "$#" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 printf "%8s%s\n" "" "--> Allocating the first free tty to ${PH_APP}"
 if [[ "$PH_APP" == "PieHelper" ]]
 then
-	PH_APP_TTY="2"
-	ph_run_with_rollback -c true -m "tty${PH_APP_TTY}"
+	PH_APP_STR_TTY="2"
 else
-	for ((PH_APP_TTY=3;PH_APP_TTY<="$((PH_PIEH_MAX_TTYS+1))";PH_APP_TTY++))
+	for ((PH_APP_STR_TTY=3;PH_APP_STR_TTY<="$((PH_PIEH_MAX_TTYS+1))";PH_APP_STR_TTY++))
 	do
-		if cut -f3 "${PH_CONF_DIR}/integrated_apps" 2>/dev/null | grep -E "^${PH_APP_TTY}$" >/dev/null
+		if cut -f3 "${PH_CONF_DIR}/integrated_apps" 2>/dev/null | grep -E "^${PH_APP_STR_TTY}$" >/dev/null
 		then
 			continue
 		fi
 		break
 	done
-	if [[ "$PH_APP_TTY" -eq "$(("$PH_PIEH_MAX_TTYS"+1))" ]]
+	if [[ "$PH_APP_STR_TTY" -eq "$(("$PH_PIEH_MAX_TTYS"+1))" ]]
 	then
 		ph_set_result -m "Could not allocate a tty to ${PH_APP} since the maximum number of $((PH_PIEH_MAX_TTYS-1)) ttys has been allocated"
 		ph_run_with_rollback -c false -m "Could not allocate" || \
 			return 1
-	else
-		ph_run_with_rollback -c true -m "tty${PH_APP_TTY}"
 	fi
 fi
-return "$PH_APP_TTY"
+ph_run_with_rollback -c true -m "tty${PH_APP_STR_TTY}"
+return "$PH_APP_STR_TTY"
 }
 
 function ph_check_object_existence {
@@ -7627,34 +7626,29 @@ ph_add_value_to_param -p PH_UNINT_APPS -v "$PH_APP"
 return 0
 }
 
-function ph_get_app_tty {
+function ph_ensure_app_tty {
 
-declare PH_APP="$1"
-declare PH_APP_USER=""
-declare -i PH_APP_TTY="0"
+declare PH_APP
+declare PH_APP_USER
+declare PH_APP_STR_TTY
 
-[[ -z "$PH_APP" ]] && \
-	echo -n "1" && \
-	return 1
+PH_APP="$1"
 
-printf "%8s%s\n" "" "--> Checking the tty of ${PH_APP}"
-PH_APP_USER="$(ph_get_app_user_from_app_name "$PH_APP")"
-PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
-if [[ "$PH_APP_TTY" -eq "0" ]]
-then 
-	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not determine TTY -> Allocating new TTY"
-	ph_set_result -r 0
+[[ -z "$PH_APP" || "$#" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+PH_APP_STR_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
+if [[ "$PH_APP_STR_TTY" == "-" ]]
+then
 	ph_allocate_new_tty "$PH_APP"
-	PH_APP_TTY="$?"
-	if [[ "$PH_APP_TTY" -ne "1" ]]
-	then
-		ph_run_with_rollback -c "ph_setup_tty -a '${PH_APP}' -t '${PH_APP_TTY}' -u '${PH_APP_USER}'" || \
-			return 1
-	fi
-else
-	ph_run_with_rollback -c true -m "tty${PH_APP_TTY}"
+	PH_APP_STR_TTY="$?"
+	[[ "$PH_APP_STR_TTY" -eq "1" ]] && \
+		return 1
+	PH_APP_USER="$(ph_get_app_user_from_app_name "$PH_APP")"
+	ph_run_with_rollback -c "ph_setup_tty -a '${PH_APP}' -t '${PH_APP_STR_TTY}' -u '${PH_APP_USER}'" || \
+		return 1
 fi
-return "$PH_APP_TTY"
+return 0
 }
 
 function ph_undo_setup_tty {
@@ -7838,11 +7832,15 @@ ph_run_with_rollback -c false -m "Could not install" || \
 
 function ph_set_app_for_start {
 
-declare PH_APP="$1"
-declare PH_OLD_STARTAPP=""
-declare -i PH_COLUMNS="$(tput cols 2>/dev/null)"
-declare -i PH_APP_TTY="0"
-declare -i PH_COUNT="0"
+declare PH_APP
+declare PH_APP_STR_TTY
+declare PH_OLD_STARTAPP
+declare -i PH_COLUMNS
+declare -i PH_COUNT
+
+PH_APP="$1"
+PH_COLUMNS="$(tput cols 2>/dev/null)"
+PH_COUNT="0"
 
 [[ -z "$PH_APP" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
@@ -7904,12 +7902,11 @@ else
 fi
 if [[ "$PH_APP" != "none" ]]
 then
-	ph_get_app_tty "$PH_APP"
-	PH_APP_TTY="$?"
-	[[ "$PH_APP_TTY" -eq "1" ]] && \
+	ph_ensure_app_tty "$PH_APP" || \
 		return 1
+	PH_APP_STR_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
 fi
-ph_run_with_rollback -c "ph_set_tty_for_boot '${PH_APP_TTY}'" || \
+ph_run_with_rollback -c "ph_set_tty_for_boot '${PH_APP_STR_TTY}'" || \
 	return 1
 ph_run_with_rollback -c "ph_set_option_to_value PieHelper -r \"PH_PIEH_STARTAPP'${PH_APP}\"" || \
 	return 1
