@@ -1,3 +1,4 @@
+* adapt REAMD.md with changes such as installation states etc
 * reimplement recursive chown and chperms to speed things up
 * create expect for moonlight pairing
 * create a function for PH_APP_GRAPH and PH_APP_EXEC determination and replace instances with calls to function
@@ -18,7 +19,6 @@
 * check why mnt/App dirs not being created with piehelper (at least not mnt/PieHelper on initial configure): change
 * change content of bullseye.conf to appropriate values
 * extra output comments for package update : is irreversible and may take a while
-* extra output comments for system update : is recommended but irreversible and can take very long depending on system config
 * further process whether all actions for a piehelper configuration are now under correct rollback control : including '-c true|-c false' or manual OK/ERROR print with ph_set_result
 * reflect changes for ph_set_option_to_value to confopts_ph.sh
 * add check function a la those for ip and users etc for cifs mountpoints : are they valid ? + implement use where needed

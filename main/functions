@@ -4640,6 +4640,11 @@ do
 		fi
 		if [[ "$PH_OPTARG_VAR" == "PH_${PH_APPU}_PKG" ]]
 		then
+			if ! ph_update_pkg_index
+			then
+				((PH_RET_CODE++))
+				continue
+			fi
 			if ! ph_check_pkg_validity "$PH_OPTARG_VAL"
 			then
 				printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Setting option '${PH_OPTARG_VAR}' to " "'${PH_OPTARG_VAL}'" " in '${PH_CONF_DIR}/${PH_APP}.conf'"
@@ -6364,6 +6369,8 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 				return 1
 		fi
 		ph_run_with_rollback -c true -m "$PH_APP_CMD"
+		ph_update_pkg_index || \
+			return 1
 		printf "%8s%s\n" "" "--> Checking the package of ${PH_APP}"
 		if [[ -z "$PH_APP_PKG" || "$(ph_check_pkg_validity "$PH_APP_PKG" ; echo "$?")" -ne "0" ]]
 		then
@@ -6683,6 +6690,8 @@ OPTARG="$PH_OLDOPTARG"
 PH_APP_PKG="$(ph_get_app_pkg_from_app_conf "$PH_APP")"
 if [[ -n "$PH_APP_PKG" ]]
 then
+	ph_update_pkg_index || \
+		return 1
 	if ph_check_pkg_validity "$PH_APP_PKG"
 	then
 		if ph_get_pkg_inst_state "$PH_APP"
