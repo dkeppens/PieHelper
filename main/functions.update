@@ -1748,8 +1748,8 @@ declare PH_i=""
 declare PH_UNLINK_APP="$1"
 declare PH_LINKED_MENU_APP=""
 
-[[ ( -z "$PH_LINKED_MENU_APP" && "$#" -ne "0" ) || \
-	( -n "$PH_LINKED_MENU_APP" && "$#" -ne "1" )  ]] && \
+[[ ( -z "$PH_UNLINK_APP" && "$#" -ne "0" ) || \
+	( -n "$PH_UNLINK_APP" && "$#" -ne "1" )  ]] && \
         ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 printf "%8s%s\n" "" "--> Determining the application currently linked to the menu"
