@@ -1737,37 +1737,39 @@ fi
 function ph_unlink_app_from_menu {
 
 declare PH_i=""
-declare PH_LINKED_MENU_APP="$1"
-declare -i PH_COUNT="0"
+declare PH_UNLINK_APP="$1"
+declare PH_LINKED_MENU_APP=""
 
 [[ ( -z "$PH_LINKED_MENU_APP" || "$#" -ne "0" ) || \
 	( -n "$PH_LINKED_MENU_APP" || "$#" -ne "1" )  ]] && \
         ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-if [[ -z "$PH_LINKED_MENU_APP" ]]
+printf "%8s%s\n" "" "--> Determining the application currently linked to the menu"
+if PH_LINKED_MENU_APP="$(ph_get_linked_menu_app)"
 then
-	printf "%8s%s\n" "" "--> Determining the application currently linked to the menu"
-	if PH_LINKED_MENU_APP="$(ph_get_linked_menu_app)"
+	if [[ -n "$PH_LINKED_MENU_APP" ]]
 	then
-		if [[ -n "$PH_LINKED_MENU_APP" ]]
-		then
-			ph_run_with_rollback -c true -m "$PH_LINKED_MENU_APP"
-		else
-			ph_run_with_rollback -c true -m "Nothing currently linked"
-			return 0
-		fi
+		ph_run_with_rollback -c true -m "$PH_LINKED_MENU_APP"
 	else
-		if [[ -n "$PH_LINKED_MENU_APP" ]]
-		then
-			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Inconsistent menu links"
-			ph_set_result -r 0
-		else
-			ph_run_with_rollback -c false -m "Could not determine" || \
-				return 1
-		fi
+		ph_run_with_rollback -c true -m "Nothing to do"
+		return 0
+	fi
+else
+	if [[ -n "$PH_LINKED_MENU_APP" ]]
+	then
+		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Inconsistent menu links"
+		ph_set_result -r 0
+		PH_UNLINK_APP=""
+	else
+		ph_run_with_rollback -c false -m "Could not determine" || \
+			return 1
 	fi
 fi
-printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Unlinking " "'${PH_LINKED_MENU_APP}'" " from menu"
+if [[ -z "$PH_UNLINK_APP" || "$PH_UNLINK_APP" != "$PH_LINKED_MENU_APP" ]]
+then
+	PH_UNLINK_APP="$PH_LINKED_MENU_APP"
+fi
+printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Unlinking " "'${PH_UNLINK_APP}'" " from menu"
 for PH_i in AppManagement TTYManagement OptsManagement
 do
 	if [[ -L "${PH_MENUS_DIR}/${PH_i}.lst" ]]
@@ -1777,17 +1779,11 @@ do
 			ph_run_with_rollback -c false -m "Could not unlink" || \
 				return 1
 		fi
-		PH_COUNT="$((PH_COUNT+1))"
 	fi
 done
-if [[ "$PH_COUNT" -gt "0" ]]
-then
-	ph_add_value_to_param -p PH_LINK_MENUS -v "$PH_LINKED_MENU_APP"
-	ph_run_with_rollback -c true
-else
-	ph_run_with_rollback -c true -m "Nothing to do"
-fi
-return 0
+ph_add_value_to_param -p PH_LINK_MENUS -v "$PH_UNLINK_APP"
+ph_run_with_rollback -c true && \
+	return "$?"
 }
 
 function ph_link_app_to_menu {
@@ -1795,7 +1791,6 @@ function ph_link_app_to_menu {
 declare PH_i=""
 declare PH_LINK_APP_TO_MENU="$1"
 declare PH_LINKED_MENU_APP=""
-declare -i PH_COUNT="0"
 
 [[ -z "$PH_LINK_APP_TO_MENU" || "$#" -ne "1" ]] && \
         ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
@@ -1808,14 +1803,17 @@ then
 		if [[ -n "$PH_LINKED_MENU_APP" ]]
 		then
 			ph_run_with_rollback -c true -m "$PH_LINKED_MENU_APP"
+			if [[ "$PH_LINKED_MENU_APP" != "$PH_LINK_APP_TO_MENU" ]]
+			then
+				ph_run_with_rollback -c "ph_unlink_app_from_menu '${PH_LINKED_TO_MENU}'" || \
+					return 1
+				PH_LINKED_MENU_APP=""
+			else
+				ph_run_with_rollback -c true -m "Nothing to do"
+				return 0
+			fi
 		else
 			ph_run_with_rollback -c true -m "Nothing currently linked"
-		fi
-		if [[ -n "$PH_LINKED_MENU_APP" && "$PH_LINKED_MENU_APP" != "$PH_LINK_APP_TO_MENU" ]]
-		then
-			ph_run_with_rollback -c "ph_unlink_app_from_menu '${PH_LINKED_TO_MENU}'" || \
-				return 1
-			PH_LINKED_MENU_APP=""
 		fi
 	else
 		if [[ -z "$PH_LINKED_MENU_APP" ]]
@@ -1844,14 +1842,9 @@ do
 		PH_COUNT="$((PH_COUNT+1))"
 	fi
 done
-if [[ "$PH_COUNT" -gt "0" ]]
-then
-	ph_add_value_to_param -p PH_UNDO_LINK_MENUS -v "$PH_LINK_APP_TO_MENU"
-	ph_run_with_rollback -c true
-else
-	ph_run_with_rollback -c true -m "Nothing to do"
-fi
-return 0
+ph_add_value_to_param -p PH_UNDO_LINK_MENUS -v "$PH_LINK_APP_TO_MENU"
+ph_run_with_rollback -c true && \
+	return "$?"
 }
 
 function ph_remove_app_menus {
@@ -2367,7 +2360,6 @@ then
 		return 1
 fi
 ph_add_value_to_param -p PH_REMOVE_APPS_DEFAULTS -v "$PH_APP"
-set -x
 ph_run_with_rollback -c true && \
 	return "$?"
 }
