@@ -2043,6 +2043,8 @@ PH_APP="$1"
 
 [[ "$PH_APP" == "Ctrls" ]] && \
 	return 0
+ph_run_with_rollback -c "ph_remove_app_menus '${PH_APP}'" || \
+	return 1
 PH_APPL="${PH_APP:0:4}"
 printf "%8s%s\033[32m%s\033[0m\n" "" "--> Creating menu items for " "'${PH_APP}'"
 for PH_i in "${PH_MENUS_DIR}/${PH_APP}.lst" "${PH_MENUS_DIR}/OptsManagement_${PH_APP}.lst" "${PH_MENUS_DIR}/TTYManagement_${PH_APP}.lst" "${PH_MENUS_DIR}/AppManagement_${PH_APP}.lst"
