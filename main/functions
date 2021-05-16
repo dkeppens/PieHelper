@@ -7819,7 +7819,7 @@ then
 				if "$PH_SUDO" chown "${PH_APP_USER}:$(id -gn "$PH_APP_USER" 2>/dev/null)" "/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh" 2>/dev/null
 				then
 					ph_run_with_rollback -c true
-					ph_run_with_rollback -c "ph_add_app_to_integration_file -a '${PH_APP}' -u '${PH_APP_USER}' -t '${PH_APP_TTY}'" || \
+					ph_run_with_rollback -c "ph_add_app_to_integration_file -a '${PH_APP}' -t '${PH_APP_TTY}'" || \
 						return 1
 					ph_add_value_to_param -p PH_UNDO_SETUP_TTYS -v "${PH_APP}'${PH_APP_USER}'${PH_APP_TTY}"
 					return 0
