@@ -6278,6 +6278,7 @@ declare -l PH_APPL=""
 declare -u PH_APPU=""
 
 OPTIND="1"
+PH_PASS_APP_USER=""
 
 while getopts a:c:u:p: PH_OPTION 2>/dev/null
 do
@@ -6423,17 +6424,19 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 		PH_PARAMS+=("-p" "'${PH_APP_PKG}'")
 	for PH_i in USER PKG
 	do
-		declare PH_VAR="PH_APP_${PH_i}"
+		declare -n PH_VAR="PH_APP_${PH_i}"
 		[[ -n "$PH_VAR" ]] && \
 			PH_PARAMS+=("-$(cut -c1<<<"$PH_i" | tr "[:upper:]" "[:lower:]")" "'${PH_VAR}'")
+		unset -n PH_VAR
 	done
-	set -x
 	if ! ph_check_app_user -a "$PH_APP" -i "$PH_APP_INST_STATE" "${PH_PARAMS[@]}"
 	then
 		unset PH_PARAMS
 		return 1
 	fi
 	unset PH_PARAMS
+	PH_APP_USER="$PH_PASS_APP_USER"
+	unset PH_PASS_APP_USER
 	PH_APP_GRAPH="$(ph_get_app_graphical_prop -a "$PH_APP" -c "$PH_APP_CMD")"
 	PH_APP_EXEC="$(ph_get_app_executable -a "$PH_APP" -c "$PH_APP_CMD")"
 	if [[ "$PH_APP" != "PieHelper" ]]
@@ -6563,7 +6566,7 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 	fi
 	if [[ -n "$PH_APP_INST_STATE" ]]
 	then
-		ph_run_with_rollback -c "ph_add_app_to_support_file -a '${PH_APP}' -u '${PH_APP_USER}' -c '${PH_APP_CMD}' -i '${PH_APP_INST_STATE}'" || \
+		ph_run_with_rollback -c "ph_add_app_to_support_file -a '${PH_APP}' -u '${PH_APP_USER}' -i '${PH_APP_INST_STATE}' -c '${PH_APP_CMD}'" || \
 			return 1
 	else
 		ph_run_with_rollback -c "ph_add_app_to_support_file -a '${PH_APP}' -u '${PH_APP_USER}' -c '${PH_APP_CMD}'" || \
@@ -7018,7 +7021,6 @@ function ph_check_app_user {
 declare PH_i=""
 declare PH_APP=""
 declare PH_APP_PKG=""
-declare PH_APP_USER=""
 declare PH_APP_INST_STATE=""
 declare PH_OPTION=""
 declare PH_OLDOPTARG="$OPTARG"
@@ -7043,11 +7045,11 @@ do
 			return 1
                 PH_APP_PKG="$OPTARG" ;;
 			     u)
-		[[ -n "$PH_APP_USER" || -z "$OPTARG" ]] && \
+		[[ -n "$PH_PASS_APP_USER" || -z "$OPTARG" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
-                PH_APP_USER="$OPTARG" ;;
+                PH_PASS_APP_USER="$OPTARG" ;;
 			     i)
 		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(P|U)@(I|A) ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
@@ -7103,31 +7105,31 @@ fi
 printf "%8s%s\n" "" "--> Checking the user account for ${PH_APP}"
 if [[ "$PH_APP" == "PieHelper" ]]
 then
-	PH_APP_USER="$PH_RUN_USER"
+	PH_PASS_APP_USER="$PH_RUN_USER"
 else
 	while true
 	do
 		PH_COUNT="$((PH_COUNT+1))"
-		if ! ph_check_user_validity "$PH_APP_USER"
+		if ! ph_check_user_validity "$PH_PASS_APP_USER"
 		then
-			if [[ -n "$PH_APP_USER" ]]
+			if [[ -n "$PH_PASS_APP_USER" ]]
 			then
-				printf "%10s\033[33m%s\033[0m\n" "" "Warning : User account '${PH_APP_USER}' does not exist -> Creating"
+				printf "%10s\033[33m%s\033[0m\n" "" "Warning : User account '${PH_PASS_APP_USER}' does not exist -> Creating"
 			else
 				printf "%10s\033[33m%s\033[0m\n" "" "Warning : " "No user provided"
 				if [[ "$PH_COUNT" -eq "1" && "$PH_APP_INST_STATE" == "PI" ]]
 				then
 					ph_set_result -r 0
 					printf "%8s%s\n" "" "--> Attempting to determine the user for ${PH_APP} from package '${PH_APP_PKG}'"
-					PH_APP_USER="$(systemctl show "$PH_APP_PKG" 2>/dev/null | nawk -F'=' '$1 ~ /^U(ser|ID)$/ && $2 !~ /\[not set\]/ { \
+					PH_PASS_APP_USER="$(systemctl show "$PH_APP_PKG" 2>/dev/null | nawk -F'=' '$1 ~ /^U(ser|ID)$/ && $2 !~ /\[not set\]/ { \
 							printf $2 ; \
 							exit 0 \
 						}')"
-					if [[ -n "$PH_APP_USER" ]]
+					if [[ -n "$PH_PASS_APP_USER" ]]
 					then
-						if [[ "$PH_APP_USER" == +([[:digit:]]) ]]
+						if [[ "$PH_PASS_APP_USER" == +([[:digit:]]) ]]
 						then
-							PH_APP_USER="$(getent passwd "$PH_APP_USER" 2>/dev/null | head -1 | cut -d':' -f1)"
+							PH_PASS_APP_USER="$(getent passwd "$PH_PASS_APP_USER" 2>/dev/null | head -1 | cut -d':' -f1)"
 						fi
 						break
 					else
@@ -7137,7 +7139,7 @@ else
 			fi
 			ph_set_result -r 0
 		fi
-		if [[ -z "$PH_APP_USER" ]]
+		if [[ -z "$PH_PASS_APP_USER" ]]
 		then
 			printf "%8s%s\n\n" "" "--> Please enter a valid user account for application ${PH_APP}"
 			printf "%10s%s\n" "" "- Entering an existing account will update the account's secondary group membership to include the following groups : 'tty,audio,video,input'"
@@ -7146,10 +7148,10 @@ else
 			printf "%10s%s\033[32m%s\033[0m\n" "" "- Leave empty to use the default of " "'${PH_RUN_USER}'"
 			printf "%10s%s\033[32m%s\033[0m\n\n" "" "- Or enter 'quit' to stop and rollback all changes"
 			printf "%8s%s" "" "User account : "
-			read -r PH_APP_USER 2>/dev/null
-			ph_screen_input "$PH_APP_USER"
-			case "$PH_APP_USER" in "")
-				PH_APP_USER="$PH_RUN_USER" ;;
+			read -r PH_PASS_APP_USER 2>/dev/null
+			ph_screen_input "$PH_PASS_APP_USER"
+			case "$PH_PASS_APP_USER" in "")
+				PH_PASS_APP_USER="$PH_RUN_USER" ;;
 					quit)
 				ph_quit_with_rollback ;;
 					*)
@@ -7161,18 +7163,18 @@ else
 		break
 	done
 fi
-ph_run_with_rollback -c true -m "$PH_APP_USER"
-if [[ "$PH_APP_USER" != @(${PH_RUN_USER}|root) ]]
+ph_run_with_rollback -c true -m "$PH_PASS_APP_USER"
+if [[ "$PH_PASS_APP_USER" != @(${PH_RUN_USER}|root) ]]
 then
 	if [[ "$PH_CREATE_FLAG" -eq "0" ]]
 	then
-		ph_run_with_rollback -c "ph_create_app_user -a '${PH_APP}' -u '${PH_APP_USER}'" || \
+		ph_run_with_rollback -c "ph_create_app_user -a '${PH_APP}' -u '${PH_PASS_APP_USER}'" || \
 			return 1
 	else
-		ph_run_with_rollback -c "ph_set_user_group_membership '${PH_APP_USER}'" || \
+		ph_run_with_rollback -c "ph_set_user_group_membership '${PH_PASS_APP_USER}'" || \
 			return 1
 	fi
-	ph_run_with_rollback -c "ph_grant_pieh_access '${PH_APP_USER}'" || \
+	ph_run_with_rollback -c "ph_grant_pieh_access '${PH_PASS_APP_USER}'" || \
 		return 1
 fi
 return 0
