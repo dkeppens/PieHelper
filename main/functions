@@ -238,7 +238,7 @@ do
 			return 1
 		PH_LINE="$OPTARG" ;;
 			     f)
-		[[ -n "$PH_FILE" ]] && \
+		[[ -n "$PH_FILE" || -z "$OPTARG" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -299,13 +299,13 @@ OPTIND="1"
 while getopts l:f:r PH_OPTION 2>/dev/null
 do
 	case "$PH_OPTION" in l)
-		[[ -n "$PH_LINE_REGEX" ]] && \
+		[[ -n "$PH_LINE_REGEX" || -z "$OPTARG" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
 		PH_LINE_REGEX="$OPTARG" ;;
 		     f)
-		[[ -n "$PH_FILE" ]] && \
+		[[ -n "$PH_FILE" || -z "$OPTARG" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -368,7 +368,7 @@ then
 					then
 						if "$PH_SUDO" rm "$PH_TMP_FILE" 2>/dev/null
 						then
-							ph_add_value_to_param -p PH_ADD_LINES -v "${PH_FILE}'${PH_PARAMS}'$(sed 's/\t/\\t/g' <<<"$PH_LINE")"
+							ph_add_value_to_param -p PH_ADD_LINES -v "${PH_FILE}'${PH_PARAMS}'$(sed 's/\t/\\t/g'<<<"$PH_LINE")"
 							return 0
 						fi
 					fi
@@ -379,7 +379,7 @@ then
 						then
 							if "$PH_SUDO" rm "$PH_TMP_FILE" 2>/dev/null
 							then
-								ph_add_value_to_param -p PH_ADD_LINES -v "${PH_FILE}'${PH_PARAMS}'$(sed 's/\t/\\t/g' <<<"$PH_LINE")"
+								ph_add_value_to_param -p PH_ADD_LINES -v "${PH_FILE}'${PH_PARAMS}'$(sed 's/\t/\\t/g'<<<"$PH_LINE")"
 								return 0
 							fi
 						fi
@@ -392,7 +392,7 @@ then
 				then
 					if mv "$PH_TMP_FILE" "$PH_FILE" 2>/dev/null
 					then
-						ph_add_value_to_param -p PH_ADD_LINES -v "${PH_FILE}'${PH_PARAMS}'$(sed 's/\t/\\t/g' <<<"$PH_LINE")"
+						ph_add_value_to_param -p PH_ADD_LINES -v "${PH_FILE}'${PH_PARAMS}'$(sed 's/\t/\\t/g'<<<"$PH_LINE")"
 						return 0
 					fi
 				else
@@ -400,7 +400,7 @@ then
 					then
 						if mv "$PH_TMP_FILE" "$PH_LINK_TARGET" 2>/dev/null
 						then
-							ph_add_value_to_param -p PH_ADD_LINES -v "${PH_FILE}'${PH_PARAMS}'$(sed 's/\t/\\t/g' <<<"$PH_LINE")"
+							ph_add_value_to_param -p PH_ADD_LINES -v "${PH_FILE}'${PH_PARAMS}'$(sed 's/\t/\\t/g'<<<"$PH_LINE")"
 							return 0
 						fi
 					else
@@ -1847,19 +1847,15 @@ return 0
 function ph_get_app_tty_from_app_name {
 
 declare PH_APP
-declare -i PH_APP_TTY
+declare PH_APP_STR_TTY
 
 PH_APP="$1"
 
 [[ -z "$PH_APP" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-if ! PH_APP_TTY="$(nawk -v app="^${PH_APP}$" -v max="$PH_PIEH_MAX_TTYS" '$1 ~ app { \
-		if ($2 ~ /^-$/) { \
-			printf "%s", "0" ; \
-			exit 1 \
-		} else { \
-			if ($2 <= max && $2 > 1) { \
+if ! PH_APP_STR_TTY="$(nawk -v app="^${PH_APP}$" -v max="$PH_PIEH_MAX_TTYS" '$1 ~ app { \
+			if ($2 ~ /^-$/ || ($2 <= max && $2 > 1)) { \
 				printf $2 ; \
 				exit 0 \
 			} else { \
@@ -1871,10 +1867,10 @@ if ! PH_APP_TTY="$(nawk -v app="^${PH_APP}$" -v max="$PH_PIEH_MAX_TTYS" '$1 ~ ap
 		next \
 	}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null)"
 then
-	PH_APP_TTY="1"
+	PH_APP_STR_TTY="1"
 fi
-echo -n "$PH_APP_TTY"
-[[ "$PH_APP_TTY" -eq "1" ]] && \
+echo -n "$PH_APP_STR_TTY"
+[[ "$PH_APP_STR_TTY" -eq "1" ]] && \
 	return 1
 return 0
 }
@@ -3947,6 +3943,7 @@ declare PH_APP_USER_GROUPS=""
 declare PH_APP_CMD=""
 declare PH_APP_PKG=""
 declare PH_APP_INST_STATE=""
+declare PH_APP_STR_TTY=""
 declare PH_OPTION=""
 declare PH_OPTION_VALUE=""
 declare PH_VAR_NAME=""
@@ -4078,11 +4075,18 @@ then
 			PH_CMD="ph_add_app_to_support_file ${PH_PARAMS}" ;;
 				  PH_ADD_APPS_TO_INT_FILE)
 			PH_APP="$(echo -n "$PH_VALUE" | cut -f1 -d"'")"
-			PH_APP_USER="$(echo -n "$PH_VALUE" | cut -f2 -d"'")"
-			PH_APP_TTY="$(echo -n "$PH_VALUE" | cut -f3 -d"'")"
-			PH_CMD="ph_add_app_to_integration_file -a '${PH_APP}' -u '${PH_APP_USER}' -t '${PH_APP_TTY}'" ;;
+			PH_APP_STR_TTY="$(echo -n "$PH_VALUE" | cut -f2 -d"'")"
+			PH_PARAMS="-a '${PH_APP}'"
+			[[ -n "${PH_APP_STR_TTY}" ]] && \
+				PH_PARAMS="${PH_PARAMS} -t '${PH_APP_STR_TTY}'"
+			PH_CMD="ph_add_app_to_integration_file ${PH_PARAMS}" ;;
 				  PH_REMOVE_APPS_FROM_INT_FILE)
-			PH_CMD="ph_remove_app_from_integration_file -a '${PH_VALUE}'" ;;
+			PH_APP="$(echo -n "$PH_VALUE" | cut -f1 -d"'")"
+			PH_APP_STR_TTY="$(echo -n "$PH_VALUE" | cut -f2 -d"'")"
+			PH_PARAMS="-a '${PH_APP}'"
+			[[ -n "${PH_APP_STR_TTY}" ]] && \
+				PH_PARAMS="${PH_PARAMS} -t '${PH_APP_STR_TTY}'"
+			PH_CMD="ph_remove_app_from_integration_file ${PH_PARAMS}" ;;
 				  PH_ADD_LINES)
 			PH_FILE="$(echo -n "$PH_VALUE" | cut -f1 -d"'")"
 			PH_PARAMS="$(echo -n "$PH_VALUE" | cut -f2 -d"'")"
@@ -6055,11 +6059,11 @@ ph_run_with_rollback -c false -m "Could not unsupport" || \
 function ph_remove_app_from_support_file {
 	
 declare PH_i=""
-declare PH_j=""
 declare PH_APP=""
 declare PH_APP_CMD=""
 declare PH_APP_USER=""
 declare PH_APP_INST_STATE=""
+declare PH_REMOVE_STRING=""
 declare PH_OPTION=""
 declare PH_OLDOPTARG="$OPTARG"
 declare -i PH_OLDOPTIND="$OPTIND"
@@ -6107,32 +6111,25 @@ OPTARG="$PH_OLDOPTARG"
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 printf "%8s%s\033[32m%s\033[0m\n" "" "--> Removing ${PH_APP} from configuration file " "'${PH_CONF_DIR}/supported_apps'"
-for PH_i in USER CMD INST_STATE
+PH_REMOVE_STRING="${PH_APP}"
+for PH_i in USER INST_STATE CMD
 do
 	PH_il="$PH_i"
 	declare -n PH_VAR="PH_APP_${PH_i}"
-	for PH_j in  1 2
-	do
-		if [[ -z "$PH_VAR" ]]
+	if [[ -z "$PH_VAR" ]]
+	then
+		PH_VAR="$(eval "ph_get_app_${PH_il}_from_app_name \"$PH_APP\"")"
+		if [[ -n "$PH_VAR" ]]
 		then
-			case "$PH_j" in 1)
-				PH_VAR="$(ph_get_app_${PH_il}_from_app_name "$PH_APP")" ;;
-					2)
-				unset -n PH_VAR
-				case "$PH_il" in cmd)
-					PH_il="start command" ;;
-						 inst_state)
-					PH_il="installation state" ;;
-				esac
-				ph_set_result -m "Could not remove ${PH_APP} from configuration file '${PH_CONF_DIR}/supported_apps' without knowing it's ${PH_il}"
-				ph_run_with_rollback -c false -m "Could not remove" || \
-					return 1 ;;
-				
-			esac
+			PH_REMOVE_STRING="${PH_REMOVE_STRING}\t${PH_VAR}"
 		fi
-	done
+	else
+		PH_REMOVE_STRING="${PH_REMOVE_STRING}\t${PH_VAR}"
+	fi
 	unset -n PH_VAR
 done
+[[ "${PH_REMOVE_STRING}" == "${PH_APP}" ]] && \
+	PH_REMOVE_STRING="${PH_REMOVE_STRING}\t.*"
 PH_COUNT="$(nawk -v app="^${PH_APP}$" 'BEGIN { \
 		count = "0" \
 	} \
@@ -6147,39 +6144,48 @@ PH_COUNT="$(nawk -v app="^${PH_APP}$" 'BEGIN { \
 case "$PH_COUNT" in 0)
 	ph_run_with_rollback -c true -m "Nothing to do" && \
 		return "$?" ;;
-                    *)
-	if ! ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\t${PH_APP_USER}\t${PH_APP_INST_STATE}\t${PH_APP_CMD}'"
+                    1)
+	if ! ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_REMOVE_STRING}'"
 	then
 		ph_run_with_rollback -c false -m "Could not remove" || \
 			return 1
 	fi ;;
+                    *)
+	ph_set_result -a -m "Configuration file '${PH_CONF_DIR}/supported_apps' is corrupted -> Found multiple instances of '${PH_APP}'" ;;
 esac
-ph_add_value_to_param -p PH_ADD_APPS_TO_SUP_FILE -v "${PH_APP}'${PH_APP_USER}'${PH_APP_CMD}'${PH_APP_INST_STATE}"
+ph_add_value_to_param -p PH_ADD_APPS_TO_SUP_FILE -v "${PH_APP}'${PH_APP_USER}'${PH_APP_INST_STATE}'${PH_APP_CMD}"
 ph_run_with_rollback -c true && \
 	return "$?"
 }
 
 function ph_remove_app_from_integration_file {
 	
-declare PH_APP=""
-declare PH_APP_USER=""
-declare PH_OPTION=""
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
-declare -i PH_COUNT="0"
-declare -i PH_APP_TTY="0"
-declare -i PH_RET_CODE="0"
+declare PH_APP
+declare PH_APP_STR_TTY
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+declare -i PH_COUNT
+
+PH_OLDOPTARG="$OPTARG"
+PH_OLDOPTIND="$OPTIND"
 
 OPTIND="1"
 
-while getopts a: PH_OPTION 2>/dev/null
+while getopts a:t: PH_OPTION 2>/dev/null
 do
         case "$PH_OPTION" in a)
-		[[ -n "$PH_APP" ]] && \
+		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
                 PH_APP="$OPTARG" ;;
+                             t)
+		[[ -n "$PH_APP_STR_TTY" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+                PH_APP_STR_TTY="$OPTARG" ;;
                              *)
 		OPTIND="$PH_OLDOPTIND"
 		OPTARG="$PH_OLDOPTARG"
@@ -6189,17 +6195,13 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_APP" || "$#" -lt "1" ]] && \
+[[ -z "$PH_APP" || ( -n "$PH_APP_STR_TTY" && "$#" -ne "4" ) || \
+	( -z "$PH_APP_STR_TTY" && "$#" -ne "2" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-PH_APP_USER="$(ph_get_app_user_from_app_name "$PH_APP")"
-PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
-if [[ "$PH_APP" != "PieHelper" ]]
-then
-	ph_run_with_rollback -c "ph_revoke_pieh_access -u '${PH_APP_USER}'" || \
-		return 1
-fi
-printf "%8s%s\033[32m%s\033[0m\n" "" "--> Removing application ${PH_APP} configuration from file " "'${PH_CONF_DIR}/integrated_apps'"
+printf "%8s%s\033[32m%s\033[0m\n" "" "--> Removing application ${PH_APP} from configuration file " "'${PH_CONF_DIR}/integrated_apps'"
+[[ -z "$PH_APP_STR_TTY" ]] && \
+	PH_APP_STR_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
 PH_COUNT="$(nawk -v app="^${PH_APP}$" 'BEGIN { \
 		count = "0" \
 	} \
@@ -6212,24 +6214,26 @@ PH_COUNT="$(nawk -v app="^${PH_APP}$" 'BEGIN { \
 		print count \
 	}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null)"
 case "$PH_COUNT" in 0)
-	ph_set_result -m "Could not remove ${PH_APP} configuration from '${PH_CONF_DIR}/integrated_apps' since it is not an integrated application"
-	ph_run_with_rollback -c false -m "Invalid application" || \
-		return 1 ;;
+	ph_run_with_rollback -c true -m "Nothing to do" && \
+		return "$?" ;;
 		    1)
-	ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/integrated_apps' -l '${PH_APP}\t.*'" || \
-		PH_RET_CODE="1" ;;
+	if [[ -n "$PH_APP_STR_TTY" ]]
+	then
+		ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/integrated_apps' -l '${PH_APP}\t${PH_APP_STR_TTY}'"
+	else
+		ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/integrated_apps' -l '${PH_APP}\t.*'"
+	fi
+	if [[ "$?" -ne "0" ]]
+	then
+		ph_run_with_rollback -c false -m "Could not remove" || \
+			return 1
+	fi ;;
 		    *)
 	ph_set_result -a -m "Configuration file '${PH_CONF_DIR}/integrated_apps' is corrupted -> Found multiple instances of '${PH_APP}'" ;;
 esac
-if [[ "$PH_RET_CODE" -ne "0" ]]
-then
-	ph_set_result -m "An error occurred trying to remove ${PH_APP} configuration from file '$PH_CONF_DIR/integrated_apps'"
-	ph_run_with_rollback -c false -m "Could not remove"
-else
-	ph_add_value_to_param -p PH_ADD_APPS_TO_INT_FILE -v "${PH_APP}'${PH_APP_USER}'${PH_APP_TTY}"
-	ph_run_with_rollback -c true
-fi
-return "$?"
+ph_add_value_to_param -p PH_ADD_APPS_TO_INT_FILE -v "${PH_APP}'${PH_APP_STR_TTY}"
+ph_run_with_rollback -c true && \
+	return "$?"
 }
 
 function ph_get_app_name_from_app_pkg {
@@ -6807,9 +6811,11 @@ case "$PH_COUNT" in 0)
 			ph_run_with_rollback -c false -m "Could not add" || \
 				return 1
 		fi ;;
-		    *)
+		    1)
 		ph_run_with_rollback -c true -m "Nothing to do" && \
 			return "$?" ;;
+		    *)
+		ph_set_result -a -m "Configuration file '${PH_CONF_DIR}/supported_apps' is corrupted -> Multiple instances of '${PH_APP}'" ;;
 esac
 ph_add_value_to_param -p PH_REMOVE_APPS_FROM_SUP_FILE -v "${PH_APP}'${PH_APP_USER}'${PH_APP_INST_STATE}'${PH_APP_CMD}"
 ph_run_with_rollback -c true && \
@@ -6888,7 +6894,7 @@ while true
 do
 	if [[ "$PH_FILE" == "supported_apps" ]]
 	then
-		if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/${PH_FILE}' -l '${PH_APP}\\t${PH_APP_USER}\\t${PH_APP_INST_STATE}\\t${PH_APP_CMD}'"
+		if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/${PH_FILE}' -l '${PH_APP}\t${PH_APP_USER}\t${PH_APP_INST_STATE}\t${PH_APP_CMD}'"
 		then
 			case "$PH_COLUMN" in 2)
 				PH_APP_USER="$PH_VALUE" ;;
@@ -6903,7 +6909,7 @@ do
 			fi
 		fi
 	else
-		if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/${PH_FILE}' -l '${PH_APP}\\t${PH_APP_TTY}'"
+		if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/${PH_FILE}' -l '${PH_APP}\t${PH_APP_TTY}'"
 		then
 			if ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/${PH_FILE}' -l '${PH_APP}\\t${PH_VALUE}'"
 			then
@@ -6921,77 +6927,76 @@ return 0
 
 function ph_add_app_to_integration_file {
 
-declare PH_APP=""
-declare PH_APP_STR_TTY=""
-declare PH_APP_USER=""
-declare PH_OPTION=""
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
-declare -i PH_COUNT="0"
-declare -i PH_APP_TTY="0"
-declare -i PH_RET_CODE="0"
+declare PH_APP
+declare PH_APP_STR_TTY
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+declare -i PH_COUNT
+
+PH_OLDOPTARG="$OPTARG"
+PH_OLDOPTIND="$OPTIND"
 
 OPTIND="1"
 
-while getopts a:u:t: PH_OPTION 2>/dev/null
+while getopts a:t: PH_OPTION 2>/dev/null
 do
         case "$PH_OPTION" in a)
+		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_APP="$OPTARG" ;;
                              t)
-                PH_APP_TTY="$OPTARG" ;;
-                             u)
-                PH_APP_USER="$OPTARG" ;;
+		[[ -n "$PH_APP_STR_TTY" || (( "$OPTARG" != @(+([[:digit:]])|-) ) && \
+			( "$OPTARG" == +([[:digit:]]) && "$OPTARG" -le "1" && "$OPTARG" -gt "$PH_PIEH_MAX_TTYS" )) ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+                PH_APP_STR_TTY="$OPTARG" ;;
+                             *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
         esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_APP" ]] && return 1
-[[ -z "$PH_APP_USER" ]] && return 1
-[[ "$PH_APP_TTY" -eq "1" || "$PH_APP_TTY" -gt "$PH_PIEH_MAX_TTYS" ]] && return 1
+[[ -z "$PH_APP" || ( -n "$PH_APP_STR_TTY" && "$#" -ne "4" ) || \
+	( -z "$PH_APP_STR_TTY" && "$#" -ne "2" ) ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-[[ "$PH_APP_TTY" -eq "0" ]] && \
-	PH_APP_STR_TTY="-" || \
-	PH_APP_STR_TTY="$PH_APP_TTY"
+[[ -z "$PH_APP_STR_TTY" ]] && \
+	PH_APP_STR_TTY="-"
 printf "%8s%s\033[32m%s\033[0m\n" "" "--> Adding application ${PH_APP} to configuration file " "'${PH_CONF_DIR}/integrated_apps'"
-PH_COUNT="$(nawk -v app="^${PH_APP}$" 'BEGIN { count = "0" } $1 ~ app { count++ ; next } { next } END { print count }' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null)"
+PH_COUNT="$(nawk -v app="^${PH_APP}$" 'BEGIN { \
+		count = "0" \
+	} \
+	$1 ~ app { \
+		count++ ; \
+		next \
+	} { \
+		next \
+	} END { \
+		print count \
+	}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null)"
 case "$PH_COUNT" in 0)
-		if [[ ! -f "${PH_CONF_DIR}/integrated_apps" ]]
+		if ! ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/integrated_apps' -l '${PH_APP}\\t${PH_APP_STR_TTY}'"
 		then
-			ph_run_with_rollback -c "ph_create_empty_file -q -t file -d '${PH_CONF_DIR}/integrated_apps'" || \
-				PH_RET_CODE="1"
-		fi
-		if [[ "$PH_RET_CODE" -eq "0" ]]
-		then
-			ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/integrated_apps' -l '${PH_APP}\\t${PH_APP_USER}\\t${PH_APP_STR_TTY}'" || \
-				PH_RET_CODE="1"
+			ph_set_result -m "An error occurred adding ${PH_APP} to configuration file '${PH_CONF_DIR}/integrated_apps'"
+			ph_run_with_rollback -c false -m "Could not add" || \
+				return 1
 		fi ;;
 		   1)
-		if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/integrated_apps' -l '${PH_APP}\t.*'"
-		then
-			ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/integrated_apps' -l '${PH_APP}\\t${PH_APP_USER}\\t${PH_APP_STR_TTY}'" || \
-				PH_RET_CODE="1"
-		else
-			PH_RET_CODE="1"
-		fi ;;
-		    2)
-		ph_set_result -a -m "Configuration file '${PH_CONF_DIR}/integrated_apps' is 'Corrupted' -> Multiple instances of '${PH_APP}'" ;;
+		ph_run_with_rollback -c true -m "Nothing to do" && \
+			return "$?" ;;
+		    *)
+		ph_set_result -a -m "Configuration file '${PH_CONF_DIR}/integrated_apps' is corrupted -> Multiple instances of '${PH_APP}'" ;;
 esac
-if [[ "$PH_RET_CODE" -ne "0" ]]
-then
-	ph_set_result -m "An error occurred adding ${PH_APP} to configuration file '${PH_CONF_DIR}/integrated_apps'"
-	ph_run_with_rollback -c "false" -m "Could not add" || \
-		return 1
-else
-	if [[ "$PH_APP" != @(PieHelper|Emulationstation) && "$PH_COUNT" -eq "0" ]]
-	then
-		ph_run_with_rollback -c "ph_grant_pieh_access -u '${PH_APP_USER}'" || \
-			return 1
-	fi
-	ph_add_value_to_param -p PH_REMOVE_APPS_FROM_INT_FILE -v "$PH_APP"
-	ph_run_with_rollback -c true
-fi
-return "$PH_RET_CODE"
+ph_add_value_to_param -p PH_REMOVE_APPS_FROM_INT_FILE -v "${PH_APP}'${PH_APP_STR_TTY}"
+ph_run_with_rollback -c true && \
+	return "$?"
 }
 
 function ph_get_app_inst_state_from_app_name {
