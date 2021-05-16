@@ -2059,7 +2059,7 @@ do
 		do
 			if [[ "$PH_APP" == "PieHelper" && "$PH_j" == Reset* ]]
 			then
-				eval "PH_j='Reset all ${PH_APP} options to default values (Debug will not be affected):for PH_k in PH_PIEH_PERSISTENT PH_PIEH_CMD_OPTS PH_PIEH_CIFS_SHARE PH_PIEH_CIFS_USER PH_PIEH_CIFS_PASS PH_PIEH_CIFS_SRV PH_PIEH_CIFS_DIR PH_PIEH_CIFS_SUBDIR PH_PIEH_CIFS_MPT PH_PIEH_PRE_CMD PH_PIEH_POST_CMD PH_PIEH_PKG_NAME PH_PIEH_SANITY;do;ph_set_option_to_default_value \"\$PH_k\";PH_OPTIONS=\"\";unset PH_k;done'"
+				eval "PH_j='Reset all ${PH_APP} options to default values (Debug will not be affected):for PH_k in PH_PIEH_PERSISTENT PH_PIEH_CMD_OPTS PH_PIEH_CIFS_SHARE PH_PIEH_CIFS_USER PH_PIEH_CIFS_PASS PH_PIEH_CIFS_SRV PH_PIEH_CIFS_DIR PH_PIEH_CIFS_SUBDIR PH_PIEH_CIFS_MPT PH_PIEH_PRE_CMD PH_PIEH_POST_CMD PH_PIEH_PKG_NAME PH_PIEH_SANITY\;do\;ph_set_option_to_default_value \"\$PH_k\"\;PH_OPTIONS=\"\";unset PH_k\;done'"
 			fi
 			ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
 				break 2
