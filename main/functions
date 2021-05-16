@@ -7410,7 +7410,7 @@ OPTIND="1"
 while getopts u:q PH_OPTION 2>/dev/null
 do
         case "$PH_OPTION" in u)
-		[[ -n "$PH_APP_USER" ]] && \
+		[[ -n "$PH_APP_USER" || -z "$OPTARG" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -7430,7 +7430,7 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_APP_USER" || "$#" -lt "2" ]] && \
+[[ -z "$PH_APP_USER" || "$#" -gt "3" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 if [[ "$PH_APP_USER" != @(root|${PH_RUN_USER}) ]]
