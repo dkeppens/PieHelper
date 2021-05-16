@@ -2343,6 +2343,7 @@ then
 		return 1
 fi
 ph_add_value_to_param -p PH_REMOVE_APPS_DEFAULTS -v "$PH_APP"
+set -x
 ph_run_with_rollback -c true && \
 	return "$?"
 }
