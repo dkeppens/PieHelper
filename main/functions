@@ -4189,10 +4189,10 @@ then
 			PH_CMD="ph_create_app_defaults '${PH_VALUE}'" ;;
 				  PH_REMOVE_APPS_DEFAULTS)
 			PH_CMD="ph_remove_app_defaults '${PH_VALUE}'" ;;
-				  PH_CREATE_APPS_DIR)
-			PH_CMD="ph_create_app_dir '${PH_VALUE}'" ;;
-				  PH_REMOVE_APPS_DIR)
-			PH_CMD="ph_remove_app_dir '${PH_VALUE}'" ;;
+				  PH_CREATE_APPS_CIFS_MPT)
+			PH_CMD="ph_create_app_cifs_mpt '${PH_VALUE}'" ;;
+				  PH_REMOVE_APPS_CIFS_MPT)
+			PH_CMD="ph_remove_app_cifs_MPT '${PH_VALUE}'" ;;
 				  PH_CREATE_APPS_ITEMS)
 			PH_APP="$(echo -n "$PH_VALUE" | cut -f1 -d"'")"
 			PH_PARAMS="$(echo -n "$PH_VALUE" | cut -f2 -d"'")"
@@ -4752,7 +4752,7 @@ do
 		then
 			if [[ -n "$(eval "echo -n \"${PH_OPTARG_VAL}\"")" && ! -d "$(eval "echo -n \"${PH_OPTARG_VAL}\"")" ]]
 			then
-				if ! ph_run_with_rollback -c "ph_create_app_dir '${PH_APP}'"
+				if ! ph_run_with_rollback -c "ph_create_app_cifs_mpt '${PH_APP}'"
 				then
 					((PH_RET_CODE++))
 					break
@@ -9212,7 +9212,7 @@ then
 			     mk_scripts)
 			PH_CMD="ph_create_app_scripts '${PH_APP}'" ;;
 			     mk_dir)
-			PH_CMD="ph_create_app_dir '${PH_APP}'" ;;
+			PH_CMD="ph_create_app_cifs_mpt '${PH_APP}'" ;;
 			     mk_all)
 			if [[ "$PH_APP_STATE" == "Integrated" ]]
 			then
@@ -9231,7 +9231,7 @@ then
 			     rm_scripts)
 			PH_CMD="ph_remove_app_scripts '${PH_APP}'" ;;
 			     rm_dir)
-			PH_CMD="ph_remove_app_dir '${PH_APP}'" ;;
+			PH_CMD="ph_remove_app_cifs_mpt '${PH_APP}'" ;;
 			     rm_all)
 			if [[ "$PH_APP_STATE" == "Integrated" ]]
 			then
