@@ -1851,7 +1851,6 @@ function ph_remove_app_menus {
 
 declare PH_i=""
 declare PH_APP="$1"
-declare PH_LINKED_MENU_APP=""
 declare -i PH_COUNT="0"
 
 [[ -z "$PH_APP" || "$#" -ne "1" ]] && \
@@ -1859,24 +1858,8 @@ declare -i PH_COUNT="0"
 
 [[ "$PH_APP" == "Ctrls" ]] && \
 	return 0
-if PH_LINKED_MENU_APP="$(ph_get_linked_menu_app)"
-then
-	if [[ "$PH_APP" != "PieHelper" && "$PH_LINKED_MENU_APP" == "$PH_APP" ]]
-	then
-		ph_run_with_rollback -c "ph_link_app_to_menu PieHelper" || \
-			return 1
-	else
-		if [[ "$PH_APP" == "PieHelper" ]]
-		then
-			ph_run_with_rollback -c "ph_unlink_app_from_menu PieHelper" || \
-				return 1
-		fi
-	fi
-else
-	printf "%8s%s\n" "" "--> Determining the application currently linked to the menu"
-	ph_run_with_rollback -c false -m "Could not determine" || \
-		return 1
-fi
+ph_run_with_rollback -c "ph_unlink_app_from_menu" || \
+	return 1
 for PH_i in "$PH_APP" "TTYManagement_${PH_APP}" "OptsManagement_${PH_APP}" "AppManagement_${PH_APP}"
 do
 	if [[ -f "${PH_MENUS_DIR}/${PH_i}.lst" ]]
@@ -2359,7 +2342,6 @@ then
 	ph_run_with_rollback -c false -m "Could not create" || \
 		return 1
 fi
-set -x
 ph_add_value_to_param -p PH_REMOVE_APPS_DEFAULTS -v "$PH_APP"
 ph_run_with_rollback -c true && \
 	return "$?"
