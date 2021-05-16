@@ -7637,6 +7637,7 @@ PH_APP="$1"
 [[ -z "$PH_APP" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
+set -x
 PH_APP_STR_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
 if [[ "$PH_APP_STR_TTY" == "-" ]]
 then
@@ -7648,6 +7649,7 @@ then
 	ph_run_with_rollback -c "ph_setup_tty -a '${PH_APP}' -t '${PH_APP_STR_TTY}' -u '${PH_APP_USER}'" || \
 		return 1
 fi
+set +x
 return 0
 }
 
