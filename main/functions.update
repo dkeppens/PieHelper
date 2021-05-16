@@ -1706,7 +1706,7 @@ declare PH_LINKED_TO
 declare -a PH_LINKS
 
 [[ "$#" -ne "0" ]] && \
-	unset -a PH_LINKS && \
+	unset PH_LINKS && \
         ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 for PH_i in AppManagement TTYManagement OptsManagement
@@ -1720,11 +1720,11 @@ do
 			PH_LINKS+=("")
 		fi
 	else
-		unset -a PH_LINKS
+		unset PH_LINKS
 		return 1
 	fi
 done
-unset -a PH_LINKS
+unset PH_LINKS
 echo -n "$PH_LINKED_MENU_APP"
 if [[ "${PH_LINKS[0]}" == "${PH_LINKS[1]}" && "${PH_LINKS[0]}" == "${PH_LINKS[2]}" ]]
 then
