@@ -1851,13 +1851,12 @@ PH_APP="$1"
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 if ! PH_APP_STR_TTY="$(nawk -v app="^${PH_APP}$" -v max="$PH_PIEH_MAX_TTYS" '$1 ~ app { \
-			if ($2 ~ /^-$/ || ($2 <= max && $2 > 1)) { \
-				printf $2 ; \
-				exit 0 \
-			} else { \
-				printf "%s", "1" ; \
-				exit 1 \
-			} \
+		if ($2 ~ /^-$/ || ($2 <= max && $2 > 1)) { \
+			printf $2 ; \
+			exit 0 \
+		} else { \
+			printf "%s", "1" ; \
+			exit 1 \
 		} \
 	} { \
 		next \
@@ -7637,7 +7636,6 @@ PH_APP="$1"
 [[ -z "$PH_APP" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-set -x
 PH_APP_STR_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
 if [[ "$PH_APP_STR_TTY" == "-" ]]
 then
@@ -7649,7 +7647,6 @@ then
 	ph_run_with_rollback -c "ph_setup_tty -a '${PH_APP}' -t '${PH_APP_STR_TTY}' -u '${PH_APP_USER}'" || \
 		return 1
 fi
-set +x
 return 0
 }
 
