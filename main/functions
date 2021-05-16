@@ -4977,7 +4977,7 @@ declare PH_i=""
 declare -u PH_APPU="${PH_APP:0:4}"
 declare -i PH_LENGTH="$(echo -n "$PH_APPU" | wc -c)"
 declare -i PH_RET_CODE="0"
-for PH_i in PH_"$PH_APPU"_CIFS_USER PH_"$PH_APPU"_CIFS_PASS PH_"$PH_APPU"_CIFS_SRV PH_"$PH_APPU"_CIFS_DIR PH_"$PH_APPU"_CIFS_SUBDIR PH_"$PH_APPU"_CIFS_MPT
+for PH_i in "PH_${PH_APPU}_CIFS_USER" "PH_${PH_APPU}_CIFS_PASS" "PH_${PH_APPU}_CIFS_SRV" "PH_${PH_APPU}_CIFS_DIR" "PH_${PH_APPU}_CIFS_SUBDIR" "PH_${PH_APPU}_CIFS_MPT"
 do
 	if eval [[ -n \"\$OLD_"$PH_i"\" ]]
 	then
@@ -5019,7 +5019,7 @@ declare PH_APP="$1"
 [[ -z "$PH_APP" ]] && return 1
 declare -i PH_RET_CODE="0"
 declare -u PH_APPU="${PH_APP:0:4}"
-declare -n TMP_CIFS_MPT=PH_"$PH_APPU"_CIFS_MPT
+declare -n TMP_CIFS_MPT="PH_${PH_APPU}_CIFS_MPT"
 
 printf "%8s%s\n" "" "--> Unmounting '$(eval echo -n "$TMP_CIFS_MPT")' cifs share"
 "$PH_SUDO" umount -f "$(eval echo -n "$TMP_CIFS_MPT")" 2>/dev/null
@@ -7049,7 +7049,7 @@ do
 			return 1
                 PH_APP_USER="$OPTARG" ;;
 			     i)
-		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(PU)@(IA) ]] && \
+		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(P|U)@(I|A) ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -9688,12 +9688,12 @@ case "$PH_ACTION" in start)
 			printf "%10s\033[32m%s\033[0m\n" "" "OK (Yes)"
 			printf "%8s%s\n" "" "--> Checking for '$PH_APP' CIFS mount presence"
 			ph_set_result -r 0
-			if mount 2>/dev/null | nawk -v rempath=^"//$PH_APPU_CIFS_SRV$(eval echo -n "$PH_APPU_CIFS_DIR""$PH_APPU_CIFS_SUBDIR")"$ -F' on ' '$1 ~ rempath { exit 1 }'
+			if mount 2>/dev/null | nawk -v rempath="^//${PH_APPU_CIFS_SRV}$(eval "echo -n \"${PH_APPU_CIFS_DIR}${PH_APPU_CIFS_SUBDIR}\"")$" -F' on ' '$1 ~ rempath { exit 1 }'
 			then
 				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found -> Mounting"
 				if ! ph_mount_cifs_share "$PH_APP"
 				then
-					ph_set_result -m "CIFS mount '//$PH_APPU_CIFS_SRV$(eval echo -n "$PH_APPU_CIFS_DIR""$PH_APPU_CIFS_SUBDIR")' presence on mountpoint '$(eval echo -n "$PH_APPU_CIFS_MPT")' is mandatory for '$PH_APP' $PH_ACTION"
+					ph_set_result -m "CIFS mount '//${PH_APPU_CIFS_SRV}$(eval "echo -n \"${PH_APPU_CIFS_DIR}${PH_APPU_CIFS_SUBDIR}\"")' presence on mountpoint '$(eval echo -n "$PH_APPU_CIFS_MPT")' is mandatory for '$PH_APP' $PH_ACTION"
 					unset -n PH_APPU_CMD_OPTS PH_APPU_USE_CTRL PH_APPU_NUM_CTRL PH_APPU_PRE_CMD PH_APPU_POST_CMD
 					unset -n PH_APPU_CIFS_SHARE PH_APPU_CIFS_DIR PH_APPU_CIFS_SUBDIR PH_APPU_CIFS_SRV PH_APPU_PERSISTENT
 					return 1
@@ -9746,7 +9746,7 @@ case "$PH_ACTION" in start)
 			if echo "$PH_APPU_CMD_OPTS" | grep -E "PH_CTRL[1-4]$|PH_CTRL[1-4] " >/dev/null
 			then
 				printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid controller usage"
-				ph_set_result -r 1 -m "Controller usage set to 'no' though mandatory when option 'PH_"$PH_APPU"_CMD_OPTS' contains references to event-based input devices"
+				ph_set_result -r 1 -m "Controller usage set to 'no' though mandatory when option 'PH_${PH_APPU}_CMD_OPTS' contains references to event-based input devices"
 				[[ "$PH_APPU_CIFS_SHARE" == "yes" ]] && ph_umount_cifs_share "$PH_APP" >/dev/null
 				unset -n PH_APPU_CMD_OPTS PH_APPU_USE_CTRL PH_APPU_NUM_CTRL PH_APPU_PRE_CMD PH_APPU_POST_CMD
 				unset -n PH_APPU_CIFS_SHARE PH_APPU_CIFS_DIR PH_APPU_CIFS_SUBDIR PH_APPU_CIFS_SRV PH_APPU_PERSISTENT
@@ -9760,7 +9760,7 @@ case "$PH_ACTION" in start)
 			printf "%10s\033[32m%s\033[0m\n" "" "OK (Yes) -> Configuring controllers"
 			if ! ph_setup_controllers "$PH_APPU_NUM_CTRL"
 			then
-				ph_set_result -m "An error occurred configuring controller usage '$PH_APPU_NUM_CTRL x $PH_CTRL_TYPE controller(s)' for '$PH_APP' $PH_ACTION"
+				ph_set_result -m "An error occurred configuring controller usage '${PH_APPU_NUM_CTRL} x ${PH_CTRL_TYPE} controller(s)' for ${PH_APP} ${PH_ACTION}"
 				[[ "$PH_APPU_CIFS_SHARE" == "yes" ]] && ph_umount_cifs_share "$PH_APP" >/dev/null
 				unset -n PH_APPU_CMD_OPTS PH_APPU_USE_CTRL PH_APPU_NUM_CTRL PH_APPU_PRE_CMD PH_APPU_POST_CMD
 				unset -n PH_APPU_CIFS_SHARE PH_APPU_CIFS_DIR PH_APPU_CIFS_SUBDIR PH_APPU_CIFS_SRV PH_APPU_PERSISTENT
@@ -9970,7 +9970,7 @@ case "$PH_ACTION" in start)
 		printf "%10s\033[32m%s\033[0m\n" "" "OK (Yes)"
 		printf "%8s%s\n" "" "--> Checking for '$PH_APP' CIFS mount presence"
 		ph_set_result -r 0
-		if mount 2>/dev/null | nawk -v rempath=^"//$PH_APPU_CIFS_SRV$(eval echo -n "$PH_APPU_CIFS_DIR$PH_APPU_CIFS_SUBDIR")"$ -F' on ' '$1 ~ rempath { exit 1 }'
+		if mount 2>/dev/null | nawk -v rempath="^//${PH_APPU_CIFS_SRV}$(eval "echo -n \"${PH_APPU_CIFS_DIR}${PH_APPU_CIFS_SUBDIR}\"")"$ -F' on ' '$1 ~ rempath { exit 1 }'
 		then
 			printf "%10s\033[32m%s\033[0m\n" "" "OK (Found) -> Unmounting"
 			ph_umount_cifs_share "$PH_APP" || PH_RET_CODE="1"
