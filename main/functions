@@ -7613,7 +7613,7 @@ ph_run_with_rollback -c "ph_create_app_items -a '${PH_APP}' -t integrate" || \
 	return 1
 if [[ "$PH_APP_TTY" -ne "0" ]]
 then
-	ph_run_with_rollback -c "ph_setup_tty -a '${PH_APP}' -t '${PH_APP_TTY}'" || \
+	ph_run_with_rollback -c "ph_setup_tty -a '${PH_APP}' -u '${PH_APP_USER}' -t '${PH_APP_TTY}'" || \
 		return 1
 else
 	ph_run_with_rollback -c "ph_add_app_to_integration_file -a '${PH_APP}' -t '${PH_APP_TTY}'" || \
