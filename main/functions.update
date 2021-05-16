@@ -591,7 +591,6 @@ OPTARG="$PH_OLDOPTARG"
 
 [[ "$PH_ROLLBACK_USED" == "yes" ]] && \
 	((PH_ROLLBACK_DEPTH++))
-echo "$PH_CMD"
 eval "$PH_CMD"
 PH_RET_CODE="$?"
 if [[ "$PH_CMD" == @(true|false) ]]
