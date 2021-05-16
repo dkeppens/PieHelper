@@ -7656,7 +7656,7 @@ then
 			return 1
 	fi
 else
-	ph_run_with_rollback -c true "TTY${PH_APP_TTY}"
+	ph_run_with_rollback -c true -m "tty${PH_APP_TTY}"
 fi
 return "$PH_APP_TTY"
 }
