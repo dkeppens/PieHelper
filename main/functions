@@ -716,7 +716,7 @@ do
 		exit "$?"
 	fi
 done
-for PH_i in Advanced Controllers Main OS OSdefaults PS3 PS4 XBOX360 Settings AppManagement_PieHelper OptsManagement_PieHelper TTYManagement_PieHelper PieHelper
+for PH_i in Advanced Controllers Main OS OSdefaults PS3 PS4 XBOX360 Settings
 do
 	if ! ph_check_object_existence -q -o "${PH_MENUS_DIR}/${PH_i}.lst"
         then
@@ -785,17 +785,14 @@ do
        		printf "%4s%s\n" "" "- Supported application ${PH_APP} configuration file '${PH_APP}.conf' is missing" >>"${PH_TMP_DIR}/reported_issues"
 		PH_RET_CODE="1"
 	fi
-	if [[ "$PH_APP" != "PieHelper" ]]
-	then
-		for PH_i in "AppManagement_${PH_APP}" "OptsManagement_${PH_APP}" "TTYManagement_${PH_APP}" "$PH_APP"
-		do
-			if [[ ! -f "${PH_MENUS_DIR}/${PH_i}.lst" ]]
-			then
-       			 	printf "%4s%s\n" "" "- Integrated application ${PH_APP} menu item '${PH_i}.lst' is missing" >>"${PH_TMP_DIR}/reported_issues"
-				PH_RET_CODE="1"
-			fi
-		done
-	fi
+	for PH_i in "AppManagement_${PH_APP}" "OptsManagement_${PH_APP}" "TTYManagement_${PH_APP}" "$PH_APP"
+	do
+		if [[ ! -f "${PH_MENUS_DIR}/${PH_i}.lst" ]]
+		then
+       		 	printf "%4s%s\n" "" "- Integrated application ${PH_APP} menu item '${PH_i}.lst' is missing" >>"${PH_TMP_DIR}/reported_issues"
+			PH_RET_CODE="1"
+		fi
+	done
 	for PH_i in alloweds defaults
 	do
 		if ph_check_object_existence -q -o "${PH_CONF_DIR}/options.${PH_i}"
@@ -1082,7 +1079,7 @@ do
 		PH_RET_CODE="1"
 	fi
 done
-for PH_i in $(ls "${PH_MENUS_DIR}/"!(@(Advanced|XBOX*|PS*|OS|OSdefaults|Settings|Controllers|Main).lst) 2>/dev/null | \
+for PH_i in $(ls "${PH_MENUS_DIR}/"!(@(Advanced|XBOX360|PS@(3|4)|OS|OSdefaults|Settings|Controllers|Main).lst) 2>/dev/null | \
 	nawk 'BEGIN { \
 		ORS =  " " \
 	} { \
@@ -1356,9 +1353,9 @@ declare PH_i="$1"
 declare PH_FILE=""
 
 PH_FILE="$(ph_get_filename_from_shortname "$PH_i")"
-if ph_check_object_existence -q -o "$PH_CONF_DIR/$PH_FILE"
+if ph_check_object_existence -q -o "${PH_CONF_DIR}/${PH_FILE}"
 then
-	printf "%4s%s\n" "" "- 'Unique' configuration file '$PH_FILE' is 'Present'" >>"$PH_TMP_DIR/reported_issues"
+	printf "%4s%s\n" "" "- Unique configuration file '${PH_FILE}' is present" >>"${PH_TMP_DIR}/reported_issues"
 	return 1
 fi
 return 0
