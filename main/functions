@@ -4129,7 +4129,12 @@ then
 				  PH_LINK_MENUS)
 			PH_CMD="ph_link_app_to_menu '${PH_VALUE}'" ;;
 				  PH_UNDO_LINK_MENUS)
-			PH_CMD="ph_unlink_app_from_menu '${PH_VALUE}'" ;;
+			if [[ -n "$PH_VALUE" ]]
+			then
+				PH_CMD="ph_unlink_app_from_menu '${PH_VALUE}'"
+			else
+				PH_CMD="ph_unlink_app_from_menu"
+			fi ;;
 				  PH_UNDO_SETUP_TTYS)
 			PH_APP="$(echo -n "$PH_VALUE" | cut -f1 -d"'")"
 			PH_APP_USER="$(echo -n "$PH_VALUE" | cut -f2 -d"'")"
@@ -6014,17 +6019,6 @@ then
 		fi
 		ph_run_with_rollback -c "ph_remove_app_items -a '${PH_APP}' -t unsupport" || \
 			return 1
-		if [[ "$(ph_get_linked_menu_app)" == "$PH_APP" ]]
-		then
-			if [[ "$PH_APP" != "PieHelper" ]]
-			then
-				ph_run_with_rollback -c "ph_link_app_to_menu PieHelper" || \
-					return 1
-			else
-				ph_run_with_rollback -c "ph_unlink_app_from_menu PieHelper" || \
-					return 1
-			fi
-		fi
 		if [[ "$PH_APP" != "PieHelper" ]]
 		then
 			:

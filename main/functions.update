@@ -1690,52 +1690,77 @@ then
 			PH_LINKED_TO="${PH_TARGET%/*}/${PH_LINKED_TO}"
 		fi
 		echo -n "$PH_LINKED_TO"
-		return 0
 	else
-		ph_set_result -m "An error occurred trying to determine the target of link '${PH_TARGET}'"
+		ph_set_result -m "An error occurred trying to determine the link target of logical link '${PH_TARGET}'"
+		return 1
 	fi
-else
-	ph_set_result -m "Cannot determine link target of file '${PH_TARGET}' since it is not a logical link"
 fi
-return 1
+return 0
 }
 
 function ph_get_linked_menu_app {
 
 declare PH_i=""
 declare PH_LINKED_MENU_APP=""
-declare PH_LINKED_TO=""
+declare PH_LINKED_TO
+declare -a PH_LINKS
 
 [[ "$#" -ne "0" ]] && \
+	unset -a PH_LINKS && \
         ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 for PH_i in AppManagement TTYManagement OptsManagement
 do
 	if PH_LINKED_TO="$(ph_get_link_target "${PH_MENUS_DIR}/${PH_i}.lst")"
 	then
-		PH_LINKED_MENU_APP="$(sed "s/^${PH_i}_//;s/\.lst$//"<<<"$PH_LINKED_TO")"
-		[[ -n "$PH_LINKED_MENU_APP" ]] && \
-			break
+		if [[ -n "$PH_LINKED_TO" ]]
+		then
+			PH_LINKS+="$(sed "s/^${PH_i}_//;s/\.lst$//"<<<"$PH_LINKED_TO")"
+		else
+			PH_LINKS+=("")
+		fi
 	else
+		unset -a PH_LINKS
 		return 1
 	fi
-	ph_set_result -m "An error occurred trying to determine the application currently linked to the menu"
-	return 1
 done
+unset -a PH_LINKS
 echo -n "$PH_LINKED_MENU_APP"
-return 0
+if [[ "${PH_LINKS[0]}" == "${PH_LINKS[1]}" && "${PH_LINKS[0]}" == "${PH_LINKS[2]}" ]]
+then
+	return 0
+else
+	return 1
+fi
 }
 
 function ph_unlink_app_from_menu {
 
 declare PH_i=""
 declare PH_LINKED_MENU_APP="$1"
+declare -i PH_COUNT="0"
 
-[[ -z "$PH_LINKED_MENU_APP" || "$#" -ne "1" ]] && \
+[[ ( -z "$PH_LINKED_MENU_APP" || "$#" -ne "0" ) || \
+	( -n "$PH_LINKED_MENU_APP" || "$#" -ne "1" )  ]] && \
         ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-[[ ! -L "${PH_MENUS_DIR}/TTYManagement.lst" && ! -L "${PH_MENUS_DIR}/AppManagement.lst" && ! -L "${PH_MENUS_DIR}/OptsManagement.lst" ]] && \
-	return 0
+if [[ -z "$PH_LINKED_MENU_APP" ]]
+then
+	printf "%8s%s\n" "" "--> Determining the application currently linked to the menu"
+	if PH_LINKED_MENU_APP="$(ph_get_linked_menu_app)"
+	then
+		ph_run_with_rollback -c true -m "$PH_LINKED_MENU_APP"
+	else
+		if [[ -n "$PH_LINKED_MENU_APP" ]]
+		then
+			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Inconsistent menu links"
+			ph_set_result -r 0
+		else
+			ph_run_with_rollback -c false -m "Could not determine" || \
+				return 1
+		fi
+	fi
+fi
 printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Unlinking " "'${PH_LINKED_MENU_APP}'" " from menu"
 for PH_i in AppManagement TTYManagement OptsManagement
 do
@@ -1746,11 +1771,17 @@ do
 			ph_run_with_rollback -c false -m "Could not unlink" || \
 				return 1
 		fi
+		PH_COUNT="$((PH_COUNT+1))"
 	fi
 done
-ph_add_value_to_param -p PH_LINK_MENUS -v "$PH_LINKED_MENU_APP"
-ph_run_with_rollback -c true && \
-	return "$?"
+if [[ "$PH_COUNT" -gt "0" ]]
+then
+	ph_add_value_to_param -p PH_LINK_MENUS -v "$PH_LINKED_MENU_APP"
+	ph_run_with_rollback -c true
+else
+	ph_run_with_rollback -c true -m "Nothing to do"
+fi
+return 0
 }
 
 function ph_link_app_to_menu {
@@ -1758,34 +1789,58 @@ function ph_link_app_to_menu {
 declare PH_i=""
 declare PH_LINK_APP_TO_MENU="$1"
 declare PH_LINKED_MENU_APP=""
+declare -i PH_COUNT="0"
 
 [[ -z "$PH_LINK_APP_TO_MENU" || "$#" -ne "1" ]] && \
         ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 if [[ -L "${PH_MENUS_DIR}/TTYManagement.lst" || -L "${PH_MENUS_DIR}/AppManagement.lst" || -L "${PH_MENUS_DIR}/OptsManagement.lst" ]]
 then
+	printf "%8s%s\n" "" "--> Determining the application currently linked to the menu"
 	if PH_LINKED_MENU_APP="$(ph_get_linked_menu_app)"
 	then
-		ph_run_with_rollback -c "ph_unlink_app_from_menu '${PH_LINKED_TO_MENU}'" || \
-			return 1
+		ph_run_with_rollback -c true -m "$PH_LINKED_MENU_APP"
+		if [[ "$PH_LINKED_MENU_APP" != "$PH_LINK_APP_TO_MENU" ]]
+		then
+			ph_run_with_rollback -c "ph_unlink_app_from_menu '${PH_LINKED_TO_MENU}'" || \
+				return 1
+			PH_LINKED_MENU_APP=""
+		fi
 	else
-		printf "%8s%s\n" "" "--> Determining the application currently linked to the menu"
-		ph_run_with_rollback -c false -m "Could not determine" || \
-			return 1
+		if [[ -z "$PH_LINKED_MENU_APP" ]]
+		then
+			ph_run_with_rollback -c false -m "Could not determine" || \
+				return 1
+		else
+			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Inconsistent menu links -> Removing the current links"
+			ph_set_result -r 0
+			ph_run_with_rollback -c "ph_unlink_app_from_menu '${PH_LINKED_MENU_APP}'" || \
+				return 1
+			PH_LINKED_MENU_APP=""
+		fi
 	fi
 fi
 printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Linking " "'${PH_LINK_APP_TO_MENU}'" " to menu"
 for PH_i in AppManagement TTYManagement OptsManagement
 do
-	if ! ph_run_with_rollback -c "ph_create_empty_file -q -t link -s '${PH_MENUS_DIR}/${PH_i}_${PH_LINK_APP_TO_MENU}.lst' -d '${PH_MENUS_DIR}/${PH_i}.lst'"
+	if [[ ! -L "${PH_MENUS_DIR}/${PH_i}.lst" ]]
 	then
-		ph_run_with_rollback -c false -m "Could not link" || \
-			return 1
+		if ! ph_run_with_rollback -c "ph_create_empty_file -q -t link -s '${PH_MENUS_DIR}/${PH_i}_${PH_LINK_APP_TO_MENU}.lst' -d '${PH_MENUS_DIR}/${PH_i}.lst'"
+		then
+			ph_run_with_rollback -c false -m "Could not link" || \
+				return 1
+		fi
+		PH_COUNT="$((PH_COUNT+1))"
 	fi
 done
-ph_add_value_to_param -p PH_UNDO_LINK_MENUS -v "$PH_LINK_APP_TO_MENU"
-ph_run_with_rollback -c true && \
-	return "$?"
+if [[ "$PH_COUNT" -gt "0" ]]
+then
+	ph_add_value_to_param -p PH_UNDO_LINK_MENUS -v "$PH_LINK_APP_TO_MENU"
+	ph_run_with_rollback -c true
+else
+	ph_run_with_rollback -c true -m "Nothing to do"
+fi
+return 0
 }
 
 function ph_remove_app_menus {
@@ -2067,6 +2122,11 @@ do
 		break
 	if [[ "$PH_i" == "${PH_MENUS_DIR}/AppManagement_${PH_APP}.lst" ]]
 	then
+		if [[ "$PH_APP" == "PieHelper" ]]
+		then
+			ph_run_with_rollback -c "ph_link_app_to_menu '${PH_APP}'" || \
+				return 1
+		fi
 		ph_add_value_to_param -p PH_REMOVE_APPS_MENUS -v "$PH_APP"
 		ph_run_with_rollback -c true && \
 			return "$?"
