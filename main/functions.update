@@ -2118,14 +2118,14 @@ do
 		break
 	if [[ "$PH_i" == "${PH_MENUS_DIR}/AppManagement_${PH_APP}.lst" ]]
 	then
+		ph_run_with_rollback -c true
 		if [[ "$PH_APP" == "PieHelper" ]]
 		then
 			ph_run_with_rollback -c "ph_link_app_to_menu '${PH_APP}'" || \
 				return 1
 		fi
 		ph_add_value_to_param -p PH_REMOVE_APPS_MENUS -v "$PH_APP"
-		ph_run_with_rollback -c true && \
-			return "$?"
+		return 0
 	fi
 done
 ph_run_with_rollback -c false -m "Could not create" || \
