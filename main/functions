@@ -1082,7 +1082,7 @@ do
 		PH_RET_CODE="1"
 	fi
 done
-for PH_i in $(ls "${PH_MENUS_DIR}/"!(@(Advanced|@(TTY|App|Opts)Management_PieHelper|PieHelper|XBOX*|PS*|OS|OSdefaults|Settings|Controllers|Main).lst) 2>/dev/null | \
+for PH_i in $(ls "${PH_MENUS_DIR}/"!(@(Advanced|XBOX*|PS*|OS|OSdefaults|Settings|Controllers|Main).lst) 2>/dev/null | \
 	nawk 'BEGIN { \
 		ORS =  " " \
 	} { \

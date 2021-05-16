@@ -1,3 +1,4 @@
+* create expect for moonlight pairing
 * create a function for PH_APP_GRAPH and PH_APP_EXEC determination and replace instances with calls to function
 * in ph_support_app : handle manually entered start commands : if packaged and file belongs to different package : update PKG option + in all cases also update start command
 * handle ph_install_app paramaters for user better : (optional since can also come from supported_apps)
