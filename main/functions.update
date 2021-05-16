@@ -1725,11 +1725,19 @@ do
 	fi
 done
 unset PH_LINKS
-echo -n "$PH_LINKED_MENU_APP"
 if [[ "${PH_LINKS[0]}" == "${PH_LINKS[1]}" && "${PH_LINKS[0]}" == "${PH_LINKS[2]}" ]]
 then
+	echo -n "${PH_LINKS[0]}"
 	return 0
 else
+	for PH_i in 0 1 2
+	do
+		if [[ -n "${PH_LINKS["$PH_i"]}" ]]
+		then
+			echo -n "${PH_LINKS["$PH_i"]}"
+			break
+		fi
+	done
 	return 1
 fi
 }
@@ -1759,17 +1767,18 @@ else
 	then
 		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Inconsistent menu links"
 		ph_set_result -r 0
-		PH_UNLINK_APP=""
 	else
 		ph_run_with_rollback -c false -m "Could not determine" || \
 			return 1
 	fi
 fi
-if [[ -z "$PH_UNLINK_APP" || "$PH_UNLINK_APP" != "$PH_LINKED_MENU_APP" ]]
-then
-	PH_UNLINK_APP="$PH_LINKED_MENU_APP"
-fi
 printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Unlinking " "'${PH_UNLINK_APP}'" " from menu"
+if [[ "$PH_UNLINK_APP" != "$PH_LINKED_MENU_APP" ]]
+then
+	ph_set_result -m "Could not unlink ${PH_UNLINK_APP} from the menu since ${PH_LINKED_MENU_APP} is currently linked"
+	ph_run_with_rollback -c false -m "Could not unlink" || \
+		return 1
+fi
 for PH_i in AppManagement TTYManagement OptsManagement
 do
 	if [[ -L "${PH_MENUS_DIR}/${PH_i}.lst" ]]
@@ -1858,7 +1867,7 @@ declare -i PH_COUNT="0"
 
 [[ "$PH_APP" == "Ctrls" ]] && \
 	return 0
-ph_run_with_rollback -c "ph_unlink_app_from_menu" || \
+ph_run_with_rollback -c "ph_unlink_app_from_menu '${PH_APP}'" || \
 	return 1
 for PH_i in "$PH_APP" "TTYManagement_${PH_APP}" "OptsManagement_${PH_APP}" "AppManagement_${PH_APP}"
 do
