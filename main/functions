@@ -6270,8 +6270,10 @@ do
 	if [[ "$PH_APP_PKG" == "$PH_PKG" ]]
 	then
 		echo -n "$PH_APP"
+		unset -n PH_PKG
 		return 0
 	fi
+	unset -n PH_PKG
 done
 return 1
 }
