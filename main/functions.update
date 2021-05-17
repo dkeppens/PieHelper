@@ -1519,9 +1519,14 @@ then
 	printf "%8s%s\033[32m%s\033[0m\n" "" "--> Removing ${PH_APP} config file " "'${PH_CONF_DIR}/${PH_APP}.conf'"
 	if ph_run_with_rollback -c "ph_store_file -f '${PH_CONF_DIR}/${PH_APP}.conf'"
 	then
-		ph_add_value_to_param -p PH_CREATE_APPS_CONF_FILE -v "$PH_APP"
-		ph_run_with_rollback -c true && \
-			return "$?"
+		if source "${PH_TEMPLATES_DIR}/${PH_APP}_conf.template" >/dev/null 2>&1
+		then
+			ph_add_value_to_param -p PH_CREATE_APPS_CONF_FILE -v "$PH_APP"
+			ph_run_with_rollback -c true && \
+				return "$?"
+		else
+			ph_set_result -m "An error occurred trying to source default ${PH_APP} configuration as '${PH_TEMPLATES_DIR}/${PH_APP}_conf.template'"
+		fi
 	else
 		ph_set_result -m "An error occurred trying to remove ${PH_APP} config file '${PH_CONF_DIR}/${PH_APP}.conf'"
 	fi
@@ -2003,9 +2008,14 @@ then
 	then
 		if ph_run_with_rollback -c "ph_secure_pieh -q -f '${PH_CONF_DIR}/${PH_APP}.conf'"
 		then
-			ph_add_value_to_param -p PH_REMOVE_APPS_CONF_FILE -v "$PH_APP"
-			ph_run_with_rollback -c true && \
-				return "$?"
+			if source "${PH_CONF_DIR}/${PH_APP}.conf" >/dev/null 2>&1
+			then
+				ph_add_value_to_param -p PH_REMOVE_APPS_CONF_FILE -v "$PH_APP"
+				ph_run_with_rollback -c true && \
+					return "$?"
+			else
+				ph_set_result -m "An error occurred trying to source '${PH_APP} configuration as '${PH_CONF_DIR}/${PH_APP}.conf'"
+			fi
 		fi
 	else
 		ph_set_result -m "An error occurred trying to modify ${PH_APP} conf file '${PH_CONF_DIR}/${PH_APP}.conf'"
