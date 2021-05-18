@@ -9,11 +9,15 @@ shopt -s extglob
 
 # Local variable declarations
 
-declare PH_i=""
-declare PH_MOVE_SCRIPTS_REGEX=""
-declare PH_ALLOW_USERS=""
-declare -i PH_FLAG="1"
-declare -a PH_PARSE_FILES
+declare PH_i
+declare PH_MOVE_SCRIPTS_REGEX
+declare PH_ALLOW_USERS
+declare -i PH_FLAG
+
+PH_i=""
+PH_MOVE_SCRIPTS_REGEX=""
+PH_ALLOW_USERS=""
+PH_FLAG="1"
 
 # Global variable declarations not related to rollback
 
@@ -144,7 +148,10 @@ source "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" >/dev/null 2>&1
 
 # Load controller settings and configuration of all supported and default applications
 
+declare -a PARSE_FILES
+
 PH_PARSE_FILES+=("${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}")
+
 if [[ -f "${PH_CONF_DIR}/supported_apps" ]]
 then
 	PH_PARSE_FILES+=("${PH_CONF_DIR}/supported_apps")
@@ -181,6 +188,7 @@ do
 		source "${PH_TEMPLATES_DIR}/${PH_i}_conf.template" >/dev/null 2>&1
 	fi
 done
+unset PH_PARSE_FILES
 
 # Handle modules xtrace
 
@@ -341,4 +349,4 @@ fi
 
 # Unset local variables
 
-unset PH_i PH_ALLOW_USERS PH_MOVE_SCRIPTS_REGEX PH_FLAG PH_PARSE_FILES 2>/dev/null
+unset PH_i PH_ALLOW_USERS PH_MOVE_SCRIPTS_REGEX PH_FLAG 2>/dev/null

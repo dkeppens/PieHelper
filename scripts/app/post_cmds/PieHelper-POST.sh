@@ -10,11 +10,12 @@
 
 #set -x
 
-declare PH_PIEH_LOC_DIR=""
-declare PH_PIEH_REM_DIR=""
+declare PH_PIEH_LOC_DIR
+declare PH_PIEH_REM_DIR
 
 PH_PIEH_LOC_DIR="$(ph_get_app_cifs_mpt -a PieHelper -r)"
 PH_PIEH_REM_DIR="$(eval "echo -n ${PH_PIEH_CIFS_DIR}${PH_PIEH_CIFS_SUBDIR}")"
+
 printf "%8s%s\n" "" "--> Checking for PieHelper POST-command prerequisite : CIFS configured"
 if [[ "$PH_PIEH_CIFS_SHARE" == "yes" ]]
 then

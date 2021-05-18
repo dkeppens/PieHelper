@@ -1,3 +1,4 @@
+* continue with declares first in distros function files + functions (work partly up from ph_integrate_app) + main.sh
 * adapt REAMD.md with changes such as installation states etc
 * reimplement recursive chown and chperms to speed things up
 * create expect for moonlight pairing
