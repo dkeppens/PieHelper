@@ -3,7 +3,9 @@
 
 function ph_check_password_validity {
 
-declare PH_PASSWD="$1"
+declare PH_PASSWD
+
+PH_PASSWD="$1"
 
 [[ "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
@@ -24,13 +26,15 @@ return 1
 
 function ph_create_oos_app_code {
 
-declare PH_APP="$1"
-declare -l PH_APPL=""
+declare PH_APP
+declare -l PH_APPL
+
+PH_APP="$1"
+PH_APPL="${PH_APP:0:3}"
 
 [[ "$#" -ne "1" || -z "$PH_APP" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-PH_APPL="${PH_APP:0:3}"
 printf "%8s%s\n" "" "--> Adding configure function for application '${PH_APP}' to codebase file '${PH_MAIN_DIR}/functions.user'"
 if ph_check_app_state_validity -a "$PH_APP" -q -d
 then
@@ -69,6 +73,11 @@ declare -i PH_OLDOPTIND
 
 PH_OLDOPTARG="$OPTARG"
 PH_OLDOPTIND="$OPTIND"
+PH_APP=""
+PH_APP_EXEC=""
+PH_APP_GRAPH=""
+PH_APP_CMD=""
+PH_OPTION=""
 
 OPTIND="1"
 
@@ -125,6 +134,10 @@ declare -i PH_OLDOPTIND
 
 PH_OLDOPTARG="$OPTARG"
 PH_OLDOPTIND="$OPTIND"
+PH_APP=""
+PH_APP_GRAPH=""
+PH_APP_CMD=""
+PH_OPTION=""
 
 OPTIND="1"
 
@@ -173,13 +186,15 @@ return 0
 
 function ph_remove_oos_app_code {
 
-declare PH_APP="$1"
-declare -l PH_APPL=""
+declare PH_APP
+declare -l PH_APPL
+
+PH_APP="$1"
+PH_APPL="${PH_APP:0:3}"
 
 [[ "$#" -ne "1" || -z "$PH_APP" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-PH_APPL="${PH_APP:0:3}"
 printf "%8s%s\n" "" "--> Removing configure function for application '${PH_APP}' from codebase file '${PH_MAIN_DIR}/functions.user'"
 if ph_check_app_state_validity -a "$PH_APP" -q -d
 then
@@ -219,13 +234,21 @@ ph_run_with_rollback -c false -m "Could not remove" || \
 
 function ph_add_line_to_file {
 
-declare PH_LINE=""
-declare PH_PARAMS=""
-declare PH_FILE=""
-declare PH_OPTION=""
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
-declare -i PH_ADD_AS_ROOT="1"
+declare PH_LINE
+declare PH_PARAMS
+declare PH_FILE
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+declare -i PH_ADD_AS_ROOT
+
+PH_OLDOPTARG="$OPTARG"
+PH_OLDOPTIND="$OPTIND"
+PH_LINE=""
+PH_PARAMS=""
+PH_FILE=""
+PH_ADD_AS_ROOT="1"
+PH_OPTION=""
 
 OPTIND="1"
 
@@ -282,17 +305,29 @@ return 1
 
 function ph_remove_line_from_file {
 
-declare PH_LINE_REGEX=""
-declare PH_LINE=""
-declare PH_PARAMS=""
-declare PH_FILE=""
-declare PH_LINK_TARGET=""
-declare PH_TMP_FILE=""
-declare PH_OPTION=""
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
-declare -i PH_COUNT="0"
-declare -i PH_REMOVE_AS_ROOT="1"
+declare PH_LINE_REGEX
+declare PH_LINE
+declare PH_PARAMS
+declare PH_FILE
+declare PH_LINK_TARGET
+declare PH_TMP_FILE
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+declare -i PH_COUNT
+declare -i PH_REMOVE_AS_ROOT
+
+PH_OLDOPTARG="$OPTARG"
+PH_OLDOPTIND="$OPTIND"
+PH_LINE_REGEX=""
+PH_LINE=""
+PH_PARAMS=""
+PH_FILE=""
+PH_LINK_TARGET=""
+PH_TMP_FILE=""
+PH_COUNT="0"
+PH_REMOVE_AS_ROOT="1"
+PH_OPTION=""
 
 OPTIND="1"
 
@@ -694,6 +729,167 @@ ph_run_with_rollback -c "ph_git_tag_local -v '${PH_NEW_VERSION}' -m '${PH_GIT_CO
 return 0
 }
 
+function ph_git_clone_master {
+
+declare PH_GIT_REPO_DIR
+declare PH_GIT_REPO_NAME
+declare PH_GIT_REPO_ARGS
+declare PH_GIT_REPO
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+
+PH_OLDOPTARG="$OPTARG"
+PH_OLDOPTIND="$OPTIND"
+PH_GIT_REPO_DIR=""
+PH_GIT_REPO_NAME=""
+PH_GIT_REPO_ARGS=""
+PH_GIT_REPO=""
+PH_OPTION=""
+
+OPTIND="1"
+
+while getopts d:r:n:a: PH_OPTION 2>/dev/null
+do
+	case "$PH_OPTION" in d)
+		[[ -n "$PH_GIT_REPO_DIR" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_GIT_REPO_DIR="$OPTARG" ;;
+			     n)
+		[[ -n "$PH_GIT_REPO_NAME" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_GIT_REPO_NAME="$OPTARG" ;;
+			     a)
+		[[ -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_GIT_REPO_ARGS="$OPTARG" ;;
+			     r)
+		[[ -n "$PH_GIT_REPO" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_GIT_REPO="$OPTARG" ;;
+			     *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+	esac
+done
+OPTIND="$PH_OLDOPTIND"
+OPTARG="$PH_OLDOPTARG"
+
+[[ -z "$PH_GIT_REPO_DIR" || -z "$PH_GIT_REPO" || -z "$PH_GIT_REPO_NAME" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+if [[ ! -d "$PH_GIT_REPO_DIR" ]]
+then
+	ph_run_with_rollback -c "ph_create_empty_file -t directory -d '${PH_GIT_REPO_DIR}'" || \
+		return 1
+fi
+printf "%8s%s\n" "" "--> Cloning master git repository '${PH_GIT_REPO}'"
+if cd "$PH_GIT_REPO_DIR" >/dev/null 2>&1
+then
+	if git clone ${PH_GIT_REPO_ARGS} "$PH_GIT_REPO" >/dev/null 2>&1
+	then
+		cd - >/dev/null 2>&1
+		ph_add_value_to_param -p PH_GIT_UNDO_CLONE_MASTER -v "${PH_GIT_REPO_DIR}'${PH_GIT_REPO}'${PH_GIT_REPO_NAME}'${PH_GIT_REPO_ARGS}"
+		ph_run_with_rollback -c true && \
+			return 0
+	else
+		ph_set_result -m "An error occurred trying to clone master git repository '${PH_GIT_REPO}'"
+	fi
+	cd - >/dev/null 2>&1
+else
+	ph_set_result -m "An error occurred trying to change directory to '${GIT_REPO_DIR}'"
+fi
+ph_run_with_rollback -c false -m "Could not clone" || \
+	return 1
+}
+
+function ph_git_undo_clone_master {
+
+declare PH_GIT_REPO
+declare PH_GIT_REPO_ARGS
+declare PH_GIT_REPO_DIR
+declare PH_GIT_REPO_NAME
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+
+PH_OLDOPTARG="$OPTARG"
+PH_OLDOPTIND="$OPTIND"
+PH_GIT_REPO=""
+PH_GIT_REPO_ARGS=""
+PH_GIT_REPO_DIR=""
+PH_GIT_REPO_NAME=""
+PH_OPTION=""
+
+OPTIND="1"
+
+while getopts d:n:r:a: PH_OPTION 2>/dev/null
+do
+	case "$PH_OPTION" in d)
+		[[ -n "$PH_GIT_REPO_DIR" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_GIT_REPO_DIR="$OPTARG" ;;
+			     r)
+		[[ -n "$PH_GIT_REPO" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_GIT_REPO="$OPTARG" ;;
+			     a)
+		[[ -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_GIT_REPO_ARGS="$OPTARG" ;;
+			     n)
+		[[ -n "$PH_GIT_REPO_NAME" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_GIT_REPO_NAME="$OPTARG" ;;
+			     *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+	esac
+done
+OPTIND="$PH_OLDOPTIND"
+OPTARG="$PH_OLDOPTARG"
+
+[[ -z "$PH_GIT_REPO_DIR" || -z "$PH_GIT_REPO" || -z "$PH_GIT_REPO_NAME" || \
+	( -e "${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}" && ! -d "${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}" ) ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+printf "%8s%s\n" "" "--> Removing cloned git repository '${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}'"
+if [[ ! -e "${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}" ]]
+then
+	ph_run_with_rollback -c true -m "Nothing to do" && \
+		return "$?"
+else
+	if "$PH_SUDO" rm -r "${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}" 2>/dev/null
+	then
+		ph_add_value_to_param -p PH_GIT_CLONE_MASTER -v "${PH_GIT_REPO_DIR}'${PH_GIT_REPO}'${PH_GIT_REPO_NAME}'${PH_GIT_REPO_ARGS}"
+		ph_run_with_rollback -c true && \
+			return "$?"
+	else
+		ph_set_result -m "An error occurred trying to recursively remove cloned git repository '${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}'"
+	fi
+fi
+ph_run_with_rollback -c false -m "Could not remove" || \
+	return 1
+}
+
 function ph_git_commit_master {
 
 declare PH_NEW_VERSION
@@ -817,6 +1013,7 @@ declare PH_APP
 declare PH_APP_STATE
 
 PH_APP="$1"
+PH_APP_STATE=""
 
 [[ -z "$PH_APP" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
@@ -828,7 +1025,9 @@ return 0
 
 function ph_check_pieh_shared_config {
 
-declare PH_i=""
+declare PH_i
+
+PH_i=""
 
 for PH_i in Bash_conf Ctrls_conf Emulationstation_conf Kodi_conf Moonlight_conf MovefromPieHScript LoginScript MoveScript MovetoPieHScript OOSapp_conf PieHelper_conf RestartScriptPieH RestartScript StartScriptPieH StartScript StopScriptPieH StopScript X11_conf
 do
@@ -859,15 +1058,25 @@ return 0
 
 function ph_check_pieh_configured_config {
 
-declare PH_i=""
-declare PH_APP=""
-declare PH_APP_USER=""
-declare PH_APP_GROUP=""
-declare PH_APPU_CIFS_MPT=""
-declare -u PH_APPU=""
-declare -l PH_APPL=""
-declare -i PH_RET_CODE="0"
-declare -i PH_APP_TTY="0"
+declare PH_i
+declare PH_APP
+declare PH_APP_USER
+declare PH_APP_GROUP
+declare PH_APPU_CIFS_MPT
+declare -u PH_APPU
+declare -l PH_APPL
+declare -i PH_RET_CODE
+declare -i PH_APP_TTY
+
+PH_i=""
+PH_APP=""
+PH_APP_USER=""
+PH_APP_GROUP=""
+PH_APPU_CIFS_MPT=""
+PH_APPU=""
+PH_APPL=""
+PH_RET_CODE="0"
+PH_APP_TTY="0"
 
 printf "%2s%s\n\n" "" "While PieHelper is configured :" >>"${PH_TMP_DIR}/reported_issues"
 for PH_i in sup int cont os defaults alloweds
@@ -1093,11 +1302,14 @@ return "$PH_RET_CODE"
 
 function ph_check_base_conf_file_validity {
 
-declare PH_i="$1"
-declare PH_APP=""
-declare PH_FILE=""
+declare PH_i
+declare PH_APP
+declare PH_FILE
 
+PH_i="$1"
+PH_APP=""
 PH_FILE="$(ph_get_filename_from_shortname "$PH_i")"
+
 if ! ph_check_object_existence -q -o "${PH_CONF_DIR}/${PH_FILE}"
 then
 	printf "%4s%s\n" "" "- Unique configuration file '${PH_FILE}' is missing" >>"${PH_TMP_DIR}/reported_issues"
@@ -1176,11 +1388,17 @@ return 0
 
 function ph_check_pieh_unconfigured_config {
 
-declare PH_i=""
-declare PH_APP=""
-declare PH_FILE=""
-declare -i PH_RET_CODE="0"
-declare -i PH_APP_TTY="0"
+declare PH_i
+declare PH_APP
+declare PH_FILE
+declare -i PH_RET_CODE
+declare -i PH_APP_TTY
+
+PH_i=""
+PH_APP=""
+PH_FILE=""
+RET_CODE="0"
+PH_APP_TTY="0"
 
 printf "%2s%s\n\n" "" "While PieHelper is unconfigured :" >>"${PH_TMP_DIR}/reported_issues"
 for PH_i in sup int cont os defaults alloweds
@@ -1268,33 +1486,32 @@ return "$PH_RET_CODE"
 
 function ph_show_app_info {
 
-declare PH_APP="$1"
-declare PH_APP_USER=""
-declare PH_APP_CMD=""
-declare PH_APP_PKG=""
-declare PH_APP_STATE=""
-declare PH_APP_INST_STATE=""
-declare -i PH_APP_TTY="0"
-declare -u PH_APPU="${PH_APP:0:4}"
-declare -n PH_APP_PERSISTENCE="PH_${PH_APPU}_PERSISTENT"
+declare PH_APP
+declare PH_APP_USER
+declare PH_APP_CMD
+declare PH_APP_PKG
+declare PH_APP_STATE
+declare PH_APP_INST_STATE
+declare PH_APP_STR_TTY
+declare -u PH_APPU
+declare -n PH_APP_PERSISTENCE
 
+PH_APP="$1"
 PH_APP_USER="$(ph_get_app_user_from_app_name "$PH_APP")"
+PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
+PH_APP_PKG="$(ph_get_app_pkg_from_app_name "$PH_APP")"
+PH_APP_STATE="$(ph_get_app_state_from_app_name "$PH_APP")"
+PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_name "$PH_APP")"
+PH_APP_STR_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
+PH_APPU="${PH_APP:0:4}"
+PH_APP_PERSISTENCE="PH_${PH_APPU}_PERSISTENT"
+
 [[ -z "$PH_APP_USER" ]] && \
 	PH_APP_USER="-"
-PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
-PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
-PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_name "$PH_APP")"
-PH_APP_PKG="$(ph_get_app_pkg_from_app_name "$PH_APP")"
 [[ -z "$PH_APP_PKG" ]] && \
 	PH_APP_PKG="-"
-PH_APP_STATE="$(ph_get_app_state_from_app_name "$PH_APP")"
 printf "\n%10s%-20s%s\n" "" "App name" ": ${PH_APP}"
-if [[ "$PH_APP_TTY" -eq "0" ]]
-then
-	printf "%10s%-20s%s\n" "" "App TTY" ": -"
-else
-	printf "%10s%-20s%s\n" "" "App TTY" ": ${PH_APP_TTY}"
-fi
+printf "%10s%-20s%s\n" "" "App tty" ": ${PH_APP_STR_TTY}"
 printf "%10s%-20s%s\n" "" "App run account" ": ${PH_APP_USER}"
 printf "%10s%-20s%s\n" "" "App start command" ": ${PH_APP_CMD}"
 printf "%10s%-20s%s\n" "" "App state" ": ${PH_APP_STATE}"
@@ -1319,6 +1536,7 @@ declare PH_APP
 declare PH_APP_STR_TTY
 
 PH_APP="$1"
+PH_APP_STR_TTY=""
 
 [[ -z "$PH_APP" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
@@ -1349,23 +1567,34 @@ return "$PH_APP_STR_TTY"
 
 function ph_check_object_existence {
 
-declare PH_DIR=""
-declare PH_FILE=""
-declare PH_TYPE="Derivate"
-declare PH_OBJECT=""
-declare PH_OBJECT_TYPE="configuration file"
-declare PH_OPTION=""
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
-declare -i PH_RET_CODE="0"
-declare -i PH_QUIESCE="1"
+declare PH_DIR
+declare PH_FILE
+declare PH_TYPE
+declare PH_OBJECT
+declare PH_OBJECT_TYPE
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+declare -i PH_RET_CODE
+declare -i PH_QUIESCE
+
+PH_OLDOPTARG="$OPTARG"
+PH_OLDOPTIND="$OPTIND"
+PH_DIR=""
+PH_FILE=""
+PH_TYPE="Derivate"
+PH_OBJECT=""
+PH_OBJECT_TYPE="configuration file"
+PH_OPTION=""
+PH_RET_CODE="0"
+PH_QUIESCE="1"
 
 OPTIND="1"
 
 while getopts o:q PH_OPTION 2>/dev/null
 do
 	case "$PH_OPTION" in o)
-		[[ -n "$PH_OBJECT" ]] && \
+		[[ -n "$PH_OBJECT" || -z "$OPTARG" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -1385,7 +1614,7 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_OBJECT" || "$#" -lt "1" ]] && \
+[[ -z "$PH_OBJECT" || "$#" -lt "2" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 PH_DIR="${PH_OBJECT%/*}"
@@ -1478,10 +1707,12 @@ return 0
 
 function ph_check_default_base_conf_file_validity {
 
-declare PH_i="$1"
-declare PH_FILE=""
+declare PH_i
+declare PH_FILE
 
+PH_i="$1"
 PH_FILE="$(ph_get_filename_from_shortname "$PH_i")"
+
 if ph_check_object_existence -q -o "${PH_CONF_DIR}/${PH_FILE}"
 then
 	printf "%4s%s\n" "" "- Unique configuration file '${PH_FILE}' is present" >>"${PH_TMP_DIR}/reported_issues"
@@ -1492,12 +1723,19 @@ return 0
 
 function ph_stop_all_running_apps {
 
-declare PH_APPS_TO_STOP="$*"
-declare PH_APP=""
-declare PH_STOPPED_APPS=""
-declare PH_APP_CMD=""
-declare -l PH_APPL=""
-declare -i PH_APP_TTY="0"
+declare PH_APPS_TO_STOP
+declare PH_APP
+declare PH_STOPPED_APPS
+declare PH_APP_CMD
+declare -l PH_APPL
+declare -i PH_APP_TTY
+
+PH_APPS_TO_STOP="$*"
+PH_APP=""
+PH_STOPPED_APPS=""
+PH_APP_CMD=""
+PH_APPL=""
+PH_APP_TTY="0"
 
 if [[ -z "$PH_APPS_TO_STOP" ]]
 then
@@ -1535,146 +1773,6 @@ do
 	fi
 done
 return 0
-}
-
-function ph_git_clone_master {
-
-declare PH_GIT_REPO_DIR=""
-declare PH_GIT_REPO_NAME=""
-declare PH_GIT_REPO_ARGS=""
-declare PH_GIT_REPO=""
-declare PH_OPTION=""
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
-
-OPTIND="1"
-
-while getopts d:r:n:a: PH_OPTION 2>/dev/null
-do
-	case "$PH_OPTION" in d)
-			[[ -n "$PH_GIT_REPO_DIR" ]] && \
-				OPTIND="$PH_OLDOPTIND" && \
-				OPTARG="$PH_OLDOPTARG" && \
-				return 1
-			PH_GIT_REPO_DIR="$OPTARG" ;;
-			     n)
-			[[ -n "$PH_GIT_REPO_NAME" ]] && \
-				OPTIND="$PH_OLDOPTIND" && \
-				OPTARG="$PH_OLDOPTARG" && \
-				return 1
-			PH_GIT_REPO_NAME="$OPTARG" ;;
-			     a)
-			PH_GIT_REPO_ARGS="$OPTARG" ;;
-			     r)
-			[[ -n "$PH_GIT_REPO" ]] && \
-				OPTIND="$PH_OLDOPTIND" && \
-				OPTARG="$PH_OLDOPTARG" && \
-				return 1
-			PH_GIT_REPO="$OPTARG" ;;
-			     *)
-			OPTIND="$PH_OLDOPTIND"
-			OPTARG="$PH_OLDOPTARG"
-			ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
-	esac
-done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
-
-[[ -z "$PH_GIT_REPO_DIR" || -z "$PH_GIT_REPO" || -z "$PH_GIT_REPO_NAME" ]] && \
-	return 1
-
-if [[ ! -d "$PH_GIT_REPO_DIR" ]]
-then
-	ph_run_with_rollback -c "ph_create_empty_file -t directory -d '${PH_GIT_REPO_DIR}'" || \
-		return 1
-fi
-printf "%8s%s\n" "" "--> Cloning github repository '${PH_GIT_REPO}'"
-if cd "$PH_GIT_REPO_DIR" >/dev/null 2>&1
-then
-	if git clone ${PH_GIT_REPO_ARGS} "$PH_GIT_REPO" >/dev/null 2>&1
-	then
-		cd - >/dev/null 2>&1
-		ph_add_value_to_param -p PH_GIT_UNDO_CLONE_MASTER -v "${PH_GIT_REPO_DIR}'${PH_GIT_REPO}'${PH_GIT_REPO_NAME}'${PH_GIT_REPO_ARGS}"
-		ph_run_with_rollback -c true && \
-			return 0
-	else
-		ph_set_result -m "Could not clone git repository '${PH_GIT_REPO}'"
-	fi
-else
-	ph_set_result -m "Could not change working directory to '${GIT_REPO_DIR}'"
-fi
-cd - >/dev/null 2>&1
-printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Could not clone"
-ph_run_with_rollback -c false || \
-	return 1
-}
-
-function ph_git_undo_clone_master {
-
-declare PH_GIT_REPO=""
-declare PH_GIT_REPO_ARGS=""
-declare PH_GIT_REPO_DIR=""
-declare PH_GIT_REPO_NAME=""
-declare PH_OPTION=""
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
-
-OPTIND="1"
-
-while getopts d:n:r:a: PH_OPTION 2>/dev/null
-do
-	case "$PH_OPTION" in d)
-			[[ -n "$PH_GIT_REPO_DIR" ]] && \
-				OPTIND="$PH_OLDOPTIND" && \
-				OPTARG="$PH_OLDOPTARG" && \
-				return 1
-			PH_GIT_REPO_DIR="$OPTARG" ;;
-			     r)
-			[[ -n "$PH_GIT_REPO" ]] && \
-				OPTIND="$PH_OLDOPTIND" && \
-				OPTARG="$PH_OLDOPTARG" && \
-				return 1
-			PH_GIT_REPO="$OPTARG" ;;
-			     a)
-			PH_GIT_REPO_ARGS="$OPTARG" ;;
-			     n)
-			[[ -n "$PH_GIT_REPO_NAME" ]] && \
-				OPTIND="$PH_OLDOPTIND" && \
-				OPTARG="$PH_OLDOPTARG" && \
-				return 1
-			PH_GIT_REPO_NAME="$OPTARG" ;;
-			     *)
-			OPTIND="$PH_OLDOPTIND"
-			OPTARG="$PH_OLDOPTARG"
-			ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
-	esac
-done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
-
-[[ -z "$PH_GIT_REPO_DIR" || -z "$PH_GIT_REPO" || -z "$PH_GIT_REPO_NAME" || \
-	( -e "${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}" && ! -d "${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}" ) ]] && \
-	return 1
-
-printf "%8s%s\n" "" "--> Removing cloned repository '${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}'"
-if [[ ! -e "${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}" ]]
-then
-	printf "%10s\033[32m%s\033[0m%s\n" "" "OK : " "Nothing to do"
-	ph_set_result -r 0
-	return 0
-else
-	if "$PH_SUDO" rm -r "${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}" 2>/dev/null
-	then
-		ph_add_value_to_param -p PH_GIT_CLONE_MASTER -v "${PH_GIT_REPO_DIR}'${PH_GIT_REPO}'${PH_GIT_REPO_NAME}'${PH_GIT_REPO_ARGS}"
-		ph_run_with_rollback -c true && \
-			return "$?"
-	else
-		ph_set_result -m "Could not remove directory '${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}'"
-	fi
-fi
-printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Could not remove"
-ph_run_with_rollback -c false || \
-	return 1
 }
 
 function ph_update_app {
