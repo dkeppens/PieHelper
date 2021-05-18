@@ -2,6 +2,9 @@
 
 function ph_apt_clean {
 
+[[ "$#" -ne "0" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
 printf "%8s%s\n" "" "--> Cleaning up after upgrade"
 if "$PH_SUDO" apt-get -qq clean >/dev/null 2>&1
 then
@@ -18,12 +21,12 @@ return 0
 
 function ph_install_pkg {
 
-declare PH_APP_PKG=""
+declare PH_APP_PKG
 
-PH_APP_PKG="$(eval echo -n "$1")"
+PH_APP_PKG="$(eval "echo -n \"$1\"")"
 
-[[ -z "$PH_APP_PKG" ]] && \
-	return 1
+[[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Installing package " "'${PH_APP_PKG}'" " (This may take a while)"
 if ! ph_get_pkg_inst_state "$PH_APP_PKG"
@@ -46,6 +49,9 @@ ph_run_with_rollback -c false -m "Could not install" || \
 
 function ph_update_pkg_index {
 
+[[ "$#" -ne "0" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
 printf "%8s%s\n" "" "--> Updating package database index"
 if ! "$PH_SUDO" apt-get -qq update >/dev/null 2>&1
 then
@@ -60,12 +66,12 @@ fi
 
 function ph_update_pkg {
 
-declare PH_APP_PKG=""
+declare PH_APP_PKG
 
-PH_APP_PKG="$(eval echo -n "$1")"
+PH_APP_PKG="$(eval "echo -n \"$1\"")"
 
-[[ -z "$PH_APP_PKG" ]] && \
-	return 1
+[[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 ph_update_pkg_index || \
 	return 1
@@ -84,12 +90,12 @@ fi
 
 function ph_remove_pkg {
 
-declare PH_APP_PKG=""
+declare PH_APP_PKG
 
-PH_APP_PKG="$(eval echo -n "$1")"
+PH_APP_PKG="$(eval "echo -n \"$1\"")"
 
-[[ -z "$PH_APP_PKG" ]] && \
-	return 1
+[[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 printf "%8s%s\033[32m%s\033[0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
 if ph_get_pkg_inst_state "$PH_APP_PKG"
@@ -117,12 +123,12 @@ ph_run_with_rollback -c false -m "Not found" || \
 
 function ph_get_pkg_inst_state {
 
-declare PH_APP_PKG=""
+declare PH_APP_PKG
 
-PH_APP_PKG="$(eval echo -n "$1")"
+PH_APP_PKG="$(eval "echo -n \"$1\"")"
 
-[[ -z "$PH_APP_PKG" ]] && \
-	return 1
+[[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 "$PH_SUDO" dpkg-query -s "$PH_APP_PKG" >/dev/null 2>&1
 return "$?"
@@ -130,18 +136,21 @@ return "$?"
 
 function ph_check_pkg_validity {
 
-declare PH_APP_PKG=""
+declare PH_APP_PKG
 
-PH_APP_PKG="$(eval echo -n "$1")"
+PH_APP_PKG="$(eval "echo -n \"$1\"")"
 
-[[ -z "$PH_APP_PKG" ]] && \
-	return 1
+[[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 "$PH_SUDO" apt-cache show "$PH_APP_PKG" >/dev/null 2>&1
 return "$?"
 }
 
 function ph_update_system {
+
+[[ "$#" -ne "0" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 ph_update_pkg_index || \
 	return 1
