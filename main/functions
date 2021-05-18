@@ -418,16 +418,90 @@ return 1
 
 function ph_git_add_local {
 
-declare PH_GIT_COMMIT_MSG=""
-declare PH_OPTION=""
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
+declare PH_GIT_COMMIT_MSG
+
+PH_GIT_COMMIT_MSG="$1"
+
+[[ "$#" -gt "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+printf "%8s%s\n" "" "--> Locally adding the latest modifications to git"
+if cd "$PH_BASE_DIR" >/dev/null 2>&1
+then
+	if [[ -z "$PH_GIT_COMMIT_MSG" ]]
+	then
+		cd - >/dev/null 2>&1
+		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Empty commit message -> Skipping"
+		ph_set_result -r 0
+		return 0
+	else
+		if git add . >/dev/null 2>&1
+		then
+			cd - >/dev/null 2>&1
+			ph_add_value_to_param -p PH_GIT_ADD_LOCAL -v "yes"
+			ph_run_with_rollback -c true && \
+				return "$?"
+		else
+			ph_set_result -m "An error occurred trying to locally add the latest modifications to git"
+		fi
+	fi
+	cd - >/dev/null 2>&1
+else
+	ph_set_result -m "An error occurred trying to change directory to '${PH_BASE_DIR}'"
+fi
+ph_run_with_rollback -c false -m "Could not add" || \
+	return 1
+}
+
+function ph_undo_git_add_local {
+
+[[ "$#" -gt "0" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+printf "%8s%s\n" "" "--> Undoing latest local git addition"
+if cd "$PH_BASE_DIR" >/dev/null 2>&1
+then
+	if git reset >/dev/null 2>&1
+	then
+		cd - >/dev/null 2>&1
+		ph_run_with_rollback -c true && \
+			return "$?"
+	else
+		ph_set_result -m "An error occurred trying to undo the latest local git addition"
+	fi
+	cd - >/dev/null 2>&1
+else
+	ph_set_result -m "An error occurred trying to change directory to '${PH_BASE_DIR}'"
+fi
+ph_run_with_rollback -c false -m "Could not undo" || \
+	return 1
+}
+
+function ph_git_tag_local {
+
+declare PH_NEW_VERSION
+declare PH_GIT_COMMIT_MSG
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+
+PH_OLDOPTARG="$OPTARG"
+PH_OLDOPTIND="$OPTIND"
+PH_NEW_VERSION=""
+PH_GIT_COMMIT_MSG=""
+PH_OPTION=""
 
 OPTIND="1"
 
-while getopts m: PH_OPTION 2>/dev/null
+while getopts v:m: PH_OPTION 2>/dev/null
 do
-	case "$PH_OPTION" in m)
+	case "$PH_OPTION" in v)
+		[[ -n "$PH_NEW_VERSION" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_NEW_VERSION="$OPTARG" ;;
+			     m)
 		[[ -n "$PH_GIT_COMMIT_MSG" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
@@ -442,242 +516,298 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_GIT_COMMIT_MSG" || "$#" -ne "2" ]] && \
+[[ -z "$PH_NEW_VERSION" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-cd "$PH_BASE_DIR" >/dev/null 2>&1
-printf "%8s%s\n" "" "--> Adding modified files to local git"
-if [[ -z "$PH_GIT_COMMIT_MSG" ]]
-then
-	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Empty commit message -> Skipping"
-else
-	if git add . >/dev/null 2>&1
-	then
-		printf "%10s\033[32m%s\033[0m\n" "" "OK"
-		ph_add_value_to_param -p PH_GIT_ADD_LOCAL -v "yes"
-	else
-		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not add files"
-	fi
-fi
-ph_set_result -r 0
-cd - >/dev/null 2>&1
-return 0
-}
-
-function ph_undo_git_add_local {
-
-declare -i PH_RET_CODE="0"
-
-cd "$PH_BASE_DIR" >/dev/null 2>&1
-printf "%8s%s\n" "" "--> Removing modified files from local git"
-if git reset >/dev/null 2>&1
-then
-	printf "%10s\033[32m%s\033[0m\n" "" "OK"
-else
-	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not remove files"
-	PH_RET_CODE="1"
-fi
-ph_set_result -r 0
-cd - >/dev/null 2>&1
-return "$PH_RET_CODE"
-}
-
-function ph_git_tag_local {
-
-declare PH_OPTION=""
-declare PH_NEW_VERSION=""
-declare PH_GIT_COMMIT_MSG=""
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
-
-OPTIND="1"
-
-while getopts v:m: PH_OPTION 2>/dev/null
-do
-	case "$PH_OPTION" in v)
-			PH_NEW_VERSION="$OPTARG" ;;
-			     m)
-			PH_GIT_COMMIT_MSG="$OPTARG" ;;
-	esac
-done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
-
-[[ -z "$PH_NEW_VERSION" ]] && return 1
-cd "$PH_BASE_DIR" >/dev/null 2>&1
 printf "%8s%s\n" "" "--> Tagging local git build as '$PH_NEW_VERSION'"
-if [[ -z "$PH_GIT_COMMIT_MSG" ]]
+if cd "$PH_BASE_DIR" >/dev/null 2>&1
 then
-	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Empty commit message -> Skipping"
-else
-	git tag -a "$PH_NEW_VERSION" -m "$PH_GIT_COMMIT_SG" >/dev/null 2>&1
-	if [[ "$?" -eq "0" ]]
+	if [[ -z "$PH_GIT_COMMIT_MSG" ]]
 	then
-		printf "%10s\033[32m%s\033[0m\n" "" "OK"
-		ph_add_value_to_param -p PH_GIT_TAG_LOCAL -v "yes"
+		cd - >/dev/null 2>&1
+		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Empty commit message -> Skipping"
+		ph_set_result -r 0
+		return 0
 	else
-		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not tag build"
+		if git tag -a "$PH_NEW_VERSION" -m "$PH_GIT_COMMIT_SG" >/dev/null 2>&1
+		then
+			cd - >/dev/null 2>&1
+			ph_add_value_to_param -p PH_GIT_TAG_LOCAL -v "yes"
+			ph_run_with_rollback -c true && \
+				return "$?"
+		else
+			ph_set_result -m "An error occurred trying to tag build '${PH_NEW_VERSION}' as '${PH_GIT_COMMIT_MSG}'"
+		fi
 	fi
+	cd - >/dev/null 2>&1
+else
+	ph_set_result -m "An error occurred trying to change directory to '${PH_BASE_DIR}'"
 fi
-ph_set_result -r 0
-cd - >/dev/null 2>&1
-return 0
+ph_run_with_rollback -c false -m "Could not commit" || \
+	return 1
 }
  
 function ph_undo_git_commit_local {
 
-declare -i PH_RET_CODE="0"
+[[ "$#" -gt "0" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-cd "$PH_BASE_DIR" >/dev/null 2>&1
-printf "%8s%s\n" "" "--> Undoing latest commit to local git"
-if git reset --soft HEAD~1 >/dev/null 2>&1
+printf "%8s%s\n" "" "--> Undoing the latest local git commit"
+if cd "$PH_BASE_DIR" >/dev/null 2>&1
 then
-	printf "%10s\033[32m%s\033[0m\n" "" "OK"
+	if git reset --soft HEAD~1 >/dev/null 2>&1
+	then
+		cd - >/dev/null 2>&1
+		ph_run_with_rollback -c true && \
+			return "$?"
+	else
+		ph_set_result -m "An error occurred trying to undo the latest local git commit"
+	fi
+	cd - >/dev/null 2>&1
 else
-	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not undo commit"
-	PH_RET_CODE="1"
+	ph_set_result -m "An error occurred trying to change directory to '${PH_BASE_DIR}'"
 fi
-ph_set_result -r 0
-cd - >/dev/null 2>&1
-return "$PH_RET_CODE"
+ph_run_with_rollback -c false -m "Could not undo" || \
+	return 1
 }
 
 function ph_git_commit_local {
 
-declare PH_OPTION=""
-declare PH_NEW_VERSION=""
-declare PH_GIT_COMMIT_MSG=""
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
+declare PH_NEW_VERSION
+declare PH_GIT_COMMIT_MSG
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+
+PH_OLDOPTARG="$OPTARG"
+PH_OLDOPTIND="$OPTIND"
+PH_NEW_VERSION=""
+PH_GIT_COMMIT_MSG=""
+PH_OPTION=""
 
 OPTIND="1"
 
 while getopts m:v: PH_OPTION 2>/dev/null
 do
 	case "$PH_OPTION" in m)
-			PH_GIT_COMMIT_MSG="$OPTARG" ;;
+		[[ -n "$PH_GIT_COMMIT_MSG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_GIT_COMMIT_MSG="$OPTARG" ;;
 			     v)
-			PH_NEW_VERSION="$OPTARG" ;;
+		[[ -n "$PH_NEW_VERSION" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_NEW_VERSION="$OPTARG" ;;
+			     *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_NEW_VERSION" ]] && return 1
-cd "$PH_BASE_DIR" >/dev/null 2>&1
-printf "%8s%s\n" "" "--> Committing build '$PH_NEW_VERSION' to local git"
-if [[ -z "$PH_GIT_COMMIT_MSG" ]]
+[[ -z "$PH_NEW_VERSION" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+printf "%8s%s\n" "" "--> Locally committing git build '${PH_NEW_VERSION}'"
+if cd "$PH_BASE_DIR" >/dev/null 2>&1
 then
-	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Empty commit message -> Skipping"
-else
-	if git commit -a --message="$PH_GIT_COMMSG" >/dev/null 2>&1
+	if [[ -z "$PH_GIT_COMMIT_MSG" ]]
 	then
-		printf "%10s\033[32m%s\033[0m\n" "" "OK"
-		ph_add_value_to_param -p PH_GIT_COMMIT_LOCAL -v "yes"
+		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Empty commit message -> Skipping"
+		ph_set_result -r 0
+		cd - >/dev/null 2>&1
+		return 0
 	else
-		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not commit to local"
+		if git commit -a --message="$PH_GIT_COMMSG" >/dev/null 2>&1
+		then
+			cd - >/dev/null 2>&1
+			ph_add_value_to_param -p PH_GIT_COMMIT_LOCAL -v "yes"
+			ph_run_with_rollback -c true && \
+				return "$?"
+		else
+			ph_set_result -m "An error occurred trying to locally commit git build '${PH_NEW_VERSION}'"
+		fi
 	fi
+	cd - >/dev/null 2>&1
+else
+	ph_set_result -m "An error occurred trying to change directory to '${PH_BASE_DIR}'"
 fi
-cd - >/dev/null 2>&1
-ph_set_result -r 0
-return 0
+ph_run_with_rollback -c false -m "Could not commit" || \
+	return 1
 }
 
 function ph_git_local {
 
-declare PH_OPTION=""
-declare PH_NEW_VERSION=""
-declare PH_GIT_COMMIT_MSG=""
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
+declare PH_NEW_VERSION
+declare PH_GIT_COMMIT_MSG
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+
+PH_OLDOPTARG="$OPTARG"
+PH_OLDOPTIND="$OPTIND"
+PH_NEW_VERSION=""
+PH_GIT_COMMIT_MSG=""
+PH_OPTION=""
 
 PH_OLD_VERSION="$(git tag -l --points-at HEAD 2>/dev/null)"
 PH_OLD_GIT_COMMIT_MSG="$(git log -1 --pretty=%B 2>/dev/null)"
-
 OPTIND="1"
 
 while getopts m:v: PH_OPTION 2>/dev/null
 do
 	case "$PH_OPTION" in m)
-			PH_GIT_COMMIT_MSG="$OPTARG" ;;
+		[[ -n "$PH_GIT_COMMIT_MSG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_GIT_COMMIT_MSG="$OPTARG" ;;
 			     v)
-			PH_NEW_VERSION="$OPTARG" ;;
+		[[ -n "$PH_NEW_VERSION" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_NEW_VERSION="$OPTARG" ;;
+			     *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_NEW_VERSION" ]] && return 1
-ph_run_with_rollback -c "ph_git_add_local -m \"$PH_GIT_COMMIT_MSG\"" || return 1
-ph_run_with_rollback -c "ph_git_commit_local -v \"$PH_NEW_VERSION\" -m \"$PH_GIT_COMMIT_MSG\"" || return 1
-ph_run_with_rollback -c "ph_git_tag_local -v \"$PH_NEW_VERSION\" -m \"$PH_GIT_COMMIT_MSG\"" || return 1
+[[ -z "$PH_NEW_VERSION" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+ph_run_with_rollback -c "ph_git_add_local '${PH_GIT_COMMIT_MSG}" || \
+	return 1
+ph_run_with_rollback -c "ph_git_commit_local -v '${PH_NEW_VERSION}' -m '${PH_GIT_COMMIT_MSG}'" || \
+	return 1
+ph_run_with_rollback -c "ph_git_tag_local -v '${PH_NEW_VERSION}' -m '${PH_GIT_COMMIT_MSG}'" || \
+	return 1
 return 0
 }
 
 function ph_git_commit_master {
 
-declare PH_OPTION=""
-declare PH_NEW_VERSION=""
-declare PH_GIT_COMMIT_MSG=""
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
+declare PH_NEW_VERSION
+declare PH_GIT_COMMIT_MSG
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+
+PH_OLDOPTARG="$OPTARG"
+PH_OLDOPTIND="$OPTIND"
+PH_NEW_VERSION=""
+PH_GIT_COMMIT_MSG=""
+PH_OPTION=""
 
 OPTIND="1"
 
 while getopts v:m: PH_OPTION 2>/dev/null
 do
 	case "$PH_OPTION" in v)
-			PH_NEW_VERSION="$OPTARG" ;;
+		[[ -n "$PH_NEW_VERSION" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_NEW_VERSION="$OPTARG" ;;
 			     m)
-			PH_GIT_COMMIT_MSG="$OPTARG" ;;
+		[[ -n "$PH_GIT_COMMIT_MSG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_GIT_COMMIT_MSG="$OPTARG" ;;
+			     *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_NEW_VERSION" ]] && return 1
-cd "$PH_BASE_DIR" >/dev/null 2>&1
-printf "%8s%s\n" "" "--> Committing build '$PH_NEW_VERSION' to git master"
-if [[ -z "$PH_GIT_COMMIT_MSG" ]]
+[[ -z "$PH_NEW_VERSION" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+printf "%8s%s\n" "" "--> Committing git build '${PH_NEW_VERSION}' to the master"
+if cd "$PH_BASE_DIR" >/dev/null 2>&1
 then
-	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Empty commit message -> Skipping"
-else
-	if git push --mirror >/dev/null 2>&1
+	if [[ -z "$PH_GIT_COMMIT_MSG" ]]
 	then
-		printf "%10s\033[32m%s\033[0m\n" "" "OK"
-		ph_add_value_to_param -p PH_GIT_COMMIT_MASTER -v "yes"
+		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Empty commit message -> Skipping"
+		ph_set_result -r 0
+		cd - >/dev/null 2>&1
+		return 0
 	else
-		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not commit to master"
+		if git push --mirror >/dev/null 2>&1
+		then
+			cd - >/dev/null 2>&1
+			ph_add_value_to_param -p PH_GIT_COMMIT_MASTER -v "yes"
+			ph_run_with_rollback -c true && \
+				return "$?"
+		else
+			ph_set_result -m "An error occurred committing git build '${PH_NEW_VERSION}' to the master"
+		fi
 	fi
+	cd - >/dev/null 2>&1
+else
+	ph_set_result -m "An error occurred trying to change directory to '${PH_BASE_DIR}'"
 fi
-ph_set_result -r 0
-cd - >/dev/null 2>&1
-return 0
+ph_run_with_rollback -c false -m "Could not commit" || \
+	return 1
 }
 
 function ph_git_master {
 
-declare PH_OPTION=""
-declare PH_NEW_VERSION=""
-declare PH_GIT_COMMIT_MSG=""
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
+declare PH_NEW_VERSION
+declare PH_GIT_COMMIT_MSG
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+
+PH_OLDOPTARG="$OPTARG"
+PH_OLDOPTIND="$OPTIND"
+PH_NEW_VERSION=""
+PH_GIT_COMMIT_MSG=""
+PH_OPTION=""
 
 OPTIND="1"
 
 while getopts v:m: PH_OPTION 2>/dev/null
 do
 	case "$PH_OPTION" in v)
-			PH_NEW_VERSION="$OPTARG" ;;
+		[[ -n "$PH_NEW_VERSION" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_NEW_VERSION="$OPTARG" ;;
 			     m)
-			PH_GIT_COMMIT_MSG="$OPTARG" ;;
+		[[ -n "$PH_GIT_COMMIT_MSG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
+		PH_GIT_COMMIT_MSG="$OPTARG" ;;
+			     *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_NEW_VERSION" ]] && return 1
-ph_run_with_rollback -c "ph_git_commit_master -v \"$PH_NEW_VERSION\" -m \"$PH_GIT_COMMIT_MSG\"" || return 1
+[[ -z "$PH_NEW_VERSION" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+ph_run_with_rollback -c "ph_git_commit_master -v '${PH_NEW_VERSION}' -m '${PH_GIT_COMMIT_MSG}'" || \
+	return 1
 return 0
 }
 
