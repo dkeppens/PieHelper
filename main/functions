@@ -564,7 +564,7 @@ then
 		ph_set_result -r 0
 		return 0
 	else
-		if git tag -a "$PH_NEW_VERSION" -m "$PH_GIT_COMMIT_SG" >/dev/null 2>&1
+		if git tag -a "$PH_NEW_VERSION" -m "$PH_GIT_COMMIT_MSG" >/dev/null 2>&1
 		then
 			cd - >/dev/null 2>&1
 			ph_add_value_to_param -p PH_GIT_TAG_LOCAL -v "yes"
@@ -2661,11 +2661,17 @@ return 0
 
 function ph_get_pieh_conf_state {
 
-declare PH_CONF_STATE=""
-declare PH_OPTION=""
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
-declare -i PH_QUIESCE="1"
+declare PH_CONF_STATE
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+declare -i PH_QUIESCE
+
+PH_OLDOPTARG="$OPTARG"
+PH_OLDOPTIND="$OPTIND"
+PH_CONF_STATE=""
+PH_OPTION=""
+PH_QUIESCE="1"
 
 OPTIND="1"
 
@@ -2710,6 +2716,7 @@ function ph_print_bannerline {
 declare -i PH_COUNT
 declare -i PH_COLUMNS
 
+PH_COUNT="0"
 PH_COLUMNS="$(tput cols 2>/dev/null)"
 
 [[ "$#" -ne "0" ]] && \
@@ -2726,12 +2733,27 @@ return 0
 
 function ph_configure_app_options {
 
-declare PH_APP="$1"
-declare PH_ANSWER=""
-declare -i PH_OPT="0"
-declare -i PH_COUNT="0"
-declare -i PH_RET_CODE="0"
-declare -a PH_OPTAR=($(nawk -F'=' 'BEGIN { ORS = " " } $1 ~ /^PH_/ { print $1 }' "${PH_CONF_DIR}/${PH_APP}.conf" 2>/dev/null))
+declare PH_APP
+declare PH_ANSWER
+declare -i PH_OPT
+declare -i PH_COUNT
+declare -i PH_RET_CODE
+declare -a PH_OPTAR
+
+PH_APP="$1"
+PH_ANSWER=""
+PH_OPT="0"
+PH_COUNT="0"
+PH_RET_CODE="0"
+PH_OPTAR=($(nawk -F'=' 'BEGIN { \
+		ORS = " " \
+	} \
+	$1 ~ /^PH_/ { \
+		print $1 \
+	}' "${PH_CONF_DIR}/${PH_APP}.conf" 2>/dev/null))
+
+[[ "$?" -ne "0" || -z "$PH_APP" || "$#" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 printf "%8s%s\n" "" "--> Starting configuration of 'read-write $PH_APP' option(s) (Press 'Enter' to start)"
 read 2>/dev/null
@@ -2842,133 +2864,201 @@ return 0
 
 function ph_configure_moon {
 
-declare PH_MOON_USER=""
-declare PH_MOON_PATH=""
+declare PH_MOON_USER
+declare PH_MOON_PATH
 
-ph_configure_app_options Moonlight
+PH_MOON_USER=""
+PH_MOON_PATH=""
+
+[[ "$#" -ne "0" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+ph_configure_app_options Moonlight || \
+	return 1
 if [[ -n "$PH_MOON_SRV" ]]
 then
-	PH_MOON_PATH="$(nawk '$1 ~ /^Moonlight$/ { printf $3 }' "$PH_CONF_DIR/supported_apps" 2>/dev/null)"
-	PH_MOON_USER="$(ph_get_app_user_from_app_name "Moonlight")"
-	if [[ -d "$(getent passwd "$PH_MOON_USER" 2>/dev/null | cut -d':' -f6)/.cache" ]]
+	PH_MOON_PATH="$(nawk '$1 ~ /^Moonlight$/ { \
+			printf $3 \
+		}' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)"
+	PH_MOON_USER="$(ph_get_app_user_from_app_name Moonlight)"
+	if [[ -d "$(getent passwd "$PH_MOON_USER" 2>/dev/null | head -1 | cut -d':' -f6)/.cache" ]]
 	then
-		printf "%8s%s\n" "" "--> Removing run account '$PH_MOON_USER' 'Moonlight' cache directory"
-		"$PH_SUDO" rm -r "$(getent passwd "$PH_MOON_USER" 2>/dev/null | cut -d':' -f6)"/".cache" 2>/dev/null
-		if [[ "$?" -eq "0" ]]
+		printf "%8s%s\n" "" "--> Removing the Moonlight cache directory for user '${PH_MOON_USER}'"
+		if "$PH_SUDO" rm -r "$(getent passwd "$PH_MOON_USER" 2>/dev/null | head -1 | cut -d':' -f6)/.cache" 2>/dev/null
 		then
-			printf "%10s\033[32m%s\033[0m\n" "" "OK"
-			ph_set_result -r 0
+			ph_run_with_rollback -c true
 		else
-			printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not remove directory"
-			ph_set_result -r 1
+			ph_run_with_rollback -c false -m "Could not remove" || \
+				return 1
 		fi
 	fi
-	if [[ ! -d "$(getent passwd "$PH_MOON_USER" 2>/dev/null | cut -d':' -f6)/.cache" ]]
+	printf "%8s%s\n" "" "--> Pairing with server '${PH_MOON_SRV}'"
+	if "$PH_SUDO" -u "$PH_MOON_USER" -c "LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib ${PH_MOON_PATH} pair ${PH_MOON_SRV}" >/dev/null 2>&1
 	then
-		printf "%8s%s\n" "" "--> Pairing with '$PH_MOON_SRV'"
-		"$PH_SUDO" -E su "$PH_MOON_USER" -c "LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib ${PH_MOON_PATH} pair ${PH_MOON_SRV}" >/dev/null 2>&1
-		ph_set_result -r "$?"
+		ph_run_with_rollback -c true && \
+			return "$?"
+	else
+		ph_run_with_rollback -c false -m "Could not pair" || \
+			return 1
 	fi
+else
+	ph_set_result -m "Could not configure Moonlight without having a valid value for option 'PH_MOON_SRV'"
 fi
-return 0
+return 1
 }
 
 function ph_configure_kodi {
 
-printf "%8s%s\n" "" "--> Configuring 'Kodi'"
-printf "%10s\033[32m%s\033[0m\n" "" "OK (Nothing to do)"
+[[ "$#" -ne "0" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+printf "%8s%s\n" "" "--> Configuring Kodi"
+printf "%10s\033[33m%s\033[0m\n" "" "Warning : Code for configuration of Kodi is currently unimplemented"
 ph_set_result -r 0
 return 0
 }
 
 function ph_configure_x11 {
 
-printf "%8s%s\n" "" "--> Configuring 'Kodi'"
-printf "%10s\033[32m%s\033[0m\n" "" "OK (Nothing to do)"
+[[ "$#" -ne "0" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+printf "%8s%s\n" "" "--> Configuring X11"
+printf "%10s\033[33m%s\033[0m\n" "" "Warning : Code for configuration of X11 is currently unimplemented"
 ph_set_result -r 0
 return 0
 }
 
 function ph_configure_bash {
 
-printf "%8s%s\n" "" "--> Configuring 'Kodi'"
-printf "%10s\033[32m%s\033[0m\n" "" "OK (Nothing to do)"
-ph_set_result -r 0
-return 0
+[[ "$#" -ne "0" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+printf "%8s%s\n" "" "--> Configuring Bash"
+ph_run_with_rollback -c true -m "Nothing to do" && \
+	return "$?"
 }
 
 function ph_configure_emul {
 
-declare PH_ALSA_CARD=""
-declare PH_ALSA_DEV=""
+declare PH_ALSA_CARD
+declare PH_ALSA_DEV
 
-printf "%8s%s\n" "" "--> Configuring 'ALSA' audio"
-PH_ALSA_CARD="$(aplay -l 2>/dev/null | nawk 'BEGIN { ORS = "" } $0 ~ /HDMI/ { for (i=1;i<=NF;i++) { if ($i~/^card$/) { sub(/:/,"",$(i+1)) ; print $(i+1) }}}' 2>/dev/null)"
-PH_ALSA_DEV="$(aplay -l 2>/dev/null | nawk 'BEGIN { ORS = "" } $0 ~ /HDMI/ { for (i=1;i<=NF;i++) { if ($i~/^device$/) { sub(/:/,"",$(i+1)) ; print $(i+1) }}}' 2>/dev/null)"
-"$PH_SUDO" -E nawk -v card="$PH_ALSA_CARD" -v dev="$PH_ALSA_DEV" '$1 ~ /^audio_enable$/ { print "audio_enable = true" ; next }
-	$1 ~ /^audio_out_rate$/ { print "audio_out_rate = 44100" ; next }
-	$1 ~ /^audio_driver$/ { print "audio_driver = alsa" ; next }
-	$1 ~ /^audio_sync$/ { print "audio_sync = true" ; next }
-	$1 ~ /^audio_device$/ { print "audio_device = hw:" card "," dev ; next }
-	{ print }' /opt/retropie/configs/all/retroarch.cfg >/tmp/retroarch.cfg_tmp 2>/dev/null
-if [[ "$?" -eq "0" ]]
+PH_ALSA_CARD=""
+PH_ALSA_DEV=""
+
+[[ "$#" -ne "0" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+printf "%8s%s\n" "" "--> Configuring Emulationstation"
+PH_ALSA_CARD="$(aplay -l 2>/dev/null | nawk 'BEGIN { \
+		ORS = "" \
+	} \
+	$0 ~ /HDMI/ { \
+		for (i=1;i<=NF;i++) { \
+			if ($i ~ /^card$/) { \
+				sub(/:/,"",$(i+1)) ; \
+				print $(i+1) \
+			} \
+		} \
+	}' 2>/dev/null)"
+PH_ALSA_DEV="$(aplay -l 2>/dev/null | nawk 'BEGIN { \
+		ORS = "" \
+	} \
+	$0 ~ /HDMI/ { \
+		for (i=1;i<=NF;i++) { \
+			if ($i ~ /^device$/) { \
+				sub(/:/,"",$(i+1)) ; \
+				print $(i+1) \
+			} \
+		} \
+	}' 2>/dev/null)"
+if [[ -n "$PH_ALSA_CARD" && -n "$PH_ALSA_DEV" ]]
 then
-	if [[ -n "$PH_ALSA_CARD" && -n "$PH_ALSA_DEV" ]]
+	if "$PH_SUDO" nawk -v card="$PH_ALSA_CARD" -v dev="$PH_ALSA_DEV" '$1 ~ /^audio_enable$/ {
+			print "audio_enable = true" ;
+			next
+		}
+		$1 ~ /^audio_out_rate$/ {
+			print "audio_out_rate = 44100" ;
+			next
+		}
+		$1 ~ /^audio_driver$/ {
+			print "audio_driver = alsa" ;
+			next
+		}
+		$1 ~ /^audio_sync$/ {
+			print "audio_sync = true" ;
+			next
+		}
+		$1 ~ /^audio_device$/ {
+			print "audio_device = hw:" card "," dev ;
+			next
+		}
+		{
+			print
+		}' /opt/retropie/configs/all/retroarch.cfg >/tmp/retroarch.cfg_tmp 2>/dev/null
 	then
-		"$PH_SUDO" mv /tmp/retroarch.cfg_tmp /opt/retropie/configs/all/retroarch.cfg 2>/dev/null
-		if [[ "$?" -eq "0" ]]
+		if "$PH_SUDO" mv /tmp/retroarch.cfg_tmp /opt/retropie/configs/all/retroarch.cfg 2>/dev/null
 		then
-			ph_set_result -r 0
-			printf "%10s\033[32m%s\033[0m\n" "" "OK"
-		else
-			printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not configure audio"
-			"$PH_SUDO" rm /tmp/retroarch_cfg_tmp 2>/dev/null
-			ph_set_result -r 1
-			return 1
+			ph_run_with_rollback -c true -m "ALSA audio is configured" && \
+				return "$?"
 		fi
-	else
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not configure audio"
-		"$PH_SUDO" rm /tmp/retroarch_cfg_tmp 2>/dev/null
-		ph_set_result -r 1
-		return 1
 	fi
-else
-	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not configure audio"
-	"$PH_SUDO" rm /tmp/retroarch_cfg_tmp 2>/dev/null
-	ph_set_result -r 1
-	return 1
 fi
-return 0
+"$PH_SUDO" rm /tmp/retroarch_cfg_tmp 2>/dev/null
+ph_run_with_rollback -c false -m "Could not configure" || \
+	return 1
 }
 
 function ph_configure_app {
 
-declare PH_APP=""
-declare PH_OPTION=""
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
-declare -l PH_APPL=""
+declare PH_APP
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+declare -l PH_APPL
+
+PH_OLDOPTARG="$OPTARG"
+PH_OLDOPTIND="$OPTIND"
+PH_APP=""
+PH_OPTION=""
+PH_APPL=""
 
 OPTIND="1"
 
 while getopts a: PH_OPTION 2>/dev/null
 do
         case "$PH_OPTION" in a)
+		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			return 1
                 PH_APP="$OPTARG"
                 PH_APPL="${PH_APP:0:4}" ;;
+			     *)
+		OPTIND="$PH_OLDOPTIND"
+		OPTARG="$PH_OLDOPTARG"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
         esac
 done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-ph_configure_"$PH_APPL" 2>/dev/null
-if [[ "$?" -ne "0" ]]
+[[ -z "$PH_APP" || "$#" -ne "2" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+if ph_configure_"$PH_APPL" 2>/dev/null
 then
 	if [[ "$(ph_check_app_state_validity -a "$PH_APP" -q -d ; echo "$?")" -ne "0" && \
 		"$(functions 2>&1 | grep -E "function ph_configure_${PH_APPL} {" >/dev/null ; echo "$?")" -ne "0" ]]
 	then
-		ph_set_result -r 1 -m "User-side development is mandatory for configuration routines of 'Out-of-scope' applications"
+		printf "%8s%s\n" "" "--> Configuring ${PH_APP}"
+		ph_set_result -m "${PH_APP} is an out-of-scope application and requires prior user-side development of a function called 'ph_configure_${PH_APPL}' in file '${PH_MAIN_DIR}/functions.user'"
+		ph_run_with_rollback -c false -m "Could not configure" || \
+			return 1
 	fi
+else
 	return 1
 fi
 return 0
@@ -2976,92 +3066,154 @@ return 0
 
 function ph_setup_controllers {
 
-declare PH_MAP="$PH_CTRL_MAP"
-declare PH_i=""
-declare PH_j=""
-declare PH_ADD_CTRL_TYPE=""
-declare PH_PARENT_DEV_PATH=""
-declare -i PH_PRINT_FLAG="1"
-declare -i PH_NUM_CTRL="$1"
-declare -i PH_CTRL_CLI_ID="0"
-declare -i PH_EVDEVS="0"
+declare PH_i
+declare PH_j
+declare PH_MAP
+declare PH_ADD_CTRL_TYPE
+declare PH_PARENT_DEV_PATH
+declare -i PH_PRINT_FLAG
+declare -i PH_NUM_CTRL
+declare -i PH_CTRL_CLI_ID
+declare -i PH_EVDEVS
 
-if [[ ! -f "$PH_CONF_DIR"/controller_cli_ids ]]
+PH_i=""
+PH_j=""
+PH_MAP="$PH_CTRL_MAP"
+PH_ADD_CTRL_TYPE=""
+PH_PARENT_DEV_PATH=""
+PH_PRINT_FLAG="1"
+PH_NUM_CTRL="$1"
+PH_CTRL_CLI_ID="0"
+PH_EVDEVS="0"
+
+[[ "$PH_NUM_CTRL" -eq "0" || "$#" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+if [[ ! -f "${PH_CONF_DIR}/controller_cli_ids" ]]
 then
-	ph_create_default_base_conf_file cont || return 1
+	ph_create_default_base_conf_file cont || \
+		return 1
 fi
 ph_cleanup_controllers reset
-[[ "$PH_CTRL_TYPE" == "XBOX360" ]] && PH_MAP="no"
+[[ "$PH_CTRL_TYPE" == "XBOX360" ]] && \
+	PH_MAP="no"
 PH_EVDEVS="$(ls -l /dev/input/event+([[:digit:]]) 2>/dev/null | wc -l)"
-[[ "$PH_EVDEVS" -eq "0" ]] && printf "%8s%s\n" "" "--> Running type verification of input devices" && printf "%10s%s\n" "" "ERROR : (None found)" && return 1 
-for PH_i in $(find /dev/input -name "event+([[:digit:]])" -exec ls -l {} \; 2>/dev/null | sort -n 2>/dev/null | nawk 'BEGIN { ORS = " " } { print $NF }')
+if [[ "$PH_EVDEVS" -eq "0" ]]
+then
+	printf "%8s%s\n" "" "--> Running type verification of input devices"
+	printf "%10s%s\n" "" "ERROR : (None found)"
+	return 1 
+fi
+for PH_i in $(find /dev/input -name "event+([[:digit:]])" -exec ls -l {} \; 2>/dev/null | sort -n 2>/dev/null | nawk 'BEGIN { \
+		ORS = " " \
+	} { \
+		print $NF \
+	}')
 do
 	printf "%8s%s\n" "" "--> Running type verification of input device '${PH_i##*event}'"
 	PH_PARENT_DEV_PATH="$(udevadm info "$PH_i" 2>/dev/null | nawk -F'=' '$0 ~ /.: DEVPATH=/ { print $2 }')"
 	PH_PARENT_DEV_PATH="${PH_PARENT_DEV_PATH%/*}"
-	[[ "$PH_CTRL_TYPE" == "PS4" ]] && PH_ADD_CTRL_TYPE="PS4A"
-	for PH_j in "$PH_CTRL_TYPE" $PH_ADD_CTRL_TYPE
+	[[ "$PH_CTRL_TYPE" == "PS4" ]] && \
+		PH_ADD_CTRL_TYPE="PS4A"
+	for PH_j in "$PH_CTRL_TYPE" ${PH_ADD_CTRL_TYPE}
 	do
-		[[ "$PH_j" != "PS4A" ]] && PH_PRINT_FLAG="0"
+		[[ "$PH_j" != "PS4A" ]] && \
+			PH_PRINT_FLAG="0"
 ## add xboxurecv connection type for wireless XBOX360 USB Receiver
-		PH_CTRL_CONN="$(udevadm info -q all --path "$PH_PARENT_DEV_PATH" 2>/dev/null | nawk -F'=' -v type="$PH_j" 'BEGIN { flag = 0 ; conn="" ; if (type~/^PS4$/) { string = "\"(Sony Interactive Entertainment )*Wireless Controller\"$" }
-				else { if (type~/^PS4A$/) { string="\"Sony Interactive Entertainment DUALSHOCK.*4 USB Wireless Adaptor\"$" }
-				else { if (type~/^PS3$/) { string="\".*PLAYSTATION\(R\)3 Controller\"$" }
-				else { if (type~/^XBOX360$/) { string="\"Microsoft X-Box 360 pad\"$" }}}}}
-				$2 ~ string { flag = 1 ; next }
-				$1 ~ "^.: ID_BUS$" { if (type~/^PS4A/) { conn = "sonywadapt" } else { conn = $2 } ; next }
-				{ next }
-				END { if (flag==1) { print conn }}' 2>/dev/null)"
+		PH_CTRL_CONN="$(udevadm info -q all --path "$PH_PARENT_DEV_PATH" 2>/dev/null | nawk -F'=' -v type="$PH_j" 'BEGIN { \
+				flag = 0 ; \
+				conn="" ; \
+				if (type ~ /^PS4$/) { \
+					string = "\"(Sony Interactive Entertainment )*Wireless Controller\"$" \
+				} elif (type ~ /^PS4A$/) { \
+					string="\"Sony Interactive Entertainment DUALSHOCK.*4 USB Wireless Adaptor\"$" \
+				} elif (type ~ /^PS3$/) { \
+					string="\".*PLAYSTATION\(R\)3 Controller\"$" \
+				} elif (type ~ /^XBOX360$/) { \
+					string="\"Microsoft X-Box 360 pad\"$" \
+				} \
+			} \
+			$2 ~ string { \
+				flag = 1 ; \
+				next \
+			} \
+			$1 ~ "^.: ID_BUS$" { \
+				if (type ~ /^PS4A/) { \
+					conn = "sonywadapt" \
+				} else { \
+					conn = $2 \
+				} ; \
+				next \
+			} { \
+				next \
+			} END { \
+				if (flag == "1") { \
+					print conn \
+				} \
+			}' 2>/dev/null)"
 		if [[ -n "$PH_CTRL_CONN" ]]
 		then
 			PH_CTRL_CLI_ID="${PH_i##*event}"
-			declare -n PH_CONN="PH_CTRL_CONN""$PH_CTRL_CLI_ID"
-			declare -n PH_CLI_ID="PH_CTRL_CLI_ID""$PH_CTRL_CLI_ID"
+			declare -n PH_CONN="PH_CTRL_CONN${PH_CTRL_CLI_ID}"
+			declare -n PH_CLI_ID="PH_CTRL_CLI_ID${PH_CTRL_CLI_ID}"
 			PH_CONN="$PH_CTRL_CONN"
 			PH_CLI_ID="$PH_CTRL_CLI_ID"
-			printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_CTRL_TYPE:$PH_CONN:id $PH_CLI_ID')"
-			[[ "$PH_j" == "PS4" ]] && PH_PRINT_FLAG="1"
-			echo "$PH_CLI_ID" >>"$PH_CONF_DIR"/controller_cli_ids 2>/dev/null
+			printf "%10s\033[32m%s\033[0m\n" "" "OK '${PH_CTRL_TYPE}:${PH_CONN}:id ${PH_CLI_ID}'"
+			[[ "$PH_j" == "PS4" ]] && \
+				PH_PRINT_FLAG="1"
+			echo "$PH_CLI_ID" >>"${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null
 			unset -n PH_CLI_ID PH_CONN
 		else
-			[[ "$PH_j" != "PS4" && "$PH_PRINT_FLAG" -eq "0" ]] && printf "%10s\033[32m%s\033[0m\n" "" "OK (Not a '$PH_CTRL_TYPE' controller)"
+			[[ "$PH_j" != "PS4" && "$PH_PRINT_FLAG" -eq "0" ]] && \
+				printf "%10s\033[32m%s\033[0m\n" "" "OK (Not a '${PH_CTRL_TYPE}' controller)"
 		fi
 	done
 done
-printf "%8s%s\n" "" "--> Verifying '$PH_CTRL_TYPE' controller count"
-if [[ "$(cat "$PH_CONF_DIR"/controller_cli_ids 2>/dev/null | wc -l)" -eq "$PH_NUM_CTRL" ]]
+printf "%8s%s\n" "" "--> Verifying '${PH_CTRL_TYPE}' controller count"
+if [[ "$(cat "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null | wc -l)" -eq "$PH_NUM_CTRL" ]]
 then
         printf "%10s\033[32m%s\033[0m\n" "" "OK"
 else
-        [[ "$(cat "$PH_CONF_DIR"/controller_cli_ids 2>/dev/null | wc -l)" -lt "$PH_NUM_CTRL" ]] && \
-                printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Insufficient number of '$PH_CTRL_TYPE' controllers connected (`cat \"$PH_CONF_DIR\"/controller_cli_ids 2>/dev/null | wc -l`<->'\"$PH_NUM_CTRL\"' requested)" && return 1
-        declare -n PH_CONN=PH_CTRL_CONN"$(sed -n '1p' "$PH_CONF_DIR"/controller_cli_ids 2>/dev/null)"
-        declare -n PH_CLI_ID=PH_CTRL_CLI_ID"$(sed -n '1p' "$PH_CONF_DIR"/controller_cli_ids 2>/dev/null)"
-        printf "%10s\033[33m%s\033[0m" "" "Warning : Greater number of '$PH_CTRL_TYPE' controllers connected than requested (`cat \"$PH_CONF_DIR\"/controller_cli_ids 2>/dev/null | wc -l`<->'\"$PH_NUM_CTRL\"' requested) -> Using '$PH_CONN:CLI id $PH_CLI_ID'"
+        if [[ "$(cat "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null | wc -l)" -lt "$PH_NUM_CTRL" ]]
+	then
+                printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Insufficient number of '${PH_CTRL_TYPE}' controllers connected ($(cat "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null | wc -l)<->${PH_NUM_CTRL} requested)"
+		return 1
+	fi
+        declare -n PH_CONN="PH_CTRL_CONN$(sed -n '1p' "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null)"
+        declare -n PH_CLI_ID="PH_CTRL_CLI_ID$(sed -n '1p' "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null)"
+        printf "%10s\033[33m%s\033[0m" "" "Warning : Greater number of '${PH_CTRL_TYPE}' controllers connected than requested ($(cat "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null | wc -l)<->${PH_NUM_CTRL} requested) -> Using '${PH_CONN}:CLI id ${PH_CLI_ID}'"
         if [[ "$PH_NUM_CTRL" -ne "1" ]]
         then
 		for ((PH_i=2;PH_i<="${PH_NUM_CTRL}";PH_i++))
                 do
-                        [[ "$PH_i" -le "$PH_NUM_CTRL" ]] && printf "\033[33m%s\033[0m" ' &&'
-                        printf "\033[33m%s\033[0m" " '$(eval echo -n \"\$PH_CTRL_CONN$PH_i\"):CLI id $(eval echo -n \"\$PH_CTRL_CLI_ID$PH_i\")'"
+                        if [[ "$PH_i" -le "$PH_NUM_CTRL" ]]
+			then
+				printf "\033[33m%s\033[0m" " &&"
+                        	printf "\033[33m%s\033[0m" " '$(eval "echo -n \"\$PH_CTRL_CONN${PH_i}\""):CLI id $(eval "echo -n \"\$PH_CTRL_CLI_ID${PH_i}\"")'"
+			fi
                 done
         fi
-        echo ''
+        echo ""
 	unset -n PH_CONN PH_CLI_ID
 fi
-[[ "$PH_NUM_CTRL" -ge "2" ]] && (printf "%8s%s\n" "" "--> Growing udev event queue for multiple controller usage" ; \
-		"$PH_SUDO" udevadm control --children-max 500 2>/dev/null ; printf "%10s\033[32m%s\033[0m\n" "" "OK")
+if [[ "$PH_NUM_CTRL" -ge "2" ]]
+then
+	printf "%8s%s\n" "" "--> Growing udev event queue for multiple controller usage"
+	"$PH_SUDO" udevadm control --children-max 500 2>/dev/null
+	printf "%10s\033[32m%s\033[0m\n" "" "OK"
+fi
 if [[ "$PH_MAP" == "yes" ]]
 then
-	ph_cleanup_controllers unmap || return 1
+	ph_cleanup_controllers unmap || \
+		return 1
 	printf "%8s%s\n" "" "--> Starting 'xboxdrv' instance with virtual 'XBOX360' controller mapping"
 	for ((PH_CTRL_ID=1;PH_CTRL_ID<="${PH_NUM_CTRL}";PH_CTRL_ID++))
 	do
-		declare -n PH_CLI_ID=PH_CTRL_CLI_ID"$(sed -n ''"$PH_CTRL_CLI_ID"'p' "$PH_CONF_DIR"/controller_cli_ids 2>/dev/null)"
-		declare -n PH_CONN=PH_CTRL_CONN"$(sed -n ''"$PH_CTRL_CLI_ID"'p' "$PH_CONF_DIR"/controller_cli_ids 2>/dev/null)"
-		case "$PH_CTRL_TYPE"_"$PH_CONN" in PS4_bluetooth)
+		declare -n PH_CLI_ID="PH_CTRL_CLI_ID$(sed -n "${PH_CTRL_CLI_ID}p" "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null)"
+		declare -n PH_CONN="PH_CTRL_CONN$(sed -n "${PH_CTRL_CLI_ID}p" "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null)"
+		case "${PH_CTRL_TYPE}_${PH_CONN}" in PS4_bluetooth)
 			("$PH_SUDO" nice --adjustment="-9" "$(command -v xboxdrv 2>/dev/null)" \
-				--evdev /dev/input/event"$PH_CLI_ID" \
+				--evdev "/dev/input/event${PH_CLI_ID}" \
 				--evdev-absmap ABS_X=x1,ABS_Y=y1 \
 				--evdev-absmap ABS_Z=x2,ABS_RZ=y2 \
 				--evdev-absmap ABS_RX=lt,ABS_RY=rt \
@@ -3071,13 +3223,16 @@ then
 				--evdev-keymap KEY_#305=a,BTN_C=b,KEY_#304=x,KEY_#307=y \
 				--evdev-keymap BTN_TL2=back,BTN_MODE=guide,BTN_TR2=start \
 				--axismap -y1=y1,-y2=y2 \
-				--pid-file /tmp/xboxdrv"$PH_CTRL_CLI_ID"".pid" --silent --detach-kernel-driver --mimic-xpad &) >/dev/null 2>&1
-			cat /tmp/xboxdrv"$PH_CTRL_CLI_ID"".pid" >/dev/null 2>&1 && printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not start instance" && >"$PH_CONF_DIR"/controller_cli_ids && return 1
-			echo "$((PH_EVDEVS+"$((PH_CTRL_CLI_ID-1))"))" >>"$PH_CONF_DIR"/controller_cli_ids  2>/dev/null ;;
+				--pid-file "/tmp/xboxdrv${PH_CTRL_CLI_ID}.pid" --silent --detach-kernel-driver --mimic-xpad &) >/dev/null 2>&1
+			cat "/tmp/xboxdrv${PH_CTRL_CLI_ID}.pid" >/dev/null 2>&1 && \
+				printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not start instance" && \
+				>"${PH_CONF_DIR}/controller_cli_ids" && \
+				return 1
+			echo "$((PH_EVDEVS+"$((PH_CTRL_CLI_ID-1))"))" >>"${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null ;;
 ## correct button mappings for the three cases below
 		   			   	 PS3_bluetooth)
 			("$PH_SUDO" nice --adjustment="-9" "$(command -v xboxdrv 2>/dev/null)" \
-				--evdev /dev/input/event"$PH_CLI_ID" \
+				--evdev "/dev/input/event${PH_CLI_ID}" \
 				--evdev-absmap ABS_X=x1,ABS_Y=y1 \
 				--evdev-absmap ABS_Z=x2,ABS_RZ=y2 \
 				--evdev-absmap ABS_RX=lt,ABS_RY=rt \
@@ -3087,12 +3242,15 @@ then
 				--evdev-keymap KEY_#305=a,BTN_C=b,KEY_#304=x,KEY_#307=y \
 				--evdev-keymap BTN_TL2=back,BTN_MODE=guide,BTN_TR2=start \
 				--axismap -y1=y1,-y2=y2 \
-				--pid-file /tmp/xboxdrv"$PH_CTRL_CLI_ID"".pid" --silent --detach-kernel-driver --mimic-xpad &) >/dev/null 2>&1
-			cat /tmp/xboxdrv"$PH_CTRL_CLI_ID"".pid" >/dev/null 2>&1 && printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not start instance" && >"$PH_CONF_DIR"/controller_cli_ids && return 1
-			echo "$((PH_EVDEVS+"$((PH_CTRL_CLI_ID-1))"))" >>"$PH_CONF_DIR"/controller_cli_ids 2>/dev/null ;;
+				--pid-file "/tmp/xboxdrv${PH_CTRL_CLI_ID}.pid" --silent --detach-kernel-driver --mimic-xpad &) >/dev/null 2>&1
+			cat "/tmp/xboxdrv${PH_CTRL_CLI_ID}.pid" >/dev/null 2>&1 && \
+				printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not start instance" && \
+				>"${PH_CONF_DIR}/controller_cli_ids" && \
+				return 1
+			echo "$((PH_EVDEVS+"$((PH_CTRL_CLI_ID-1))"))" >>"${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null ;;
 			   			       PS3_usb)
 			("$PH_SUDO" nice --adjustment="-9" "$(command -v xboxdrv 2>/dev/null)" \
-				--evdev /dev/input/event"$PH_CLI_ID" \
+				--evdev "/dev/input/event${PH_CLI_ID}" \
 				--evdev-absmap ABS_X=x1,ABS_Y=y1 \
 				--evdev-absmap ABS_Z=x2,ABS_RZ=y2 \
 				--evdev-absmap ABS_RX=lt,ABS_RY=rt \
@@ -3102,12 +3260,15 @@ then
 				--evdev-keymap KEY_#305=a,BTN_C=b,KEY_#304=x,KEY_#307=y \
 				--evdev-keymap BTN_TL2=back,BTN_MODE=guide,BTN_TR2=start \
 				--axismap -y1=y1,-y2=y2 \
-				--pid-file /tmp/xboxdrv"$PH_CTRL_CLI_ID"".pid" --silent --detach-kernel-driver --mimic-xpad &) >/dev/null 2>&1
-			cat /tmp/xboxdrv"$PH_CTRL_CLI_ID"".pid" >/dev/null 2>&1 && printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not start instance" && >"$PH_CONF_DIR"/controller_cli_ids && return 1
-			echo "$((PH_EVDEVS+"$((PH_CTRL_CLI_ID-1))"))" >>"$PH_CONF_DIR"/controller_cli_ids 2>/dev/null ;;
+				--pid-file "/tmp/xboxdrv${PH_CTRL_CLI_ID}.pid" --silent --detach-kernel-driver --mimic-xpad &) >/dev/null 2>&1
+			cat "/tmp/xboxdrv${PH_CTRL_CLI_ID}.pid" >/dev/null 2>&1 && \
+				printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not start instance" && \
+				>"${PH_CONF_DIR}/controller_cli_ids" && \
+				return 1
+			echo "$((PH_EVDEVS+"$((PH_CTRL_CLI_ID-1))"))" >>"${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null ;;
 				         		     *)
 			("$PH_SUDO" nice --adjustment="-9" "$(command -v xboxdrv 2>/dev/null)" \
-				--evdev /dev/input/event"$PH_CLI_ID" \
+				--evdev "/dev/input/event${PH_CLI_ID}" \
 				--evdev-absmap ABS_X=x1,ABS_Y=y1 \
 				--evdev-absmap ABS_Z=x2,ABS_RZ=y2 \
 				--evdev-absmap ABS_RX=lt,ABS_RY=rt \
@@ -3117,62 +3278,104 @@ then
 				--evdev-keymap KEY_#305=a,BTN_C=b,KEY_#304=x,KEY_#307=y \
 				--evdev-keymap BTN_TL2=back,BTN_MODE=guide,BTN_TR2=start \
 				--axismap -y1=y1,-y2=y2 \
-				--pid-file /tmp/xboxdrv"$PH_CTRL_CLI_ID"".pid" --silent --detach-kernel-driver --mimic-xpad &) >/dev/null 2>&1
-			cat /tmp/xboxdrv"$PH_CTRL_CLI_ID"".pid" >/dev/null 2>&1 && printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not start instance" && >"$PH_CONF_DIR"/controller_cli_ids && return 1
-			echo "$((PH_EVDEVS+"$((PH_CTRL_CLI_ID-1))"))" >>"$PH_CONF_DIR"/controller_cli_ids 2>/dev/null ;; 
+				--pid-file "/tmp/xboxdrv${PH_CTRL_CLI_ID}.pid" --silent --detach-kernel-driver --mimic-xpad &) >/dev/null 2>&1
+			cat "/tmp/xboxdrv${PH_CTRL_CLI_ID}.pid" >/dev/null 2>&1 && \
+				printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not start instance" && \
+				>"${PH_CONF_DIR}/controller_cli_ids" && \
+				return 1
+			echo "$((PH_EVDEVS+"$((PH_CTRL_CLI_ID-1))"))" >>"${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null ;; 
 		esac
 		unset -n PH_CLI_ID PH_CONN
 	done
 	printf "%10s\033[32m%s\033[0m\n" "" "OK"
 fi
-for PH_i in $(cat "$PH_CONF_DIR"/controller_cli_ids 2>/dev/null | paste -d" " -s)
+for PH_i in $(cat "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null | paste -d" " -s)
 do
-	[[ "$PH_i" -lt "$PH_EVDEVS" ]] && unset -n PH_CTRL_CONN"$PH_i" PH_CTRL_CLI_ID"$PH_i"
+	[[ "$PH_i" -lt "$PH_EVDEVS" ]] && \
+		unset -n "PH_CTRL_CONN${PH_i}" "PH_CTRL_CLI_ID${PH_i}"
 done
 return 0
 }
 
 function ph_get_controller_cli_id {
 
-declare PH_CTRL_CLI_ID=""
+declare PH_CTRL_CLI_ID
+declare -i PH_CTRL_CLI_ID_LINE
 
-PH_CTRL_CLI_ID="$(sed -n ''"$1"'p' "$PH_CONF_DIR"/controller_cli_ids 2>/dev/null)"
-[[ -z "$PH_CTRL_CLI_ID" ]] && return 1
-echo -n "$PH_CTRL_CLI_ID"
+PH_CTRL_CLI_ID=""
+PH_CTRL_CLI_ID_LINE="$1"
+
+[[ "$PH_CTRL_CLI_ID_LINE" -eq "0" || "$#" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+if PH_CTRL_CLI_ID="$(sed -n "${PH_CTRL_ID_LINE}p" "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null)"
+then
+	echo -n "$PH_CTRL_CLI_ID"
+else
+	return 1
+fi
 return 0
 }
 
 function ph_cleanup_controllers {
 
-declare -i PH_RET_CODE="0"
+declare PH_XBOXDRV_PID
+declare PH_XBOXDRV_PID_FILE
+declare -i PH_CTRL_ID_COUNT
 
-if [[ "$1" == @(reset|full) ]]
-then
-	if [[ "$(cat "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null | wc -l)" -gt "0" ]]
+PH_XBOXDRV_PID_FILE="$("$PH_SUDO" ls -lt /tmp/xboxdrv*.pid 2>/dev/null | nawk '{ \
+		printf substr($NF,5) ; \
+		exit \
+	}')"
+PH_XBOXDRV_PID="$(cat "$PH_XBOXDRV_PID_FILE" 2>/dev/null)"
+PH_CTRL_ID_COUNT="$(cat "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null | wc -l)"
+
+[[ "$#" -ne "0" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+while true
+do
+	if [[ "$1" == @(reset|full) ]]
 	then
-		printf "%8s%s\n" "" "--> Resetting controller CLI ids"
-		>"${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null
-		printf "%10s\033[32m%s\033[0m\n" "" "OK"
+		if [[ "$PH_CTRL_ID_COUNT" -gt "0" ]]
+		then
+			printf "%8s%s\n" "" "--> Resetting controller CLI ids"
+			if ph_run_with_rollback -c "ph_store_file -f '${PH_CONF_DIR}/controller_cli_ids'"
+			then
+				if ph_run_with_rollback -c "ph_create_empty_file -q -t file -d '${PH_CONF_DIR}/controller_cli_ids'"
+				then
+					ph_run_with_rollback -c true
+					break
+				fi
+			fi
+			ph_run_with_rollback -c false -m "Could not reset" || \
+				return 1
+		fi
 	fi
-fi
+done
 if [[ "$1" == @(unmap|full) ]]
 then
 	if pgrep xboxdrv >/dev/null 2>&1
 	then
 		printf "%8s%s\n" "" "--> Stopping 'xboxdrv' instance(s)"
-		"$PH_SUDO" pkill -9 xboxdrv >/dev/null 2>&1
-		if [[ "$?" -eq "0" ]]
+		if "$PH_SUDO" kill -9 "${PH_XBOXDRV_PID}" >/dev/null 2>&1
 		then
-			"$PH_SUDO" rm /tmp/xboxdrv*.pid >/dev/null 2>&1
-			printf "%10s\033[32m%s\033[0m\n" "" "OK"
-			sleep 1
+			if "$PH_SUDO" rm "${PH_XBOXDRV_PID_FILE}" >/dev/null 2>&1
+			then
+				ph_run_with_rollback -c true
+				sleep 1
+				return 0
+			else
+				ph_set_result -m "An error occurred trying to remove 'xboxdrv' PID file '${PH_XBOXDRV_PID_FILE}'"
+			fi
 		else
-			printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Could not stop instance(s) -> A reboot is required"
-			PH_RET_CODE="1"
+			ph_set_result -m "An error occurred trying kill 'xboxdrv' process '${PH_XBOXDRV_PID}'"
 		fi
+		ph_run_with_rollback -c false -m "Could not stop"
+			return 1
 	fi
 fi
-return "$PH_RET_CODE"
+return 0
 }
 
 function ph_get_app_pkg_from_app_name {
@@ -3182,13 +3385,13 @@ declare -u PH_APPU
 declare -n PH_APP_PKG
 
 PH_APP="$1"
+PH_APPU="${PH_APP:0:4}"
+PH_APP_PKG="PH_${PH_APPU}_PKG_NAME"
 
 [[ -z "$PH_APP" || "$#" -ne "1" ]] && \
 	unset -n PH_APP_PKG && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-PH_APPU="${PH_APP:0:4}"
-PH_APP_PKG="PH_${PH_APPU}_PKG_NAME"
 echo -n "$PH_APP_PKG"
 unset -n PH_APP_PKG
 return 0
@@ -3196,19 +3399,33 @@ return 0
 
 function ph_check_app_state_validity {
 
-declare PH_OPTION=""
-declare PH_APP=""
-declare PH_APP_CMD=""
-declare PH_i=""
-declare PH_APP_TYPE=""
-declare PH_APP_STATE="Unknown"
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
-declare -i PH_APP_TTY="0"
-declare -i PH_QUIESCE="1"
-declare -i PH_FORCE_PRINT_FLAG="1"
-declare -i PH_RET_CODE="0"
-declare -l PH_APPL=""
+declare PH_i
+declare PH_APP
+declare PH_APP_CMD
+declare PH_APP_STR_TTY
+declare PH_APP_TYPE
+declare PH_APP_STATE
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+declare -i PH_QUIESCE
+declare -i PH_FORCE_PRINT_FLAG
+declare -i PH_RET_CODE
+declare -l PH_APPL
+
+PH_OLDOPTARG="$OPTARG"
+PH_OLDOPTIND="$OPTIND"
+PH_i=""
+PH_APP=""
+PH_APP_CMD=""
+PH_APP_STR_TTY=""
+PH_APP_TYPE=""
+PH_APP_STATE="Unknown"
+PH_OPTION=""
+PH_QUIESCE="1"
+PH_FORCE_PRINT_FLAG="1"
+PH_RET_CODE="0"
+PH_APPL=""
 
 OPTIND="1"
 
@@ -3284,7 +3501,9 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_APP" || -z "$PH_APP_TYPE" || "$#" -lt "3" ]] && \
+[[ -z "$PH_APP" || -z "$PH_APP_TYPE" || ( "$#" -gt "3" && "$PH_QUIESCE" -eq "1" && "$PH_FORCE_PRINT_FLAG" -eq "1" ) || \
+	( "$#" -gt "4" && (( "$PH_QUIESCE" -eq "0" && "$PH_FORCE_PRINT_FLAG" -eq "1" ) || \
+	( "$PH_QUIESCE" -eq "1" && "$PH_FORCE_PRINT_FLAG" -eq "0" ))) || "$#" -gt "5" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 [[ "$PH_QUIESCE" -eq "1" ]] && \
@@ -3310,24 +3529,23 @@ case "$PH_APP_TYPE" in Default)
 		PH_APP_STATE="Supported"
 		if cut -f1 "${PH_CONF_DIR}/integrated_apps" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
 		then
-			PH_APP_STATE="Integrated"
-			if nawk -v app="^${PH_APP}$" '$1 ~ app && $3 !~ /^-$/ {
-					printf $1
-				}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
+			PH_APP_STR_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
+			if [[ "$PH_APP_STR_TTY" == "-" ]]
 			then
+				PH_APP_STATE="Integrated"
+			else
 				PH_APP_STATE="Halted"
-				PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
 				PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
 				if [[ "$PH_APP" == "Bash" ]]
 				then
 					PH_APP_CMD="bash"
-					if [[ -n "$(ps --ppid "$(pgrep -t "tty${PH_APP_TTY}" -f "$PH_APP_CMD" 2>/dev/null)" 2>/dev/null | tail -n +2)" ]]
+					if [[ -n "$(ps --ppid "$(pgrep -t "tty${PH_APP_STR_TTY}" -f "$PH_APP_CMD" 2>/dev/null)" 2>/dev/null | tail -n +2)" ]]
 					then
 						PH_APP_STATE="Running"
 					fi
 				else
-					PH_APP_CMD="${PH_APP_CMD//#PH_TTY#/${PH_APP_TTY}}(sed "s/#PH_TTY#/""$PH_APP_TTY""/g" <<<"$PH_APP_CMD")"
-					if pgrep -t "tty${PH_APP_TTY}" -f "$PH_APP_CMD" >/dev/null 2>&1
+					PH_APP_CMD="${PH_APP_CMD//#PH_TTY#/${PH_APP_STR_TTY}}"
+					if pgrep -t "tty${PH_APP_STR_TTY}" -f "$PH_APP_CMD" >/dev/null 2>&1
 					then
 						PH_APP_STATE="Running"
 					else
@@ -3401,27 +3619,36 @@ return "$PH_RET_CODE"
 
 function ph_move_app {
 
-declare PH_OPTION=""
-declare PH_APP=""
-declare PH_APP_USER=""
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
-declare -i PH_APP_TTY="0"
-declare -i PH_APP_NEW_TTY="0"
-declare -i PH_BOOT_TTY_FLAG="1"
+declare PH_APP
+declare PH_APP_USER
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+declare -i PH_APP_TTY
+declare -i PH_APP_NEW_TTY
+declare -i PH_BOOT_TTY_FLAG
+
+PH_OLDOPTARG="$OPTARG"
+PH_OLDOPTIND="$OPTIND"
+PH_APP=""
+PH_APP_USER=""
+PH_OPTION=""
+PH_APP_TTY="0"
+PH_APP_NEW_TTY="0"
+PH_BOOT_TTY_FLAG="1"
 
 OPTIND="1"
 
 while getopts t:a: PH_OPTION 2>/dev/null
 do
         case "$PH_OPTION" in a)
-		[[ -n "$PH_APP" ]] && \
+		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
                 PH_APP="$OPTARG" ;;
                              t)
-		[[ "$PH_APP_NEW_TTY" -gt "0" ]] && \
+		[[ "$PH_APP_NEW_TTY" -gt "0" || "$OPTARG" -le "1" || "$OPTARG" -gt "$PH_PIEH_MAX_TTYS" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -3446,7 +3673,7 @@ ph_run_with_rollback -c "ph_undo_setup_tty -a '${PH_APP}' -t '${PH_APP_TTY}' -u 
 	return 1
 ph_run_with_rollback -c "ph_setup_tty -a '${PH_APP}' -t '${PH_APP_NEW_TTY}' -u '${PH_APP_USER}'" || \
 	return 1
-if [[ "$PH_BOOT_TTY_FLAG" -eq "0" ]]
+if [[ ]]
 then
 	ph_run_with_rollback -c "ph_set_tty_for_boot '${PH_APP_NEW_TTY}'" || \
 		return 1
@@ -3456,12 +3683,15 @@ return 0
 
 function ph_set_tty_for_boot {
 
-declare PH_i=""
-declare -i PH_APP_TTY="$1"
-declare -i PH_CUR_TTY="0"
-declare -i PH_RET_CODE="0"
+declare PH_i
+declare -i PH_APP_TTY
+declare -i PH_CUR_TTY
 
-[[ "$PH_APP_TTY" -eq "1" || "$#" -ne "1" ]] && \
+PH_i=""
+PH_APP_TTY="$1"
+PH_CUR_TTY="0"
+
+[[ "$PH_APP_TTY" -eq "1" || "$PH_APP_TTY" -gt "$PH_PIEH_MAX_TTYS" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 if [[ ! -f /etc/systemd/system/getty@tty1.service.d/autostart.conf ]]
@@ -3473,7 +3703,7 @@ then
 	then
 		if ph_run_with_rollback -c "ph_create_empty_file -r -q -t file -d '/etc/systemd/system/getty@tty1.service.d/autostart.conf'"
 		then
-			for PH_i in '[Service]' 'ExecStart=' 'ExecStart=-/sbin/agetty --noclear tty1 $TERM' "ExecStartPost=+/bin/chvt ${PH_APP_TTY}" 'TTYVTDisallocate=no' 'TTYReset=no' 'TTYVHangup=no'
+			for PH_i in '[Service]' 'ExecStart=' 'ExecStart=-/sbin/agetty --noclear tty1 ${TERM}' "ExecStartPost=+/bin/chvt ${PH_APP_TTY}" 'TTYVTDisallocate=no' 'TTYReset=no' 'TTYVHangup=no'
 			do
 				if ! ph_run_with_rollback -c "ph_add_line_to_file -r -l '${PH_i}' -f '/etc/systemd/system/getty@tty1.service.d/autostart.conf'"
 				then
@@ -3483,18 +3713,13 @@ then
 			done
         		if "$PH_SUDO" chmod 644 /etc/systemd/system/getty@tty1.service.d/autostart.conf 2>/dev/null
 			then
-        			if "$PH_SUDO" chown root:root /etc/systemd/system/getty@tty1.service.d/autostart.conf 2>/dev/null
+				if "$PH_SUDO" systemctl daemon-reload >/dev/null 2>&1
 				then
-					if "$PH_SUDO" systemctl daemon-reload >/dev/null 2>&1
-					then
-						ph_add_value_to_param -p PH_SET_BOOT_TTYS -v "$PH_APP_TTY"
-						ph_run_with_rollback -c true && \
-							return "$?"
-					else
-						ph_set_result -m "Could not reload systemd configuration"
-					fi
+					ph_add_value_to_param -p PH_SET_BOOT_TTYS -v "$PH_APP_TTY"
+					ph_run_with_rollback -c true && \
+						return "$?"
 				else
-					ph_set_result -m "Could not set ownership of file '/etc/systemd/system/getty@tty1.service.d/autostart.conf' to 'root:root'"
+					ph_set_result -m "Could not reload systemd configuration"
 				fi
 			else
 				ph_set_result -m "Could not set permissions of file '/etc/systemd/system/getty@tty1.service.d/autostart.conf' to '644'"
@@ -3508,7 +3733,7 @@ else
 		}' /etc/systemd/system/getty@tty1.service.d/autostart.conf 2>/dev/null)"
 	[[ "$PH_CUR_TTY" -eq "$PH_APP_TTY" ]] && \
 		return 0
-	printf "%8s%s\n" "" "--> Removing StartApp configuration for 'TTY${PH_CUR_TTY}'"
+	printf "%8s%s\033[32m%s\033[0m\n" "" "--> Removing StartApp configuration for " "'tty${PH_CUR_TTY}'"
 	if ph_run_with_rollback -c "ph_store_file -r -f '/etc/systemd/system/getty@tty1.service.d/autostart.conf'"
 	then
 		if "$PH_SUDO" systemctl daemon-reload >/dev/null 2>&1
@@ -4781,7 +5006,7 @@ PH_i=""
 PH_TTYS="$*"
 PH_APP_TTY="0"
 
-for PH_i in "$PH_TTYS"
+for PH_i in ${PH_TTYS}
 do
 	[[ "$PH_i" != +([[:digit:]]) ]] && \
 		ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
@@ -7555,7 +7780,7 @@ case "$PH_COUNT" in 0)
 			ph_run_with_rollback -c true -m "Nothing to do" && \
 				return "$?"
 		else
-			ph_update_base_conf_file -a '${PH_APP}' -f sup ${PH_PARAMS} || \
+			ph_update_base_conf_file -a '${PH_APP}' -q -f sup ${PH_PARAMS} || \
 				return 1
 		fi ;;
 		    *)
@@ -7580,6 +7805,7 @@ declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 declare -i PH_VAL_COLUMN
 declare -i PH_INDEX
+declare -i PH_QUIESCE
 declare -a PH_VAL_VALUES
 declare -a PH_VAL_COLUMNS
 
@@ -7595,10 +7821,11 @@ PH_FILE=""
 PH_OPTION=""
 PH_VAL_COLUMN="0"
 PH_INDEX="0"
+PH_QUIESCE="1"
 
 OPTIND="1"
 
-while getopts a:f:c:v: PH_OPTION 2>/dev/null
+while getopts a:f:c:v:q PH_OPTION 2>/dev/null
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -7618,6 +7845,13 @@ do
                 PH_VAL_COLUMNS+="$OPTARG" ;;
                              v)
                 PH_VAL_VALUES+="$OPTARG" ;;
+                             q)
+		[[ "$PH_QUIESCE" -eq "0" ]] && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			unset PH_VAL_VALUES PH_VAL_COLUMNS && \
+			return 1
+		PH_QUIESCE="0" ;;
                              *)
 		OPTIND="$PH_OLDOPTIND"
 		OPTARG="$PH_OLDOPTARG"
@@ -7628,9 +7862,9 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_APP" || -z "$PH_FILE" || "${#PH_VAL_VALUES[@]}" -eq "0" || "${#PH_VAL_COLUMNS[@]}" -ne "${#PH_VAL_VALUES[@]}" || \
-	( "$PH_FILE" == "int" && "${#PH_VAL_VALUES[@]}" -ne "1" ) || \
-	( "$PH_FILE" == "sup" && ( "${#PH_VAL_VALUES[@]}" -lt "1" || "${#PH_VAL_VALUES[@]}" -gt "3" )) ]] && \
+[[ -z "$PH_APP" || -z "$PH_FILE" || "$#" -lt "6" || "${#PH_VAL_VALUES[@]}" -eq "0" || "${#PH_VAL_COLUMNS[@]}" -ne "${#PH_VAL_VALUES[@]}" || \
+	( "$PH_FILE" == "int" && ( "${#PH_VAL_VALUES[@]}" -ne "1" || "$#" -gt "7" )) || \
+	( "$PH_FILE" == "sup" && ( "$#" -gt "11" || ( "${#PH_VAL_VALUES[@]}" -lt "1" || "${#PH_VAL_VALUES[@]}" -gt "3" ))) ]] && \
 	unset PH_VAL_VALUES PH_VAL_COLUMNS && \
 	return 1
 
@@ -7643,7 +7877,8 @@ then
 else
 	PH_APP_STR_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
 fi
-printf "%8s%s\n" "" "--> Updating information for ${PH_APP} in configuration file '${PH_CONF_DIR}/${PH_FILE}'"
+[[ "$PH_QUIESCE" -eq "1" ]] && \
+	printf "%8s%s\n" "" "--> Updating information for ${PH_APP} in configuration file '${PH_CONF_DIR}/${PH_FILE}'"
 while true
 do
 	if [[ "$PH_FILE" == "supported_apps" ]]
@@ -7662,6 +7897,7 @@ do
 					PH_APP_CMD="$PH_VAL_VALUE" ;;
 				esac
 			done
+			unset PH_VAL_VALUES PH_VAL_COLUMNS
 			if ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/${PH_FILE}' -l '${PH_APP}\\t${PH_APP_USER}\\t${PH_APP_INST_STATE}\\t${PH_APP_CMD}'"
 			then
 				break
@@ -7671,6 +7907,7 @@ do
 		if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/${PH_FILE}' -l '${PH_APP}\t${PH_APP_STR_TTY}'"
 		then
 			PH_APP_STR_TTY="${PH_VAL_VALUES[0]}"
+			unset PH_VAL_VALUES PH_VAL_COLUMNS
 			if ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/${PH_FILE}' -l '${PH_APP}\\t${PH_APP_STR_TTY}'"
 			then
 				break
@@ -7678,12 +7915,12 @@ do
 		fi
 	fi
 	unset PH_VAL_VALUES PH_VAL_COLUMNS
-	ph_run_with_rollback -c false -m "Could not update" || \
-		return 1
+	[[ "$PH_QUIESCE" -eq "1" ]] && \
+		ph_run_with_rollback -c false -m "Could not update"
+	return 1
 done
-unset PH_VAL_VALUES PH_VAL_COLUMNS
-ph_run_with_rollback -c true && \
-	return "$?"
+[[ "$PH_QUIESCE" -eq "1" ]] && \
+	ph_run_with_rollback -c true
 return 0
 }
 
@@ -7760,7 +7997,7 @@ case "$PH_COUNT" in 0)
 			ph_run_with_rollback -c true -m "Nothing to do" && \
 				return "$?"
 		else
-			ph_update_base_conf_file -a '${PH_APP}' -c 2 -f int -v '${PH_APP_STR_TTY}' || \
+			ph_update_base_conf_file -a '${PH_APP}' -q -f int -c 2 -v '${PH_APP_STR_TTY}' || \
 				return 1
 		fi ;;
 		    *)
@@ -8521,31 +8758,33 @@ OPTARG="$PH_OLDOPTARG"
 [[ -z "$PH_APP_USER" ]] && \
 	PH_APP_USER="$(ph_get_app_user_from_app_name "$PH_APP")"
 printf "%8s%s\033[32m%s\033[0m\n" "" "--> Deallocating " "'tty${PH_APP_TTY}'"
-if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/integrated_apps' -l '${PH_APP}\t${PH_APP_USER}\t${PH_APP_TTY}'"
+if ph_update_base_conf_file -a "$PH_APP" -q -f int -c 2 -v "-"
 then
-	if ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/integrated_apps' -l '${PH_APP}\\t${PH_APP_USER}\\t-'"
+	ph_run_with_rollback -c true
+	printf "%8s%s\033[32m%s\033[0m\n" "" "--> Removing ${PH_APP} LoginScript " "'/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh'"
+	if ph_run_with_rollback -c "ph_store_file -r -f '/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh'"
 	then
 		ph_run_with_rollback -c true
-		printf "%8s%s\033[32m%s\033[0m\n" "" "--> Removing ${PH_APP} LoginScript " "'/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh'"
-		if ph_run_with_rollback -c "ph_store_file -r -f '/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh'"
+		printf "%8s%s\033[32m%s\033[0m\n" "" "--> Removing ${PH_APP} autologin configuration " "'/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/autologin.conf'"
+		if ph_run_with_rollback -c "ph_store_file -r -f '/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/autologin.conf'"
 		then
-			printf "%10s\033[32m%s\033[0m\n" "" "OK"
-			printf "%8s%s\033[32m%s\033[0m\n" "" "--> Removing ${PH_APP} autologin configuration " "'/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/autologin.conf'"
-			if ph_run_with_rollback -c "ph_store_file -r -f '/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/autologin.conf'"
+			if "$PH_SUDO" systemctl daemon-reload >/dev/null 2>&1
 			then
-				if "$PH_SUDO" systemctl daemon-reload >/dev/null 2>&1
+				ph_run_with_rollback -c true
+				if [[ "$("$PH_SUDO" find "/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/"* -maxdepth 1 -print 2>/dev/null | wc -l)" -eq "0" ]]
 				then
-					ph_add_value_to_param -p PH_SETUP_TTYS -v "${PH_APP}'${PH_APP_USER}'${PH_APP_TTY}"
-					ph_run_with_rollback -c true && \
-						return "$?"
-				else
-					ph_set_result -m "An error occurred trying to reload systemd configuration"
+					ph_run_with_rollback -c "ph_remove_empty_file -r -t directory -d '/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d'" || \
+						return 1
 				fi
+				ph_add_value_to_param -p PH_SETUP_TTYS -v "${PH_APP}'${PH_APP_USER}'${PH_APP_TTY}"
+				return 0
+			else
+				ph_set_result -m "An error occurred trying to reload systemd configuration"
 			fi
 		fi
-		ph_run_with_rollback -c false -m "Could not remove" || \
-			return 1
 	fi
+	ph_run_with_rollback -c false -m "Could not remove" || \
+		return 1
 fi
 ph_run_with_rollback -c false -m "Could not deallocate" || \
 	return 1
@@ -8573,7 +8812,7 @@ PH_APP_CMD=""
 PH_OPTION=""
 PH_APP_TTY="0"
 PH_RET_CODE="0"
-PH_APPL="${PH_APP:0:4}"
+PH_APPL=""
 
 OPTIND="1"
 
@@ -8584,7 +8823,8 @@ do
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
-                PH_APP="$OPTARG" ;;
+                PH_APP="$OPTARG"
+		PH_APPL="${PH_APP:0:4}" ;;
                              u)
 		[[ -n "$PH_APP_USER" || -z "$OPTARG" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
@@ -8606,10 +8846,10 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-PH_APP_CMD="${PH_SCRIPTS_DIR}/start${PH_APPL}.sh"
-[[ -z "$PH_APP" || -z "$PH_APP_USER" || "$PH_APP_TTY" -le "1" || "$PH_APP_TTY" -gt "$PH_PIEH_MAX_TTYS" || "$#" -ne "6" ]] && \
+[[ -z "$PH_APP" || -z "$PH_APP_USER" || "$PH_APP_TTY" -eq "0" || "$#" -ne "6" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
+PH_APP_CMD="${PH_SCRIPTS_DIR}/start${PH_APPL}.sh"
 if [[ ! -d "/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d" ]]
 then
 	ph_run_with_rollback -c "ph_create_empty_file -r -t directory -d '/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d'" || \
@@ -8618,7 +8858,7 @@ fi
 printf "%8s%s\033[32m%s\033[0m\n" "" "--> Installing ${PH_APP} autologin configuration as " "'/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/autologin.conf'"
 if ph_run_with_rollback -c "ph_create_empty_file -q -r -t file -d '/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/autologin.conf'"
 then
-	for PH_i in "[Service]" "ExecStart=" "ExecStart=-/sbin/agetty --autologin ${PH_APP_USER} --noclear tty${PH_APP_TTY} \$TERM"
+	for PH_i in '[Service]' 'ExecStart=' "ExecStart=-/sbin/agetty --autologin ${PH_APP_USER} --noclear tty${PH_APP_TTY} \$TERM"
 	do
 		if ! ph_run_with_rollback -c "ph_add_line_to_file -r -f '/etc/systemd/system/getty@tty${PH_APP_TTY}.service.d/autologin.conf' -l '${PH_i}'"
 		then
@@ -8644,7 +8884,7 @@ then
 				if "$PH_SUDO" chown "${PH_APP_USER}:$(id -gn "$PH_APP_USER" 2>/dev/null)" "/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh" 2>/dev/null
 				then
 					ph_run_with_rollback -c true
-					ph_run_with_rollback -c "ph_add_app_to_integration_file -a '${PH_APP}' -t '${PH_APP_TTY}'" || \
+					ph_update_base_conf_file -a "$PH_APP" -f int -c 2 -v "${PH_APP_TTY}" || \
 						return 1
 					ph_add_value_to_param -p PH_UNDO_SETUP_TTYS -v "${PH_APP}'${PH_APP_USER}'${PH_APP_TTY}"
 					return 0
@@ -8683,15 +8923,11 @@ ph_run_with_rollback -c true -m "$PH_OLD_STARTAPP"
 if [[ "$PH_APP" == "prompt" ]]
 then
 	printf "%8s%s\n" "" "--> Please choose the application to start on system boot"
-	declare -a PH_APP_READ=($(nawk 'BEGIN { \
-			ORS = " " \
-		} { \
-			print $1 \
-		}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null))
+	declare -a PH_APP_READ=($(ph_get_app_list_by_state -s Integrated -t minimum))
 	while true
 	do
 		[[ "$PH_COUNT" -gt "0" ]] && \
-			printf "\n%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Invalid response"
+			printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
 		nawk '{
 			printf "%10s%s\033[32m%s\033[0m\n", "", NR ". ", $1
 		}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null
@@ -9363,7 +9599,7 @@ PH_i=""
 PH_TTYS="$*"
 PH_APP_TTY="0"
 
-for PH_i in "$PH_TTYS"
+for PH_i in ${PH_TTYS}
 do
 	[[ "$PH_i" != +([[:digit:]]) ]] && \
 		ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
@@ -9718,9 +9954,9 @@ do
 done
 if [[ "$PH_PIEH_ADDED_FLAG" -eq "0" ]]
 then
-	echo -n PieHelper $(sed 's/PieHelper//g'<<<${PH_APP_LIST[@]})
+	echo -n PieHelper "${PH_APP_LIST[@]//PieHelper/}"
 else
-	echo -n ${PH_APP_LIST[@]}
+	echo -n "${PH_APP_LIST[@]}"
 fi
 unset PH_APP_LIST
 return 0
