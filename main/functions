@@ -7980,9 +7980,9 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_APP" || -z "$PH_FILE" || "$#" -lt "6" || "${#PH_VAL_VALUES[@]}" -eq "0" || "${#PH_VAL_COLUMNS[@]}" -ne "${#PH_VAL_VALUES[@]}" || \
-	( "$PH_FILE" == "int" && ( "${#PH_VAL_VALUES[@]}" -ne "1" || "$#" -gt "9" )) || \
-	( "$PH_FILE" == "sup" && ( "$#" -gt "17" || ( "${#PH_VAL_VALUES[@]}" -lt "1" || "${#PH_VAL_VALUES[@]}" -gt "3" ))) ]] && \
+[[ -z "$PH_APP" || "$PH_FILE_SHORTNAME" != @(cont|os|sup|int|@(default|allowed)s) || "$#" -lt "6" || "${#PH_VAL_VALUES[@]}" -eq "0" || "${#PH_VAL_COLUMNS[@]}" -ne "${#PH_VAL_VALUES[@]}" || \
+	( "$PH_FILE_SHORTNAME" == "int" && ( "${#PH_VAL_VALUES[@]}" -ne "1" || "$#" -gt "9" )) || \
+	( "$PH_FILE_SHORTNAME" == "sup" && ( "$#" -gt "17" || ( "${#PH_VAL_VALUES[@]}" -lt "1" || "${#PH_VAL_VALUES[@]}" -gt "3" ))) ]] && \
 	unset PH_VAL_VALUES PH_VAL_COLUMNS && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
