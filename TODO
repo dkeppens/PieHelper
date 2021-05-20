@@ -6,6 +6,7 @@
 * continue with declares first in functions (work partly up from ph_get_app_name_from_app_tty) + main.sh
 * adapt REAMD.md with changes such as installation states etc
 * reimplement recursive chown and chperms to speed things up
+* implement rollback for packaged updates
 * create expect for moonlight pairing
 * create a function for PH_APP_GRAPH and PH_APP_EXEC determination and replace instances with calls to function
 * in ph_support_app : handle manually entered start commands : if packaged and file belongs to different package : update PKG option + in all cases also update start command
