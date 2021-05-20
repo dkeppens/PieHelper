@@ -11,15 +11,37 @@ shopt -s extglob
 
 declare PH_i
 declare PH_MOVE_SCRIPTS_REGEX
-declare PH_ALLOW_USERS
 declare -i PH_FLAG
 
 PH_i=""
 PH_MOVE_SCRIPTS_REGEX=""
-PH_ALLOW_USERS=""
 PH_FLAG="1"
 
 # Global variable declarations not related to rollback
+
+declare -x PH_SCRIPTS_DIR
+declare -x PH_INST_DIR
+declare -x PH_BASE_DIR
+declare -x PH_BUILD_DIR
+declare -x PH_SNAPSHOT_DIR
+declare -x PH_MNT_DIR
+declare -x PH_CONF_DIR
+declare -x PH_MAIN_DIR
+declare -x PH_TMP_DIR
+declare -x PH_FILES_DIR
+declare -x PH_MENUS_DIR
+declare -x PH_TEMPLATES_DIR
+declare -x PH_EXCLUDES_DIR
+declare -x PH_SUPPORTED_DISTROS
+declare -x PH_SUPPORTED_DEBIAN_RELS
+declare -x PH_CHECK_SUPPORTED
+declare -x PH_VERSION
+declare -x PH_DISTRO
+declare -x PH_DISTRO_REL
+declare -x PH_RUN_USER
+declare -x PH_SUDO
+declare -x PH_PI_MODEL
+declare -x PH_FILE_SUFFIX
 
 PH_SCRIPTS_DIR="$(cd "$(dirname "$0")" && pwd)"
 PH_INST_DIR="${PH_SCRIPTS_DIR%/PieHelper/scripts}"
@@ -36,7 +58,12 @@ PH_TEMPLATES_DIR="${PH_FILES_DIR}/templates"
 PH_EXCLUDES_DIR="${PH_FILES_DIR}/excludes"
 PH_SUPPORTED_DISTROS=("Archlinux" "Debian")
 PH_SUPPORTED_DEBIAN_RELS=("jessie" "stretch" "buster" "bullseye")
-PH_CHECK_SUPPORTED=(${PH_SUPPORTED_DISTROS[@]//Debian/"${PH_SUPPORTED_DEBIAN_RELS[@]}"})
+PH_CHECK_SUPPORTED+=("${PH_SUPPORTED_DEBIAN_RELS[@]}" "${PH_SUPPORTED_DISTROS[@]}")
+for PH_i in "${!PH_CHECK_SUPPORTED[@]}"
+do
+	[[ "${PH_CHECK_SUPPORTED["${PH_i}"]}" == "Debian" ]] && \
+		unset PH_CHECK_SUPPORTED["${PH_i}"]
+done
 PH_VERSION=""
 PH_DISTRO=""
 PH_DISTRO_REL=""
@@ -50,7 +77,6 @@ PH_PI_MODEL="$(nawk '$0 ~ /Raspberry Pi/ { \
 			} \
 		} \
 	}' /proc/cpuinfo 2>/dev/null)"
-
 if [[ "$(dtoverlay -l 2>/dev/null | grep -E "vc4-(f)*kms-v3d" >/dev/null ; echo "$?")" -eq "0" || \
 	( "$PH_PI_MODEL" == "pi4" && "$(dtoverlay -l 2>/dev/null | grep -E "vc4-kms-v3d-pi4" >/dev/null ; echo "$?")" -eq "0" ) || \
 	"$(find /sys/firmware/devicetree/base/chosen -type d -name "framebuffer@*" 2>/dev/null | wc -l)" -gt "0" ]]
@@ -65,12 +91,25 @@ export PH_VERSION PH_DISTRO PH_DISTRO_REL PH_RUN_USER PH_SUDO PH_PI_MODEL PH_FIL
 
 # Global variable declarations related to rollback
 
+declare -x PH_ROLLBACK_USED
+declare -x PH_RESULT_MSG
+declare -x PH_RESULT_TYPE_USED
+declare -x PH_TOTAL_RESULT
+declare -x PH_RESULT
+declare -ix PH_RESULT_COUNT
+declare -ix PH_TOTAL_RESULT_COUNT
+declare -ix PH_ROLLBACK_DEPTH
+declare -ax PH_ALL_ROLLBACK_PARAMS
+
 PH_ROLLBACK_USED=""
 PH_RESULT_MSG=""
 PH_RESULT_TYPE_USED=""
 PH_TOTAL_RESULT=""
 PH_RESULT=""
-PH_ALL_ROLLBACK_PARAMS="PH_DEPTH_PARAMS PH_DEPTH PH_CONFIGURED_STATE PH_UNCONFIGURED_STATE PH_GROUPS PH_REMOVE_ACLS_USERS PH_CREATE_ACLS_USERS \
+PH_RESULT_COUNT="0"
+PH_TOTAL_RESULT_COUNT="0"
+PH_ROLLBACK_DEPTH="0"
+PH_ALL_ROLLBACK_PARAMS+=(PH_DEPTH_PARAMS PH_DEPTH PH_CONFIGURED_STATE PH_UNCONFIGURED_STATE PH_GROUPS PH_REMOVE_ACLS_USERS PH_CREATE_ACLS_USERS \
 	PH_REMOVE_RIGHTS_USERS PH_CREATE_RIGHTS_USERS PH_INSTALL_PKGS PH_REMOVE_PKGS PH_INT_APPS PH_SUP_APPS PH_UNINT_APPS PH_UNSUP_APPS PH_OPTIONS PH_PIEH_VERSION PH_OLD_VERSION \
 	PH_BOOTENV PH_ENABLE_TTYS PH_DISABLE_TTYS PH_SETUP_TTYS PH_UNDO_SETUP_TTYS PH_BLACKLIST_MODULES PH_UNBLACKLIST_MODULES PH_LOAD_MODULES PH_UNLOAD_MODULES \
 	PH_CREATE_EMPTY_FILES PH_REMOVE_EMPTY_FILES PH_CREATE_APPS_ITEMS PH_REMOVE_APPS_ITEMS PH_GIT_ADD_LOCAL PH_GIT_TAG_LOCAL PH_GIT_COMMIT_LOCAL PH_GIT_CLONE_MASTER \
@@ -79,13 +118,9 @@ PH_ALL_ROLLBACK_PARAMS="PH_DEPTH_PARAMS PH_DEPTH PH_CONFIGURED_STATE PH_UNCONFIG
 	PH_SET_BOOT_TTYS PH_COPY_FILES PH_GRANT_APPS_ACCESS PH_REVOKE_APPS_ACCESS PH_CREATE_APPS_CIFS_MPT PH_REMOVE_APPS_CIFS_MPT PH_CREATE_APPS_ALLOWEDS PH_REMOVE_APPS_ALLOWEDS \
 	PH_CREATE_APPS_DEFAULTS PH_REMOVE_APPS_DEFAULTS PH_CREATE_APPS_CONF_FILE PH_REMOVE_APPS_CONF_FILE PH_CREATE_APPS_MENUS PH_REMOVE_APPS_MENUS PH_CREATE_APPS_SCRIPTS \
 	PH_REMOVE_APPS_SCRIPTS PH_CREATE_OOS_APPS_CODE PH_REMOVE_OOS_APPS_CODE PH_VARIABLES PH_STORE_OPTION PH_RETRIEVE_STORED_OPTION PH_INSTALL_APPS PH_UNINSTALL_APPS \
-	PH_CREATE_APP_USER PH_REMOVE_APP_USER PH_APP_MOUNT_CIFS PH_APP_UMOUNT_CIFS"
+	PH_CREATE_APP_USER PH_REMOVE_APP_USER PH_APP_MOUNT_CIFS PH_APP_UMOUNT_CIFS)
 
 export PH_ROLLBACK_USED PH_RESULT_MSG PH_RESULT_TYPE_USED PH_TOTAL_RESULT PH_RESULT PH_ALL_ROLLBACK_PARAMS
-
-declare -ix PH_RESULT_COUNT="0"
-declare -ix PH_TOTAL_RESULT_COUNT="0"
-declare -ix PH_ROLLBACK_DEPTH="0"
 
 # Set Linux distro and release
 
@@ -109,7 +144,14 @@ export LD_LIBRARY_PATH PATH
 
 # Load all relevant module declarations
 
-for PH_i in functions functions.user functions.update $(echo -n "${PH_SUPPORTED_DISTROS[@]}" | nawk '{ for (i=1;i<=NF;i++) { printf "distros/functions." $i ; if (i<NF) { printf " " }}}')
+for PH_i in functions functions.user functions.update $(echo -n "${PH_SUPPORTED_DISTROS[@]}" | nawk '{ \
+		for (i=1;i<=NF;i++) { \
+			printf "distros/functions." $i ; \
+			if (i < NF) { \
+				printf " " \
+			} \
+		} \
+	}')
 do
 	if [[ -f "${PH_MAIN_DIR}/${PH_i}" && -r "${PH_MAIN_DIR}/${PH_i}" ]]
 	then
@@ -148,7 +190,7 @@ source "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" >/dev/null 2>&1
 
 # Load controller settings and configuration of all supported and default applications
 
-declare -a PARSE_FILES
+declare -a PH_PARSE_FILES
 
 PH_PARSE_FILES+=("${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}")
 
@@ -216,10 +258,10 @@ fi
 
 # Initialize rollback
 
-for PH_i in ${PH_ALL_ROLLBACK_PARAMS}
+for PH_i in "${PH_ALL_ROLLBACK_PARAMS[@]}"
 do
 	unset "$PH_i" 2>/dev/null
-	declare -a "$PH_i"
+	declare -ax "$PH_i"
 done
 ph_initialize_rollback
 
@@ -252,12 +294,12 @@ fi
 if [[ "$PH_PIEH_SANITY" == "yes" ]]
 then
 	PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
-	if [[ "$("$PH_SUDO" cat "/proc/${PPID}/comm" 2>/dev/null)" != +(conf*_ph|list*_ph|start*|restart*${PH_MOVE_SCRIPTS_REGEX}).sh ]]
+	if [[ "$("$PH_SUDO" cat "/proc/${PPID}/comm" 2>/dev/null)" != +(@(conf|list)*_ph|@(re|)start*|${PH_MOVE_SCRIPTS_REGEX}).sh ]]
 	then
 		if [[ -f "${PH_TMP_DIR}/reported_issues" ]]
 		then
 			ph_show_report || \
-				exit "$?"
+				exit 1
 		else
 			if [[ -f "${PH_TMP_DIR}/.first_run" ]]
 			then
@@ -284,7 +326,7 @@ then
 	if [[ -f "${PH_TMP_DIR}/reported_issues" ]]
 	then
 		ph_show_report || \
-			exit "$?"
+			exit 1
 	fi
 fi
 
@@ -294,10 +336,10 @@ ph_clean_tmp_dir
 
 # Re-initialize rollback
 
-for PH_i in ${PH_ALL_ROLLBACK_PARAMS}
+for PH_i in "${PH_ALL_ROLLBACK_PARAMS[@]}"
 do
 	unset "$PH_i" 2>/dev/null
-	declare -a "$PH_i"
+	declare -ax "$PH_i"
 done
 ph_initialize_rollback
 
@@ -319,31 +361,26 @@ PH_RUN_USER="$(nawk -v mstring="^PieHelper$" '$1 ~ mstring { \
 
 # Set all user accounts allowed to run PieHelper
 
+declare -a PH_ALLOW_USERS
 [[ "$PH_RUN_USER" == "root" ]] && \
-	PH_ALLOW_USERS="$PH_RUN_USER"
+	PH_ALLOW_USERS+=("$PH_RUN_USER")
 for PH_i in $("$PH_SUDO" find "/etc/sudoers.d" -name "020_pieh-*" -mount 2>/dev/null | paste -d " " -s)
 do
-	PH_i="${PH_i##/etc/sudoers.d/020_pieh-}"
-	if [[ -z "$PH_ALLOW_USERS" ]]
-	then
-		PH_ALLOW_USERS="$PH_i"
-	else
-		PH_ALLOW_USERS="${PH_ALLOW_USERS}|${PH_i}"
-	fi
+	PH_ALLOW_USERS+=("${PH_i##/etc/sudoers.d/020_pieh-}")
 done
-[[ -z "$PH_ALLOW_USERS" ]] && \
+[[ "${#PH_ALLOW_USERS[@]}" -eq "0" ]] && \
 	ph_set_result -a -m "Failed to determine users with access : Make sure the sudo config for user '${PH_RUN_USER}' exists as '/etc/sudoers.d/020_pieh-${PH_RUN_USER}'"
 
 # Check whether the current user is allowed
 
-if [[ "$(whoami 2>/dev/null)" != @(${PH_ALLOW_USERS}) ]]
+if [[ "$(whoami 2>/dev/null)" != @("${PH_ALLOW_USERS[*]// /|}") ]]
 then
 	if [[ -z "$PH_RUN_USER" ]]
 	then
 		touch "${PH_TMP_DIR}/.first_run" 2>/dev/null
 		ph_set_result -a -m "Unknown user account for PieHelper : Try configuring first by running '${PH_SCRIPTS_DIR}/confpieh_ph.sh -c'"
 	else
-		ph_set_result -a -m "Only the following accounts are allowed to run PieHelper : '${PH_ALLOW_USERS//|/ /}'"
+		ph_set_result -a -m "Only the following accounts are allowed to run PieHelper : '${PH_ALLOW_USERS[*]// /|}'"
 	fi
 fi
 

@@ -1,4 +1,5 @@
 * rechange escape \ to escape \t in ph_remove_empty_line or at least test
+* recheck correct unsetting of any code containing arrays
 * create function to retrieve all options for an app and use in store/retrieve functions + maybe elsewhere + better handling of possible returned errors
 * check functions concerning CIFS in functions.update for resolving of possible variables in values for CIFS_DIR and CIFS_SUBDIR + maybe others ? --> Check conf file templates
 * run check of code for instances of abovementioned auto-resolving of possible variables in option values -> Should not be \$$ !!!

@@ -682,7 +682,7 @@ then
 			ph_show_result
 			for PH_ARRAY_INDEX in "${!PH_DEPTH[@]}"
 			do
-				unset PH_DEPTH[${PH_ARRAY_INDEX}]
+				unset PH_DEPTH["${PH_ARRAY_INDEX}"]
 			done
 			if [[ "${#PH_DEPTH_PARAMS[@]}" -gt "0" ]]
 			then
@@ -692,12 +692,12 @@ then
 			fi
 		fi
 	else
-		for PH_ARRAY_INDEX in ${!PH_DEPTH[@]}
+		for PH_ARRAY_INDEX in "${!PH_DEPTH[@]}"
 		do
 			if [[ "${PH_DEPTH["${PH_ARRAY_INDEX}"]}" -gt "$PH_ROLLBACK_DEPTH" ]]
 			then
 				PH_COUNT="0"
-				for PH_COMPARE_INDEX in ${!PH_DEPTH_PARAMS[@]}
+				for PH_COMPARE_INDEX in "${!PH_DEPTH_PARAMS[@]}"
 				do
 					[[ "${PH_DEPTH_PARAMS["${PH_COMPARE_INDEX}"]}" == "${PH_DEPTH_PARAMS["${PH_ARRAY_INDEX}"]}" ]] && \
 						((PH_COUNT++))
@@ -705,7 +705,7 @@ then
 						break
 				done
 				declare -n PH_PARAM_ARRAY="${PH_DEPTH_PARAMS["${PH_ARRAY_INDEX}"]}"
-				unset PH_PARAM_ARRAY["$(echo ${!PH_PARAM_ARRAY[@]} | nawk -v cnt="$PH_COUNT" '{ printf $cnt ; exit }')"]
+				unset PH_PARAM_ARRAY["$(echo "${!PH_PARAM_ARRAY[@]}" | nawk -v cnt="$PH_COUNT" '{ printf $cnt ; exit }')"]
 				unset PH_DEPTH_PARAMS["${PH_ARRAY_INDEX}"]
 				unset PH_DEPTH["${PH_ARRAY_INDEX}"]
 				unset -n PH_PARAM_ARRAY
@@ -1184,25 +1184,22 @@ return 1
 function ph_quit_pieh {
 
 declare PH_i
-declare -i PH_COUNT
 
 PH_i=""
-PH_COUNT="0"
 
 [[ "$#" -gt "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 clear 2>/dev/null
 printf "\033[36m%s\033[0m\n\n" "- List of available tools : "
-for PH_i in $(find "${PH_SCRIPTS_DIR}/"* -maxdepth 1 -type f -print 2>/dev/null)
-do
-	echo "${PH_i##*/}"
-	((PH_COUNT++))
-done
-if [[ "$PH_COUNT" -eq "0" ]]
+declare -a PH_SCRIPTS
+if ! PH_SCRIPTS+=($(find "${PH_SCRIPTS_DIR}/"* -maxdepth 1 -type f -exec basename {} \; 2>/dev/null))
 then
 	printf "%2s\033[33m%s\033[0m\n\n" "" "Warning : Could not list"
+else
+	echo "${PH_SCRIPTS[@]}"
 fi
+unset PH_SCRIPTS
 printf "\n%s\n" "Type the name of any tool and press 'Enter' to run it"
 printf "\n%s\n" "Some tools accept additional arguments to modify their default action"
 printf "\n%s\n" "Adding the '-h' parameter will display help"
