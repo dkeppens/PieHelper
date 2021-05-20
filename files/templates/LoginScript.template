@@ -9,5 +9,5 @@ PH_APP_TTY=''							# The TTY the application will start on
 
 if [[ "$USER" == "$PH_APP_USER" && "$(tty 2>/dev/null)" == "/dev/${PH_APP_TTY}" ]]
 then
-	${PH_APP_CMD}
+	eval "${PH_APP_CMD}"
 fi
