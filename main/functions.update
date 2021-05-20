@@ -1193,7 +1193,7 @@ PH_i=""
 clear 2>/dev/null
 printf "\033[36m%s\033[0m\n\n" "- List of available tools : "
 declare -a PH_SCRIPTS
-if ! PH_SCRIPTS+=($(find "${PH_SCRIPTS_DIR}/"* -maxdepth 1 -type f -exec basename {} \; 2>/dev/null))
+if ! read -rd '' -a PH_SCRIPTS < <(find "${PH_SCRIPTS_DIR}/"* -maxdepth 1 -type f -exec basename {} \; 2>/dev/null)
 then
 	printf "%2s\033[33m%s\033[0m\n\n" "" "Warning : Could not list"
 else
