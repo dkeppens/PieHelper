@@ -362,6 +362,8 @@ do
 			return 1
 		PH_RECVD_FLAG="0"
 		PH_RESULT_MSG="$OPTARG" ;;
+			     t)
+		PH_RESULT_TYPE_USED="Total" ;;
 			     a)
 		PH_RECVD_FLAG="0"
 		PH_RESULT="Abort"
@@ -370,8 +372,6 @@ do
 		PH_RECVD_FLAG="0"
 		PH_RESULT="Warning"
 		PH_RESULT_TYPE_USED="$PH_RESULT" ;;
-			     t)
-		PH_RESULT_TYPE_USED="Total" ;;
 			     *)
 		OPTIND="$PH_OLDOPTIND"
 		OPTARG="$PH_OLDOPTARG"
@@ -688,7 +688,6 @@ then
 			then
 				printf "\033[36m%s\033[0m\n\n" "- Rolling back changes"
 				ph_rollback_changes
-				exit "$?"
 			fi
 		fi
 	else
