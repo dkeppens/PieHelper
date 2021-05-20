@@ -1400,13 +1400,13 @@ then
 						ph_set_result -m "An error occurred trying to remove ${PH_APP} mountpoint '${PH_APP_CIFS_MPT}'"
 					fi
 				else
-					ph_set_result -m "Refusing to remove (Directory is an active mountpoint)"
+					ph_set_result -m "Refusing to remove since the directory is an active mountpoint"
 				fi
 			else
-				ph_set_result -m "Refusing to remove '${PH_APP_CIFS_MPT}' (Directory is not empty)"
+				ph_set_result -m "Refusing to remove '${PH_APP_CIFS_MPT}' since the directory is not empty"
 			fi
 		else
-			ph_set_result -m "Refusing to remove '${PH_APP_CIFS_MPT}' (Not a directory)"
+			ph_set_result -m "Refusing to remove '${PH_APP_CIFS_MPT}' since it's not a directory"
 		fi
 	else
 		ph_run_with_rollback -c true -m "Nothing to do" && \
@@ -1497,7 +1497,7 @@ then
 	then
 		if [[ "$("$PH_SUDO" find "$PH_APP_CIFS_MPT" -maxdepth 1 ! -wholename "$PH_APP_CIFS_MPT" 2>/dev/null | wc -l)" -ne "0" ]]
 		then
-			ph_set_result -m "Could not accept '${PH_APP_CIFS_MPT}' as a mountpoint (Not an empty directory)"
+			ph_set_result -m "Could not accept '${PH_APP_CIFS_MPT}' as a mountpoint since it's not an empty directory"
 		else
 			if [[ "$(mount 2>/dev/null | nawk -v mstring="^${PH_APP_CIFS_MPT}$" '$3 ~ mstring { \
 					print \
@@ -1505,7 +1505,7 @@ then
 					next \
 				}' | wc -l)" -gt "0" ]]
 			then
-				ph_set_result -m "Could not accept '${PH_APP_CIFS_MPT}' as a mountpoint (Directory is an active mountpoint)"
+				ph_set_result -m "Could not accept '${PH_APP_CIFS_MPT}' as a mountpoint since the directory is an active mountpoint"
 			else
 				ph_run_with_rollback -c true -m "Nothing to do" && \
 					return "$?"
@@ -1514,7 +1514,7 @@ then
 	else
 		if [[ -e "$PH_APP_CIFS_MPT" ]]
 		then
-			ph_set_result -m "Refusing to accept '${PH_APP_CIFS_MPT}' as a mountpoint (Not an empty directory)"
+			ph_set_result -m "Refusing to accept '${PH_APP_CIFS_MPT}' as a mountpoint since it's not an empty directory"
 		else
 			if ! ph_run_with_rollback -c "ph_create_empty_file -r -q -t directory -d '${PH_APP_CIFS_MPT}'"
 			then
