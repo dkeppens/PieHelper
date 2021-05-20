@@ -1,3 +1,4 @@
+* maybe move main.sh to app/scripts since it's not a function
 * rechange escape \ to escape \t in ph_remove_empty_line or at least test
 * recheck correct unsetting of any code containing arrays
 * create function to retrieve all options for an app and use in store/retrieve functions + maybe elsewhere + better handling of possible returned errors
