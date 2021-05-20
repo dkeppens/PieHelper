@@ -1094,7 +1094,7 @@ do
 done
 if [[ ! -f /etc/profile.d/PieHelper-path.sh ]]
 then
-        printf "%4s%s\n" "" "- The PATH and LD_LIBRARY_PATH extension is missing" >>"${PH_TMP_DIR}/.reported_issues"
+        printf "%4s%s\033[1;33m%s\033[0;0m%s\n" "" "- The PATH and LD_LIBRARY_PATH extension " "'/etc/profile.d/PieHelper-path.sh'" " is missing" >>"${PH_TMP_DIR}/.reported_issues"
 	PH_RET_CODE="1"
 else
 	PH_APP_USER="$(ph_get_app_user_from_app_name PieHelper)"
@@ -1180,7 +1180,7 @@ do
 		PH_RET_CODE="1"
 	fi
 done
-for PH_APP in $(ph_get_app_list_by_state -s Integrated -t Halted)
+for PH_APP in $(ph_get_app_list_by_state -s Halted -t exact)
 do
 	PH_APPL="${PH_APP:0:4}"
 	PH_APP_STR_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
