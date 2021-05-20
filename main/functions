@@ -10301,7 +10301,7 @@ then
 				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not display"
 				ph_set_result -r 0
 			fi
-			printf "\n\033[1;37m%s\033[0;0m" "Press Enter to reboot into the PieHelper menu"
+			printf "\n\033[1;37m%s\033[0;0m\n\n" "Press Enter to reboot into the PieHelper menu"
 			read -r 2>/dev/null
 			"$PH_SUDO" init 6
 		else
