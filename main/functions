@@ -4546,7 +4546,8 @@ then
 				printf "%8s%s%s" "" "--> Continue with PieHelper removal (y/n) ? "
 			fi
 			read -r PH_ANSWER 2>/dev/null
-			ph_screen_input "$PH_ANSWER"
+			ph_screen_input "$PH_ANSWER" || \
+				return 1
 			((PH_COUNT++))
 		done
 		ph_run_with_rollback -c true -m "$PH_ANSWER"
@@ -5894,6 +5895,7 @@ function ph_screen_input {
 if [[ "$(echo "$*" | sed 's/[ ,/.]//g')" == *+([![:word:]])* ]]
 then
 	ph_set_result -a -m "Invalid input characters detected"
+	return 1
 fi
 return 0
 }
@@ -7434,7 +7436,8 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 					printf "%12s\033[32m%s\033[0m\n\n" "" "5. Quit and rollback changes"
 					printf "%12s%s" "" "Your choice : "
 					read -r PH_ANSWER 2>/dev/null
-					ph_screen_input "$PH_ANSWER"
+					ph_screen_input "$PH_ANSWER" || \
+						return 1
 					PH_COUNT="$((PH_COUNT+1))"
 					[[ "$PH_ANSWER" -ge "1" && "$PH_ANSWER" -le "5" ]] && \
 						ph_run_with_rollback -c true
@@ -7443,7 +7446,8 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 							     2)
 						printf "%8s%s" "" "--> Please enter the full pathname of '${PH_APP_EXEC##*/}' (Leave empty to return to the previous menu) :"
 						read -r PH_APP_EXEC 2>/dev/null
-						ph_screen_input "$PH_APP_EXEC"
+						ph_screen_input "$PH_APP_EXEC" || \
+							return 1
 						[[ -z "$PH_APP_EXEC" ]] && \
 							ph_run_with_rollback -c true && \
 							continue ;;
@@ -8258,7 +8262,8 @@ else
 			printf "%10s%s\033[32m%s\033[0m\n\n" "" "- Or enter 'quit' to stop and rollback all changes"
 			printf "%8s%s" "" "User account : "
 			read -r PH_PASS_APP_USER 2>/dev/null
-			ph_screen_input "$PH_PASS_APP_USER"
+			ph_screen_input "$PH_PASS_APP_USER" || \
+				return 1
 			case "$PH_PASS_APP_USER" in "")
 				PH_PASS_APP_USER="$PH_RUN_USER" ;;
 					quit)
@@ -8420,7 +8425,8 @@ do
 	printf "%10s%s\033[32m%s\033[0m\n\n" "" "- Or enter 'quit' to stop and rollback all changes"
 	printf "%8s%s" "" "User password : "
 	read -rs PH_APP_USER_PASS 2>/dev/null
-	ph_screen_input "$PH_APP_USER_PASS"
+	ph_screen_input "$PH_APP_USER_PASS" || \
+		return 1
 	PH_COUNT="$((PH_COUNT+1))"
 	case "$PH_APP_USER_PASS" in "")
 		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Passwords may not be empty" ;;
@@ -8434,7 +8440,8 @@ do
 			ph_run_with_rollback -c true
 			printf "%8s%s" "" "Please re-enter the password : "
 			read -rs PH_APP_USER_PASS_REPEAT 2>/dev/null
-			ph_screen_input "$PH_APP_USER_PASS_REPEAT"
+			ph_screen_input "$PH_APP_USER_PASS_REPEAT" || \
+				return 1
 			if [[ "$PH_APP_USER_PASS" == "$PH_APP_USER_PASS_REPEAT" ]]
 			then
 				ph_run_with_rollback -c true
@@ -9054,7 +9061,8 @@ then
 		printf "%8s%s" "" "Your choice : "
 		read -r PH_APP_READ[0] 2>/dev/null
 		((PH_COUNT++))
-		ph_screen_input "${PH_APP_READ[0]}"
+		ph_screen_input "${PH_APP_READ[0]}" || \
+			return 1
 		case "${PH_APP_READ[0]}" in $(cat -n "${PH_CONF_DIR}/integrated_apps" 2>/dev/null | nawk '{ \
 				print $1 \
 			}' | paste -d "|" -s))
@@ -9382,7 +9390,8 @@ do
 	[[ "$PH_COUNT" -gt "0" ]] && printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
 	printf "%8s%s" "" "--> Continue verification of PieHelper (y/n) ? "
 	read -r PH_ANSWER 2>/dev/null
-	ph_screen_input "$PH_ANSWER"
+	ph_screen_input "$PH_ANSWER" || \
+		return 1
 	((PH_COUNT++))
 done
 printf "%10s\033[32m%s\033[0m\n" "" "OK"
@@ -10125,7 +10134,8 @@ do
 		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
 	printf "%8s%s\033[32m%s\033[0m%s" "" "--> Continue configuring PieHelper under account " "'${PH_RUN_USER}'" " (y/n) ? "
 	read -r PH_ANSWER 2>/dev/null
-	ph_screen_input "$PH_ANSWER"
+	ph_screen_input "$PH_ANSWER" || \
+		return 1
 	((PH_COUNT++))
 done
 ph_run_with_rollback -c true -m "$PH_ANSWER"
@@ -10263,7 +10273,8 @@ then
 				printf "%12s%s\n\n" "" "- Please note that system updates are not reversible"
 				printf "%12s%s" "" "Perform update (y/n) ? "
 				read -r PH_ANSWER 2>/dev/null
-				ph_screen_input "$PH_ANSWER"
+				ph_screen_input "$PH_ANSWER" || \
+					return 1
 				((PH_COUNT++))
 			done
 			ph_run_with_rollback -c true -m "$PH_ANSWER"
