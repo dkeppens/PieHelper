@@ -3789,7 +3789,7 @@ ph_run_with_rollback -c "ph_undo_setup_tty -a '${PH_APP}' -t '${PH_APP_TTY}' -u 
 	return 1
 ph_run_with_rollback -c "ph_setup_tty -a '${PH_APP}' -t '${PH_APP_NEW_TTY}' -u '${PH_APP_USER}'" || \
 	return 1
-if [[ ]]
+if [[ "$PH_BOOT_TTY_FLAG" -eq "0" ]]
 then
 	ph_run_with_rollback -c "ph_set_tty_for_boot '${PH_APP_NEW_TTY}'" || \
 		return 1
