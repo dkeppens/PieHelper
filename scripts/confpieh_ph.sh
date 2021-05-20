@@ -463,7 +463,7 @@ case "$PH_ACTION" in repair)
 							PH_LIST_MODULES="${PH_LIST_MODULES},${PH_i}"
 					fi
 				done
-				for PH_i in $(echo $(nawk '$1 ~ /^function$/ { \
+				for PH_i in $(nawk '$1 ~ /^function$/ { \
 						print $2 \
 					}' "${PH_MAIN_DIR}/functions" "${PH_MAIN_DIR}/functions.update" "${PH_MAIN_DIR}/functions.user" "${PH_MAIN_DIR}/distros/functions.${PH_DISTRO}" 2>/dev/null | \
 					sed 's/ /\n/g' | sort | paste -d" " -s)
