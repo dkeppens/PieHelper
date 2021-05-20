@@ -1948,7 +1948,7 @@ then
 		do
 			[[ "$PH_COUNT" -ne "0" ]] && \
 				printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
-			printf "%8s%s" "" "--> Update now (y/n) ? "
+			printf "%8s%s\033[1;37m%s\033[0;0m%s" "" "--> Update now " "(y/n)" " ? "
 			read -r PH_ANSWER 2>/dev/null
 			ph_set_result -r 0
 			if [[ "$PH_ANSWER" == "n" ]]
@@ -2894,7 +2894,7 @@ do
 		fi
         	[[ "$PH_COUNT" -gt "0" ]] && \
 			printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
-               	printf "%8s%s" "" "--> Do you want the change the value for ${PH_OPTAR[$PH_OPT]} (y/n) ? "
+               	printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m%s" "" "--> Do you want the change the value for " "'${PH_OPTAR[$PH_OPT]}' " "(y/n)" " ? "
                	read -r PH_ANSWER 2>/dev/null
                	if ! ph_screen_input "$PH_ANSWER"
                	then
@@ -4546,9 +4546,9 @@ then
 				printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
 			if [[ "$PH_ACTION" == "unconfigure" ]]
 			then
-				printf "%8s%s%s" "" "--> Continue with PieHelper unconfiguration (y/n) ? "
+				printf "%8s%s\033[1;37m%s\033[0;0m%s" "" "--> Continue with PieHelper unconfiguration " "(y/n)" " ? "
 			else
-				printf "%8s%s%s" "" "--> Continue with PieHelper removal (y/n) ? "
+				printf "%8s%s\033[1;37m%s\033[0;0m%s" "" "--> Continue with PieHelper removal " "(y/n)" " ? "
 			fi
 			read -r PH_ANSWER 2>/dev/null
 			ph_screen_input "$PH_ANSWER" || \
@@ -6878,9 +6878,9 @@ case "$PH_APP_STATE" in Integrated|Halted|Running)
 		do
 			[[ "$PH_COUNT" -gt "0" ]] && \
 				printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
-			printf "%8s%s\n\n" "" "--> Do you also want to uninstall ${PH_APP} ?"
-			printf "%10s%s\n\n" "" "- Do not uninstall ${PH_APP} if applications outside the PieHelper framework still require it"
-			printf "%8s%s" "" "Uninstall ${PH_APP} (y/n) ? "
+			printf "%8s%s\033[1;33m%s\033[0;0m%s\n\n" "" "--> Do you also want to uninstall " '${PH_APP}'" " ? "
+			printf "%10s\033[1;37m%s\033[1;33m%s\033[1;37m%s\033[0;0m\n\n" "" "- Do not uninstall " "'${PH_APP}'" " if applications outside the PieHelper framework still require it"
+			printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m%s" "" "Uninstall " "'${PH_APP}'" " (y/n)" " ? "
 			read -r PH_ANSWER 2>/dev/null
 			((PH_COUNT++))
 		done
@@ -6913,12 +6913,12 @@ case "$PH_APP_STATE" in Integrated|Halted|Running)
 			do
 				[[ "$PH_COUNT" -gt "0" ]] && \
 					printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
-				printf "%8s%s\n\n" "" "--> Do you also want to remove user '${PH_APP_USER}' ?"
-				printf "%10s%s\n" "" "- PieHelper access for user '${PH_APP_USER}' is revoked but the user might still have system access"
+				printf "%8s%s\033[1;33m%s\033[0;0m%s\n\n" "" "--> Do you also want to remove user " "'${PH_APP_USER}'" " ?"
+				printf "%10s\033[1;37m%s\033[1;33m%s\033[1;37m%s\n" "" "- PieHelper access for user " "'${PH_APP_USER}'" " is revoked but the user might still have system access"
 				printf "%10s%s\n" "" "- You should not remove the user if :"
 				printf "%12s%s\n" "" "- If the account is still required for other reasons"
-				printf "%12s%s\n\n" "" "- If you want to keep the data in the user's home directory '$(getent passwd ${PH_APP_USER} 2>/dev/null | head -1 | cut -d':' -f6)'"
-				printf "%8s%s" "" "Remove ${PH_APP_USER} (y/n) ? "
+				printf "%12s%s\033[1;33m%s\033[0;0m%s\n\n" "" "- If you want to keep the data in the user's home directory " "'$(getent passwd ${PH_APP_USER} 2>/dev/null | head -1 | cut -d':' -f6)'"
+				printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m%s" "" "Remove " "'${PH_APP_USER}'" " (y/n)" " ? "
 				read -r PH_ANSWER 2>/dev/null
 				((PH_COUNT++))
 			done
@@ -6954,7 +6954,7 @@ case "$PH_APP_STATE" in Integrated|Halted|Running)
 				return 1
 		fi
 	else
-		printf "%8s%s\n" "" "--> Checking for unused dependencies of ${PH_APP}"
+		printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Checking for unused dependencies of " "'${PH_APP}'"
 		PH_APP_GRAPH="$(ph_get_app_graphical_prop -a "$PH_APP" -c "$PH_APP_CMD")"
 		if [[ "$PH_APP_GRAPH" == "yes" && "$PH_APP" != "X11" ]]
 		then
@@ -6975,12 +6975,12 @@ case "$PH_APP_STATE" in Integrated|Halted|Running)
 				do
 					[[ "$PH_COUNT" -gt "0" ]] && \
 						printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
-					printf "%8s%s\n\n" "" "--> Do you also want to unsupport X11 ?"
-					printf "%10s%s\n" "" "- X11 is the graphical environment application and can be used on it's own or be a requirement for other applications"
+					printf "%8s%s\033[1;33m%s\033[0;0m%s\n\n" "" "--> Do you also want to unsupport " "'X11'" " ?"
+					printf "%10s\033[1;37m%s\n" "" "- X11 is the graphical environment application and can be used on it's own or be a requirement for other applications"
 					printf "%10s%s\n" "" "- X11 should not be unsupported if :"
 					printf "%12s%s\n" "" "- You still want to use the graphical environment"
-					printf "%12s%s\n\n" "" "- Applications outside the PieHelper framework still require it"
-					printf "%8s%s" "" "Unsupport X11 (y/n) ? "
+					printf "%12s%s\033[0;0m\n\n" "" "- Applications outside the PieHelper framework still require it"
+					printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m%s" "" "Unsupport " "'X11'" " (y/n)" " ? "
 					read -r PH_ANSWER 2>/dev/null
 					((PH_COUNT++))
 				done
@@ -9395,7 +9395,7 @@ printf "%4s%s\n\n" "" "- Reboot your system if required"
 while [[ "$PH_ANSWER" != @(y|n) ]]
 do
 	[[ "$PH_COUNT" -gt "0" ]] && printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
-	printf "%8s%s" "" "--> Continue verification of PieHelper (y/n) ? "
+	printf "%8s%s\033[1;37m%s\033[0;0m%s" "" "--> Continue verification of PieHelper " "(y/n)" " ? "
 	read -r PH_ANSWER 2>/dev/null
 	ph_screen_input "$PH_ANSWER" || \
 		return 1
@@ -10139,7 +10139,7 @@ while [[ "$PH_ANSWER" != @(y@(es|)|n@(o|)) ]]
 do
 	[[ "$PH_COUNT" -gt "0" ]] && \
 		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
-	printf "%8s%s\033[1;33m%s\033[0;0m%s" "" "--> Continue configuring PieHelper under account " "'${PH_RUN_USER}'" " (y/n) ? "
+	printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m%s" "" "--> Continue configuring PieHelper under account " "'${PH_RUN_USER}'" " (y/n)" " ? "
 	read -r PH_ANSWER 2>/dev/null
 	ph_screen_input "$PH_ANSWER" || \
 		return 1
@@ -10278,7 +10278,7 @@ then
 				printf "%8s%s\033[1;37m%s\n\n" "" "--> Perform full system update before reboot " "(Recommended)"
 				printf "%12s%s\n" "" "- System updates can take a long time depending on the system's current version and configuration"
 				printf "%12s%s\033[0;0m\n\n" "" "- Please note that system updates are not reversible"
-				printf "%12s%s" "" "Perform update (y/n) ? "
+				printf "%12s%s\033[1;37m%s\033[0;0m%s" "" "Perform update " "(y/n)" " ? "
 				read -r PH_ANSWER 2>/dev/null
 				ph_screen_input "$PH_ANSWER" || \
 					return 1
