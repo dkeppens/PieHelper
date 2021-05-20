@@ -1072,6 +1072,7 @@ declare PH_APPU_CIFS_MPT
 declare -i PH_RET_CODE
 declare -u PH_APPU
 declare -l PH_APPL
+declare -a PH_CIFS_MPTS
 
 PH_i=""
 PH_APP=""
@@ -1152,19 +1153,16 @@ do
 		fi
 	done
 done
-for PH_i in $("$PH_SUDO" find "${PH_MNT_DIR}/*" -type d 2>/dev/null | nawk 'BEGIN { \
-		ORS = " " \
-	} { \
-		print \
-	}')
+read -rd '' -a PH_CIFS_MPTS < <("$PH_SUDO" find "${PH_MNT_DIR}/*" -maxdepth 1 -type d -exec basename {} \; 2>/dev/null)
+for PH_APP in "${PH_CIFS_MPTS[@]}"
 do
-	PH_APP="${PH_i##*/}"
 	if ! cut -f1 "${PH_CONF_DIR}/integrated_apps" 2>&1 | grep -E "^${PH_APP}$" >/dev/null
 	then
         	printf "%4s%s\n" "" "- Default CIFS mountpoint '${PH_MNT_DIR}/${PH_APP}' is present while ${PH_APP} application state is not 'Integrated'" >>"${PH_TMP_DIR}/.reported_issues"
 		PH_RET_CODE="1"
 	fi
 done
+unset PH_CIFS_MPTS
 for PH_APP in $(ph_get_app_list_by_state -s Integrated -t minimum)
 do
 	PH_APPU="${PH_APP:0:4}"
@@ -1219,55 +1217,58 @@ do
 done
 for ((PH_APP_STR_TTY=2;PH_APP_STR_TTY<="${PH_PIEH_MAX_TTYS}";PH_APP_STR_TTY++))
 do
-	PH_APP="$(ph_get_app_name_from_app_tty "$PH_APP_STR_TTY")"
-	PH_APPL="${PH_APP:0:4}"
-	PH_APP_USER="$(ph_get_app_user_from_app_tty "$PH_APP_STR_TTY")"
-	if [[ -f "/etc/systemd/system/getty@tty${PH_APP_STR_TTY}.service.d/autologin.conf" ]]
+	if cut -f2 "${PH_CONF_DIR}/integrated_apps" 2>/dev/null | grep -E "^${PH_APP_STR_TTY}$" >/dev/null
 	then
-		if cut -f3 "${PH_CONF_DIR}/integrated_apps" 2>/dev/null | grep -E "^${PH_APP_STR_TTY}$" >/dev/null
+		PH_APP="$(ph_get_app_name_from_app_tty "$PH_APP_STR_TTY")"
+		PH_APPL="${PH_APP:0:4}"
+		PH_APP_USER="$(ph_get_app_user_from_app_tty "$PH_APP_STR_TTY")"
+		if [[ -f "/etc/systemd/system/getty@tty${PH_APP_STR_TTY}.service.d/autologin.conf" ]]
 		then
-			if [[ "$(ph_get_app_user_from_autologin "$PH_APP_STR_TTY")" != "$PH_APP_USER" ]]
+			if cut -f2 "${PH_CONF_DIR}/integrated_apps" 2>/dev/null | grep -E "^${PH_APP_STR_TTY}$" >/dev/null
 			then
-        			printf "%4s%s\n" "" "- Autologin for 'tty${PH_APP_STR_TTY}' has a corrupted value for PH_APP_USER -> Should be '${PH_APP_USER}'" >>"${PH_TMP_DIR}/.reported_issues"
+				if [[ "$(ph_get_app_user_from_autologin "$PH_APP_STR_TTY")" != "$PH_APP_USER" ]]
+				then
+					printf "%4s%s\n" "" "- Autologin for 'tty${PH_APP_STR_TTY}' has a corrupted value for PH_APP_USER -> Should be '${PH_APP_USER}'" >>"${PH_TMP_DIR}/.reported_issues"
+					PH_RET_CODE="1"
+				fi
+				if [[ "$PH_APP_STR_TTY" -ne "$(ph_get_app_tty_from_autologin "$PH_APP_STR_TTY")" ]]
+				then
+					printf "%4s%s\n" "" "- Autologin for 'tty${PH_APP_STR_TTY}' has a corrupted value for PH_APP_TTY -> Should be '${PH_APP_STR_TTY}'" >>"${PH_TMP_DIR}/.reported_issues"
+					PH_RET_CODE="1"
+				fi
+			else
+				printf "%4s%s\n" "" "- Autologin configuration for 'tty${PH_APP_STR_TTY}' is present while tty${PH_APP_STR_TTY} is unallocated" >>"${PH_TMP_DIR}/.reported_issues"
 				PH_RET_CODE="1"
 			fi
-			if [[ "$PH_APP_STR_TTY" -ne "$(ph_get_app_tty_from_autologin "$PH_APP_STR_TTY")" ]]
-			then
-        			printf "%4s%s\n" "" "- Autologin for 'tty${PH_APP_STR_TTY}' has a corrupted value for PH_APP_TTY -> Should be '${PH_APP_STR_TTY}'" >>"${PH_TMP_DIR}/.reported_issues"
-				PH_RET_CODE="1"
-			fi
-		else
-        		printf "%4s%s\n" "" "- Autologin configuration for 'tty${PH_APP_STR_TTY}' is present while tty${PH_APP_STR_TTY} is unallocated" >>"${PH_TMP_DIR}/.reported_issues"
-			PH_RET_CODE="1"
 		fi
-	fi
-	if [[ -f "/etc/profile.d/PieHelper_tty${PH_APP_STR_TTY}.sh" ]]
-	then
-		if cut -f3 "${PH_CONF_DIR}/integrated_apps" 2>/dev/null | grep -E "^${PH_APP_STR_TTY}$" >/dev/null
+		if [[ -f "/etc/profile.d/PieHelper_tty${PH_APP_STR_TTY}.sh" ]]
 		then
-			if [[ "$(ph_get_app_user_from_login_script_owner "$PH_APP_STR_TTY")" != "$PH_APP_USER" ]]
+			if cut -f2 "${PH_CONF_DIR}/integrated_apps" 2>/dev/null | grep -E "^${PH_APP_STR_TTY}$" >/dev/null
 			then
-        			printf "%4s%s\n" "" "- LoginScript for 'tty${PH_APP_STR_TTY}' has a corrupted value for ownership -> Should be '${PH_APP_USER}'" >>"${PH_TMP_DIR}/.reported_issues"
+				if [[ "$(ph_get_app_user_from_login_script_owner "$PH_APP_STR_TTY")" != "$PH_APP_USER" ]]
+				then
+					printf "%4s%s\n" "" "- LoginScript for 'tty${PH_APP_STR_TTY}' has a corrupted value for ownership -> Should be '${PH_APP_USER}'" >>"${PH_TMP_DIR}/.reported_issues"
+					PH_RET_CODE="1"
+				fi
+				if [[ "$(ph_get_app_user_from_login_script "$PH_APP_STR_TTY")" != "$PH_APP_USER" ]]
+				then
+					printf "%4s%s\n" "" "- LoginScript for 'tty${PH_APP_STR_TTY}' has a corrupted value for PH_APP_USER -> Should be '${PH_APP_USER}'" >>"${PH_TMP_DIR}/.reported_issues"
+					PH_RET_CODE="1"
+				fi
+				if [[ "$(ph_get_app_tty_from_login_script "$PH_APP_STR_TTY")" -ne "$PH_APP_STR_TTY" ]]
+				then
+					printf "%4s%s\n" "" "- LoginScript for 'tty${PH_APP_STR_TTY}' has a corrupted value for PH_APP_TTY -> Should be 'tty${PH_APP_STR_TTY}'" >>"${PH_TMP_DIR}/.reported_issues"
+					PH_RET_CODE="1"
+				fi
+				if [[ "$(ph_get_app_name_from_login_script "$PH_APP_STR_TTY")" != "$PH_APP" ]]
+				then
+					printf "%4s%s\n" "" "- LoginScript for 'tty${PH_APP_STR_TTY}' has a corrupted value for PH_APP_CMD -> Should be '${PH_SCRIPTS_DIR}/start${PH_APPL}.sh'" >>"${PH_TMP_DIR}/.reported_issues"
+					PH_RET_CODE="1"
+				fi
+			else
+				printf "%4s%s\n" "" "- LoginScript for 'tty${PH_APP_STR_TTY}' is present while tty${PH_APP_STR_TTY} is unallocated" >>"${PH_TMP_DIR}/.reported_issues"
 				PH_RET_CODE="1"
 			fi
-			if [[ "$(ph_get_app_user_from_login_script "$PH_APP_STR_TTY")" != "$PH_APP_USER" ]]
-			then
-        			printf "%4s%s\n" "" "- LoginScript for 'tty${PH_APP_STR_TTY}' has a corrupted value for PH_APP_USER -> Should be '${PH_APP_USER}'" >>"${PH_TMP_DIR}/.reported_issues"
-				PH_RET_CODE="1"
-			fi
-			if [[ "$(ph_get_app_tty_from_login_script "$PH_APP_STR_TTY")" -ne "$PH_APP_STR_TTY" ]]
-			then
-        			printf "%4s%s\n" "" "- LoginScript for 'tty${PH_APP_STR_TTY}' has a corrupted value for PH_APP_TTY -> Should be 'tty${PH_APP_STR_TTY}'" >>"${PH_TMP_DIR}/.reported_issues"
-				PH_RET_CODE="1"
-			fi
-			if [[ "$(ph_get_app_name_from_login_script "$PH_APP_STR_TTY")" != "$PH_APP" ]]
-			then
-        			printf "%4s%s\n" "" "- LoginScript for 'tty${PH_APP_STR_TTY}' has a corrupted value for PH_APP_CMD -> Should be '${PH_SCRIPTS_DIR}/start${PH_APPL}.sh'" >>"${PH_TMP_DIR}/.reported_issues"
-				PH_RET_CODE="1"
-			fi
-		else
-        		printf "%4s%s\n" "" "- LoginScript for 'tty${PH_APP_STR_TTY}' is present while tty${PH_APP_STR_TTY} is unallocated" >>"${PH_TMP_DIR}/.reported_issues"
-			PH_RET_CODE="1"
 		fi
 	fi
 done
@@ -10072,7 +10073,7 @@ do
 			PH_APP_LIST+=("$PH_APP")
 		fi
 	else
-		if ph_check_app_state_validity -a "$PH_APP" -q ${PH_REQ_APP_STATE_PARAM}
+		if ph_check_app_state_validity -a "$PH_APP" -q "${PH_REQ_APP_STATE_PARAM}"
 		then
 			PH_APP_LIST+=("$PH_APP")
 		fi
