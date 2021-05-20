@@ -2323,7 +2323,7 @@ ph_set_result -m "An error occurred trying to store '${PH_FILE}' as '${PH_TMP_FI
 return 1
 }
 
-function ph_create_default_base_conf_file {
+function ph_create_base_conf_file {
 
 declare PH_FILE
 declare PH_FILE_SHORTNAME
@@ -2335,7 +2335,7 @@ PH_FILE_SHORTNAME="$1"
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 PH_FILE="$(ph_get_filename_from_shortname "$PH_FILE_SHORTNAME")"
-printf "%8s%s\n" "" "--> Creating base configuration file '${PH_FILE}'"
+printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Creating base configuration file " "'${PH_FILE}'"
 if [[ ! -e "${PH_CONF_DIR}/${PH_FILE}" ]]
 then
 	if ph_run_with_rollback -c "ph_create_empty_file -t file -q -d '${PH_CONF_DIR}/${PH_FILE}'"
@@ -3211,7 +3211,7 @@ PH_EVDEVS="0"
 
 if [[ ! -f "${PH_CONF_DIR}/controller_cli_ids" ]]
 then
-	ph_create_default_base_conf_file cont || \
+	ph_create_base_conf_file cont || \
 		return 1
 fi
 ph_cleanup_controllers reset
@@ -6137,7 +6137,7 @@ case "$PH_APP" in Moonlight)
 					if cd build >/dev/null 2>&1
 					then
 						ph_run_with_rollback -c true
-						printf "%8s%s\n" "" "--> Generating '${PH_APP}' build (This may take a while)"
+						printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m\n" "" "--> Generating a build for " "'${PH_APP}'" " (This may take a while)"
 						if ! cmake ../ >"/var/tmp/${PH_APP}.build" >/dev/null 2>&1
 						then
 							ph_set_result -m "Could not generate a build for '${PH_APP}' (Logfile is '/var/tmp/${PH_APP}.build')"
@@ -6154,7 +6154,7 @@ case "$PH_APP" in Moonlight)
 							return 1
 						fi
 						ph_run_with_rollback -c true -m "Built in '${HOME}/moonlight-embedded/build'"
-						printf "%8s%s\n" "" "--> Compiling '${PH_APP}' (This may take a while)"
+						printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m\n" "" "--> Compiling " "'${PH_APP}'" "(This may take a while)"
 						if ! make >"/var/tmp/${PH_APP}.compile" >/dev/null 2>&1
 						then
 							ph_set_result -m "Could not compile '${PH_APP}' (Logfile is '/var/tmp/${PH_APP}.compile')"
@@ -6233,24 +6233,24 @@ case "$PH_APP" in Moonlight)
 			"$PH_SUDO" rm -r RetroPie-Setup >/dev/null 2>&1
 			ph_run_with_rollback -c "ph_git_clone_master -r 'https://github.com/RetroPie/RetroPie-Setup.git' -d '${PH_EMUL_HOME}' -n 'RetroPie-Setup' -a '--depth=1'" || \
 				return 1
-			printf "%8s%s\n\n" "" "--> Configuring '${PH_APP}' setup script"
+			printf "%8s%s\033[1;33m%s\033[0;0m\n\n" "" "--> Configuring the setup script for " "'${PH_APP}'"
 			if "$PH_SUDO" chown -R "${PH_APP_USER}:$("$PH_SUDO" id -gn "$PH_APP_USER" 2>/dev/null)" "${PH_EMUL_HOME}/RetroPie-Setup" 2>/dev/null
 			then
 				if "$PH_SUDO" chmod +x "${PH_EMUL_HOME}/RetroPie-Setup/retropie_setup.sh" >/dev/null 2>&1
 				then
 					ph_run_with_rollback -c true
-					printf "%8s%s\n\n" "" "--> Executing '${PH_APP}' setup script"
-					printf "%10s%s\n" "" "- The setup script will do a basic installation of '${PH_APP}'"
+					printf "%8s%s\033[1;33m%s\033[0;0m\n\n" "" "--> Executing the setup script for " "'${PH_APP}'"
+					printf "%10s\033[1;37m%s\033[1;33m%s\033[1;37m\n" "" "- The setup script will do a basic installation of " "'${PH_APP}'"
 					printf "%10s%s\n" "" "- Note that running basic installation could take up to 30 minutes depending on system specs"
 					printf "%10s%s\n" "" "- StartApp configuration from this script will be replaced by StartApp configuration from PieHelper"
-					printf "%10s%s\n" "" "- Exit the script normally after basic installation completes and '${PH_APP}' installation will resume"
-					printf "%10s%s" "" "- Press Enter to continue"
+					printf "%10s%s\033[1;33m%s\033[1;37m%s\n" "" "- Exit the script normally after basic installation completes and " "'${PH_APP}'" " installation will resume"
+					printf "%10s%s\033[0;0m" "" "- Press Enter to continue"
 					read -r 2>/dev/null
 					clear
 					if "$PH_SUDO" -E -u "$PH_APP_USER" sh -c "${PH_SUDO} ./retropie_setup.sh"
 					then
 						clear
-						printf "%8s%s\n\n" "" "--> Executing '${PH_APP}' setup script"
+						printf "%8s%s\033[1;33m%s\033[0;0m\n\n" "" "--> Executing the setup script for " "'${PH_APP}'"
 						ph_run_with_rollback -c true -m "Success"
 						if [[ -f "${PH_CONF_DIR}/${PH_APP}.conf" ]]
 						then
@@ -6308,28 +6308,31 @@ declare PH_EMUL_SETUP_DIR_INIT=""
 [[ "$#" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Determining '${PH_APP}' base directory"
+printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Determining the base directory of " "'${PH_APP}'"
 declare PH_APP_USER="$(ph_get_app_user_from_app_name "$PH_APP")"
 if [[ -f /etc/profile.d/10-retropie.sh ]]
 then
 	PH_EMUL_DIR_INIT="$(nawk -F'"' '$1 ~ /bash/ { \
-			print $2 }' /etc/profile.d/10-retropie.sh 2>/dev/null)"
+			print $2 \
+		}' /etc/profile.d/10-retropie.sh 2>/dev/null)"
 	if [[ -n "$PH_EMUL_DIR_INIT" ]]
 	then
 		PH_EMUL_DIR_INIT="${PH_EMUL_DIR_INIT%%/configs*}"
-		printf "%10s\033[32m%s\033[1;37m%s\033[0;0m\n" "" "OK : " "'${PH_EMUL_DIR_INIT}'"
 	fi
 else
 	if [[ -d /opt/retropie ]]
 	then
 		PH_EMUL_DIR_INIT="/opt/retropie"
-		printf "%10s\033[32m%s\033[1;37m%s\033[0;0m\n" "" "OK : " "'${PH_EMUL_DIR_INIT}'"
-	else
-		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not determine (Set '${PH_APP}' option 'PH_EMUL_DIR' manually using 'confopts_ph.sh' or the PieHelper menu"
 	fi
+fi
+if [[ -n "$PH_EMUL_DIR_INIT" ]]
+then
+	ph_run_with_rollback -c true -m "${PH_EMUL_DIR_INIT}"
+else
+	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not determine -> Set '${PH_APP}' option 'PH_EMUL_DIR' manually using 'confopts_ph.sh' or the PieHelper menu"
 	ph_set_result -r 0
 fi
-printf "%8s%s\n" "" "--> Determining '${PH_APP}' setup directory (This may take a while)"
+printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m\n" "" "--> Determining the setup directory of " "'${PH_APP}'" " (This may take a while)"
 if [[ -d "${PH_EMUL_HOME}/RetroPie" ]]
 then
 	PH_EMUL_SETUP_DIR_INIT="${PH_EMUL_HOME}/RetroPie"
@@ -6338,11 +6341,11 @@ else
 fi
 if [[ -n "$PH_EMUL_SETUP_DIR_INIT" ]]
 then
-	printf "%10s\033[1;37m%s\033[0;0m%s\n" "" "OK : " "'${PH_EMUL_SETUP_DIR_INIT}'"
+	ph_run_with_rollback -c true -m "${PH_EMUL_DIR_SETUP_INIT}"
 else
-	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not determine (Set '${PH_APP}' option 'PH_EMUL_SETUP_DIR' manually using 'confopts_ph.sh' or the PieHelper menu"
+	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not determine -> Set '${PH_APP}' option 'PH_EMUL_SETUP_DIR' manually using 'confopts_ph.sh' or the PieHelper menu"
+	ph_set_result -r 0
 fi
-ph_set_result -r 0
 if [[ -n "$PH_EMUL_DIR_INIT" ]]
 then
 	ph_run_with_rollback -c "ph_set_option_to_value ${PH_APP} -r \"PH_EMUL_DIR'${PH_EMUL_DIR_INIT}\"" || \
@@ -7449,7 +7452,7 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 					case "$PH_ANSWER" in 1)
 						break ;;
 							     2)
-						printf "%8s%s" "" "--> Please enter the full pathname of '${PH_APP_EXEC##*/}' (Leave empty to return to the previous menu) :"
+						printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m" "" "--> Please enter the full pathname of " "'${PH_APP_EXEC##*/}'" " (Leave empty to return to the previous menu) :"
 						read -r PH_APP_EXEC 2>/dev/null
 						ph_screen_input "$PH_APP_EXEC" || \
 							return 1
@@ -7457,7 +7460,7 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 							ph_run_with_rollback -c true && \
 							continue ;;
 							     3)
-						printf "%8s%s\n" "" "--> Scanning for executable '${PH_APP_EXEC##*/}' (This may take a while)"
+						printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m\n" "" "--> Scanning for executable " "'${PH_APP_EXEC##*/}'" " (This may take a while)"
 						PH_APP_EXEC="$("$PH_SUDO" find / -type f -perm -o=x \( ! -fstype nfs -a ! -fstype cifs \) -name "${PH_APP_EXEC##*/}" 2>/dev/null)" ;;
 							     4)
 						if [[ "$PH_FORCE_SUPPORT_FLAG" -eq "0" ]]
@@ -8733,23 +8736,21 @@ then
 	ph_set_result -r 1 -m "A valid name is mandatory for integrating an application"
 	return 1
 else
-	printf "%10s\033[32m%s\033[0m\n" "" "OK ('${PH_APP}')"
-	ph_set_result -r 0
+	ph_run_with_rollback -c true -m "${PH_APP}"
 	printf "%8s%s\n" "" "--> Checking '${PH_APP}' application state"
 	PH_APP_STATE="$(ph_get_app_state_from_app_name "$PH_APP")"
 	case "$PH_APP_STATE" in Supported)
-			printf "%10s\033[32m%s\033[0m\n" "" "OK ('${PH_APP_STATE}')" ;;
+			ph_run_with_rollback -c true -m "${PH_APP_STATE}" ;;
 				Integrated|Halted|Running)
 			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid application state"
-			ph_set_result -r 0 -w -m "'${PH_APP}' already integrated"
+			ph_set_result -r 0
 			return 0 ;;
 				*)
-			printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid application state"
-			ph_set_result -r 1 -m "Prior support is mandatory for integrating '${PH_APP}'"
-			return 1 ;;
+			ph_set_result -m "Could not integrate application ${PH_APP} since it has not been priorly supported"
+			ph_run_with_rollback -c false -m "Could not integrate" || \
+				return 1 ;;
 	esac
 fi
-ph_set_result -r 0
 if [[ -n "$PH_APP_STR_TTY" ]]
 then
 	printf "%8s%s\n" "" "--> Checking the tty parameter"
@@ -8761,7 +8762,7 @@ then
 			PH_APP_TTY="2"
 			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid TTY -> Setting to 'tty${PH_APP_TTY}'"
 		else
-			printf "%10s\033[32m%s\033[0m\n" "" "OK ('tty${PH_APP_TTY}')"
+			ph_run_with_rollback -c true -m "tty${PH_APP_TTY}"
 		fi
 	else
 		if [[ "$PH_APP_TTY" -lt "3" || "$PH_APP_TTY" -gt "$PH_PIEH_MAX_TTYS" ]]
@@ -8780,7 +8781,7 @@ then
 				[[ "$PH_APP_TTY" -eq "1" ]] && \
 					return 1
 			else
-				printf "%10s\033[32m%s\033[0m\n" "" "OK ('tty${PH_APP_TTY}')"
+				ph_run_with_rollback -c true -m "tty${PH_APP_TTY}"
 			fi
 		fi
 	fi
@@ -9483,7 +9484,7 @@ PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
 "$PH_SUDO" rm "${PH_MNT_DIR}/"!(.gitignore) 2>/dev/null
 if ! ph_check_object_existence -o sup
 then
-	ph_create_default_base_conf_file sup
+	ph_create_base_conf_file sup
 	ph_support_app -a PieHelper
 else
 	printf "%8s%s\n" "" "--> Checking support for application 'PieHelper'"
@@ -9506,7 +9507,7 @@ fi
 . "$PH_CONF_DIR"/PieHelper.conf >/dev/null 2>&1
 if ! ph_check_object_existence -o int
 then
-	ph_create_default_base_conf_file int
+	ph_create_base_conf_file int
 	ph_integrate_app -a PieHelper
 else
 	printf "%8s%s\n" "" "--> Checking integration for application 'PieHelper'"
@@ -9636,7 +9637,7 @@ then
 fi
 for PH_i in cont os defaults alloweds
 do
-	ph_create_default_base_conf_file "$PH_i"
+	ph_create_base_conf_file "$PH_i"
 done
 for PH_APP in "PieHelper" "Ctrls" $(echo -n "$PH_SUPAPPS")
 do
@@ -10232,7 +10233,7 @@ then
 			fi
 			for PH_i in sup defaults alloweds int os cont
 			do
-				ph_create_default_base_conf_file "$PH_i" || \
+				ph_create_base_conf_file "$PH_i" || \
 					return 1
 			done
 			ph_run_with_rollback -c "ph_pieh_configured_path_conf" || \
@@ -10273,8 +10274,8 @@ then
 			do
 				[[ "$PH_COUNT" -gt "0" ]] && \
 					printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
-				printf "%8s%s\n\n" "" "--> Perform full system update before reboot (Recommended)"
-				printf "%12s\033[1;37m%s\n" "" "- System updates can take a long time depending on the system's current version and configuration"
+				printf "%8s%s\033[1;37m%s\n\n" "" "--> Perform full system update before reboot " "(Recommended)"
+				printf "%12s%s\n" "" "- System updates can take a long time depending on the system's current version and configuration"
 				printf "%12s%s\033[0;0m\n\n" "" "- Please note that system updates are not reversible"
 				printf "%12s%s" "" "Perform update (y/n) ? "
 				read -r PH_ANSWER 2>/dev/null

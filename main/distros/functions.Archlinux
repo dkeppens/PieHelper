@@ -9,7 +9,7 @@ PH_APP_PKG="$(eval "echo -n \"$1\"")"
 [[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Installing package " "'${PH_APP_PKG}'" " (This may take a while)"
+printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m\n" "" "--> Installing package " "'${PH_APP_PKG}'" " (This may take a while)"
 if ! "$PH_SUDO" pacman -S "$PH_APP_PKG" --noconfirm >/dev/null 2>&1
 then
 	ph_set_result -m "An error occurred trying to install package '${PH_APP_PKG}'"
@@ -30,7 +30,7 @@ PH_APP_PKG="$(eval "echo -n \"$1\"")"
 [[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\033[32m%s\033[0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
+printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
 if ph_get_pkg_inst_state "$PH_APP_PKG"
 then
 	ph_run_with_rollback -c true -m "Found"
@@ -52,11 +52,11 @@ PH_APP_PKG="$(eval "echo -n \"$1\"")"
 [[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\033[32m%s\033[0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
+printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
 if ph_get_pkg_inst_state "$PH_APP_PKG"
 then
 	ph_run_with_rollback -c true -m "Found"
-	printf "%8s%s\033[32m%s\033[0m%s\n" "" "--> Uninstalling package " "'${PH_APP_PKG}'" " (This may take a while)"
+	printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m\n" "" "--> Uninstalling package " "'${PH_APP_PKG}'" " (This may take a while)"
 	if "$PH_SUDO" pacman -Rs "$PH_APP_PKG" --noconfirm >/dev/null 2>&1
 	then
 		if "$PH_SUDO" pacman -Rns "$(pacman -Qtdq)" --noconfirm >/dev/null 2>&1
@@ -107,7 +107,7 @@ function ph_update_system {
 [[ "$#" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Updating system (This may take a while)"
+printf "%8s%s\033[1;37m%s\033[0;0m\n" "" "--> Updating your system" " (This may take a while)"
 if "$PH_SUDO" pacman -Syu --noconfirm >/dev/null 2>&1
 then
 	ph_run_with_rollback -c true

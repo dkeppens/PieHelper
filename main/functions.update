@@ -218,7 +218,7 @@ then
 fi
 case "$PH_FILE_TYPE" in link)
 	[[ "$PH_QUIESCE" -eq "1" ]] && \
-        	printf "%s\n" " to '${PH_FILE_SOURCE}'"
+        	printf "%s\033[1;33m%s\033[0;0m\n" " to " "'${PH_FILE_SOURCE}'"
         if [[ "$PH_CREATE_AS_ROOT" -eq "0" ]]
         then
                 "$PH_SUDO" ln -s "$PH_FILE_SOURCE" "$PH_FILE_DEST" 2>/dev/null
