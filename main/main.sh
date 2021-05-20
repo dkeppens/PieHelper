@@ -296,7 +296,7 @@ then
 	PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
 	if [[ "$("$PH_SUDO" cat "/proc/${PPID}/comm" 2>/dev/null)" != +(@(conf|list)*_ph|@(re|)start*|${PH_MOVE_SCRIPTS_REGEX}).sh ]]
 	then
-		if [[ -f "${PH_TMP_DIR}/reported_issues" ]]
+		if [[ -f "${PH_TMP_DIR}/.reported_issues" ]]
 		then
 			ph_show_report || \
 				exit 1
@@ -305,25 +305,25 @@ then
 			then
 				ph_check_pieh_shared_config
 				ph_check_pieh_unconfigured_config
-				if [[ -f "${PH_TMP_DIR}/reported_issues" ]]
+				if [[ -f "${PH_TMP_DIR}/.reported_issues" ]]
 				then
-					printf "%2s%s\n" "" "OR" >>"${PH_TMP_DIR}/reported_issues"
+					printf "%2s%s\n" "" "OR" >>"${PH_TMP_DIR}/.reported_issues"
 					ph_check_pieh_shared_config
 					ph_check_pieh_configured_config
 				fi
 			else
 				ph_check_pieh_shared_config
 				ph_check_pieh_configured_config
-				if [[ -f "${PH_TMP_DIR}/reported_issues" ]]
+				if [[ -f "${PH_TMP_DIR}/.reported_issues" ]]
 				then
-					printf "%2s%s\n" "" "OR" >>"${PH_TMP_DIR}/reported_issues"
+					printf "%2s%s\n" "" "OR" >>"${PH_TMP_DIR}/.reported_issues"
 					ph_check_pieh_shared_config
 					ph_check_pieh_unconfigured_config
 				fi
 			fi
 		fi
 	fi
-	if [[ -f "${PH_TMP_DIR}/reported_issues" ]]
+	if [[ -f "${PH_TMP_DIR}/.reported_issues" ]]
 	then
 		ph_show_report || \
 			exit 1

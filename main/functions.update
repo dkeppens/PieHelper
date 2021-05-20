@@ -13,7 +13,7 @@ PH_i=""
 for PH_i in $("$PH_SUDO" ls -lA "${PH_TMP_DIR}/" 2>/dev/null | nawk 'NR == "1" { \
                 next \
         } \
-        $NF !~ /^\.(gitignore|(un|)configure_in_progress|first_run)/ { \
+        $NF !~ /^\.(gitignore|first_run|reported_issues)/ { \
                 printf " " $NF \
         }')
 do
