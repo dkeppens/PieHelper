@@ -3693,19 +3693,19 @@ then
 			[[ "$PH_APP_TYPE" != "Default" ]] && \
 				PH_RET_CODE="1" ;;
 				Default)
-			[[ "$PH_APP_TYPE" == @(Halted|Running|Integrated|Reserved) ]] && \
+			[[ "$PH_APP_TYPE" == @(Halted|Running|Integrated|Supported|Reserved) ]] && \
 				PH_RET_CODE="1" ;;
 				Supported)
-			[[ "$PH_APP_TYPE" == @(Halted|Running|Integrated|Unused) ]] && \
+			[[ "$PH_APP_TYPE" == @(Halted|Running|Integrated|Reserved|Default|Unused) ]] && \
 				PH_RET_CODE="1" ;;
 				Integrated)
-			[[ "$PH_APP_TYPE" == @(Halted|Running|Unused) ]] && \
+			[[ "$PH_APP_TYPE" == @(Halted|Running|Reserved|Default|Unused) ]] && \
 				PH_RET_CODE="1" ;;
 				Running)
-			[[ "$PH_APP_TYPE" == @(Halted|Unused) ]] && \
+			[[ "$PH_APP_TYPE" == @(Halted|Reserved|Default|Unused) ]] && \
 				PH_RET_CODE="1" ;;
 				Halted)
-			[[ "$PH_APP_TYPE" == @(Running|Unused) ]] && \
+			[[ "$PH_APP_TYPE" == @(Running|Reserved|Default|Unused) ]] && \
 				PH_RET_CODE="1" ;;
 	esac
 	if [[ "$PH_APP_STATE" == @(@(Support|Integrat|Halt)ed|Running) && "$PH_APP_TYPE" == "Default" ]]
