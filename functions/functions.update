@@ -47,7 +47,7 @@ PH_REMOVE_AS_ROOT="1"
 
 OPTIND="1"
 
-while getopts d:t:qr PH_OPTION 2>/dev/null
+while getopts :d:t:qr PH_OPTION
 do
         case "$PH_OPTION" in d)
 		[[ -n "$PH_FILE_DEST" || -z "$OPTARG" ]] && \
@@ -160,7 +160,7 @@ PH_CREATE_AS_ROOT="1"
 
 OPTIND="1"
 
-while getopts d:s:t:qr PH_OPTION 2>/dev/null
+while getopts :d:s:t:qr PH_OPTION
 do
         case "$PH_OPTION" in d)
 		[[ -n "$PH_FILE_DEST" || -z "$OPTARG" ]] && \
@@ -293,7 +293,7 @@ PH_OPTION=""
 OPTIND="1"
 PH_RESULT_TYPE_USED="Normal"
 
-while getopts t PH_OPTION 2>/dev/null
+while getopts :t PH_OPTION
 do
         case "$PH_OPTION" in t)
 		[[ -n "$PH_RESULT_TYPE_USED" || -z "$OPTARG" ]] && \
@@ -346,7 +346,7 @@ PH_RECVD_FLAG="1"
 OPTIND="1"
 PH_RESULT_TYPE_USED="Normal"
 
-while getopts r:m:taw PH_OPTION 2>/dev/null
+while getopts :r:m:taw PH_OPTION
 do
 	case "$PH_OPTION" in r)
 		[[ "$PH_RET_CODE_RECVD_FLAG" -eq "0" ]] && \
@@ -446,7 +446,7 @@ PH_RESULT_INDENT="0"
 
 OPTIND="1"
 
-while getopts i:t PH_OPTION 2>/dev/null
+while getopts :i:t PH_OPTION
 do
         case "$PH_OPTION" in i)
 		[[ "$PH_RESULT_INDENT" -gt "0" ]] && \
@@ -530,7 +530,7 @@ PH_OPTION=""
 
 OPTIND="1"
 
-while getopts p:v: PH_OPTION 2>/dev/null
+while getopts :p:v: PH_OPTION
 do
 	case "$PH_OPTION" in p)
 		[[ -n "$PH_PARAM_USED" || -z "$OPTARG" ]] && \
@@ -627,7 +627,7 @@ PH_COUNT="0"
 
 OPTIND="1"
 
-while getopts c:m: PH_OPTION 2>/dev/null
+while getopts :c:m: PH_OPTION
 do
 	case "$PH_OPTION" in c)
 		[[ -n "$PH_CMD" ]] && \
@@ -742,7 +742,7 @@ PH_RET_CODE="0"
 
 OPTIND="1"
 
-while getopts f:t:q PH_OPTION 2>/dev/null
+while getopts :f:t:q PH_OPTION
 do
 	case "$PH_OPTION" in t)
 		[[ "$OPTARG" != @(immediate|delayed|never) || -n "$PH_ROLLBACK_TIME" ]] && \
@@ -842,7 +842,7 @@ PH_QUIESCE="1"
 
 OPTIND="1"
 
-while getopts p:t:o:f:q PH_OPTION 2>/dev/null
+while getopts :p:t:o:f:q PH_OPTION
 do
 	case "$PH_OPTION" in q)
 		[[ "$PH_QUIESCE" -eq "0" ]] && \
@@ -946,7 +946,7 @@ PH_QUIESCE="1"
 
 OPTIND="1"
 
-while getopts u:q PH_OPTION 2>/dev/null
+while getopts :u:q PH_OPTION
 do
 	case "$PH_OPTION" in q)
 		[[ "$PH_QUIESCE" -eq "0" ]] && \
@@ -1027,7 +1027,7 @@ PH_QUIESCE="1"
 
 OPTIND="1"
 
-while getopts u:q PH_OPTION 2>/dev/null
+while getopts :u:q PH_OPTION
 do
 	case "$PH_OPTION" in q)
 		[[ "$PH_QUIESCE" -eq "0" ]] && \
@@ -1100,7 +1100,7 @@ PH_ACTIONU=""
 
 OPTIND="1"
 
-while getopts u:f:t:p:q PH_OPTION 2>/dev/null
+while getopts :u:f:t:p:q PH_OPTION
 do
 	case "$PH_OPTION" in q)
 		[[ "$PH_QUIESCE" -eq "0" ]] && \
@@ -1254,7 +1254,7 @@ PH_OPTION=""
 
 OPTIND="1"
 
-while getopts a:t:kldcms PH_OPTION 2>/dev/null
+while getopts :a:t:kldcms PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -1435,7 +1435,7 @@ PH_APPU=""
 
 OPTIND="1"
 
-while getopts a:r PH_OPTION 2>/dev/null
+while getopts :a:r PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -1565,7 +1565,7 @@ PH_OPTION=""
 
 OPTIND="1"
 
-while getopts a:t:kldcms PH_OPTION 2>/dev/null
+while getopts :a:t:kldcms PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \

@@ -3,7 +3,15 @@
 
 #set -x
 
-# Enable extended globbing for bash
+# Trap interrupts
+
+trap ":" INT TERM
+
+# Enable robust coding options
+
+set -u -o pipefail
+
+# Enable extended globbing
 
 shopt -s extglob
 
@@ -27,14 +35,12 @@ declare -x PH_SNAPSHOT_DIR
 declare -x PH_MNT_DIR
 declare -x PH_CONF_DIR
 declare -x PH_MAIN_DIR
+declare -x PH_FUNCS_DIR
 declare -x PH_TMP_DIR
 declare -x PH_FILES_DIR
 declare -x PH_MENUS_DIR
 declare -x PH_TEMPLATES_DIR
 declare -x PH_EXCLUDES_DIR
-declare -x PH_SUPPORTED_DISTROS
-declare -x PH_SUPPORTED_DEBIAN_RELS
-declare -x PH_CHECK_SUPPORTED
 declare -x PH_VERSION
 declare -x PH_DISTRO
 declare -x PH_DISTRO_REL
@@ -42,6 +48,9 @@ declare -x PH_RUN_USER
 declare -x PH_SUDO
 declare -x PH_PI_MODEL
 declare -x PH_FILE_SUFFIX
+declare -ax PH_SUPPORTED_DISTROS
+declare -ax PH_SUPPORTED_DEBIAN_RELS
+declare -ax PH_CHECK_SUPPORTED
 
 PH_SCRIPTS_DIR="$(cd "$(dirname "$0")" && pwd)"
 PH_INST_DIR="${PH_SCRIPTS_DIR%/PieHelper/scripts}"
@@ -49,21 +58,14 @@ PH_BASE_DIR="${PH_INST_DIR}/PieHelper"
 PH_BUILD_DIR="${PH_BASE_DIR}/builds"
 PH_SNAPSHOT_DIR="${PH_BASE_DIR}/snapshots"
 PH_MNT_DIR="${PH_BASE_DIR}/mnt"
-PH_CONF_DIR="${PH_SCRIPTS_DIR}/../conf"
-PH_MAIN_DIR="${PH_SCRIPTS_DIR}/../main"
-PH_TMP_DIR="${PH_SCRIPTS_DIR}/../tmp"
-PH_FILES_DIR="${PH_SCRIPTS_DIR}/../files"
+PH_CONF_DIR="${PH_BASE_DIR}/conf"
+PH_MAIN_DIR="${PH_SCRIPTS_DIR}/app"
+PH_FUNCS_DIR="${PH_BASE_DIR}/functions"
+PH_TMP_DIR="${PH_BASE_DIR}/tmp"
+PH_FILES_DIR="${PH_BASE_DIR}/files"
 PH_MENUS_DIR="${PH_FILES_DIR}/menus"
 PH_TEMPLATES_DIR="${PH_FILES_DIR}/templates"
 PH_EXCLUDES_DIR="${PH_FILES_DIR}/excludes"
-PH_SUPPORTED_DISTROS=("Archlinux" "Debian")
-PH_SUPPORTED_DEBIAN_RELS=("jessie" "stretch" "buster" "bullseye")
-PH_CHECK_SUPPORTED+=("${PH_SUPPORTED_DEBIAN_RELS[@]}" "${PH_SUPPORTED_DISTROS[@]}")
-for PH_i in "${!PH_CHECK_SUPPORTED[@]}"
-do
-	[[ "${PH_CHECK_SUPPORTED["${PH_i}"]}" == "Debian" ]] && \
-		unset PH_CHECK_SUPPORTED["${PH_i}"]
-done
 PH_VERSION=""
 PH_DISTRO=""
 PH_DISTRO_REL=""
@@ -85,9 +87,14 @@ then
 else
 	PH_FILE_SUFFIX="_X"
 fi
-
-export PH_SCRIPTS_DIR PH_INST_DIR PH_BASE_DIR PH_BUILD_DIR PH_SNAPSHOT_DIR PH_MNT_DIR PH_CONF_DIR PH_MAIN_DIR PH_TMP_DIR PH_FILES_DIR PH_MENUS_DIR PH_EXCLUDES_DIR PH_TEMPLATES_DIR
-export PH_VERSION PH_DISTRO PH_DISTRO_REL PH_RUN_USER PH_SUDO PH_PI_MODEL PH_FILE_SUFFIX PH_SUPPORTED_DISTROS PH_SUPPORTED_DEBIAN_RELS PH_CHECK_SUPPORTED
+PH_SUPPORTED_DISTROS=("Archlinux" "Debian")
+PH_SUPPORTED_DEBIAN_RELS=("jessie" "stretch" "buster" "bullseye")
+PH_CHECK_SUPPORTED+=("${PH_SUPPORTED_DEBIAN_RELS[@]}" "${PH_SUPPORTED_DISTROS[@]}")
+for PH_i in "${!PH_CHECK_SUPPORTED[@]}"
+do
+	[[ "${PH_CHECK_SUPPORTED["${PH_i}"]}" == "Debian" ]] && \
+		unset PH_CHECK_SUPPORTED["${PH_i}"]
+done
 
 # Global variable declarations related to rollback
 
@@ -120,8 +127,6 @@ PH_ALL_ROLLBACK_PARAMS+=(PH_DEPTH_PARAMS PH_DEPTH PH_CONFIGURED_STATE PH_UNCONFI
 	PH_REMOVE_APPS_SCRIPTS PH_CREATE_OOS_APPS_CODE PH_REMOVE_OOS_APPS_CODE PH_VARIABLES PH_STORE_OPTION PH_RETRIEVE_STORED_OPTION PH_INSTALL_APPS PH_UNINSTALL_APPS \
 	PH_CREATE_APP_USER PH_REMOVE_APP_USER PH_APP_MOUNT_CIFS PH_APP_UMOUNT_CIFS)
 
-export PH_ROLLBACK_USED PH_RESULT_MSG PH_RESULT_TYPE_USED PH_TOTAL_RESULT PH_RESULT PH_ALL_ROLLBACK_PARAMS
-
 # Set Linux distro and release
 
 if [[ -f /usr/bin/pacman ]]
@@ -138,9 +143,20 @@ fi
 
 # Set PATH and LD_LIBRARY_PATH
 
-LD_LIBRARY_PATH="/usr/local/lib:/usr/lib:/lib:${LD_LIBRARY_PATH}"
-PATH="${PH_SCRIPTS_DIR}:/usr/local/bin:${PATH}"
-export LD_LIBRARY_PATH PATH
+if [[ "$(declare -p LD_LIBRARY_PATH 2>/dev/null)" != declare* ]]
+then 
+	LD_LIBRARY_PATH="/usr/local/lib:/usr/lib:/lib"
+	export LD_LIBRARY_PATH
+else
+	LD_LIBRARY_PATH="/usr/local/lib:/usr/lib:/lib:${LD_LIBRARY_PATH}"
+fi
+if [[ "$(declare -p LD_LIBRARY_PATH 2>/dev/null)" != declare* ]]
+then 
+	PATH="${PH_SCRIPTS_DIR}:/usr/local/bin"
+	export PATH
+else
+	PATH="${PH_SCRIPTS_DIR}:/usr/local/bin:${PATH}"
+fi
 
 # Load all relevant module declarations
 
@@ -153,15 +169,15 @@ for PH_i in functions functions.user functions.update $(echo -n "${PH_SUPPORTED_
 		} \
 	}')
 do
-	if [[ -f "${PH_MAIN_DIR}/${PH_i}" && -r "${PH_MAIN_DIR}/${PH_i}" ]]
+	if [[ -f "${PH_FUNCS_DIR}/${PH_i}" && -r "${PH_FUNCS_DIR}/${PH_i}" ]]
 	then
-		if ! source "${PH_MAIN_DIR}/${PH_i}" >/dev/null 2>&1
+		if ! source "${PH_FUNCS_DIR}/${PH_i}" >/dev/null 2>&1
 		then
-			printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Could not load critical codebase file '${PH_MAIN_DIR}/${PH_i}')"
+			printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Could not load critical codebase file '${PH_FUNCS_DIR}/${PH_i}')"
 			exit 1
 		fi
 	else
-		printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '${PH_MAIN_DIR}/${PH_i}')"
+		printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '${PH_FUNCS_DIR}/${PH_i}')"
 		exit 1
 	fi
 done

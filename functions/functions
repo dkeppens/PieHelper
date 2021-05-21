@@ -35,13 +35,13 @@ PH_APPL="${PH_APP:0:3}"
 [[ -z "$PH_APP" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Adding configure function for application '${PH_APP}' to codebase file '${PH_MAIN_DIR}/functions.user'"
+printf "%8s%s\n" "" "--> Adding configure function for application '${PH_APP}' to codebase file '${PH_FUNCS_DIR}/functions.user'"
 if ph_check_app_state_validity -a "$PH_APP" -q -d
 then
 	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Nothing to do since ${PH_APP} is not an out-of-scope application"
 	ph_set_result -r 0
 else
-	if ! cat >>"${PH_MAIN_DIR}/functions.user" 2>/dev/null <<EOF
+	if ! cat >>"${PH_FUNCS_DIR}/functions.user" 2>/dev/null <<EOF
 
 function ph_configure_${PH_APPL} {
 
@@ -50,12 +50,12 @@ return 0
 }
 EOF
 	then
-		ph_set_result -m "An error occurred trying to add function 'ph_configure_${PH_APPL}' to codebase file '${PH_MAIN_DIR}/functions.user'"
+		ph_set_result -m "An error occurred trying to add function 'ph_configure_${PH_APPL}' to codebase file '${PH_FUNCS_DIR}/functions.user'"
 		ph_run_with_rollback -c false -c "Could not add" || \
 			return 1
 	else
 		ph_add_value_to_param -p PH_REMOVE_OOS_APPS_CODE -v "$PH_APP"
-		ph_run_with_rollback -c true -m "Configuration code for ${PH_APP} can now be added to '${PH_MAIN_DIR}/functions.user'"
+		ph_run_with_rollback -c true -m "Configuration code for ${PH_APP} can now be added to '${PH_FUNCS_DIR}/functions.user'"
 	fi
 fi
 return 0
@@ -81,7 +81,7 @@ PH_OPTION=""
 
 OPTIND="1"
 
-while getopts a:c: PH_OPTION 2>/dev/null
+while getopts :a:c: PH_OPTION
 do
 	case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -141,7 +141,7 @@ PH_OPTION=""
 
 OPTIND="1"
 
-while getopts a:c: PH_OPTION 2>/dev/null
+while getopts :a:c: PH_OPTION
 do
 	case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -195,7 +195,7 @@ PH_APPL="${PH_APP:0:3}"
 [[ -z "$PH_APP" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Removing configure function for application '${PH_APP}' from codebase file '${PH_MAIN_DIR}/functions.user'"
+printf "%8s%s\n" "" "--> Removing configure function for application '${PH_APP}' from codebase file '${PH_FUNCS_DIR}/functions.user'"
 if ph_check_app_state_validity -a "$PH_APP" -q -d
 then
 	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Nothing to do since ${PH_APP} is not an out-of-scope application"
@@ -216,9 +216,9 @@ else
 			if (flag == 0) {
 				print $0
 			}
-		}' "${PH_MAIN_DIR}/functions.user" >"${PH_TMP_DIR}/functions_user_tmp" 2>/dev/null
+		}' "${PH_FUNCS_DIR}/functions.user" >"${PH_TMP_DIR}/functions_user_tmp" 2>/dev/null
 	then
-		if mv "${PH_TMP_DIR}/functions_user_tmp" "${PH_MAIN_DIR}/functions.user" 2>/dev/null
+		if mv "${PH_TMP_DIR}/functions_user_tmp" "${PH_FUNCS_DIR}/functions.user" 2>/dev/null
 		then
 			ph_add_value_to_param -p PH_CREATE_OOS_APPS_CODE -v "$PH_APP"
 			ph_run_with_rollback -c true && \
@@ -227,7 +227,7 @@ else
 	fi
 fi
 "$PH_SUDO" rm "${PH_TMP_DIR}/functions_user_tmp" 2>/dev/null
-ph_set_result -m "An error occurred trying to remove function 'ph_configure_${PH_APPL}' from codebase file '${PH_MAIN_DIR}/functions.user'"
+ph_set_result -m "An error occurred trying to remove function 'ph_configure_${PH_APPL}' from codebase file '${PH_FUNCS_DIR}/functions.user'"
 ph_run_with_rollback -c false -m "Could not remove" || \
 	return 1
 }
@@ -252,7 +252,7 @@ PH_OPTION=""
 
 OPTIND="1"
 
-while getopts l:f:r PH_OPTION 2>/dev/null
+while getopts :l:f:r PH_OPTION
 do
 	case "$PH_OPTION" in l)
 		[[ -n "$PH_LINE" ]] && \
@@ -331,7 +331,7 @@ PH_OPTION=""
 
 OPTIND="1"
 
-while getopts l:f:r PH_OPTION 2>/dev/null
+while getopts :l:f:r PH_OPTION
 do
 	case "$PH_OPTION" in l)
 		[[ -n "$PH_LINE_REGEX" || -z "$OPTARG" ]] && \
@@ -528,7 +528,7 @@ PH_OPTION=""
 
 OPTIND="1"
 
-while getopts v:m: PH_OPTION 2>/dev/null
+while getopts :v:m: PH_OPTION
 do
 	case "$PH_OPTION" in v)
 		[[ -n "$PH_NEW_VERSION" || -z "$OPTARG" ]] && \
@@ -622,7 +622,7 @@ PH_OPTION=""
 
 OPTIND="1"
 
-while getopts m:v: PH_OPTION 2>/dev/null
+while getopts :m:v: PH_OPTION
 do
 	case "$PH_OPTION" in m)
 		[[ -n "$PH_GIT_COMMIT_MSG" ]] && \
@@ -694,7 +694,7 @@ PH_OLD_VERSION="$(git tag -l --points-at HEAD 2>/dev/null)"
 PH_OLD_GIT_COMMIT_MSG="$(git log -1 --pretty=%B 2>/dev/null)"
 OPTIND="1"
 
-while getopts m:v: PH_OPTION 2>/dev/null
+while getopts :m:v: PH_OPTION
 do
 	case "$PH_OPTION" in m)
 		[[ -n "$PH_GIT_COMMIT_MSG" ]] && \
@@ -749,7 +749,7 @@ PH_OPTION=""
 
 OPTIND="1"
 
-while getopts d:r:n:a: PH_OPTION 2>/dev/null
+while getopts :d:r:n:a: PH_OPTION
 do
 	case "$PH_OPTION" in d)
 		[[ -n "$PH_GIT_REPO_DIR" || -z "$OPTARG" ]] && \
@@ -832,7 +832,7 @@ PH_OPTION=""
 
 OPTIND="1"
 
-while getopts d:n:r:a: PH_OPTION 2>/dev/null
+while getopts :d:n:r:a: PH_OPTION
 do
 	case "$PH_OPTION" in d)
 		[[ -n "$PH_GIT_REPO_DIR" || -z "$OPTARG" ]] && \
@@ -906,7 +906,7 @@ PH_OPTION=""
 
 OPTIND="1"
 
-while getopts v:m: PH_OPTION 2>/dev/null
+while getopts :v:m: PH_OPTION
 do
 	case "$PH_OPTION" in v)
 		[[ -n "$PH_NEW_VERSION" || -z "$OPTARG" ]] && \
@@ -976,7 +976,7 @@ PH_OPTION=""
 
 OPTIND="1"
 
-while getopts v:m: PH_OPTION 2>/dev/null
+while getopts :v:m: PH_OPTION
 do
 	case "$PH_OPTION" in v)
 		[[ -n "$PH_NEW_VERSION" || -z "$OPTARG" ]] && \
@@ -1613,7 +1613,7 @@ PH_RET_CODE="0"
 
 OPTIND="1"
 
-while getopts o:q PH_OPTION 2>/dev/null
+while getopts :o:q PH_OPTION
 do
 	case "$PH_OPTION" in o)
 		[[ -n "$PH_OBJECT" || -z "$OPTARG" ]] && \
@@ -1860,7 +1860,7 @@ PH_APPL=""
 
 OPTIND="1"
 
-while getopts a: PH_OPTION 2>/dev/null
+while getopts :a: PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -2026,8 +2026,8 @@ then
 	done
 	printf "%10s\033[32m%s\033[0m\n" "" "OK"
 	printf "%8s%s\n" "" "--> Updating 'Unique' codebase files"
-	for PH_i in /PieHelper${PH_SCRIPTS_DIR##*PieHelper}/app/pre_cmds/ /PieHelper${PH_SCRIPTS_DIR##*PieHelper}/app/post_cmds/ \
-		/PieHelper${PH_MAIN_DIR##*PieHelper}/ /PieHelper${PH_MAIN_DIR##*PieHelper}/distros/ /PieHelper${PH_SCRIPTS_DIR##*PieHelper}/app/expect/
+	for PH_i in /PieHelper${PH_MAIN_DIR##*PieHelper}/pre_cmds/ /PieHelper${PH_MAIN_DIR##*PieHelper}/post_cmds/ \
+		/PieHelper${PH_MAIN_DIR##*PieHelper}/ /PieHelper${PH_FUNCS_DIR##*PieHelper}/ /PieHelper${PH_FUNCS_DIR##*PieHelper}/distros/ /PieHelper${PH_MAIN_DIR##*PieHelper}/expect/
 	do
 		for PH_j in $(ls "${PH_UPDATE_DIR}${PH_i}" 2>/dev/null)
 		do
@@ -2062,7 +2062,7 @@ then
 	done
 	printf "%10s\033[32m%s\033[0m\n" "" "OK"
 	printf "%8s%s\n" "" "--> Sourcing new 'Shared' codebase"
-	source "${PH_MAIN_DIR}/functions.update" 2>/dev/null
+	source "${PH_FUNCS_DIR}/functions.update" 2>/dev/null
 	printf "%10s\033[32m%s\033[0m\n" "" "OK"
 	for PH_APP in $(ph_get_app_list_by_state -s Supported -t minimum)
 	do
@@ -2189,7 +2189,7 @@ PH_RESTORE_AS_ROOT="1"
 
 OPTIND="1"
 
-while getopts f:rc PH_OPTION 2>/dev/null
+while getopts :f:rc PH_OPTION
 do
 	case "$PH_OPTION" in f)
 		[[ -n "$PH_FILE" || -z "$OPTARG" ]] && \
@@ -2268,7 +2268,7 @@ PH_STORE_AS_ROOT="1"
 
 OPTIND="1"
 
-while getopts f:rc PH_OPTION 2>/dev/null
+while getopts :f:rc PH_OPTION
 do
 	case "$PH_OPTION" in f)
 		[[ -n "$PH_FILE" || -z "$OPTARG" ]] && \
@@ -2528,7 +2528,7 @@ PH_il=""
 
 OPTIND="1"
 
-while getopts u:t:c:i:p: PH_OPTION 2>/dev/null
+while getopts :u:t:c:i:p: PH_OPTION
 do
         case "$PH_OPTION" in u)
 		[[ -n "$PH_APP_USER" || -z "$OPTARG" ]] && \
@@ -2792,7 +2792,7 @@ PH_QUIESCE="1"
 
 OPTIND="1"
 
-while getopts q PH_OPTION 2>/dev/null
+while getopts :q PH_OPTION
 do
         case "$PH_OPTION" in q)
 		[[ "$PH_QUIESCE" -eq "0" ]] && \
@@ -3148,7 +3148,7 @@ PH_APPL=""
 
 OPTIND="1"
 
-while getopts a: PH_OPTION 2>/dev/null
+while getopts :a: PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -3175,7 +3175,7 @@ then
 		"$(functions 2>&1 | grep -E "function ph_configure_${PH_APPL} {" >/dev/null ; echo "$?")" -ne "0" ]]
 	then
 		printf "%8s%s\n" "" "--> Configuring ${PH_APP}"
-		ph_set_result -m "${PH_APP} is an out-of-scope application and requires prior user-side development of a function called 'ph_configure_${PH_APPL}' in file '${PH_MAIN_DIR}/functions.user'"
+		ph_set_result -m "${PH_APP} is an out-of-scope application and requires prior user-side development of a function called 'ph_configure_${PH_APPL}' in file '${PH_FUNCS_DIR}/functions.user'"
 		ph_run_with_rollback -c false -m "Could not configure" || \
 			return 1
 	fi
@@ -3550,7 +3550,7 @@ PH_APPL=""
 
 OPTIND="1"
 
-while getopts a:isuhrdqfv PH_OPTION 2>/dev/null
+while getopts :a:isuhrdqfv PH_OPTION
 do
 	case "$PH_OPTION" in i)
 		[[ -n "$PH_APP_TYPE" ]] && \
@@ -3760,7 +3760,7 @@ PH_BOOT_TTY_FLAG="1"
 
 OPTIND="1"
 
-while getopts t:a: PH_OPTION 2>/dev/null
+while getopts :t:a: PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -3924,7 +3924,7 @@ PH_RET_CODE="0"
 
 OPTIND="1"
 
-while getopts n:v: PH_OPTION 2>/dev/null
+while getopts :n:v: PH_OPTION
 do
         case "$PH_OPTION" in n)
 		[[ -n "$PH_VARNAME" || -z "$OPTARG" ]] && \
@@ -4137,7 +4137,7 @@ PH_OPTION=""
 
 OPTIND="1"
 
-while getopts o:a:r PH_OPTION 2>/dev/null
+while getopts :o:a:r PH_OPTION
 do
         case "$PH_OPTION" in o)
 		[[ -n "$PH_OPT" || -z "$OPTARG" ]] && \
@@ -4479,7 +4479,7 @@ PH_COUNT="0"
 OPTIND="1"
 PH_ROLLBACK_USED="yes"
 
-while getopts urb PH_OPTION 2>/dev/null
+while getopts :urb PH_OPTION
 do
         case "$PH_OPTION" in r)
 		[[ -n "$PH_ACTION" ]] && \
@@ -5181,7 +5181,7 @@ PH_COPY_AS_ROOT="1"
 
 OPTIND="1"
 
-while getopts s:d:mrq PH_OPTION 2>/dev/null
+while getopts :s:d:mrq PH_OPTION
 do
 	case "$PH_OPTION" in s)
 		[[ -n "$PH_FILE_SOURCE" || -z "$OPTARG" ]] && \
@@ -5386,7 +5386,7 @@ OPTIND="2"
 
 ([[ -f "${PH_CONF_DIR}/${PH_APP}.conf" && "$#" -gt "1" ]] ; return "$?") || \
 	ph_set_option_to_value PieHelper -h && \
-	while getopts o:r:h PH_OPTION 2>/dev/null
+	while getopts :o:r:h PH_OPTION
 do
 	case "$PH_OPTION" in o)
 			export PH_MSG_TYPE="Warning" ;;
@@ -6058,7 +6058,7 @@ PH_APPU=""
 
 OPTIND="1"
 
-while getopts a:u: PH_OPTION 2>/dev/null
+while getopts :a:u: PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" ]] && \
@@ -6392,7 +6392,7 @@ PH_APPU=""
 
 OPTIND="1"
 
-while getopts a: PH_OPTION 2>/dev/null
+while getopts :a: PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -6591,7 +6591,7 @@ PH_APP_TTY="0"
 
 OPTIND="1"
 
-while getopts a:u:t:c:i: PH_OPTION 2>/dev/null
+while getopts :a:u:t:c:i: PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -6786,7 +6786,7 @@ PH_il=""
 
 OPTIND="1"
 
-while getopts a:c:u:i:p: PH_OPTION 2>/dev/null
+while getopts :a:c:u:i:p: PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -7034,7 +7034,7 @@ PH_il=""
 
 OPTIND="1"
 
-while getopts a:u:c:i: PH_OPTION 2>/dev/null
+while getopts :a:u:c:i: PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -7138,7 +7138,7 @@ PH_COUNT="0"
 
 OPTIND="1"
 
-while getopts a:t: PH_OPTION 2>/dev/null
+while getopts :a:t: PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -7270,7 +7270,7 @@ PH_APPU=""
 OPTIND="1"
 PH_PASS_APP_USER=""
 
-while getopts a:c:u:p:i:f PH_OPTION 2>/dev/null
+while getopts :a:c:u:p:i:f PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -7598,7 +7598,7 @@ PH_RET_CODE="0"
 
 OPTIND="1"
 
-while getopts a:t: PH_OPTION 2>/dev/null
+while getopts :a:t: PH_OPTION
 do
 	case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -7706,7 +7706,7 @@ PH_PKG_RECEIVED_FLAG="1"
 
 OPTIND="1"
 
-while getopts a:c:p: PH_OPTION 2>/dev/null
+while getopts :a:c:p: PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -7815,7 +7815,7 @@ PH_il=""
 
 OPTIND="1"
 
-while getopts a:c:u:i: PH_OPTION 2>/dev/null
+while getopts :a:c:u:i: PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -7956,7 +7956,7 @@ PH_QUIESCE="1"
 
 OPTIND="1"
 
-while getopts a:f:c:v:q PH_OPTION 2>/dev/null
+while getopts :a:f:c:v:q PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -8073,7 +8073,7 @@ PH_COUNT="0"
 
 OPTIND="1"
 
-while getopts a:t: PH_OPTION 2>/dev/null
+while getopts :a:t: PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -8186,7 +8186,7 @@ PH_CREATE_FLAG="1"
 
 OPTIND="1"
 
-while getopts a:p:u:i: PH_OPTION 2>/dev/null
+while getopts :a:p:u:i: PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -8330,7 +8330,7 @@ PH_OLDOPTIND="$OPTIND"
 
 OPTIND="1"
 
-while getopts a:u: PH_OPTION 2>/dev/null
+while getopts :a:u: PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -8397,7 +8397,7 @@ PH_COUNT="0"
 
 OPTIND="1"
 
-while getopts a:u: PH_OPTION 2>/dev/null
+while getopts :a:u: PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -8499,7 +8499,7 @@ PH_COUNT="0"
 
 OPTIND="1"
 
-while getopts u:q PH_OPTION 2>/dev/null
+while getopts :u:q PH_OPTION
 do
         case "$PH_OPTION" in u)
 		[[ -n "$PH_APP_USER" || -z "$OPTARG" ]] && \
@@ -8564,7 +8564,7 @@ PH_COUNT="0"
 
 OPTIND="1"
 
-while getopts u:q PH_OPTION 2>/dev/null
+while getopts :u:q PH_OPTION
 do
         case "$PH_OPTION" in u)
 		[[ -n "$PH_APP_USER" || -z "$OPTARG" ]] && \
@@ -8641,7 +8641,7 @@ PH_APP_TTY="0"
 
 OPTIND="1"
 
-while getopts a:t:c:u: PH_OPTION 2>/dev/null
+while getopts :a:t:c:u: PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -8853,7 +8853,7 @@ PH_APP_TTY="0"
 
 OPTIND="1"
 
-while getopts a:u:t: PH_OPTION 2>/dev/null
+while getopts :a:u:t: PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -8948,7 +8948,7 @@ PH_APPL=""
 
 OPTIND="1"
 
-while getopts a:u:t: PH_OPTION 2>/dev/null
+while getopts :a:u:t: PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
@@ -9410,8 +9410,8 @@ then
 	return "$?"
 fi
 "$PH_SUDO" rm "${PH_TMP_DIR}/.first_run" 2>/dev/null
-for PH_i in "$PH_SCRIPTS_DIR" "${PH_SCRIPTS_DIR}/../app/expect" "$PH_FILES_DIR" "$PH_MENUS_DIR" "$PH_CONF_DIR" "${PH_CONF_DIR}/distros" \
-	"${PH_MAIN_DIR}" "${PH_MAIN_DIR}/distros" "${PH_SCRIPTS_DIR}/app/post_cmds" "${PH_SCRIPTS_DIR}/app/pre_cmds" "$PH_MNT_DIR" \
+for PH_i in "$PH_SCRIPTS_DIR" "$PH_MAIN_DIR" "${PH_MAIN_DIR}/expect" "$PH_FILES_DIR" "$PH_MENUS_DIR" "$PH_CONF_DIR" "${PH_CONF_DIR}/distros" \
+	"${PH_FUNCS_DIR}" "${PH_FUNCS_DIR}/distros" "${PH_MAIN_DIR}/post_cmds" "${PH_MAIN_DIR}/pre_cmds" "$PH_MNT_DIR" \
 	"$PH_TMP_DIR" "$PH_BUILD_DIR" "$PH_SNAPSHOT_DIR" "$PH_TEMPLATES_DIR" "$PH_EXCLUDES_DIR" "${PH_FILES_DIR}/stored"
 do
 	ph_check_object_existence -o "$PH_i" || \
@@ -9448,12 +9448,12 @@ do
 done
 for PH_i in "${PH_SUPPORTED_DISTROS[@]}"
 do
-	ph_check_object_existence -o "${PH_MAIN_DIR}/distros/functions.${PH_i}" || \
+	ph_check_object_existence -o "${PH_FUNCS_DIR}/distros/functions.${PH_i}" || \
 		return 1
 done
 for PH_i in functions functions.update functions.user
 do
-	ph_check_object_existence -o "${PH_MAIN_DIR}/${PH_i}" || \
+	ph_check_object_existence -o "${PH_FUNCS_DIR}/${PH_i}" || \
 		return 1
 done
 ph_check_object_existence -o "${PH_SCRIPTS_DIR}/../app/expect/confctrls.expect" || \
@@ -9463,26 +9463,25 @@ do
 	ph_check_object_existence -o "${PH_BASE_DIR}/${PH_i}"
 done
 PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
-"$PH_SUDO" rm "${PH_BASE_DIR}/"!(@(README.md|TODO|CODE_OF_CONDUCT.md|INSTALL|HOWTO|LICENSE|builds|snapshots|tmp|mnt|main|conf|files|.git|.github|scripts)) 2>/dev/null
-"$PH_SUDO" rm "${PH_SCRIPTS_DIR}/"!(@(conf*_ph|list_ph|@(re|)start*|stop*|${PH_MOVE_SCRIPTS_REGEX})\.sh) 2>/dev/null
-"$PH_SUDO" rm "${PH_SCRIPTS_DIR}/../"!(@(app|user)) 2>/dev/null
-"$PH_SUDO" rm "${PH_SCRIPTS_DIR}/../app/"!(@(expect|@(pre|post)_cmds)) 2>/dev/null
-"$PH_SUDO" rm -r "${PH_SCRIPTS_DIR}/../app/expect/"!(confctrls\.expect) 2>/dev/null
-"$PH_SUDO" rm -r "${PH_SCRIPTS_DIR}/../app/pre_cmds/"!(@(Kodi|PieHelper)-PRE\.sh) 2>/dev/null
-"$PH_SUDO" rm -r "${PH_SCRIPTS_DIR}/../app/post_cmds/"!(@(Kodi|PieHelper)-POST\.sh) 2>/dev/null
-"$PH_SUDO" rm "${PH_MAIN_DIR}/"!(@(distros|functions@(|\.@(user|update)))) 2>/dev/null
-"$PH_SUDO" rm -r "${PH_MAIN_DIR}/distros/"!(functions\.@($(sed 's/ /\|/g'<<<"${PH_SUPPORTED_DISTROS[@]}"))) 2>/dev/null
+"$PH_SUDO" rm "${PH_BASE_DIR}/"!(@(README.md|TODO|CODE_OF_CONDUCT.md|INSTALL|HOWTO|LICENSE|@(build|snapshot|function|script|file)s|tmp|mnt|main|conf|.git|.github)) 2>/dev/null
+"$PH_SUDO" rm "${PH_SCRIPTS_DIR}/"!(@(app|@(@(conf|list)*_ph|@(re|)start*|stop*|${PH_MOVE_SCRIPTS_REGEX})\.sh)) 2>/dev/null
+"$PH_SUDO" rm "${PH_MAIN_DIR}/"!(@(@(pre|post)_cmds|main.sh|expect)) 2>/dev/null
+"$PH_SUDO" rm -r "${PH_MAIN_DIR}/expect/"!(@(setpasswd|confctrls)\.expect) 2>/dev/null
+"$PH_SUDO" rm -r "${PH_MAIN_DIR}/pre_cmds/"!(@(Kodi|PieHelper)-PRE\.sh) 2>/dev/null
+"$PH_SUDO" rm -r "${PH_MAIN_DIR}/post_cmds/"!(@(Kodi|PieHelper)-POST\.sh) 2>/dev/null
+"$PH_SUDO" rm "${PH_FUNCS_DIR}/"!(@(distros|functions@(|\.@(user|update)))) 2>/dev/null
+"$PH_SUDO" rm -r "${PH_FUNCS_DIR}/distros/"!(functions\.@($(sed 's/ /\|/g'<<<"${PH_SUPPORTED_DISTROS[@]}"))) 2>/dev/null
 "$PH_SUDO" rm "${PH_FILES_DIR}/"!(@(menus|excludes|templates|stored|VERSIONS|default_apps_@(X|GL))) 2>/dev/null
 "$PH_SUDO" rm "${PH_FILES_DIR}/stored/"!(@(autologin|logind)_conf|10-retropie_sh) 2>/dev/null
 "$PH_SUDO" rm -r "${PH_EXCLUDES_DIR}/"!(@(tar|kodi)\.excludes) 2>/dev/null
 "$PH_SUDO" rm -r "${PH_TEMPLATES_DIR}/"!(@(@(Login|@(S|Res)tart|Stop|Move@(to|from)PieH|Move)Script|@(@(Res|S)tart|Stop)ScriptPieH|@(Kodi|Moonlight|PieHelper|Emulationstation|Bash|X11|Ctrls|OOSapp)_conf)\.template) 2>/dev/null
-"$PH_SUDO" rm "${PH_CONF_DIR}/"!(@(distros|@(supported|integrated)_apps|OS.defaults|VERSION|controller_cli_ids)) 2>/dev/null
-"$PH_SUDO" rm -r "${PH_CONF_DIR}/distros/"!(@($(sed 's/ /\|/g'<<<${PH_CHECK_SUPPORTED[@]})).conf) 2>/dev/null
-"$PH_SUDO" rm -r "${PH_MENUS_DIR}/"!(*.lst) 2>/dev/null
-"$PH_SUDO" rm -r "${PH_TMP_DIR}/"!(.@(first_run|gitignore|stored_options)) 2>/dev/null
-"$PH_SUDO" rm -r "${PH_BUILD_DIR}/"!(@(PieHelper*.tar|.gitignore)) 2>/dev/null
-"$PH_SUDO" rm -r "${PH_SNAPSHOT_DIR}/"!(@(PieHelper*.tar|.gitignore)) 2>/dev/null
-"$PH_SUDO" rm "${PH_MNT_DIR}/"!(.gitignore) 2>/dev/null
+"$PH_SUDO" rm "${PH_CONF_DIR}/"!(@(distros|@(supported|integrated)_apps|OS\.defaults|VERSION|controller_cli_ids)) 2>/dev/null
+"$PH_SUDO" rm -r "${PH_CONF_DIR}/distros/"!(@($(sed 's/ /\|/g'<<<${PH_CHECK_SUPPORTED[@]}))\.conf) 2>/dev/null
+"$PH_SUDO" rm -r "${PH_MENUS_DIR}/"!(*\.lst) 2>/dev/null
+"$PH_SUDO" rm -r "${PH_TMP_DIR}/"!(\.@(first_run|gitignore|stored_options)) 2>/dev/null
+"$PH_SUDO" rm -r "${PH_BUILD_DIR}/"!(@(PieHelper*\.tar|\.gitignore)) 2>/dev/null
+"$PH_SUDO" rm -r "${PH_SNAPSHOT_DIR}/"!(@(PieHelper*\.tar|\.gitignore)) 2>/dev/null
+"$PH_SUDO" rm "${PH_MNT_DIR}/"!(\.gitignore) 2>/dev/null
 if ! ph_check_object_existence -o sup
 then
 	ph_create_base_conf_file sup
@@ -9808,7 +9807,7 @@ PH_OPTION=""
 
 OPTIND="1"
 
-while getopts u:g: PH_OPTION 2>/dev/null
+while getopts :u:g: PH_OPTION
 do
         case "$PH_OPTION" in u)
 		[[ -n "$PH_APP_USER" || -z "$OPTARG" ]] && \
@@ -10013,7 +10012,7 @@ PH_PIEH_ADDED_FLAG="1"
 
 OPTIND="1"
 
-while getopts s:t: PH_OPTION 2>/dev/null
+while getopts :s:t: PH_OPTION
 do
 	case "$PH_OPTION" in s)
 		[[ -n "$PH_REQ_APP_STATE" || "$OPTARG" != @(Integrated|Supported|Default|Running|Halted|Unknown|Reserved) ]] && \
@@ -10438,7 +10437,7 @@ PH_APPU=""
 
 OPTIND="1"
 
-while getopts a:p:s:k:l:o:u: PH_OPTION 2>/dev/null
+while getopts :a:p:s:k:l:o:u: PH_OPTION
 do
         case "$PH_OPTION" in a)
 		[[ -n "$PH_APP" ]] && \
@@ -11008,7 +11007,6 @@ PH_APPU_CIFS_DIR="PH_${PH_APPU}_CIFS_DIR"
 PH_APPU_CIFS_SUBDIR="PH_${PH_APPU}_CIFS_SUBDIR"
 PH_APPU_PERSISTENT="PH_${PH_APPU}_PERSISTENT"
 
-set +o pipefail
 case "$PH_ACTION" in start)
 	if [[ "$PH_FG_CONSOLE" -eq "$PH_APP_TTY" ]]
 	then

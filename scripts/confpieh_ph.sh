@@ -3,7 +3,19 @@
 # Enable debug by uncommenting the line below that says "#set -x"
 # Disable debug by commenting out the line below that says "set -x"
 
-. "$(dirname "$0")"/../main/main.sh || exit "$?" && set +x
+if [[ -f "$(dirname "$0" 2>/dev/null)/app/main.sh" && -r "$(dirname "$0" 2>/dev/null)/app/main.sh" ]]
+then
+	if ! source "$(dirname "$0" 2>/dev/null)/app/main.sh"
+	then
+		printf "\n%2s\033[1;31m%s\033[0;0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Could not load critical codebase file '$(dirname "$0" 2>/dev/null)/app/main.sh'"
+		exit 1
+	else
+		set +x
+	fi
+else
+	printf "\n%2s\033[1;31m%s\033[0;0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '$(dirname "$0" 2>/dev/null)/app/main.sh'"
+	exit 1
+fi
 
 #set -x
 

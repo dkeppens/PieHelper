@@ -2,7 +2,19 @@
 # Run application management routines (by Davy Keppens on 03/11/2018)
 # Enable/Disable debug by running 'confpieh_ph.sh -p debug -m confapps_ph.sh'
 
-. "$(dirname "$0")"/../main/main.sh || exit "$?" && set +x
+if [[ -f "$(dirname "$0" 2>/dev/null)/app/main.sh" && -r "$(dirname "$0" 2>/dev/null)/app/main.sh" ]]
+then
+	if ! source "$(dirname "$0" 2>/dev/null)/app/main.sh"
+	then
+		printf "\n%2s\033[1;31m%s\033[0;0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Could not load critical codebase file '$(dirname "$0" 2>/dev/null)/app/main.sh'"
+		exit 1
+	else
+		set +x
+	fi
+else
+	printf "\n%2s\033[1;31m%s\033[0;0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '$(dirname "$0" 2>/dev/null)/app/main.sh'"
+	exit 1
+fi
 
 #set -x
 

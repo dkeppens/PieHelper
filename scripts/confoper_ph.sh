@@ -2036,10 +2036,8 @@ case $PH_ACTION in all)
 		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s\033[32m%s\033[0m\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 			 update)
-		set -o pipefail
 		ph_update_system | sed 's/Starting system update/Executing function update/'
 		[[ "$?" -eq "0" ]] && PH_RESULT="SUCCESS" || PH_RESULT="FAILED"
-		set +o pipefail
                 if [[ "$(cat /proc/"$PPID"/comm)" != "confoper_ph.sh" ]]
                 then
 			printf "\033[36m%s\033[0m\n" "- Proposing recommended and possibly required (only in case of kernel and/or bootloader/firmware update) reboot" 

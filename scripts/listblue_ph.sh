@@ -2,7 +2,19 @@
 # List bluetooth adapter(s) (by Davy Keppens on 26/12/2018)
 # Enable/Disable debug by running 'confpieh_ph.sh -p debug -m listblue_ph.sh'
 
-. "$(dirname "$0")"/../main/main.sh || exit "$?" && set +x
+if [[ -f "$(dirname "$0" 2>/dev/null)/app/main.sh" && -r "$(dirname "$0" 2>/dev/null)/app/main.sh" ]]
+then
+	if ! source "$(dirname "$0" 2>/dev/null)/app/main.sh"
+	then
+		printf "\n%2s\033[1;31m%s\033[0;0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Could not load critical codebase file '$(dirname "$0" 2>/dev/null)/app/main.sh'"
+		exit 1
+	else
+		set +x
+	fi
+else
+	printf "\n%2s\033[1;31m%s\033[0;0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '$(dirname "$0" 2>/dev/null)/app/main.sh'"
+	exit 1
+fi
 
 #set -x
 
@@ -38,11 +50,9 @@ then
 	"$PH_SUDO" systemctl start bluetooth >/dev/null 2>&1 || PH_RET_CODE="1"
 	if [[ "$PH_RET_CODE" -eq "0" ]]
 	then
-		set -o pipefail
 		PH_NR_ADAPTS=`"$PH_SUDO" bt-adapter -l 2>/dev/null | nawk -F'\(' '$0 ~ /No adapters found/ { print "None" ; exit 0 } \
 							$0 !~ /Available adapters/ { print substr($2,1,length($2)-1) } { next }' | wc -l`
 		PH_RET_CODE="$?" 
-		set +o pipefail
 		if [[ "$PH_RET_CODE" -eq "0" && "$PH_NR_ADAPTS" -ne "0" ]]
 		then
 			for PH_i in `"$PH_SUDO" bt-adapter -l 2>/dev/null | nawk -F'\(' 'BEGIN { ORS = " " } $0 !~ /Available adapters/ { print substr($2,1,length($2)-1) } { next }'`
