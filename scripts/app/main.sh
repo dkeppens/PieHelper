@@ -11,9 +11,10 @@ trap ":" INT TERM
 
 set -o pipefail
 
-# Enable extended globbing
+# Enable extended globbing and terminal resizing
 
 shopt -s extglob
+shopt -s checkwinsize
 
 # Local variable declarations
 
@@ -160,14 +161,15 @@ fi
 
 # Force color terminal
 
-if [[ "$TERM" != "xterm-256color" ]]
+if [[ "$TERM" != "xterm" ]]
 then
-	export TERM="xterm-256color"
+	export TERM="xterm"
 fi
 
 # Override terminal color settings
 
-source "${PH_MAIN_DIR}/.term_colors.sh" >/dev/null 2>&1
+printf %b '\e[0;37m' '\e[0;40m' '\e[8]' '\e[H\e[J'
+source "${PH_MAIN_DIR}/.term_colors.sh"
 
 # Load all relevant module declarations
 
@@ -374,7 +376,7 @@ ph_initialize_rollback
 
 if [[ -f "${PH_TMP_DIR}/.first_run" ]]
 then
-	clear
+	#clear
 	printf "\n\033[36m%s\033[0m\n\n" "- Configuring PieHelper '${PH_VERSION}'"
 	ph_configure_pieh
 	exit "$?"
