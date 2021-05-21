@@ -7,12 +7,6 @@
 
 trap ":" INT TERM
 
-# Override terminal colour settings
-
-tput sgr0 2>/dev/null
-tput setaf 7 2>/dev/null
-tput setab 0 2>/dev/null
-
 # Enable robust coding options
 
 set -o pipefail
@@ -163,6 +157,17 @@ then
 else
 	PATH="${PH_SCRIPTS_DIR}:/usr/local/bin:${PATH}"
 fi
+
+# Force color terminal
+
+if [[ "$TERM" != "xterm-256color" ]]
+then
+	export TERM="xterm-256color"
+fi
+
+# Override terminal color settings
+
+source "${PH_MAIN_DIR}/.term_colors" >/dev/null 2>&1
 
 # Load all relevant module declarations
 
