@@ -1042,11 +1042,6 @@ do
 		exit "$?"
         fi
 done
-if ! ph_check_object_existence -q -o "${PH_MAIN_DIR}/.term_colors.sh"
-then
-	ph_show_result
-	exit "$?"
-fi
 for PH_i in GL X
 do
 	if ! ph_check_object_existence -q -o "${PH_FILES_DIR}/default_apps_${PH_i}"
@@ -1470,7 +1465,7 @@ do
        	printf "%4s%s\n" "" "- Default CIFS mountpoint '${PH_MNT_DIR}/${PH_APP}' is present" >>"${PH_TMP_DIR}/.reported_issues"
 	PH_RET_CODE="1"
 done
-for PH_i in $(find "${PH_SCRIPTS_DIR}" -maxdepth 1 -type f -regextype egrep ! -regex ".*/(.term_colors|start|stop|restart|.*_ph).*\.sh" -print 2>/dev/null | nawk 'BEGIN { \
+for PH_i in $(find "${PH_SCRIPTS_DIR}" -maxdepth 1 -type f -regextype egrep ! -regex ".*/(start|stop|restart|.*_ph).*\.sh" -print 2>/dev/null | nawk 'BEGIN { \
 		ORS =  " " \
 	} { \
 		print $1 \
