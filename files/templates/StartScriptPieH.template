@@ -203,6 +203,8 @@ else
 fi
 set -x
 ps -ef | grep startpieh
+sleep 3
+pgrep "^start${PH_RUNAPPL}.sh"
 printf "%8s%s\n" "" "--> Checking for '$PH_RUNAPP' presence"
 PH_INST="$(pgrep "^start${PH_RUNAPPL}.sh" 2>/dev/null | sed "s/^${PH_MYPID}$//g" | paste -d" " -s)"
 if [[ -n "$PH_INST" ]]
