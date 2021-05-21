@@ -2,7 +2,9 @@
 # Run 'PieHelper' to '#PH_APP2#' move action (by Davy Keppens on 04/10/2018)
 # Enable/Disable debug by running 'confpieh_ph.sh -p debug -m piehto#PH_APPL2#.sh'
 
-. "$(dirname "$0")"/../main/main.sh || exit "$?" && set +x
+. "$(dirname "$0" 2>/dev/null)/app/main.sh" || \
+	exit "$?" && \
+	set +x
 
 #set -x
 
