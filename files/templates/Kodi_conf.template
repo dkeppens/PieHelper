@@ -3,7 +3,7 @@
 
 # Read-only variables
 
-[[ -z "$PH_KODI_PERSISTENT" ]] && declare -r PH_KODI_PERSISTENT='no'			# - This indicates whether Kodi, when active, should be kept running on it's allocated TTY
+declare -r PH_KODI_PERSISTENT='no'							# - This indicates whether Kodi, when active, should be kept running on it's allocated TTY
 											#   whenever any application other than Kodi starts
 											#   Persistent applications will only stop when a direct stop or restart is issued
 											# - Default is 'no'
@@ -11,7 +11,7 @@
 											# - Important : * If an application does not render to the default frame buffer it can stay visible in foreground when switching to
 											#                 a TTY that is allocated to a persistent-marked application
 											#               * That behaviour can be avoided by setting persistence to 'no' for both applications
-[[ -z "$PH_KODI_NUM_CTRL" ]] && declare -ri PH_KODI_NUM_CTRL='1'			# - This is the number of controllers you want to use with Kodi
+declare -ri PH_KODI_NUM_CTRL='1'							# - This is the number of controllers you want to use with Kodi
 											# - Changes to an option that sets the controller amount for an application will automatically be reflected to
 											#   the application's command line options if event-based input devices are present as command-line parameters
 											# - Default is '1'

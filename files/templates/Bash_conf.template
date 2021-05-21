@@ -3,15 +3,16 @@
 
 # Read-only variables
 
-[[ -z "$PH_BASH_USE_CTRL" ]] && declare -r PH_BASH_USE_CTRL='no'			# - This indicates whether you want to use controllers with Bash or not
-											# - Controller type to be used and the toggle for optional mapping with xboxdrv should be configured separately using 'confopts_ph.sh'
+declare -r PH_BASH_USE_CTRL='no'							# - This indicates whether you want to use controllers with Bash or not
+											# - Controller type to be used and the toggle for optional mapping with xboxdrv should be configured separately using
+											#   'confopts_ph.sh'
 											#   or the PieHelper menu
 											# - The amount of controllers to use can be set with option PH_BASH_NUM_CTRL
-											# - If this is set to 'yes' and the specified amount of controllers of the type configured can not be detected on Bash startup,
-											#   startup will fail
+											# - If this is set to 'yes' and the specified amount of controllers of the type configured can not be detected on
+											#   Bash startup, startup will fail
                                                                                         # - Default is 'no'
                                                                                         # - This value is read-only
-[[ -z "$PH_BASH_NUM_CTRL" ]] && declare -ri PH_BASH_NUM_CTRL='1'			# - This is the number of controllers you want to use with Bash
+declare -ri PH_BASH_NUM_CTRL='1'							# - This is the number of controllers you want to use with Bash
 											# - Changes to an option that sets the controller amount for an application will automatically be reflected to
 											#   the option holding that application's command line options if event-based input devices are present as command-line parameters
 											# - Default is '1'

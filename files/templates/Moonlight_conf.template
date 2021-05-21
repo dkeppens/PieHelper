@@ -4,7 +4,7 @@
 
 # Read-only variables
 
-[[ -z "$PH_MOON_PERSISTENT" ]] && declare -r PH_MOON_PERSISTENT='no'			# - This indicates whether Moonlight, when active, should be kept running on it's allocated TTY
+declare -r PH_MOON_PERSISTENT='no'							# - This indicates whether Moonlight, when active, should be kept running on it's allocated TTY
 											#   whenever any application other than Moonlight starts
 											#   Persistent applications will only stop when a direct stop or restart is issued
 											# - Default is 'no'
@@ -12,7 +12,7 @@
 											# - Important : * If an application does not render to the default frame buffer it can stay visible in foreground when switching to
 											#                 a TTY that is allocated to a persistent-marked application
 											#               * That behaviour can be avoided by setting persistence to 'no' for both applications
-[[ -z "$PH_MOON_CIFS_SHARE" ]] && declare -r PH_MOON_CIFS_SHARE='no'			# - This indicates whether you want to mount a CIFS share from a local network server PH_MOON_CIFS_SRV before Moonlight starts and
+declare -r PH_MOON_CIFS_SHARE='no'							# - This indicates whether you want to mount a CIFS share from a local network server PH_MOON_CIFS_SRV before Moonlight starts and
 											#   umount it after Moonlight shuts down
 											# - Default is 'no'
 											# - This value is read-only
@@ -21,29 +21,29 @@
 											#               * Enable UNIX permissions functionality on your CIFS server if available
 											#               * Lastly, a user account PH_MOON_CIFS_USER with a password PH_MOON_CIFS_PASS should be created on PH_MOON_CIFS_SRV
 											#               * Check PH_MOON_CIFS_USER help for more information on specific rules applicable to PH_MOON_CIFS_USER values
-[[ -z "$PH_MOON_CIFS_USER" ]] && declare -r PH_MOON_CIFS_USER='N/A'			# - This is the user account on local network server PH_MOON_CIFS_SRV with password PH_MOON_CIFS_PASS
+declare -r PH_MOON_CIFS_USER='N/A'							# - This is the user account on local network server PH_MOON_CIFS_SRV with password PH_MOON_CIFS_PASS
 											#   if PH_MOON_CIFS_SHARE is set to 'yes'
 											# - PH_MOON_CIFS_USER should always be created on PH_MOON_CIFS_SRV and granted read-write rights to the share
 											# - PieHelper's run account PH_RUN_USER should always be created on PH_MOON_CIFS_SRV and granted read-write rights to the share
 											# - Default is 'N/A'
 											# - This value is read-only
-[[ -z "$PH_MOON_CIFS_PASS" ]] && declare -r PH_MOON_CIFS_PASS='N/A'			# - This is the password for user PH_MOON_CIFS_USER on local network server PH_MOON_CIFS_SRV if PH_MOON_CIFS_SHARE is set to 'yes'
+declare -r PH_MOON_CIFS_PASS='N/A'							# - This is the password for user PH_MOON_CIFS_USER on local network server PH_MOON_CIFS_SRV if PH_MOON_CIFS_SHARE is set to 'yes'
 											# - The password should not contain any single quote (') characters
 											# - Default is 'N/A'
 											# - This value is read-only
-[[ -z "$PH_MOON_CIFS_SRV" ]] && declare -r PH_MOON_CIFS_SRV='N/A'			# - This is the ip address of your local network server where CIFS sharing is enabled if PH_MOON_CIFS_SHARE is set to 'yes'
+declare -r PH_MOON_CIFS_SRV='N/A'							# - This is the ip address of your local network server where CIFS sharing is enabled if PH_MOON_CIFS_SHARE is set to 'yes'
 											# - Default is 'N/A'
 											# - This value is read-only
-[[ -z "$PH_MOON_CIFS_DIR" ]] && declare -r PH_MOON_CIFS_DIR='N/A'			# - This is the pathname of the CIFS share on local network server PH_MOON_CIFS_SRV if PH_MOON_CIFS_SHARE is set to 'yes'
+declare -r PH_MOON_CIFS_DIR='N/A'							# - This is the pathname of the CIFS share on local network server PH_MOON_CIFS_SRV if PH_MOON_CIFS_SHARE is set to 'yes'
 											# - Allowed values are values starting with '/' and an empty string
 											# - Default is 'N/A'
 											# - This value is read-only
-[[ -z "$PH_MOON_CIFS_SUBDIR" ]] && declare -r PH_MOON_CIFS_SUBDIR='N/A'			# - This is the pathname relative to PH_MOON_CIFS_DIR on local network server PH_MOON_CIFS_SRV that will be mounted on PH_MOON_CIFS_MPT
+declare -r PH_MOON_CIFS_SUBDIR='N/A'							# - This is the pathname relative to PH_MOON_CIFS_DIR on local network server PH_MOON_CIFS_SRV that will be mounted on PH_MOON_CIFS_MPT
 											#   if PH_MOON_CIFS_SHARE is set to 'yes'
 											# - Default is 'N/A'
 											# - Allowed values are values starting with '/' and an empty string
 											# - This value is read-only
-[[ -z "$PH_MOON_CIFS_MPT" ]] && declare -r PH_MOON_CIFS_MPT='N/A'			# - This is the full pathname of a directory on your PI where you want to mount PH_MOON_CIFS_SUBDIR if PH_MOON_CIFS_SHARE is set to 'yes'
+declare -r PH_MOON_CIFS_MPT='N/A'							# - This is the full pathname of a directory on your PI where you want to mount PH_MOON_CIFS_SUBDIR if PH_MOON_CIFS_SHARE is set to 'yes'
 											# - A default directory 'mnt' with a subfolder named after the application is automatically created under the PieHelper root
 											#   directory but other values can be set if preferred
 											# - Non-existing pathnames will be recursively created

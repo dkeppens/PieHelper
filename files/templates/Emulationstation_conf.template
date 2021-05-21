@@ -3,7 +3,7 @@
 
 # Read-only variables
 
-[[ -z "$PH_EMUL_PERSISTENT" ]] && declare -r PH_EMUL_PERSISTENT='no'			# - This indicates whether Emulationstation, when active, should be kept running on it's allocated TTY
+declare -r PH_EMUL_PERSISTENT='no'							# - This indicates whether Emulationstation, when active, should be kept running on it's allocated TTY
 											#   whenever any application other than Emulationstation starts
 											#   Persistent applications will only stop when a direct stop or restart is issued
 											# - Default is 'no'
@@ -11,7 +11,7 @@
 											# - Important : * If an application does not render to the default frame buffer it can stay visible in foreground when switching to
 											#                 a TTY that is allocated to a persistent-marked application
 											#               * That behaviour can be avoided by setting persistence to 'no' for both applications
-[[ -z "$PH_EMUL_CIFS_MPT" ]] && declare -r PH_EMUL_CIFS_MPT='${PH_EMUL_SETUP_DIR}/roms'	# - This is the full pathname of a directory on your PI where you want to mount PH_EMUL_CIFS_SUBDIR if PH_EMUL_CIFS_SHARE is set to 'yes'
+declare -r PH_EMUL_CIFS_MPT='${PH_EMUL_SETUP_DIR}/roms'					# - This is the full pathname of a directory on your PI where you want to mount PH_EMUL_CIFS_SUBDIR if PH_EMUL_CIFS_SHARE is set to 'yes'
 											# - A default directory 'mnt' with a subfolder named after the application is automatically created under the PieHelper root
 											#   directory but other values can be set if preferred
 											# - Non-existing pathnames will be recursively created

@@ -3,7 +3,7 @@
 
 # Read-only variables
 
-[[ -z "$PH_X11_USE_CTRL" ]] && declare -r PH_X11_USE_CTRL='no'				# - This indicates whether you want to use controllers with X11 or not
+declare -r PH_X11_USE_CTRL='no'								# - This indicates whether you want to use controllers with X11 or not
 											# - Controller type to be used and the toggle for optional mapping with xboxdrv should be configured separately using 'confopts_ph.sh'
 											#   or the PieHelper menu
 											# - The amount of controllers to use can be set with option PH_X11_NUM_CTRL
@@ -11,7 +11,7 @@
 											#   startup will fail
 											# - Default is 'no'
 											# - This value is read-only
-[[ -z "$PH_X11_NUM_CTRL" ]] && declare -ri PH_X11_NUM_CTRL='1'				# - This is the number of controllers you want to use with X11
+declare -ri PH_X11_NUM_CTRL='1'								# - This is the number of controllers you want to use with X11
 											# - Changes to an option that sets the controller amount for an application will automatically be reflected to
 											#   the option holding that application's command line options if event-based input devices are present as command-line parameters
 											# - Default is '1'
