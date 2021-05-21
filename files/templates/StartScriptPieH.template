@@ -119,7 +119,7 @@ OPTARG="$PH_OLDOPTARG"
 
 [[ -z "$PH_MODE" ]] && PH_MODE="normal"
 
-printf "\n\033[36m%s\033[0m\n\n" "- Executing '$PH_RUNAPP' start action prechecks" 
+printf "\n\033[1;36m%s\033[1;33m%s\033[0;0m\n\n" "- Checking the requirements to start " "'${PH_RUNAPP}'" 
 PH_RUNAPP_STATE="$(ph_get_app_state_from_app_name "$PH_RUNAPP")"
 PH_FG_CONSOLE="$("$PH_SUDO" fgconsole 2>/dev/null)"
 if [[ "$("$PH_SUDO" cat "/proc/$PPID/comm")" != restart*sh ]]
@@ -200,8 +200,9 @@ else
 	fi
 	ph_set_result -r 0
 fi
+set -x
 printf "%8s%s\n" "" "--> Checking for '$PH_RUNAPP' presence"
-PH_INST="$(pgrep ^"start$PH_RUNAPPL.sh" 2>/dev/null | sed "s/^""$$""$//g" | paste -d" " -s)"
+PH_INST="$(pgrep "^start${PH_RUNAPPL}.sh" 2>/dev/null | sed "s/^${$}$//g" | paste -d" " -s)"
 if [[ -n "$PH_INST" ]]
 then
 	if [[ "$PH_MODE" == "normal" ]]
