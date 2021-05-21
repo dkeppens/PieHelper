@@ -1,5 +1,4 @@
-* maybe move main.sh to app/scripts since it's not a function
-* rechange escape \ to escape \t in ph_remove_empty_line or at least test
+* use ${var?} for usage of directory vars
 * recheck correct unsetting of any code containing arrays
 * create function to retrieve all options for an app and use in store/retrieve functions + maybe elsewhere + better handling of possible returned errors
 * check functions concerning CIFS in functions.update for resolving of possible variables in values for CIFS_DIR and CIFS_SUBDIR + maybe others ? --> Check conf file templates
