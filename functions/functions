@@ -5760,21 +5760,18 @@ do
 		fi
 		if [[ "$PH_OPTARG_VAR" == "PH_${PH_APPU}_PKG" ]]
 		then
-			if ph_check_object_existence -q -o sup
+			if ph_get_pkg_inst_state "$PH_OPTARG_VAL"
 			then
-				if ph_get_pkg_inst_state "$PH_OPTARG_VAL"
+				if ! ph_update_base_conf_file -a "$PH_APP" -f sup -c 3 -v PI
 				then
-					if ! ph_update_base_conf_file -a "$PH_APP" -f sup -c 3 -v PI
-					then
-						((PH_RET_CODE++))
-						break
-					fi
-				else
-					if ! ph_update_base_conf_file -a "$PH_APP" -f sup -c 3 -v PA
-					then
-						((PH_RET_CODE++))
-						break
-					fi
+					((PH_RET_CODE++))
+					break
+				fi
+			else
+				if ! ph_update_base_conf_file -a "$PH_APP" -f sup -c 3 -v PA
+				then
+					((PH_RET_CODE++))
+					break
 				fi
 			fi
 		fi
@@ -6104,7 +6101,7 @@ then
 		return 1
 	[[ "$PH_DISTRO" == "Debian" ]] && \
 		ph_apt_clean
-	if ph_check_object_existence -q -o sup
+	if [[ "$(ph_check_object_existence -q -o sup ; echo "$?")" -eq "0" && "$(ph_check_app_state_validity -a "$PH_APP" -q -s ; echo "$?")" -eq "0" ]]
 	then
 		ph_update_base_conf_file -a "$PH_APP" -f sup -c 3 -v PI || \
 			return 1
@@ -6176,7 +6173,7 @@ case "$PH_APP" in Moonlight)
 						if "$PH_SUDO" make install >/dev/null 2>&1
 						then
 							ph_run_with_rollback -c true
-							if ph_check_object_existence -q -o sup
+							if [[ "$(ph_check_object_existence -q -o sup ; echo "$?")" -eq "0" && "$(ph_check_app_state_validity -a "$PH_APP" -q -s ; echo "$?")" -eq "0" ]]
 							then
 								ph_update_base_conf_file -a "$PH_APP" -f sup -c 3 -v UI || \
 									return 1
@@ -6263,7 +6260,7 @@ case "$PH_APP" in Moonlight)
 							ph_run_with_rollback -c "ph_pieh_configured_emul_conf" || \
 								return 1
 						fi
-						if ph_check_object_existence -q -o sup
+						if [[ "$(ph_check_object_existence -q -o sup ; echo "$?")" -eq "0" && "$(ph_check_app_state_validity -a "$PH_APP" -q -s ; echo "$?")" -eq "0" ]]
 						then
 							ph_update_base_conf_file -a "$PH_APP" -f sup -c 3 -v UI || \
 								return 1
@@ -9016,7 +9013,7 @@ then
 				if "$PH_SUDO" chown "${PH_APP_USER}:$(id -gn "$PH_APP_USER" 2>/dev/null)" "/etc/profile.d/PieHelper_tty${PH_APP_TTY}.sh" 2>/dev/null
 				then
 					ph_run_with_rollback -c true
-					ph_update_base_conf_file -a "$PH_APP" -f int -c 2 -v "${PH_APP_TTY}" || \
+					ph_run_with_rollback -c "ph_add_app_to_integration_file -a '${PH_APP}' -t '${PH_APP_TTY}'" || \
 						return 1
 					ph_add_value_to_param -p PH_UNDO_SETUP_TTYS -v "${PH_APP}'${PH_APP_USER}'${PH_APP_TTY}"
 					return 0
