@@ -1,7 +1,7 @@
 # Main PieHelper (By Davy Keppens on 06/10/18)
 # Enable/Disable debug by running 'confpieh_ph.sh -p debug -m main.sh'
 
-#set -x
+set -x
 
 # Trap interrupts
 
@@ -241,9 +241,9 @@ for PH_i in Ctrls $(nawk 'BEGIN { \
 do
 	if [[ -f "${PH_CONF_DIR}/${PH_i}.conf" ]]
 	then
-		source "${PH_CONF_DIR}/${PH_i}.conf" >/dev/null 2>&1
+		source "${PH_CONF_DIR}/${PH_i}.conf"
 	else
-		source "${PH_TEMPLATES_DIR}/${PH_i}_conf.template" >/dev/null 2>&1
+		source "${PH_TEMPLATES_DIR}/${PH_i}_conf.template"
 	fi
 done
 unset PH_PARSE_FILES
