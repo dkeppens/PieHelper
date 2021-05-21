@@ -168,8 +168,8 @@ fi
 
 # Override terminal color settings
 
-printf %b '\e[0;37m' '\e[0;40m' '\e[8]' '\e[H\e[J'
-source "${PH_MAIN_DIR}/.term_colors.sh"
+printf %b '\e[0;37m'
+printf %b '\e[0;40m' '\e[8]' '\e[H\e[J'
 
 # Load all relevant module declarations
 
@@ -376,7 +376,7 @@ ph_initialize_rollback
 
 if [[ -f "${PH_TMP_DIR}/.first_run" ]]
 then
-	#clear
+	clear
 	printf "\n\033[36m%s\033[0m\n\n" "- Configuring PieHelper '${PH_VERSION}'"
 	ph_configure_pieh
 	exit "$?"
