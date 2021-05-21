@@ -7,6 +7,12 @@
 
 trap ":" INT TERM
 
+# Override terminal colour settings
+
+tput sgr0 2>/dev/null
+tput setaf 7 2>/dev/null
+tput setab 0 2>/dev/null
+
 # Enable robust coding options
 
 set -o pipefail
