@@ -8,40 +8,54 @@
 
 #set -x
 
-declare PH_RUNAPP="#PH_APP#"
-declare PH_RUNAPP_STATE=""
-declare PH_EXCEPTION=""
-declare PH_OPTION=""
-declare PH_i=""
-declare PH_STOPAPPS="None"
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
-declare -i PH_RUNAPP_TTY="0"
-declare -i PH_PIEH_TTY="0"
-declare -i PH_FG_CONSOLE="0"
-declare -l PH_RUNAPPL="${PH_RUNAPP:0:4}"
-declare -u PH_RUNAPPU="${PH_RUNAPP:0:4}"
+declare PH_i
+declare PH_RUNAPP
+declare PH_RUNAPP_STATE
+declare PH_EXCEPTION
+declare PH_STOPAPPS
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+declare -i PH_RUNAPP_TTY
+declare -i PH_PIEH_TTY
+declare -i PH_FG_CONSOLE
+declare -l PH_RUNAPPL
+declare -u PH_RUNAPPU
+
+PH_i=""
+PH_RUNAPP="#PH_APP#"
+PH_RUNAPP_STATE=""
+PH_EXCEPTION=""
+PH_STOPAPPS="None"
+PH_OPTION=""
+PH_OLDOPTARG="$OPTARG"
+PH_OLDOPTIND="$OPTIND"
+PH_RUNAPP_TTY="0"
+PH_PIEH_TTY="0"
+PH_FG_CONSOLE="0"
+PH_RUNAPPL="${PH_RUNAPP:0:4}"
+PH_RUNAPPU="${PH_RUNAPP:0:4}"
 
 OPTIND="1"
 
-while getopts h PH_OPTION 2>/dev/null
+while getopts :h PH_OPTION
 do
         case "$PH_OPTION" in *)
-                >&2 printf "\n\033[36m%s%s%s\033[0m\n" "Usage : start" "$PH_RUNAPPL" ".sh | -h"
+                >&2 printf "\n\033[1;36m%s\033[0;0m\n" "Usage : start${PH_RUNAPPL}.sh | -h"
                 >&2 printf "\n"
-                >&2 printf "%3s%s\n" "" "Where -h displays this usage"
-                >&2 printf "%9s%s\n" "" "- Running this script without parameters will start a new instance of '$PH_RUNAPP' on it's allocated TTY and that TTY will become the active TTY"
-                >&2 printf "%12s%s\n" "" "- The first unallocated TTY will be automatically assigned to any application without a TTY that attempts to start"
-                >&2 printf "%12s%s\n" "" "- A TTY is only deallocated when an application is removed from PieHelper"
-                >&2 printf "%12s%s\n" "" "- If an application in need of a TTY attempts to start but all TTY's are already allocated, startup will fail"
+                >&2 printf "%3s\033[1;37m%s\n" "" "Where -h displays this usage"
+                >&2 printf "%9s%s\n" "" "- Running this script without parameters will start a new instance of '${PH_RUNAPP}' on its allocated tty and that tty will become the active tty"
+                >&2 printf "%12s%s\n" "" "- The first unallocated tty will be automatically assigned to any application without a tty that attempts to start"
+                >&2 printf "%12s%s\n" "" "- A tty is only deallocated when an application is removed from PieHelper"
+                >&2 printf "%12s%s\n" "" "- If an application in need of a tty attempts to start but all ttys are already allocated, startup will fail"
                 >&2 printf "%12s%s\n" "" "- At any application start, all other running integrated applications will first be stopped"
                 >&2 printf "%12s%s\n" "" "  Two exceptions to this rule exist :"
                 >&2 printf "%15s%s\n" "" "- PieHelper starting on a pseudo-terminal will never stop running applications"
                 >&2 printf "%15s%s\n" "" "- Applications marked as persistent remain online" 
-                >&2 printf "%12s%s\n" "" "- Additionally, the following rules apply to the start of '$PH_RUNAPP' :"
-                >&2 printf "%15s%s\n" "" "- '$PH_RUNAPP' must be an integrated application or startup will fail"
-                >&2 printf "%15s%s\n" "" "- If a persistent '$PH_RUNAPP' instance is already running on that TTY, that TTY will become the active TTY"
-                >&2 printf "%15s%s\n" "" "- If a non-persistent '$PH_RUNAPP' instance is already running on that TTY, startup will fail"
+                >&2 printf "%12s%s\n" "" "- Additionally, the following rules apply to the start of '${PH_RUNAPP}' :"
+                >&2 printf "%15s%s\n" "" "- '${PH_RUNAPP}' must be an integrated application or startup will fail"
+                >&2 printf "%15s%s\n" "" "- If a persistent '${PH_RUNAPP}' instance is already running on that tty, that tty will become the active tty"
+                >&2 printf "%15s%s\033[0;0m\n" "" "- If a non-persistent '${PH_RUNAPP}' instance is already running on that tty, startup will fail"
                 >&2 printf "\n"
                 OPTIND="$PH_OLDOPTIND"
 		OPTARG="$PH_OLDOPTARG"
@@ -51,127 +65,114 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-printf "\n\033[36m%s\033[0m\n\n" "- Executing '$PH_RUNAPP' start action prechecks"
+printf "\n\033[1;36m%s\033[1;33m%s\033[0;0m\n\n" "- Checking the requirements to start " "'${PH_RUNAPP}'"
 PH_PIEH_TTY="$(ph_get_app_tty_from_app_name PieHelper)"
 PH_RUNAPP_STATE="$(ph_get_app_state_from_app_name "$PH_RUNAPP")"
 PH_FG_CONSOLE="$("$PH_SUDO" fgconsole 2>/dev/null)"
-if [[ "$("$PH_SUDO" cat "/proc/$PPID/comm")" != restart*sh ]]
+if [[ "$("$PH_SUDO" cat "/proc/${PPID}/comm" 2>/dev/null)" != restart*sh ]]
 then
-	printf "%8s%s\n" "" "--> Checking for '$PH_RUNAPP' integration"
 	if [[ "$PH_RUNAPP_STATE" == @(Integrated|Halted|Running) ]]
 	then
-		ph_set_result -r "$?"
-		printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_RUNAPP_STATE')"
+		ph_run_with_rollback -c true
 	else
-		ph_set_result -r "$?" -m "Integration is mandatory for '$PH_RUNAPP' start"
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid application state"
-		ph_show_result
-		exit "$?"
+		ph_set_result -m "Could not start '${PH_RUNAPP}' since it's not an integrated application"
+		ph_run_with_rollback -c false || \
+			exit 1
 	fi
+else
+	ph_run_with_rollback -c true
 fi
 printf "%8s%s\n" "" "--> Checking for running applications"
-if [[ "$("$PH_SUDO" cat "/proc/$PPID/comm" 2>/dev/null)" == +(?)to+(?).sh ]]
+if [[ "$("$PH_SUDO" cat "/proc/${PPID}/comm" 2>/dev/null)" == +(?)to+(?).sh ]]
 then
-	PH_EXCEPTION="$(nawk '$1 ~ /^stop.*\.sh$/ { print substr($1,5,length($1)-7) }' "$PH_SCRIPTS_DIR/$("$PH_SUDO" cat "/proc/$PPID/comm")" 2>/dev/null)"
+	PH_EXCEPTION="$(nawk '$1 ~ /^stop.*\.sh$/ { \
+			print substr($1,5,length($1)-7) \
+		}' "${PH_SCRIPTS_DIR}/$("$PH_SUDO" cat "/proc/${PPID}/comm" 2>/dev/null)" 2>/dev/null)"
 fi
-for PH_i in $(confapps_ph.sh -p list -k run 2>/dev/null | grep -v Skipping | tail -n +4 | tac | tail -n +4 | nawk -v runappl=^"$PH_RUNAPPL"$ -v except=^"$PH_EXCEPTION"$ 'BEGIN { FS = "\x27" ; ORS = " " }
-											$2 !~ /^None$/ && tolower(substr($2,1,4)) !~ except && tolower(substr($2,1,4)) !~ runappl { print $2 }')
+for PH_i in $(confapps_ph.sh -p list -k run 2>/dev/null | grep -v Skipping | tail -n +4 | tac | tail -n +4 | \
+	nawk -v runappl="^${PH_RUNAPPL}$" -v except="^${PH_EXCEPTION}$" 'BEGIN { \
+			FS = "\x27" ; \
+			ORS = " " \
+		} \
+		$2 !~ /^None$/ && tolower(substr($2,1,4)) !~ except && tolower(substr($2,1,4)) !~ runappl { \
+			print $2 \
+	}')
 do
 	if [[ "$PH_STOPAPPS" != "None" ]]
 	then
-		PH_STOPAPPS="$PH_STOPAPPS $PH_i"
+		PH_STOPAPPS="${PH_STOPAPPS} ${PH_i}"
 	else
 		PH_STOPAPPS="$PH_i"
 	fi
 done
-ph_set_result -r 0
 if [[ "$PH_STOPAPPS" == "None" ]]
 then
-	printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_STOPAPPS')"
+	ph_run_with_rollback -c true "$PH_STOPAPPS"
 	PH_STOPAPPS=""
 else
-	printf "%10s\033[33m%s\033[0m\n" "" "Warning : The following applications are running ('$PH_STOPPAPPS') -> Stopping"
+	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Will stop the following currently running aplications '${PH_STOPPAPPS}'"
+	ph_set_result -r 0
 fi
-for PH_i in $(echo -n "$PH_STOPAPPS")
+for PH_i in ${PH_STOPAPPS}
 do
 	if ! ph_do_app_action stop "$PH_i"
 	then
 		ph_show_result
 		exit "$?"
 	else
-		[[ "$(ph_get_app_state_from_app_name "$PH_i")" == "Running" ]] && PH_STOPAPPS="$(sed "s/^$PH_i //g;s/ $PH_i / /g;s/ $PH_i$//g" <<<"$PH_STOPAPPS" 2>/dev/null)"
+		[[ "$(ph_get_app_state_from_app_name "$PH_i")" == "Running" ]] && \
+			PH_STOPAPPS="$(sed "s/^${PH_i} //g;s/ ${PH_i} / /g;s/ ${PH_i}$//g"<<<"${PH_STOPAPPS}" 2>/dev/null)"
 	fi
 done
-[[ -z "$PH_STOPAPPS" ]] && PH_STOPAPPS="None"
-ph_set_result -m "The following applications were stopped ('$PH_STOPAPPS')"
-ph_get_app_tty "$PH_RUNAPP"
-PH_RUNAPP_TTY="$?"
-if [[ "$PH_RUNAPP_TTY" -le "1" || "$PH_RUNAPP_TTY" -gt "$PH_PIEH_MAX_TTYS" ]]
-then
-	ph_set_result -m "A valid TTY allocation is mandatory for '$PH_RUNAPP' start"
-	ph_show_result -t
-	exit "$?"
-fi
-printf "%8s%s\n" "" "--> Checking for '$PH_RUNAPP' presence"
+[[ -z "$PH_STOPAPPS" ]] && \
+	PH_STOPAPPS="None"
+ph_set_result -m "These applications were stopped '${PH_STOPAPPS}'"
+ph_ensure_app_tty "$PH_RUNAPP" || \
+	exit 1
+PH_RUNAPP_TTY="$(ph_get_app_tty_from_app_name "$PH_RUNAPP")"
+printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Checking for the presence of " "'${PH_RUNAPP}'"
 if [[ "$PH_RUNAPP_STATE" != "Running" ]]
 then
-	printf "%10s\033[32m%s\033[0m\n" "" "OK (Not found) -> Starting"
-	ph_set_result -r 0
-	ph_show_result
-	ph_set_result -t -r "$?"
-	printf "\033[36m%s\033[0m\n\n" "- Executing '$PH_RUNAPP' start action"
-	"$PH_SUDO" rm "$PH_TMP_DIR/Start.report" 2>/dev/null
-	set -o pipefail
-	if ph_do_app_action start "$PH_RUNAPP" | tee -a "$PH_TMP_DIR/Start.report" 2>/dev/null
+	ph_run_with_rollback -c true -m "Not found"
+	"$PH_SUDO" rm "${PH_TMP_DIR}/Start.report" 2>/dev/null
+	if ph_do_app_action start "$PH_RUNAPP" 2>&1 | tee -a "${PH_TMP_DIR}/Start.report"
 	then
-		set +o pipefail
-		[[ "$PH_RUNAPP" == "Bash" ]] && exit 0
+		[[ "$PH_RUNAPP" == "Bash" ]] && \
+			exit 0
 	else
-		set +o pipefail
 		if [[ "$PH_FG_CONSOLE" -ne "$PH_RUNAPP_TTY" ]]
 		then
-			ph_show_result
-			ph_set_result -t -r "$?"
-			printf "\033[36m%s\033[0m\n\n" "- Displaying 'FAILED' status report for '$PH_RUNAPP' start"
-			if cat "$PH_TMP_DIR/Start.report" 2>/dev/null
+			printf "%8s%s\033[1;33m%s\033[0;0m%s\n" "--> Displaying status report for failed " "'${PH_RUNAPP}'" " start"
+			if cat "${PH_TMP_DIR}/Start.report" 2>/dev/null
 			then
-				ph_set_result -r 0
+				printf "\n"
+				ph_run_with_rollback -c true
 			else
-				ph_set_result -r 1 -m "An error occurred displaying status report '$PH_TMP_DIR/Start.report' of '$PH_RUNAPP' start"
+				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not display"
+				ph_set_result -r 0
 			fi
 		else
-			"$PH_SUDO" rm "$PH_TMP_DIR/Start.report" 2>/dev/null
-			ph_show_result
-			ph_set_result -t -r "$?"
-			ph_show_result -t
-			if [[ "$PH_PIEH_TTY" -gt "1" && "$PH_PIEH_TTY" -le "$PH_PIEH_MAX_TTYS" ]]
-			then
-				"$PH_SUDO" chvt "$PH_PIEH_TTY" 2>/dev/null
-			else
-				"$PH_SUDO" chvt 1 2>/dev/null
-			fi
-			"$PH_SUDO" systemctl stop "getty@tty$PH_RUNAPP_TTY" >/dev/null 2>&1
+			"$PH_SUDO" rm "${PH_TMP_DIR}/Start.report" 2>/dev/null
+			"$PH_SUDO" chvt "$PH_PIEH_TTY"
+			"$PH_SUDO" systemctl stop "getty@tty${PH_RUNAPP_TTY}" >/dev/null 2>&1
 			"$PH_SUDO" systemctl daemon-reload >/dev/null 2>&1
 			exit 1
 		fi
 	fi
-	"$PH_SUDO" rm "$PH_TMP_DIR/Start.report" 2>/dev/null
+	"$PH_SUDO" rm "${PH_TMP_DIR}/Start.report" 2>/dev/null
 	ph_show_result
-	ph_set_result -t -r "$?"
 else
-	if [[ "$(eval "echo -n \$PH_""$PH_RUNAPPU""_PERSISTENT")" == "no" ]]
+	if [[ "$(eval "echo -n \"\$PH_${PH_RUNAPPU}_PERSISTENT\"")" == "no" ]]
 	then
-		printf "%10s\033[31m%s\033[0m\n\n" "" "ERROR : Found"
-		ph_set_result -r 1 -m "An error occurred starting '$PH_RUNAPP' on 'TTY$PH_RUNAPP_TTY' (Already non-persistently running)"
-		ph_show_result
+		ph_set_result -m "Could not start '${PH_RUNAPP}' on 'tty${PH_RUNAPP_TTY}' since it's already non-persistently running"
+		ph_run_with_rollback -c false -m "Found" || \
+			exit 1
 	else
-		printf "%10s\033[33m%s\033[0m\n\n" "" "Warning : Found"
-		ph_set_result -r 0 -w -m "'$PH_RUNAPP' already persistently running on 'TTY$PH_RUNAPP_TTY' -> Switching to instance"
+		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Found"
+		ph_set_result -r 0 -w -m "'${PH_RUNAPP}' is already persistently running on 'tty${PH_RUNAPP_TTY}' -> Switching to instance"
 		ph_show_result
-		sleep 2 2>/dev/null
-		"$PH_SUDO" chvt "$PH_RUNAPP_TTY" 2>/dev/null
+		sleep 2
+		"$PH_SUDO" chvt "$PH_RUNAPP_TTY"
 	fi
-	exit "$?"
 fi
-ph_show_result -t
 exit "$?"

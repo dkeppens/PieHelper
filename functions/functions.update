@@ -1683,7 +1683,7 @@ PH_APP="$1"
 
 if [[ -f "${PH_CONF_DIR}/${PH_APP}.conf" ]]
 then
-	printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing ${PH_APP} config file " "'${PH_CONF_DIR}/${PH_APP}.conf'"
+	printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing ${PH_APP}'s config file " "'${PH_CONF_DIR}/${PH_APP}.conf'"
 	if ph_run_with_rollback -c "ph_store_file -f '${PH_CONF_DIR}/${PH_APP}.conf'"
 	then
 		if source "${PH_TEMPLATES_DIR}/${PH_APP}_conf.template" >/dev/null 2>&1
@@ -1739,7 +1739,7 @@ do
 	if [[ -f "${PH_SCRIPTS_DIR}/${PH_i}" ]]
 	then
 		[[ "$PH_COUNT" -eq "0" ]] && \
-			printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing management scripts for " "'${PH_APP}'"
+			printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing the management scripts of " "'${PH_APP}'"
 		((PH_COUNT++))
 		if ! ph_run_with_rollback -c "ph_store_file -f '${PH_SCRIPTS_DIR}/${PH_i}'"
 		then
@@ -1759,19 +1759,23 @@ ph_run_with_rollback -c true && \
 function ph_remove_app_alloweds {
 
 declare PH_APP
+declare PH_APP_DISPLAY
 declare PH_TMP_FILE
 declare -u PH_APPU
 
 PH_APP="$1"
+PH_APP_DISPLAY="${PH_APP} option"
 PH_TMP_FILE=""
 PH_APPU="${PH_APP:0:4}"
 
 [[ -z "$PH_APP" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
+[[ "$PH_APP" == "Ctrls" ]] && \
+	PH_APP_DISPLAY="controllers settings"
 if grep -E "^PH_${PH_APPU}_" "${PH_CONF_DIR}/options.alloweds" >/dev/null 2>&1
 then
-	printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing ${PH_APP} option alloweds from file " "'${PH_CONF_DIR}/options.alloweds'"
+	printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing ${PH_APP_DISPLAY} alloweds from file " "'${PH_CONF_DIR}/options.alloweds'"
 	if ph_run_with_rollback -c "ph_store_file -f '${PH_CONF_DIR}/options.alloweds'"
 	then
 		if PH_TMP_FILE="$("$PH_SUDO" ls -lAt "${PH_TMP_DIR}/options_alloweds_tmp."* 2>/dev/null | nawk '{ \
@@ -1793,10 +1797,10 @@ then
 						return "$?"
 				fi
 			else
-				ph_set_result -m "An error occurred trying to remove ${PH_APP} option alloweds from file '${PH_CONF_DIR}/options.alloweds'"
+				ph_set_result -m "An error occurred trying to remove ${PH_APP_DISPLAY} alloweds from file '${PH_CONF_DIR}/options.alloweds'"
 			fi
 		else
-			ph_set_result -m "An error occurred trying to remove ${PH_APP} option alloweds from file '${PH_CONF_DIR}/options.alloweds'"
+			ph_set_result -m "An error occurred trying to remove ${PH_APP_DISPLAY} alloweds from file '${PH_CONF_DIR}/options.alloweds'"
 		fi
 	fi
 	ph_run_with_rollback -c false -m "Could not remove" || \
@@ -1808,19 +1812,23 @@ return 0
 function ph_remove_app_defaults {
 
 declare PH_APP
+declare PH_APP_DISPLAY
 declare PH_TMP_FILE
 declare -u PH_APPU
 
 PH_APP="$1"
+PH_APP_DISPLAY="${PH_APP} option"
 PH_TMP_FILE=""
 PH_APPU="${PH_APP:0:4}"
 
 [[ -z "$PH_APP" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
+[[ "$PH_APP" == "Ctrls" ]] && \
+	PH_APP_DISPLAY="controller settings"
 if grep -E "^PH_${PH_APPU}_" "${PH_CONF_DIR}/options.defaults" >/dev/null 2>&1
 then
-	printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing ${PH_APP} option defaults from file " "'${PH_CONF_DIR}/options.defaults'"
+	printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing ${PH_APP_DISPLAY} defaults from file " "'${PH_CONF_DIR}/options.defaults'"
 	if ph_run_with_rollback -c "ph_store_file -f '${PH_CONF_DIR}/options.defaults'"
 	then
 		if PH_TMP_FILE="$("$PH_SUDO" ls -lAt "${PH_TMP_DIR}/options_defaults_tmp."* 2>/dev/null | nawk '{ \
@@ -1842,10 +1850,10 @@ then
 						return "$?"
 				fi
 			else
-				ph_set_result -m "An error occurred trying to remove ${PH_APP} option defaults from file '${PH_CONF_DIR}/options.defaults'"
+				ph_set_result -m "An error occurred trying to remove ${PH_APP_DISPLAY} defaults from file '${PH_CONF_DIR}/options.defaults'"
 			fi
 		else
-			ph_set_result -m "An error occurred trying to remove ${PH_APP} option defaults from file '${PH_CONF_DIR}/options.defaults'"
+			ph_set_result -m "An error occurred trying to remove ${PH_APP_DISPLAY} defaults from file '${PH_CONF_DIR}/options.defaults'"
 		fi
 	fi
 	ph_run_with_rollback -c false -m "Could not remove" || \
@@ -1965,7 +1973,7 @@ else
 			return 1
 	fi
 fi
-printf "%8s%s\033[1;33m%s\033[0;0m%s\n" "" "--> Unlinking " "'${PH_UNLINK_APP}'" " from menu"
+printf "%8s%s\033[1;33m%s\033[0;0m%s\n" "" "--> Unlinking application " "'${PH_UNLINK_APP}'" " from the menu"
 if [[ "$PH_UNLINK_APP" != "$PH_LINKED_MENU_APP" ]]
 then
 	ph_set_result -m "Could not unlink ${PH_UNLINK_APP} from the menu since ${PH_LINKED_MENU_APP} is currently linked"
@@ -2035,7 +2043,7 @@ then
 		fi
 	fi
 fi
-printf "%8s%s\033[1;33m%s\033[0;0m%s\n" "" "--> Linking " "'${PH_LINK_APP_TO_MENU}'" " to menu"
+printf "%8s%s\033[1;33m%s\033[0;0m%s\n" "" "--> Linking application " "'${PH_LINK_APP_TO_MENU}'" " to the menu"
 for PH_i in AppManagement TTYManagement OptsManagement
 do
 	if [[ ! -L "${PH_MENUS_DIR}/${PH_i}.lst" ]]
@@ -2075,7 +2083,7 @@ do
 	if [[ -f "${PH_MENUS_DIR}/${PH_i}.lst" ]]
 	then
 		[[ "$PH_COUNT" -eq "0" ]] && \
-			printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing menu items for " "'${PH_APP}'"
+			printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing the menu items of " "'${PH_APP}'"
 		((PH_COUNT++))
 		if ! ph_run_with_rollback -c "ph_store_file -f '${PH_MENUS_DIR}/${PH_i}.lst'"
 		then
@@ -2118,7 +2126,7 @@ PH_APPL2=""
 	return 0
 ph_run_with_rollback -c "ph_remove_app_scripts '${PH_APP}'" || \
 	return 1
-printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Creating management scripts for " "'${PH_APP}'"
+printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Creating the management scripts for " "'${PH_APP}'"
 [[ "$PH_APP" == "PieHelper" ]] && \
 	PH_SCRIPT_SUFFIX="PieH"
 for PH_i in start stop restart
@@ -2185,10 +2193,12 @@ ph_run_with_rollback -c true && \
 function ph_create_app_conf_file {
 
 declare PH_APP
+declare PH_APP_DISPLAY
 declare PH_SOURCE_FILE
 declare -u PH_APPU
 
 PH_APP="$1"
+PH_APP_DISPLAY=""
 PH_SOURCE_FILE="${PH_APP}_conf"
 PH_APPU="${PH_APP:0:4}"
 
@@ -2198,7 +2208,13 @@ PH_APPU="${PH_APP:0:4}"
 [[ "$(cut -f1 "${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null ; echo "$?")" -ne "0" && \
 	"$PH_APP" != "Ctrls" ]] && \
 	PH_SOURCE_FILE="OOSapp_conf"
-printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Creating config file for ${PH_APP} as " "'${PH_CONF_DIR}/${PH_APP}.conf'"
+if [[ "$PH_APP" == "Ctrls" ]]
+then
+	PH_APP_DISPLAY="controller settings"
+else
+	PH_APP_DISPLAY="config file for ${PH_APP}"
+fi
+printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Creating the ${PH_APP_DISPLAY} as " "'${PH_CONF_DIR}/${PH_APP}.conf'"
 if [[ -f "${PH_CONF_DIR}/${PH_APP}.conf" ]]
 then
 	if ! ph_run_with_rollback -c "ph_store_file -f '${PH_CONF_DIR}/${PH_APP}.conf'"
@@ -2250,7 +2266,7 @@ PH_APPL="${PH_APP:0:4}"
 	return 0
 ph_run_with_rollback -c "ph_remove_app_menus '${PH_APP}'" || \
 	return 1
-printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Creating menu items for " "'${PH_APP}'"
+printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Creating the menu items for " "'${PH_APP}'"
 for PH_i in "${PH_MENUS_DIR}/${PH_APP}.lst" "${PH_MENUS_DIR}/OptsManagement_${PH_APP}.lst" "${PH_MENUS_DIR}/TTYManagement_${PH_APP}.lst" "${PH_MENUS_DIR}/AppManagement_${PH_APP}.lst"
 do
 	ph_run_with_rollback -c "ph_create_empty_file -q -t file -d '${PH_i}'" || \
@@ -2355,12 +2371,14 @@ function ph_create_app_alloweds {
 
 declare PH_i
 declare PH_APP
+declare PH_APP_DISPLAY
 declare PH_LINE
 declare -u PH_APPU
 declare "PH_${PH_APPU}_OPTS"
 
 PH_i=""
 PH_APP="$1"
+PH_APP_DISPLAY="${PH_APP} option"
 PH_LINE=""
 PH_APPU="${PH_APP:0:4}"
 eval "PH_${PH_APPU}_OPTS=\"USE_CTRL NUM_CTRL PERSISTENT CIFS_SHARE CIFS_USER CIFS_PASS CIFS_SRV CIFS_DIR CIFS_SUBDIR CIFS_MPT PRE_CMD POST_CMD\""
@@ -2372,6 +2390,7 @@ declare -n PH_OPTS="PH_${PH_APPU}_OPTS"
 case "$PH_APP" in Moonlight)
                 PH_OPTS="$PH_OPTS RES WIDTH HEIGHT FPS BITRATE PCKETSIZE SRV" ;;
                       Ctrls)
+		PH_APP_DISPLAY="controller settings"
                 PH_OPTS="MAP TYPE PIN_PS3 PIN_PS4 BLUE_ADAPT" ;;
 		      Emulationstation)
                 PH_OPTS="$PH_OPTS DIR SETUP_DIR" ;;
@@ -2382,7 +2401,7 @@ unset -n PH_OPTS
 ph_run_with_rollback -c "ph_remove_app_alloweds '${PH_APP}'" || \
 	return 1
 declare -n PH_OPTS="PH_${PH_APPU}_OPTS"
-printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Creating ${PH_APP} option alloweds in file " "'${PH_CONF_DIR}/options.alloweds'"
+printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Creating ${PH_APP_DISPLAY} alloweds in file " "'${PH_CONF_DIR}/options.alloweds'"
 for PH_i in ${PH_OPTS}
 do
 	case "$PH_i" in DIR|*_CMD)
@@ -2441,6 +2460,7 @@ function ph_create_app_defaults {
 
 declare PH_i
 declare PH_APP
+declare PH_APP_DISPLAY
 declare PH_OPT
 declare PH_LINE
 declare -u PH_APPU
@@ -2448,6 +2468,7 @@ declare "PH_${PH_APPU}_OPTS"
 
 PH_i=""
 PH_APP="$1"
+PH_APP_DISPLAY="${PH_APP} option"
 PH_OPT=""
 PH_LINE=""
 PH_APPU="${PH_APP:0:4}"
@@ -2460,6 +2481,7 @@ declare -n PH_OPTS="PH_${PH_APPU}_OPTS"
 case "$PH_APP" in Moonlight)
                 PH_OPTS="${PH_OPTS} RES WIDTH HEIGHT FPS BITRATE PCKTSIZE SRV GAME" ;;
                       Ctrls)
+		PH_APP_DISPLAY="controller settings"
                 PH_OPTS="MAP TYPE PS3_PIN PS4_PIN BLUE_ADAPT" ;;
            Emulationstation)
                 PH_OPTS="${PH_OPTS} DIR SETUP_DIR" ;;
@@ -2470,7 +2492,7 @@ unset -n PH_OPTS
 ph_run_with_rollback -c "ph_remove_app_defaults '${PH_APP}'" || \
 	return 1
 declare -n PH_OPTS="PH_${PH_APPU}_OPTS"
-printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Creating ${PH_APP} option defaults in file " "'${PH_CONF_DIR}/options.defaults'"
+printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Creating ${PH_APP_DISPLAY} defaults in file " "'${PH_CONF_DIR}/options.defaults'"
 for PH_i in ${PH_OPTS}
 do
         PH_OPT="PH_${PH_APPU}_${PH_i}"

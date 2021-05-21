@@ -181,8 +181,8 @@ then
 	done
 	[[ -z "$PH_STOPAPPS" ]] && PH_STOPAPPS="None"
 	ph_set_result -m "The following applications were stopped ('$PH_STOPAPPS')"
-	ph_get_app_tty "$PH_RUNAPP"
-	PH_RUNAPP_TTY="$?"
+	ph_ensure_app_tty "$PH_RUNAPP"
+	PH_RUNAPP_TTY="$(ph_get_app_tty_from_app_name "$PH_RUNAPP")"
 	if [[ "$PH_RUNAPP_TTY" -le "1" || "$PH_RUNAPP_TTY" -gt "$PH_PIEH_MAX_TTYS" ]]
 	then
 		ph_set_result -m "A valid TTY allocation is mandatory for '$PH_RUNAPP' start on a TTY"

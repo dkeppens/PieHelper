@@ -8,29 +8,47 @@
 
 #set -x
 
-declare PH_RUNAPP="PieHelper"
-declare PH_STOPAPP="#PH_APP#"
-declare PH_OPTION=""
-declare PH_MENU=""
-declare PH_MODE=""
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
-declare -i PH_FG_CONSOLE="0"
-declare -i PH_STOPAPP_TTY="0"
-declare -l PH_RUNAPPL="${PH_RUNAPP:0:4}"
-declare -l PH_STOPAPPL="${PH_STOPAPP:0:4}"
+declare PH_RUNAPP
+declare PH_STOPAPP
+declare PH_STOPAPP_STR_TTY
+declare PH_MENU
+declare PH_MODE
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+declare -i PH_FG_CONSOLE
+declare -l PH_RUNAPPL
+declare -l PH_STOPAPPL
+
+PH_OLDOPTARG="$OPTARG"
+PH_OLDOPTIND="$OPTIND"
+PH_RUNAPP="PieHelper"
+PH_STOPAPP="#PH_APP#"
+PH_STOPAPP_STR_TTY=""
+PH_MENU=""
+PH_MODE=""
+PH_OPTION=""
+PH_FG_CONSOLE="0"
+PH_RUNAPPL="${PH_RUNAPP:0:4}"
+PH_STOPAPPL="${PH_STOPAPP:0:4}"
 
 OPTIND="1"
 
-while getopts hpm: PH_OPTION 2>/dev/null
+while getopts :hpm: PH_OPTION
 do
         case "$PH_OPTION" in p)
-		[[ -n "$PH_MODE" ]] && (! "$PH_STOPAPPL""topieh.sh" -h) && OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && exit 1
+		[[ -n "$PH_MODE" ]] && \
+			(! "${PH_STOPAPPL}topieh.sh" -h) && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			exit 1
 		PH_MODE="pseudo" ;;
 			     m)
-		[[ -n "$PH_MENU" ]] && (! "$PH_STOPAPPL""topieh.sh" -h) && OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && exit 1
+		[[ -n "$PH_MENU" ]] && \
+			(! "${PH_STOPAPPL}topieh.sh" -h) && \
+			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="$PH_OLDOPTARG" && \
+			exit 1
                 if ! ph_screen_input "$OPTARG"
                 then
                         OPTARG="$PH_OLDOPTARG"
@@ -39,42 +57,42 @@ do
                 fi
                 PH_MENU="$OPTARG" ;;
 			     *)
-                >&2 printf "\n\033[36m%s%s%s%s\033[0m\n" "Usage : $PH_STOPAPPL" "to" "$PH_RUNAPPL" ".sh '-p' '-m ['menu']' | -h"
+                >&2 printf "\n\033[1;36m%s\033[0;0m\n" "Usage : ${PH_STOPAPPL}to${PH_RUNAPPL}.sh '-p' '-m ['menu']' | -h"
                 >&2 printf "\n"
-                >&2 printf "%3s%s\n" "" "Where -h displays this usage"
-                >&2 printf "%9s%s\n" "" "- Running this script without parameters will stop an instance of '$PH_STOPAPP' running on it's allocated TTY if"
-                >&2 printf "%9s%s\n" "" "  the currently active TTY is the TTY allocated to '$PH_STOPAPP'"
-                >&2 printf "%9s%s\n" "" "  If successful, a new instance of '$PH_RUNAPP' will be started on it's allocated TTY"
-                >&2 printf "%12s%s\n" "" "- The first unallocated TTY will be automatically assigned to any application without a TTY that attempts to start"
-                >&2 printf "%12s%s\n" "" "- A TTY is only deallocated when an application is removed from PieHelper"
-                >&2 printf "%12s%s\n" "" "- If an application in need of a TTY attempts to start but all TTY's are already allocated, startup will fail"
-                >&2 printf "%12s%s\n" "" "- Persistence will be taken into account when stopping '$PH_STOPAPP' since the stop command is being issued indirectly"
+                >&2 printf "%3s\033[1;37m%s\n" "" "Where -h displays this usage"
+                >&2 printf "%9s%s\n" "" "- Running this script without parameters will stop an instance of '${PH_STOPAPP}' running on its allocated tty if"
+                >&2 printf "%9s%s\n" "" "  the currently active tty is the tty allocated to '${PH_STOPAPP}'"
+                >&2 printf "%9s%s\n" "" "  If successful, a new instance of '${PH_RUNAPP}' will be started on its allocated tty"
+                >&2 printf "%12s%s\n" "" "- The first unallocated tty will be automatically assigned to any application without a tty that attempts to start"
+                >&2 printf "%12s%s\n" "" "- A tty is only deallocated when an application is removed from PieHelper"
+                >&2 printf "%12s%s\n" "" "- If an application in need of a tty attempts to start but all ttys are already allocated, startup will fail"
+                >&2 printf "%12s%s\n" "" "- Persistence will be taken into account when stopping '${PH_STOPAPP}' since the stop command is being issued indirectly"
                 >&2 printf "%12s%s\n" "" "- At any application start, all other running integrated applications will first be stopped"
                 >&2 printf "%12s%s\n" "" "  Two exceptions to this rule exist :"
                 >&2 printf "%15s%s\n" "" "- PieHelper starting on a pseudo-terminal will never stop running applications"
                 >&2 printf "%15s%s\n" "" "- Applications marked as persistent remain online"
-                >&2 printf "%12s%s\n" "" "- Additionally, the following rules apply to the stop of '$PH_STOPAPP' :"
-                >&2 printf "%15s%s\n" "" "- If no active instance of '$PH_STOPAPP' can be found on it's allocated TTY or"
-                >&2 printf "%15s%s\n" "" "  the TTY for '$PH_STOPAPP' cannot be determined, stop will be skipped but succeed with a warning"
-                >&2 printf "%12s%s\n" "" "- Additionally, the following rules apply to the start of '$PH_RUNAPP' :"
-                >&2 printf "%15s%s\n" "" "- If a persistent '$PH_RUNAPP' instance is already running on that TTY, that TTY will become the active TTY"
-                >&2 printf "%15s%s\n" "" "- If a non-persistent '$PH_RUNAPP' instance is already running on that TTY, startup will fail"
-                >&2 printf "%15s%s\n" "" "- If a '$PH_RUNAPP' instance is already running on a pseudo-terminal, that instance will be replaced by the new instance on it's allocated TTY"
-                >&2 printf "%9s%s\n" "" "-p allows setting the start of '$PH_RUNAPP' to be executed on a pseudo-terminal instead of it's allocated TTY"
+                >&2 printf "%12s%s\n" "" "- Additionally, the following rules apply to the stop of '${PH_STOPAPP}' :"
+                >&2 printf "%15s%s\n" "" "- If no active instance of '${PH_STOPAPP}' can be found on its allocated tty or"
+                >&2 printf "%15s%s\n" "" "  the tty for '${PH_STOPAPP}' cannot be determined, stop will be skipped but succeed with a warning"
+                >&2 printf "%12s%s\n" "" "- Additionally, the following rules apply to the start of '${PH_RUNAPP}' :"
+                >&2 printf "%15s%s\n" "" "- If a persistent '${PH_RUNAPP}' instance is already running on that tty, that tty will become the active tty"
+                >&2 printf "%15s%s\n" "" "- If a non-persistent '${PH_RUNAPP}' instance is already running on that tty, startup will fail"
+                >&2 printf "%15s%s\n" "" "- If a '${PH_RUNAPP}' instance is already running on a pseudo-terminal, that instance will be replaced by the new instance on its allocated tty"
+                >&2 printf "%9s%s\n" "" "-p allows setting the start of '${PH_RUNAPP}' to be executed on a pseudo-terminal instead of its allocated tty"
                 >&2 printf "%12s%s\n" "" "- Specifying -p is optional"
                 >&2 printf "%12s%s\n" "" "- The following rules replace these for a normal start :"
-                >&2 printf "%15s%s\n" "" "- If a persistent '$PH_RUNAPP' pseudo-terminal instance is already running, startup will be skipped but succeed with a warning"
-                >&2 printf "%15s%s\n" "" "- If a non-persistent '$PH_RUNAPP' pseudo-terminal instance is already running, startup will fail"
-                >&2 printf "%15s%s\n" "" "- If a '$PH_RUNAPP' instance is already running on it's allocated TTY, that instance will be replaced by the new pseudo-terminal instance"
-                >&2 printf "%9s%s\n" "" "-m allows starting '$PH_RUNAPP' directly in menu [menu] instead of the default 'Main' menu"
+                >&2 printf "%15s%s\n" "" "- If a persistent '${PH_RUNAPP}' pseudo-terminal instance is already running, startup will be skipped but succeed with a warning"
+                >&2 printf "%15s%s\n" "" "- If a non-persistent '${PH_RUNAPP}' pseudo-terminal instance is already running, startup will fail"
+                >&2 printf "%15s%s\n" "" "- If a '${PH_RUNAPP}' instance is already running on its allocated tty, that instance will be replaced by the new pseudo-terminal instance"
+                >&2 printf "%9s%s\n" "" "-m allows starting '${PH_RUNAPP}' directly in menu [menu] instead of the default 'Main' menu"
                 >&2 printf "%12s%s\n" "" "- Specifying -m is optional"
                 >&2 printf "%12s%s\n" "" "- Allowed values for [menu] are 'Main', 'Controllers', 'Apps', 'Advanced', 'Settings', 'PS3', 'PS4', 'XBOX360', 'AppManagement',"
                 >&2 printf "%12s%s\n" "" "  'OptsManagement', 'TTYManagement', 'AppManagement', the name of any supported application, as well as one of 'OptsManagement', 'AppManagement', or 'TTYManagement' concatenated with '_' and"
                 >&2 printf "%12s%s\n" "" "  the name of any supported application, f.e. 'OptsManagement_Bash', 'AppManagement_PieHelper' or 'TTYManagement_Moonlight'"
-                >&2 printf "%15s%s\n" "" "- By default, the current value of option PH_PIEH_CMD_OPTS will be used"
+                >&2 printf "%15s%s\n" "" "- By default, the current value of option 'PH_PIEH_CMD_OPTS' will be used"
                 >&2 printf "%18s%s\n" "" "- If PH_PIEH_CMD_OPTS has no value, it will be set to 'Main'"
                 >&2 printf "%15s%s\n" "" "- If an empty string is specified for [menu], the default will be used"
-                >&2 printf "%12s%s\n" "" "- This setting will be ignored if a persistent instance of '$PH_RUNAPP' is already active"
+                >&2 printf "%12s%s\033[0;0m\n" "" "- This setting will be ignored if a persistent instance of '${PH_RUNAPP}' is already active"
                 >&2 printf "\n"
                 OPTIND="$PH_OLDOPTIND"
 		OPTARG="$PH_OLDOPTARG"
@@ -84,22 +102,24 @@ done
 OPTIND="$PH_OLDOPTIND"
 OPTARG="$PH_OLDOPTARG"
 
-[[ -z "$PH_MODE" ]] && PH_MODE="normal"
-
-PH_STOPAPP_TTY="$(ph_get_app_tty_from_app_name "$PH_STOPAPP")"
+[[ -z "$PH_MODE" ]] && \
+	PH_MODE="normal"
+printf "\n\033[1;36m%s\033[1;33m%s\033[0;0m\n" "- Checking the requirements to stop " "'${PH_STOPAPP}'"
+PH_STOPAPP_STR_TTY="$(ph_get_app_tty_from_app_name "$PH_STOPAPP")"
 PH_FG_CONSOLE="$("$PH_SUDO" fgconsole 2>/dev/null)"
-if [[ "$PH_FG_CONSOLE" -ne "$PH_STOPAPP_TTY" ]]
+if [[ "$PH_FG_CONSOLE" -ne "$PH_STOPAPP_STR_TTY" ]]
 then
-        printf "\n\033[36m%s\033[0m\n" "- Executing '$PH_STOPAPP' stop action prechecks"
-	ph_set_result -r 1 -m "Currently active TTY allocated to '$PH_STOPAPP' is mandatory for '$PH_STOPAPP' stop"
-	ph_show_result
-        exit "$?"
-fi
-"stop$PH_STOPAPPL.sh" || exit "$?"
-if [[ "$PH_MODE" == "normal" ]]
-then
-	"start$PH_RUNAPPL.sh" -m "$PH_MENU"
+	ph_set_result -m "Could not stop '${PH_STOPAPP}' since the currently active tty is not allocated to '${PH_STOPAPP}'"
+	ph_run_with_rollback -c false -m "Could not stop"
 else
-	"start$PH_RUNAPPL.sh" -p -m "$PH_MENU"
+	ph_run_with_rollback -c true
+	"stop${PH_STOPAPPL}.sh" || \
+		exit "$?"
+	if [[ "$PH_MODE" == "normal" ]]
+	then
+		"start${PH_RUNAPPL}.sh" -m "$PH_MENU"
+	else
+		"start${PH_RUNAPPL}.sh" -p -m "$PH_MENU"
+	fi
 fi
 exit "$?"

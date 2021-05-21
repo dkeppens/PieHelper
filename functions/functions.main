@@ -1105,7 +1105,7 @@ else
 				print $3 \
 			}')" != "root" ]]
 		then
-			printf "%4s%s\n" "" "- The PATH and LD_LIBRARY_PATH extension has a corrupted value for ownership -> Fix by running '${PH_SUDO} chown root:root /etc/profile.d/PieHelper-path.sh'" >>"${PH_TMP_DIR}/.reported_issues"
+			printf "%4s%s\n" "" "- The PATH and LD_LIBRARY_PATH extension " "'/etc/profile.d/PieHelper-path.sh'" " has a corrupted value for ownership -> Fix by running '${PH_SUDO} chown root:root /etc/profile.d/PieHelper-path.sh'" >>"${PH_TMP_DIR}/.reported_issues"
 			PH_RET_CODE="1"
 		fi
 	fi
@@ -1426,7 +1426,7 @@ do
 done
 if [[ -f /etc/profile.d/PieHelper-path.sh ]]
 then
-        printf "%4s%s\n" "" "- The PATH and LD_LIBRARY_PATH extension is present" >>"${PH_TMP_DIR}/.reported_issues"
+        printf "%4s%s\n" "" "- The PATH and LD_LIBRARY_PATH extension " "'/etc/profile.d/PieHelper-path.sh'" " is present" >>"${PH_TMP_DIR}/.reported_issues"
 	PH_RET_CODE="1"
 fi
 if [[ "$PH_DISTRO" == "Debian" ]]
@@ -4629,7 +4629,7 @@ function ph_pieh_unconfigured_path_conf {
 
 if [[ -f /etc/profile.d/PieHelper-path.sh ]]
 then
-	printf "%8s%s\n" "" "--> Removing the PATH and LD_LIBRARY_PATH extension for PieHelper"
+	printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing PieHelper's PATH and LD_LIBRARY_PATH extension " "'/etc/profile.d/PieHelper-path.sh'"
 	if ph_run_with_rollback -c "ph_store_file -r -f '/etc/profile.d/PieHelper-path.sh'"
 	then
 		ph_add_value_to_param -p PH_CONFIGURED_STATE -v path
@@ -6491,7 +6491,7 @@ then
 			then
 				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found"
 				printf "%8s%s\n" "" "--> Locating '$PH_APP' build repository"
-				PH_PATH=`$PH_SUDO find / -type d ! -fstype nfs -name moonlight-embedded 2>/dev/null`
+				PH_PATH="$("$PH_SUDO" find / -type d ! -fstype nfs -name moonlight-embedded 2>/dev/null)"
 				[[ "$?" -ne "0" ]] && printf "%10s%s\n" "" "ERROR : Could not locate repository" && return 1
 			else
 				printf "%10s%s\n" "" "OK (Found)"
@@ -9709,7 +9709,7 @@ ph_secure_pieh -t never
 if [[ "$PH_NEED_BOOT" == "yes" ]]
 then
 	ph_show_result
-	printf "\n%s\n\n" "" "A reboot is required since the PATH and LD_LIBRARY_PATH extension was reinstalled"
+	printf "\n%s\n\n" "" "A reboot is required since the PATH and LD_LIBRARY_PATH extension for PieHelper was reinstalled"
 	printf "%s" "Press 'Enter' to reboot and continue"
 	read -r 2>/dev/null
 	chvt 1
@@ -9761,7 +9761,7 @@ function ph_pieh_configured_path_conf {
 [[ "$#" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Creating the PATH and LD_LIBRARY_PATH extension for PieHelper"
+printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Creating PieHelper's PATH and LD_LIBRARY_PATH extension as " "'/etc/profile.d/PieHelper-path.sh'"
 if [[ ! -f /etc/profile.d/PieHelper-path.sh ]]
 then
 	if ph_run_with_rollback -c "ph_create_empty_file -r -q -t file -d '/etc/profile.d/PieHelper-path.sh'"
@@ -10219,7 +10219,7 @@ then
 				ph_run_with_rollback -c "ph_install_pkg '${PH_i}'" || \
 					return 1
 			done
-			printf "%8s%s\n" "" "--> Checking for Emulationstation (RetroPie)"
+			printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Checking for the presence of " "'Emulationstation' (RetroPie)"
 			if [[ -f /usr/bin/emulationstation ]]
 			then
 				ph_run_with_rollback -c true -m "Found"
