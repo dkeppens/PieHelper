@@ -167,11 +167,11 @@ fi
 
 # Override terminal color settings
 
-source "${PH_MAIN_DIR}/.term_colors" >/dev/null 2>&1
+source "${PH_MAIN_DIR}/.term_colors.sh" >/dev/null 2>&1
 
 # Load all relevant module declarations
 
-for PH_i in functions functions.user functions.update $(echo -n "${PH_SUPPORTED_DISTROS[@]}" | nawk '{ \
+for PH_i in functions.main functions.user functions.update $(echo -n "${PH_SUPPORTED_DISTROS[@]}" | nawk '{ \
 		for (i=1;i<=NF;i++) { \
 			printf "distros/functions." $i ; \
 			if (i < NF) { \

@@ -1042,6 +1042,11 @@ do
 		exit "$?"
         fi
 done
+if ! ph_check_object_existence -q -o "${PH_MAIN_DIR}/.term_colors.sh"
+then
+	ph_show_result
+	exit "$?"
+fi
 for PH_i in GL X
 do
 	if ! ph_check_object_existence -q -o "${PH_FILES_DIR}/default_apps_${PH_i}"
@@ -1465,7 +1470,7 @@ do
        	printf "%4s%s\n" "" "- Default CIFS mountpoint '${PH_MNT_DIR}/${PH_APP}' is present" >>"${PH_TMP_DIR}/.reported_issues"
 	PH_RET_CODE="1"
 done
-for PH_i in $(find "${PH_SCRIPTS_DIR}" -maxdepth 1 -type f -regextype egrep ! -regex ".*/(start|stop|restart|.*_ph).*\.sh" -print 2>/dev/null | nawk 'BEGIN { \
+for PH_i in $(find "${PH_SCRIPTS_DIR}" -maxdepth 1 -type f -regextype egrep ! -regex ".*/(.term_colors|start|stop|restart|.*_ph).*\.sh" -print 2>/dev/null | nawk 'BEGIN { \
 		ORS =  " " \
 	} { \
 		print $1 \
@@ -9448,7 +9453,7 @@ do
 	ph_check_object_existence -o "${PH_FUNCS_DIR}/distros/functions.${PH_i}" || \
 		return 1
 done
-for PH_i in functions functions.update functions.user
+for PH_i in functions.main functions.update functions.user
 do
 	ph_check_object_existence -o "${PH_FUNCS_DIR}/${PH_i}" || \
 		return 1
@@ -9466,7 +9471,7 @@ PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
 "$PH_SUDO" rm -r "${PH_MAIN_DIR}/expect/"!(@(setpasswd|confctrls)\.expect) 2>/dev/null
 "$PH_SUDO" rm -r "${PH_MAIN_DIR}/pre_cmds/"!(@(Kodi|PieHelper)-PRE\.sh) 2>/dev/null
 "$PH_SUDO" rm -r "${PH_MAIN_DIR}/post_cmds/"!(@(Kodi|PieHelper)-POST\.sh) 2>/dev/null
-"$PH_SUDO" rm "${PH_FUNCS_DIR}/"!(@(distros|functions@(|\.@(user|update)))) 2>/dev/null
+"$PH_SUDO" rm "${PH_FUNCS_DIR}/"!(@(distros|functions@(main|\.@(user|update)))) 2>/dev/null
 "$PH_SUDO" rm -r "${PH_FUNCS_DIR}/distros/"!(functions\.@($(sed 's/ /\|/g'<<<"${PH_SUPPORTED_DISTROS[@]}"))) 2>/dev/null
 "$PH_SUDO" rm "${PH_FILES_DIR}/"!(@(menus|excludes|templates|stored|VERSIONS|default_apps_@(X|GL))) 2>/dev/null
 "$PH_SUDO" rm "${PH_FILES_DIR}/stored/"!(@(autologin|logind)_conf|10-retropie_sh) 2>/dev/null

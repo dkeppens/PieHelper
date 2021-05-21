@@ -1,5 +1,5 @@
 # PieHelper TERM color settings (By Davy Keppens on 21/05/21)
-# Enable/Disable debug by running 'confpieh_ph.sh -p debug -m .term_colors'
+# Enable/Disable debug by running 'confpieh_ph.sh -p debug -m .term_colors.sh'
 
 #set -x
 
