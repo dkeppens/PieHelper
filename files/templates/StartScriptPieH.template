@@ -20,6 +20,7 @@ declare PH_STOPAPPS="None"
 declare PH_OLDOPTARG="$OPTARG"
 declare -i PH_OLDOPTIND="$OPTIND"
 declare -i PH_RUNAPP_TTY="0"
+declare -i PH_MYPID="${$}"
 declare -i PH_FG_CONSOLE="0"
 declare -i PH_RECVD_FLAG="1"
 declare -i PH_RET_CODE="0"
@@ -202,11 +203,11 @@ else
 fi
 set -x
 ps -ef | grep startpieh
-read -r KAKA
 printf "%8s%s\n" "" "--> Checking for '$PH_RUNAPP' presence"
-PH_INST="$(pgrep "^start${PH_RUNAPPL}.sh" 2>/dev/null | sed "s/^${$}$//g" | paste -d" " -s)"
+PH_INST="$(pgrep "^start${PH_RUNAPPL}.sh" 2>/dev/null | sed "s/^${PH_MYPID}$//g" | paste -d" " -s)"
 if [[ -n "$PH_INST" ]]
 then
+	read -r KAKA
 	if [[ "$PH_MODE" == "normal" ]]
 	then
 		if pgrep -t "tty$PH_RUNAPP_TTY" -f "start$PH_RUNAPPL.sh" >/dev/null 2>&1
