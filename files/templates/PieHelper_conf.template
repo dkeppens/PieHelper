@@ -37,7 +37,7 @@ PH_PIEH_DEBUG=''									# - This is a comma-separated list of PieHelper modules
 											# - Default is ''
 											# - Allowed values are any relevant PieHelper modules
 											# - Relevant module names are defined as all PieHelper script names and any PieHelper functions relevant to the Operating system being used
-PH_PIEH_SANITY='no'									# - This indicates whether PieHelper should run sanity checks on it's configuration on each run
+PH_PIEH_SANITY='yes'									# - This indicates whether PieHelper should run sanity checks on it's configuration on each run
 											# - Disabling this will slightly boost performance but configuration errors will no longer be automatically detected
 											# - Default is 'yes'
 											# - Allowed values are 'yes' and 'no'
