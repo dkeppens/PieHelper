@@ -2,8 +2,8 @@
 # Run '#PH_APP#' to 'PieHelper' move action (by Davy Keppens on 04/10/2018)
 # Enable/Disable debug by running 'confpieh_ph.sh -p debug -m #PH_APPL#topieh.sh'
 
-. "$(dirname "$0" 2>/dev/null)/app/main.sh" || \
-	exit "$?" && \
+. "$(dirname "${0}" 2>/dev/null)/app/main.sh" || \
+	exit "${?}" && \
 	set +x
 
 #set -x
@@ -20,8 +20,8 @@ declare -i PH_FG_CONSOLE
 declare -l PH_RUNAPPL
 declare -l PH_STOPAPPL
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_RUNAPP="PieHelper"
 PH_STOPAPP="#PH_APP#"
 PH_STOPAPP_STR_TTY=""
@@ -36,26 +36,20 @@ OPTIND="1"
 
 while getopts :hpm: PH_OPTION
 do
-        case "$PH_OPTION" in p)
-		[[ -n "$PH_MODE" ]] && \
+        case "${PH_OPTION}" in p)
+		[[ -n "${PH_MODE}" ]] && \
 			(! "${PH_STOPAPPL}topieh.sh" -h) && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			exit 1
 		PH_MODE="pseudo" ;;
 			     m)
-		[[ -n "$PH_MENU" ]] && \
+		[[ -n "${PH_MENU}" || "${OPTARG}" != @(Main|@(Controller|App|Setting)s|Advanced|PS@(3|4)|XBOX360|@(App|Opts|TTY)Management*) ]] && \
 			(! "${PH_STOPAPPL}topieh.sh" -h) && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			exit 1
-                if ! ph_screen_input "$OPTARG"
-                then
-                        OPTARG="$PH_OLDOPTARG"
-                        OPTIND="$PH_OLDOPTIND"
-                        exit 1
-                fi
-                PH_MENU="$OPTARG" ;;
+                PH_MENU="${OPTARG}" ;;
 			     *)
                 >&2 printf "\n\033[1;36m%s\033[0;0m\n" "Usage : ${PH_STOPAPPL}to${PH_RUNAPPL}.sh '-p' '-m ['menu']' | -h"
                 >&2 printf "\n"
@@ -94,32 +88,34 @@ do
                 >&2 printf "%15s%s\n" "" "- If an empty string is specified for [menu], the default will be used"
                 >&2 printf "%12s%s\033[0;0m\n" "" "- This setting will be ignored if a persistent instance of '${PH_RUNAPP}' is already active"
                 >&2 printf "\n"
-                OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+                OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		exit 1 ;;
         esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "$PH_MODE" ]] && \
+[[ -z "${PH_MODE}" ]] && \
 	PH_MODE="normal"
-printf "\n\033[1;36m%s\033[1;33m%s\033[0;0m\n" "- Checking the requirements to stop " "'${PH_STOPAPP}'"
-PH_STOPAPP_STR_TTY="$(ph_get_app_tty_from_app_name "$PH_STOPAPP")"
-PH_FG_CONSOLE="$("$PH_SUDO" fgconsole 2>/dev/null)"
-if [[ "$PH_FG_CONSOLE" -ne "$PH_STOPAPP_STR_TTY" ]]
+printf "\n\033[1;36m%s\033[0;0m\n\n" "- Checking the requirements to stop '${PH_STOPAPP}'"
+PH_STOPAPP_STR_TTY="$(ph_get_app_tty_from_app_name "${PH_STOPAPP}")"
+PH_FG_CONSOLE="$("${PH_SUDO}" fgconsole 2>/dev/null)"
+if [[ "${PH_FG_CONSOLE}" -ne "${PH_STOPAPP_STR_TTY}" ]]
 then
 	ph_set_result -m "Could not stop '${PH_STOPAPP}' since the currently active tty is not allocated to '${PH_STOPAPP}'"
 	ph_run_with_rollback -c false -m "Could not stop"
 else
 	ph_run_with_rollback -c true
+	ph_set_result -t -r 0
+	ph_show_result
 	"stop${PH_STOPAPPL}.sh" || \
-		exit "$?"
-	if [[ "$PH_MODE" == "normal" ]]
+		exit 1
+	if [[ "${PH_MODE}" == "normal" ]]
 	then
-		"start${PH_RUNAPPL}.sh" -m "$PH_MENU"
+		"start${PH_RUNAPPL}.sh" -m "${PH_MENU}"
 	else
-		"start${PH_RUNAPPL}.sh" -p -m "$PH_MENU"
+		"start${PH_RUNAPPL}.sh" -p -m "${PH_MENU}"
 	fi
 fi
-exit "$?"
+exit "${?}"

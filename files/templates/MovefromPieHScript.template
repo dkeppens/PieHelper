@@ -2,8 +2,8 @@
 # Run 'PieHelper' to '#PH_APP2#' move action (by Davy Keppens on 04/10/2018)
 # Enable/Disable debug by running 'confpieh_ph.sh -p debug -m piehto#PH_APPL2#.sh'
 
-. "$(dirname "$0" 2>/dev/null)/app/main.sh" || \
-	exit "$?" && \
+. "$(dirname "${0}" 2>/dev/null)/app/main.sh" || \
+	exit "${?}" && \
 	set +x
 
 #set -x
@@ -19,8 +19,8 @@ declare -i PH_FG_CONSOLE
 declare -l PH_RUNAPPL
 declare -l PH_STOPAPPL
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_RUNAPP="#PH_APP2#"
 PH_STOPAPP="PieHelper"
 PH_STOPAPP_STR_TTY=""
@@ -34,11 +34,11 @@ OPTIND="1"
 
 while getopts :hp PH_OPTION
 do
-        case "$PH_OPTION" in p)
-		[[ -n "$PH_MODE" ]] && \
+        case "${PH_OPTION}" in p)
+		[[ -n "${PH_MODE}" ]] && \
 			(! "piehto${PH_RUNAPPL}.sh" -h) && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			exit 1
                 PH_MODE="pseudo" ;;
                              *)
@@ -69,33 +69,35 @@ do
                 >&2 printf "%15s%s\n" "" "- If a '${PH_STOPAPP}' instance is running on its allocated tty, stop will fail"
                 >&2 printf "%15s%s\033[0;0m\n" "" "- If no active instance of '${PH_STOPAPP}' can be found on a pseudo-terminal, stop will be skipped but succeed with a warning"
                 >&2 printf "\n"
-                OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+                OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		exit 1 ;;
         esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "$PH_MODE" ]] && \
+[[ -z "${PH_MODE}" ]] && \
 	PH_MODE="normal"
-printf "\n\033[1;36m%s\033[1;33m%s\033[0;0m\n" "- Checking the requirements to stop " "'${PH_STOPAPP}'"
-PH_STOPAPP_STR_TTY="$(ph_get_app_tty_from_app_name "$PH_STOPAPP")"
-PH_FG_CONSOLE="$("$PH_SUDO" fgconsole 2>/dev/null)"
-if [[ "$PH_FG_CONSOLE" -ne "$PH_STOPAPP_STR_TTY" && "$PH_MODE" != "pseudo" ]]
+printf "\n\033[1;36m%s\033[0;0m\n\n" "- Checking the requirements to stop '${PH_STOPAPP}'"
+PH_STOPAPP_STR_TTY="$(ph_get_app_tty_from_app_name "${PH_STOPAPP}")"
+PH_FG_CONSOLE="$("${PH_SUDO}" fgconsole 2>/dev/null)"
+if [[ "${PH_FG_CONSOLE}" -ne "${PH_STOPAPP_STR_TTY}" && "${PH_MODE}" != "pseudo" ]]
 then
 	ph_set_result -m "Could not stop '${PH_STOPAPP}' since the currently active tty is not allocated to '${PH_STOPAPP}'"
 	ph_run_with_rollback -c false -m "Could not stop"
 else
 	ph_run_with_rollback -c true
-	if [[ "$PH_MODE" == "normal" ]]
+	ph_set_result -t -r 0
+	ph_show_result
+	if [[ "${PH_MODE}" == "normal" ]]
 	then
 		"stop${PH_STOPAPPL}.sh" || \
-			exit "$?"
+			exit 1
 	else
 		"stop${PH_STOPAPPL}.sh" -p || \
-			exit "$?"
+			exit 1
 	fi
 	"start${PH_RUNAPPL}.sh"
 fi
-exit "$?"
+exit "${?}"
