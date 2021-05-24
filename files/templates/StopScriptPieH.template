@@ -18,6 +18,7 @@ declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 declare -i PH_STOPAPP_TTY
+declare -i PH_SUBPID
 declare -l PH_STOPAPPL
 
 PH_i=""
@@ -30,6 +31,7 @@ PH_OPTION=""
 PH_OLDOPTARG="${OPTARG}"
 PH_OLDOPTIND="${OPTIND}"
 PH_STOPAPP_TTY="0"
+PH_SUBPID="0"
 PH_STOPAPPL="${PH_STOPAPP:0:4}"
 
 OPTIND="1"
@@ -111,8 +113,8 @@ case "${PH_STOPAPP_STATE}" in Supported|Integrated|Halted)
 		else
 			ph_run_with_rollback -c true -m no
 			printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Stopping " "'${PH_STOPAPP}'"
-			PH_INST="$(pgrep "^start${PH_STOPAPPL}.sh" 2>/dev/null | sed "s/^${PPID}$//g" | paste -d" " -s)"
-			for PH_i in ${PH_INST}
+			PH_INST="$(PH_SUBPID="${BASHPID}" ; pgrep "^start${PH_STOPAPPL}.sh" 2>/dev/null | grep -Ev "^(${$}|${PH_SUBPID})$")"
+			for PH_i in $(paste -d " " -s <<<"${PH_INST}")
 			do
 				if ! "${PH_SUDO}" kill -9 "${PH_i}" 2>/dev/null
 				then
