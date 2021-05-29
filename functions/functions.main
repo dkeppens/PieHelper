@@ -3840,10 +3840,10 @@ then
 					ph_run_with_rollback -c true && \
 						return "$?"
 				else
-					ph_set_result -m "Could not reload systemd configuration"
+					ph_set_result -m "An error occurred trying to reload systemd configuration"
 				fi
 			else
-				ph_set_result -m "Could not set permissions of file '/etc/systemd/system/getty@tty1.service.d/autostart.conf' to '644'"
+				ph_set_result -m "An error occurred trying to set permissions of file '/etc/systemd/system/getty@tty1.service.d/autostart.conf' to '644'"
 			fi
 		fi
 	fi
@@ -5147,11 +5147,22 @@ do
 	then
 		ph_run_with_rollback -c true -m "Nothing to do"
 	else
-        	if ! "$PH_SUDO" systemctl stop "getty@tty${PH_APP_TTY}" >/dev/null 2>&1
-		then
+		while true
+		do
+			if "$PH_SUDO" systemctl stop "getty@tty${PH_APP_TTY}" >/dev/null 2>&1
+			then
+				if "$PH_SUDO" systemctl daemon-reload >/dev/null 2>&1
+				then
+					break
+				else
+					ph_set_result -m "An error occurred trying to reload systemd configuration"
+				fi
+			else
+				ph_set_result -m "An error occurred trying to stop tty${PH_APP_TTY}"
+			fi
 			ph_run_with_rollback -c false -m "Could not stop" || \
 				return 1
-		fi
+		done
 		ph_add_value_to_param -p PH_START_TTYS -v "${PH_APP_TTY}"
 		ph_run_with_rollback -c true
 	fi
@@ -5184,11 +5195,22 @@ do
 	then
 		ph_run_with_rollback -c true -m "Nothing to do"
 	else
-        	if ! "$PH_SUDO" systemctl disable "getty@tty${PH_APP_TTY}" >/dev/null 2>&1
-		then
+		while true
+		do
+			if "$PH_SUDO" systemctl disable "getty@tty${PH_APP_TTY}" >/dev/null 2>&1
+			then
+				if "$PH_SUDO" systemctl daemon-reload >/dev/null 2>&1
+				then
+					break
+				else
+					ph_set_result -m "An error occurred trying to reload systemd configuration"
+				fi
+			else
+				ph_set_result -m "An error occurred trying to disable tty${PH_APP_TTY}"
+			fi
 			ph_run_with_rollback -c false -m "Could not disable" || \
 				return 1
-		fi
+		done
 		ph_add_value_to_param -p PH_ENABLE_TTYS -v "$PH_APP_TTY"
 		ph_run_with_rollback -c true
 	fi
@@ -6023,13 +6045,10 @@ do
 		then
 			if ph_run_with_rollback -c "ph_remove_empty_file -r -q -t directory -d '/etc/systemd/system/getty@tty1.service.d'"
 			then
-				if systemctl is-enabled getty@tty1 >/dev/null 2>&1
+				if ph_run_with_rollback -c "ph_disable_app_tty 1"
 				then
-					if ph_run_with_rollback -c "ph_disable_app_tty 1"
-					then
-						ph_run_with_rollback -c true
-						continue
-					fi
+					ph_run_with_rollback -c true
+					continue
 				fi
 			fi
 		fi
@@ -9785,12 +9804,23 @@ do
 	then
 		ph_run_with_rollback -c true -m "Nothing to do"
 	else
-        	if ! "$PH_SUDO" systemctl start "getty@tty${PH_APP_TTY}" >/dev/null 2>&1
-		then
+		while true
+		do
+        		if "$PH_SUDO" systemctl start "getty@tty${PH_APP_TTY}" >/dev/null 2>&1
+			then
+        			if "$PH_SUDO" systemctl daemon-reload >/dev/null 2>&1
+				then
+					break
+				else
+					ph_set_result -m "An error occurred trying to reload systemd configuration"
+				fi
+			else
+				ph_set_result -m "An error occurred trying to start tty${PH_APP_TTY}"
+			fi
 			ph_run_with_rollback -c false -m "Could not start" || \
 				return 1
-		fi
-		ph_add_value_to_param -p PH_STOP_TTYS -v "${PH_APP_TTY}"
+		done
+		ph_add_value_to_param -p PH_STOP_TTYS -v "$PH_APP_TTY"
 		ph_run_with_rollback -c true
 	fi
 done
@@ -9822,11 +9852,22 @@ do
 	then
 		ph_run_with_rollback -c true -m "Nothing to do"
 	else
-        	if ! "$PH_SUDO" systemctl enable "getty@tty${PH_APP_TTY}" >/dev/null 2>&1
-		then
+		while true
+		do
+        		if "$PH_SUDO" systemctl enable "getty@tty${PH_APP_TTY}" >/dev/null 2>&1
+			then
+        			if "$PH_SUDO" systemctl daemon-reload >/dev/null 2>&1
+				then
+					break
+				else
+					ph_set_result -m "An error occurred trying to reload systemd configuration"
+				fi
+			else
+				ph_set_result -m "An error occurred trying to enable tty${PH_APP_TTY}"
+			fi
 			ph_run_with_rollback -c false -m "Could not enable" || \
 				return 1
-		fi
+		done
 		ph_add_value_to_param -p PH_DISABLE_TTYS -v "$PH_APP_TTY"
 		ph_run_with_rollback -c true
 	fi
@@ -11242,8 +11283,12 @@ case "$PH_ACTION" in start)
 				PH_APP_CMD="bash"
 			if ! pgrep -t "tty${PH_APP_TTY}" -f "${PH_APP_CMD}" >/dev/null 2>&1
 			then
-				"$PH_SUDO" systemctl stop "getty@tty${PH_APP_TTY}" >/dev/null 2>&1
-				"$PH_SUDO" systemctl daemon-reload >/dev/null 2>&1
+				if ! ph_run_with_rollback -c "ph_stop_app_tty '${PH_APP_TTY}'"
+				then
+					unset -n PH_APPU_CMD_OPTS PH_APPU_USE_CTRL PH_APPU_NUM_CTRL PH_APPU_PRE_CMD PH_APPU_POST_CMD
+					unset -n PH_APPU_CIFS_SHARE PH_APPU_CIFS_DIR PH_APPU_CIFS_SUBDIR PH_APPU_CIFS_SRV PH_APPU_PERSISTENT
+					return 1
+				fi
 			fi
 			[[ "$PH_APP" == "Bash" ]] && \
 				PH_APP_CMD="/bin/bash"
@@ -11264,8 +11309,12 @@ case "$PH_ACTION" in start)
 	if [[ "$PH_APP" != "PieHelper" ]]
 	then
 		ph_umount_cifs_share PieHelper >/dev/null 2>&1
-		"$PH_SUDO" systemctl stop "getty@tty$PH_PIEH_TTY" >/dev/null 2>&1
-		"$PH_SUDO" systemctl daemon-reload >/dev/null 2>&1
+		if ! ph_run_with_rollback -c "ph_stop_app_tty '${PH_PIEH_TTY}'"
+		then
+			unset -n PH_APPU_CMD_OPTS PH_APPU_USE_CTRL PH_APPU_NUM_CTRL PH_APPU_PRE_CMD PH_APPU_POST_CMD
+			unset -n PH_APPU_CIFS_SHARE PH_APPU_CIFS_DIR PH_APPU_CIFS_SUBDIR PH_APPU_CIFS_SRV PH_APPU_PERSISTENT
+			return 1
+		fi
 	else
 		PH_APP_CMD="ph_show_menu"
 	fi
@@ -11346,7 +11395,7 @@ case "$PH_ACTION" in start)
 				"$PH_SUDO" chvt 1 2>/dev/null
 			fi
 		fi
-		if ! "$PH_SUDO" systemctl stop "getty@tty${PH_APP_TTY}" >/dev/null 2>&1
+		if ! ph_run_with_rollback -c "ph_stop_app_tty '${PH_APP_TTY}'"
 		then
 			printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not stop TTY"
 			ph_set_result -r 1 -m "An error occurred stopping 'TTY$PH_APP_TTY' allocated to '$PH_APP'"
