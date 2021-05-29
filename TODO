@@ -1,3 +1,6 @@
+* maybe also resolve function for dynamic var ?
+* add optional PH_'APPU'_STOP_CMD (and also STOP_CMD_OPTS ???)' for each application and rename _CMD and CMD_OPTS to same with a leading _START_
+* use ph_resolve_dynamic_value in ph_get_app_pkg functions and possibly more
 * use ${var?} for usage of directory vars
 * recheck correct unsetting of any code containing arrays
 * create function to retrieve all options for an app and use in store/retrieve functions + maybe elsewhere + better handling of possible returned errors

@@ -23,7 +23,7 @@ function ph_install_pkg {
 
 declare PH_APP_PKG
 
-PH_APP_PKG="$(eval "echo -n \"$1\"")"
+PH_APP_PKG="$(ph_resolve_dynamic_value "$1")"
 
 [[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
@@ -68,7 +68,7 @@ function ph_update_pkg {
 
 declare PH_APP_PKG
 
-PH_APP_PKG="$(eval "echo -n \"$1\"")"
+PH_APP_PKG="$(ph_resolve_dynamic_value "$1")"
 
 [[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
@@ -92,7 +92,7 @@ function ph_remove_pkg {
 
 declare PH_APP_PKG
 
-PH_APP_PKG="$(eval "echo -n \"$1\"")"
+PH_APP_PKG="$(ph_resolve_dynamic_value "$1")"
 
 [[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
@@ -125,7 +125,7 @@ function ph_get_pkg_inst_state {
 
 declare PH_APP_PKG
 
-PH_APP_PKG="$(eval "echo -n \"$1\"")"
+PH_APP_PKG="$(ph_resolve_dynamic_value "$1")"
 
 [[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
@@ -138,7 +138,7 @@ function ph_check_pkg_validity {
 
 declare PH_APP_PKG
 
-PH_APP_PKG="$(eval "echo -n \"$1\"")"
+PH_APP_PKG="$(ph_resolve_dynamic_value "$1")"
 
 [[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"

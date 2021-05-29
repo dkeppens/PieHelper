@@ -1426,8 +1426,8 @@ declare -i PH_OLDOPTIND
 declare -i PH_RESOLVE
 declare -u PH_APPU
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_APP=""
 PH_OPTION=""
 PH_RESOLVE="1"
@@ -1437,39 +1437,39 @@ OPTIND="1"
 
 while getopts :a:r PH_OPTION
 do
-        case "$PH_OPTION" in a)
-		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+        case "${PH_OPTION}" in a)
+		[[ -n "${PH_APP}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-                PH_APP="$OPTARG" ;;
+                PH_APP="${OPTARG}" ;;
                              r)
-		[[ "$PH_RESOLVE" -eq "0" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ "${PH_RESOLVE}" -eq "0" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
                 PH_RESOLVE="0" ;;
                              *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
                 ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
         esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "$PH_APP" || "$#" -lt "2" ]] && \
+[[ -z "${PH_APP}" || "${#}" -lt "2" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-[[ "$PH_APP" == @(Moonlight|Ctrls) ]] && \
+[[ "${PH_APP}" == @(Moonlight|Ctrls) ]] && \
 	return 0
 PH_APPU="${PH_APP:0:4}"
 declare -n PH_APP_CIFS_MPT="PH_${PH_APPU}_CIFS_MPT"
-if [[ "$PH_RESOLVE" -eq "0" ]]
+if [[ "${PH_RESOLVE}" -eq "0" ]]
 then
-	eval echo -n "$PH_APP_CIFS_MPT"
+	echo -n "$(ph_resolve_dynamic_value "${PH_APP_CIFS_MPT}")"
 else
-	echo -n "$PH_APP_CIFS_MPT"
+	echo -n "${PH_APP_CIFS_MPT}"
 fi
 unset -n PH_APP_CIFS_MPT
 return 0
