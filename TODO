@@ -1,3 +1,5 @@
+* add support for new XBOX controller
+* create and source a new config file for user-defined variables + mention in *_conf.template files
 * maybe also resolve function for dynamic var ?
 * add optional PH_'APPU'_STOP_CMD (and also STOP_CMD_OPTS ???)' for each application and rename _CMD and CMD_OPTS to same with a leading _START_
 * use ph_resolve_dynamic_value in ph_get_app_pkg functions and possibly more

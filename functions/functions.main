@@ -10234,8 +10234,8 @@ then
 	ph_set_result -r 0 -w -m "PieHelper is already ${PH_CONF_STATE}"
 	return 0
 fi
-[[ -z "$PH_RUN_USER" ]] && \
-	export PH_RUN_USER="$(whoami 2>/dev/null)"
+[[ -z "${PH_RUN_USER}" ]] && \
+	PH_RUN_USER="$(whoami 2>/dev/null)"
 printf "%2s\033[1;37m%s\n\n" "" "This will :"
 printf "%4s%s\033[1;33m%s\033[1;37m%s\n" "" "- Configure " "'${PH_RUN_USER}'" " as the user account for the PieHelper application"
 printf "%4s%s\n" "" "- Install all required packages"
