@@ -50,10 +50,12 @@ PH_PIEH_CMD_OPTS='Main'									# - These are the command line options you want 
 											# - Changes to an option for an application's command line options where event-based input devices are present will automatically be reflected to
 											#   the application's option determining the controller amount unless all event device parameters are being removed
 											# - Default is 'Main'
-											# - Allowed values are 'Main', 'Controllers', 'Apps', 'Advanced', 'Settings', 'PS3', 'PS4', 'XBOX360', 'AppManagement',
-											#   'OptsManagement', 'AppManagement', 'TTYManagement', the name of any supported application, as well as one of 'OptsManagement',
-											#   'AppManagement' or 'TTYManagement' concatenated with '_' and the name of any supported application, f.e. 'OptsManagement_Bash',
-											#   'AppManagement_PieHelper' or 'TTYManagement_Moonlight'
+											# - Allowed values are :
+											#   - 'Main' or 'Controllers' or 'Apps' or 'Advanced' or 'Settings' or
+											#   - 'PS3' or 'PS4' or 'XBOX360' or
+											#   - 'AppManagement' or 'AppManagement_[appname]' where [appname] is the name of a supported application, e.g. 'AppManagement_PieHelper'
+											#   - 'OptsManagement' or 'OptsManagement_[appname]' where [appname] is the name of a supported application, e.g. 'OptsManagement_PieHelper'
+											#   - 'TTYManagement' or 'TTYManagement_[appname]' where [appname] is the name of a supported application, e.g. 'TTYManagement_PieHelper'
 PH_PIEH_PKG_NAME=''									# - This is the package name for PieHelper if available
 											# - Default is ''
 											# - Variables can be used as part of or instead of the normal value

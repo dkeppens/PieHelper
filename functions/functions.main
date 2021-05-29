@@ -11234,110 +11234,119 @@ case "$PH_ACTION" in start)
 		clear
 	fi ;;
 		     stop)
-	printf "%8s%s\n" "" "--> Stopping '$PH_APP'"
-	if [[ "$PH_APPU_PERSISTENT" == "yes" && -z "$3" ]]
+	printf "%8s%s\n" "" "--> Checking the currently active tty"
+	if [[ "${PH_FG_CONSOLE}" != "${PH_APP_STR_TTY}" ]]
 	then
-		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Persistent application -> Skipping"
-		ph_set_result -r 0 -m "'$PH_APP' was left online due to being marked persistent"
-		unset -n PH_APPU_CMD_OPTS PH_APPU_USE_CTRL PH_APPU_NUM_CTRL PH_APPU_PRE_CMD PH_APPU_POST_CMD
-		unset -n PH_APPU_CIFS_SHARE PH_APPU_CIFS_DIR PH_APPU_CIFS_SUBDIR PH_APPU_CIFS_SRV PH_APPU_PERSISTENT
-		return 0
-	fi
-	if [[ "$PH_APP" == "Moonlight" ]]
-	then
-		while pgrep moonlight >/dev/null
-		do
-			"$PH_SUDO" -E su "$PH_APP_USER" -c "LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib ${PH_MOON_PATH} quit" >/dev/null 2>&1
-			sleep 3
-		done
-	fi
-	if [[ "$PH_FG_CONSOLE" -eq "$PH_APP_TTY" ]]
-	then
-		if [[ ( "$PH_APP" != "PieHelper" ) && ( "$PH_PIEH_TTY" -gt "1" && "$PH_PIEH_TTY" -le "$PH_PIEH_MAX_TTYS" ) ]]
-		then
-			"$PH_SUDO" chvt "$PH_PIEH_TTY" 2>/dev/null
-		else
-			"$PH_SUDO" chvt 1 2>/dev/null
-		fi
-	fi
-	if ! "$PH_SUDO" systemctl stop "getty@tty${PH_APP_TTY}" >/dev/null 2>&1
-	then
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not stop TTY"
-		ph_set_result -r 1 -m "An error occurred stopping 'TTY$PH_APP_TTY' allocated to '$PH_APP'"
-		unset -n PH_APPU_CMD_OPTS PH_APPU_USE_CTRL PH_APPU_NUM_CTRL PH_APPU_PRE_CMD PH_APPU_POST_CMD
-		unset -n PH_APPU_CIFS_SHARE PH_APPU_CIFS_DIR PH_APPU_CIFS_SUBDIR PH_APPU_CIFS_SRV PH_APPU_PERSISTENT
-		return 1
+		ph_set_result -m "Could not stop '${PH_APP}' since the currently active tty is not allocated to '${PH_APP}'"
+		ph_run_with_rollback -c false -m "Could not stop" || \
+			return 1
 	else
-		ph_add_value_to_param -p PH_START_APPS -v "$PH_APP"
-		ph_run_with_rollback -c "true"
-	fi
-	printf "%8s%s\n" "" "--> Checking for '$PH_APP' POST-command requirement"
-	ph_set_result -r 0
-	if [[ -n "$PH_APPU_POST_CMD" ]]
-	then
-		printf "%10s\033[32m%s\033[0m\n" "" "OK (Yes) -> Running POST-command actions"
-		printf "%8s%s\n" "" "--> Checking for '$PH_APP' POST-command '$(eval echo -n "$PH_APPU_POST_CMD" | nawk '{ print $1 ; exit 0 }')' presence"
-		ph_set_result -r 0
-		if [[ -f "$(eval echo -n "$PH_APPU_POST_CMD" | nawk '{ print $1 ; exit 0 }')" || -L "$(eval echo -n "$PH_APPU_POST_CMD" | nawk '{ print $1 ; exit 0 }')" ]]
+		ph_run_with_rollback -c true
+		printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Stopping " "'${PH_APP}'"
+		if [[ "${PH_APPU_PERSISTENT}" == "yes" && -z "${3}" ]]
 		then
-			printf "%10s\033[32m%s\033[0m\n" "" "OK (Found)"
-			file -b "$(eval echo -n "$PH_APPU_POST_CMD" | nawk '{ print $1 ; exit 0 }')" 2>/dev/null | nawk 'BEGIN { rc = 0 } $0 ~ /ASCII text executable/ { exit 1 }
-								$0 ~ /ASCII text/ { exit 2 }
-								$0 ~ /32-bit.*executable/ { exit 3 }
-								$0 ~ /32-bit.*shared object/ { exit 3 }
-								$0 ~ /64-bit.*executable/ { exit 4 }
-								$0 ~ /64-bit.*shared object/ { exit 4 }
-								$0 ~ /directory/ { exit 5 }
-								{ exit 6 }'
-			case "$?" in 1|3|4)
-				$(eval echo -n "$PH_APPU_POST_CMD") 2>/dev/null ;;
-			             2)
-				. $(eval echo -n "$PH_APPU_POST_CMD") 2>/dev/null ;;
-				     5|6)
-				false ;;
-			esac
-			if [[ "$?" -ne "0" ]]
+			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Persistent application -> Skipping"
+			ph_set_result -r 0 -m "'$PH_APP' was left online due to being marked persistent"
+			unset -n PH_APPU_CMD_OPTS PH_APPU_USE_CTRL PH_APPU_NUM_CTRL PH_APPU_PRE_CMD PH_APPU_POST_CMD
+			unset -n PH_APPU_CIFS_SHARE PH_APPU_CIFS_DIR PH_APPU_CIFS_SUBDIR PH_APPU_CIFS_SRV PH_APPU_PERSISTENT
+			return 0
+		fi
+		if [[ "$PH_APP" == "Moonlight" ]]
+		then
+			while pgrep moonlight >/dev/null
+			do
+				"$PH_SUDO" -E su "$PH_APP_USER" -c "LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib ${PH_MOON_PATH} quit" >/dev/null 2>&1
+				sleep 3
+			done
+		fi
+		if [[ "$PH_FG_CONSOLE" -eq "$PH_APP_TTY" ]]
+		then
+			if [[ ( "$PH_APP" != "PieHelper" ) && ( "$PH_PIEH_TTY" -gt "1" && "$PH_PIEH_TTY" -le "$PH_PIEH_MAX_TTYS" ) ]]
 			then
-				printf "%8s%s\n" "" "--> Checking for '$PH_APP' POST-command '$(eval echo -n "$PH_APPU_POST_CMD")' validity"
-				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid command -> Skipping"
-				ph_set_result -r 0
+				"$PH_SUDO" chvt "$PH_PIEH_TTY" 2>/dev/null
+			else
+				"$PH_SUDO" chvt 1 2>/dev/null
+			fi
+		fi
+		if ! "$PH_SUDO" systemctl stop "getty@tty${PH_APP_TTY}" >/dev/null 2>&1
+		then
+			printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not stop TTY"
+			ph_set_result -r 1 -m "An error occurred stopping 'TTY$PH_APP_TTY' allocated to '$PH_APP'"
+			unset -n PH_APPU_CMD_OPTS PH_APPU_USE_CTRL PH_APPU_NUM_CTRL PH_APPU_PRE_CMD PH_APPU_POST_CMD
+			unset -n PH_APPU_CIFS_SHARE PH_APPU_CIFS_DIR PH_APPU_CIFS_SUBDIR PH_APPU_CIFS_SRV PH_APPU_PERSISTENT
+			return 1
+		else
+			ph_add_value_to_param -p PH_START_APPS -v "$PH_APP"
+			ph_run_with_rollback -c "true"
+		fi
+		printf "%8s%s\n" "" "--> Checking for '$PH_APP' POST-command requirement"
+		ph_set_result -r 0
+		if [[ -n "$PH_APPU_POST_CMD" ]]
+		then
+			printf "%10s\033[32m%s\033[0m\n" "" "OK (Yes) -> Running POST-command actions"
+			printf "%8s%s\n" "" "--> Checking for '$PH_APP' POST-command '$(eval echo -n "$PH_APPU_POST_CMD" | nawk '{ print $1 ; exit 0 }')' presence"
+			ph_set_result -r 0
+			if [[ -f "$(eval echo -n "$PH_APPU_POST_CMD" | nawk '{ print $1 ; exit 0 }')" || -L "$(eval echo -n "$PH_APPU_POST_CMD" | nawk '{ print $1 ; exit 0 }')" ]]
+			then
+				printf "%10s\033[32m%s\033[0m\n" "" "OK (Found)"
+				file -b "$(eval echo -n "$PH_APPU_POST_CMD" | nawk '{ print $1 ; exit 0 }')" 2>/dev/null | nawk 'BEGIN { rc = 0 } $0 ~ /ASCII text executable/ { exit 1 }
+									$0 ~ /ASCII text/ { exit 2 }
+									$0 ~ /32-bit.*executable/ { exit 3 }
+									$0 ~ /32-bit.*shared object/ { exit 3 }
+									$0 ~ /64-bit.*executable/ { exit 4 }
+									$0 ~ /64-bit.*shared object/ { exit 4 }
+									$0 ~ /directory/ { exit 5 }
+									{ exit 6 }'
+				case "$?" in 1|3|4)
+					$(eval echo -n "$PH_APPU_POST_CMD") 2>/dev/null ;;
+				             2)
+					. $(eval echo -n "$PH_APPU_POST_CMD") 2>/dev/null ;;
+					     5|6)
+					false ;;
+				esac
+				if [[ "$?" -ne "0" ]]
+				then
+					printf "%8s%s\n" "" "--> Checking for '$PH_APP' POST-command '$(eval echo -n "$PH_APPU_POST_CMD")' validity"
+					printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid command -> Skipping"
+					ph_set_result -r 0
+				fi
+			else
+				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found -> Skipping"
 			fi
 		else
-			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found -> Skipping"
+			printf "%10s\033[32m%s\033[0m\n" "" "OK (No)"
 		fi
-	else
-		printf "%10s\033[32m%s\033[0m\n" "" "OK (No)"
-	fi
-	printf "%8s%s\n" "" "--> Checking for '$PH_APP' CIFS mount requirement"
-	ph_set_result -r 0
-	if [[ "$PH_APPU_CIFS_SHARE" == "no" ]]
-	then
-		printf "%10s\033[32m%s\033[0m\n" "" "OK (No)"
-	else
-		printf "%10s\033[32m%s\033[0m\n" "" "OK (Yes)"
-		printf "%8s%s\n" "" "--> Checking for '$PH_APP' CIFS mount presence"
+		printf "%8s%s\n" "" "--> Checking for '$PH_APP' CIFS mount requirement"
 		ph_set_result -r 0
-		if mount 2>/dev/null | nawk -v rempath="^//${PH_APPU_CIFS_SRV}$(eval "echo -n \"${PH_APPU_CIFS_DIR}${PH_APPU_CIFS_SUBDIR}\"")"$ -F' on ' '$1 ~ rempath { exit 1 }'
+		if [[ "$PH_APPU_CIFS_SHARE" == "no" ]]
 		then
-			printf "%10s\033[32m%s\033[0m\n" "" "OK (Found) -> Unmounting"
-			ph_umount_cifs_share "$PH_APP" || PH_RET_CODE="1"
+			printf "%10s\033[32m%s\033[0m\n" "" "OK (No)"
 		else
-			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found -> Skipping"
+			printf "%10s\033[32m%s\033[0m\n" "" "OK (Yes)"
+			printf "%8s%s\n" "" "--> Checking for '$PH_APP' CIFS mount presence"
+			ph_set_result -r 0
+			if mount 2>/dev/null | nawk -v rempath="^//${PH_APPU_CIFS_SRV}$(eval "echo -n \"${PH_APPU_CIFS_DIR}${PH_APPU_CIFS_SUBDIR}\"")"$ -F' on ' '$1 ~ rempath { exit 1 }'
+			then
+				printf "%10s\033[32m%s\033[0m\n" "" "OK (Found) -> Unmounting"
+				ph_umount_cifs_share "$PH_APP" || PH_RET_CODE="1"
+			else
+				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found -> Skipping"
+			fi
 		fi
-	fi
-	printf "%8s%s\n" "" "--> Checking for '$PH_APP' controller usage requirement"
-	ph_set_result -r 0
-	if [[ "$PH_APPU_USE_CTRL" == "yes" ]]
-	then
-		printf "%10s\033[32m%s\033[0m\n" "" "OK (Found) -> Cleaning up"
-		ph_cleanup_controllers full || PH_RET_CODE="1"
-		printf "%8s%s\n\n" "" "--> Displaying reminder for controller usage"
-		printf "%12s\033[33m%s\033[0m\n\n" "" "- Please manually turn off your controller(s)"
-		printf "%10s\033[32m%s\033[0m\n" "" "OK"
+		printf "%8s%s\n" "" "--> Checking for '$PH_APP' controller usage requirement"
 		ph_set_result -r 0
-		sleep 5
-	else
-		printf "%10s\033[32m%s\033[0m\n" "" "OK (Not found)"
+		if [[ "$PH_APPU_USE_CTRL" == "yes" ]]
+		then
+			printf "%10s\033[32m%s\033[0m\n" "" "OK (Found) -> Cleaning up"
+			ph_cleanup_controllers full || PH_RET_CODE="1"
+			printf "%8s%s\n\n" "" "--> Displaying reminder for controller usage"
+			printf "%12s\033[33m%s\033[0m\n\n" "" "- Please manually turn off your controller(s)"
+			printf "%10s\033[32m%s\033[0m\n" "" "OK"
+			ph_set_result -r 0
+			sleep 5
+		else
+			printf "%10s\033[32m%s\033[0m\n" "" "OK (Not found)"
+		fi
 	fi ;;
 esac
 unset -n PH_APPU_CMD_OPTS PH_APPU_USE_CTRL PH_APPU_NUM_CTRL PH_APPU_PRE_CMD PH_APPU_POST_CMD
