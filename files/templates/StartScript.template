@@ -82,9 +82,9 @@ then
 		}' "${PH_SCRIPTS_DIR}/$("$PH_SUDO" cat "/proc/${PPID}/comm" 2>/dev/null)" 2>/dev/null)"
 fi
 declare -a PH_STOP_APPS
-if ! read -rd '' -a PH_STOP_APPS < <(ph_get_app_list_by_state -s Running -t exact | \
+read -rd '' -a PH_STOP_APPS < <(ph_get_app_list_by_state -s Running -t exact | \
 	nawk -v runappl="^${PH_RUNAPPL}$" -v except="^${PH_EXCEPTION}$" 'BEGIN { \
-			RS = " " \
+			RS = " " ; \
 			ORS = " " \
 		} \
 		tolower(substr($0,1,4)) !~ except && tolower(substr($0,1,4)) !~ runappl { \
@@ -92,12 +92,6 @@ if ! read -rd '' -a PH_STOP_APPS < <(ph_get_app_list_by_state -s Running -t exac
 		} { \
 			next \
 		}')
-then
-	unset PH_STOP_APPS
-	ph_set_result -m "An error occurred trying to determine the currently running applications"
-	ph_run_with_rollback -c false -m "Could not determine"
-	exit "${?}"
-fi
 if [[ "${#PH_STOP_APPS[@]}" -eq "0" ]]
 then
 	ph_run_with_rollback -c true "None"
