@@ -16,7 +16,7 @@ declare PH_KODI_REM_DIR
 
 PH_KODI_HOME="$(getent passwd "$PH_APP_USER" 2>/dev/null | head -1 | cut -d':' -f6)"
 PH_KODI_LOC_DIR="$(ph_get_app_cifs_mpt -a Kodi -r)"
-PH_KODI_REM_DIR="$(eval "echo -n ${PH_KODI_CIFS_DIR}${PH_KODI_CIFS_SUBDIR}")"
+PH_KODI_REM_DIR="$(ph_resolve_dynamic_value "${PH_KODI_CIFS_DIR}${PH_KODI_CIFS_SUBDIR}")"
 
 printf "%8s%s\n" "" "--> Checking for Kodi POST-command prerequisite : CIFS configured"
 if [[ "$PH_KODI_CIFS_SHARE" == "yes" ]]
