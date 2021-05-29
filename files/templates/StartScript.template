@@ -82,7 +82,7 @@ then
 		}' "${PH_SCRIPTS_DIR}/$("$PH_SUDO" cat "/proc/${PPID}/comm" 2>/dev/null)" 2>/dev/null)"
 fi
 declare -a PH_STOP_APPS
-if ! read -r -a PH_STOP_APPS < <(confapps_ph.sh -p list -k run 2>/dev/null | tail -n +4 | tac | tail -n +4 | \
+if ! read -rd '' -a PH_STOP_APPS < <(confapps_ph.sh -p list -k run 2>/dev/null | tail -n +4 | tac | tail -n +4 | \
 	nawk -v runappl="^${PH_RUNAPPL}$" -v except="^${PH_EXCEPTION}$" 'BEGIN { \
 			FS = "\x27" ; \
 			ORS = " " \

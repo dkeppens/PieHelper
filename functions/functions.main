@@ -10401,12 +10401,10 @@ then
 			then
 				ph_update_system || \
 					return 1
-				[[ "$PH_DISTRO" == "Debian" ]] && \
-					ph_apt_clean
 			fi
 			printf "%8s%s\n" "" "--> Displaying the user manual"
 			sleep 2
-			if less "${PH_SCRIPTS_DIR}/../HOWTO" 2>/dev/null
+			if less "${PH_BASE_DIR}/HOWTO" 2>/dev/null
 			then
 				ph_run_with_rollback -c true -m "${PH_SCRIPTS_DIR}/../HOWTO"
 			else

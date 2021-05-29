@@ -115,7 +115,7 @@ case "${PH_STOPAPP_STATE}" in Supported|Integrated|Halted)
 			ph_run_with_rollback -c true -m "No"
 			printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Stopping " "'${PH_STOPAPP}'"
 			declare -a PH_INSTANCES
-			if ! read -r -a PH_INSTANCES < <(PH_SUBPID="${BASHPID}" ; pgrep "^start${PH_STOPAPPL}.sh" 2>/dev/null | grep -Ev "^(${$}|${PH_SUBPID})$")
+			if ! read -rd '' -a PH_INSTANCES < <(PH_SUBPID="${BASHPID}" ; pgrep "^start${PH_STOPAPPL}.sh" 2>/dev/null | grep -Ev "^(${$}|${PH_SUBPID})$")
 			then
 				unset PH_INSTANCES
 				ph_set_result -m "An error occurred trying to determine a list of running instances of '${PH_STOPAPP}'" 
