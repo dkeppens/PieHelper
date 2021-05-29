@@ -82,17 +82,16 @@ then
 		}' "${PH_SCRIPTS_DIR}/$("$PH_SUDO" cat "/proc/${PPID}/comm" 2>/dev/null)" 2>/dev/null)"
 fi
 declare -a PH_STOP_APPS
-if ! read -rd '' -a PH_STOP_APPS < <(confapps_ph.sh -p list -k run 2>/dev/null | tail -n +4 | tac | tail -n +4 | \
+if ! read -rd '' -a PH_STOP_APPS < <(ph_get_app_list_by_state -s Running -t exact | \
 	nawk -v runappl="^${PH_RUNAPPL}$" -v except="^${PH_EXCEPTION}$" 'BEGIN { \
-			FS = "\x27" ; \
+			RS = " " \
 			ORS = " " \
 		} \
-		$0 ~ /Skipping/ { \
+		tolower(substr($0,1,4)) !~ except && tolower(substr($0,1,4)) !~ runappl { \
+			print \
+		} { \
 			next \
-		} \
-		$2 !~ /^None$/ && tolower(substr($2,1,4)) !~ except && tolower(substr($2,1,4)) !~ runappl { \
-			print $2 \
-	}')
+		}')
 then
 	unset PH_STOP_APPS
 	ph_set_result -m "An error occurred trying to determine the currently running applications"
