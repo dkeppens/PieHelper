@@ -4892,6 +4892,10 @@ then
 					   never)
 				PH_CMD="continue" ;;
 			esac ;;
+				  PH_START_TTYS)
+			PH_CMD="ph_start_app_tty '${PH_VALUE}'" ;;
+				  PH_STOP_TTYS)
+			PH_CMD="ph_stop_app_tty '${PH_VALUE}'" ;;
 				  PH_INSTALL_APPS)
 			PH_APP="$(echo -n "$PH_VALUE" | cut -f1 -d"'")"
 			PH_APP_USER="$(echo -n "$PH_VALUE" | cut -f2 -d"'")"
@@ -5116,6 +5120,43 @@ then
 fi
 ph_show_result
 return "$?"
+}
+
+function ph_stop_app_tty {
+
+declare PH_i
+declare PH_TTYS
+declare -i PH_APP_TTY
+
+PH_i=""
+PH_TTYS="$*"
+PH_APP_TTY="0"
+
+for PH_i in ${PH_TTYS}
+do
+	[[ "$PH_i" != +([[:digit:]]) ]] && \
+		ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+done
+[[ "$#" -lt "1" || "$#" -gt "$PH_PIEH_MAX_TTYS" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+for PH_APP_TTY in ${PH_TTYS}
+do
+        printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Stopping " "'tty${PH_APP_TTY}'"
+	if ! systemctl is-active getty@tty1 >/dev/null 2>&1
+	then
+		ph_run_with_rollback -c true -m "Nothing to do"
+	else
+        	if ! "$PH_SUDO" systemctl stop "getty@tty${PH_APP_TTY}" >/dev/null 2>&1
+		then
+			ph_run_with_rollback -c false -m "Could not stop" || \
+				return 1
+		fi
+		ph_add_value_to_param -p PH_START_TTYS -v "${PH_APP_TTY}"
+		ph_run_with_rollback -c true
+	fi
+done
+return 0
 }
 
 function ph_disable_app_tty {
@@ -9717,6 +9758,43 @@ then
 fi
 ph_show_result
 return "$?"
+}
+
+function ph_start_app_tty {
+
+declare PH_i
+declare PH_TTYS
+declare -i PH_APP_TTY
+
+PH_i=""
+PH_TTYS="$*"
+PH_APP_TTY="0"
+
+for PH_i in ${PH_TTYS}
+do
+	[[ "$PH_i" != +([[:digit:]]) ]] && \
+		ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+done
+[[ "$#" -lt "1" || "$#" -gt "$PH_PIEH_MAX_TTYS" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+for PH_APP_TTY in ${PH_TTYS}
+do
+	printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Starting " "'tty${PH_APP_TTY}'"
+	if systemctl is-active getty@tty1 >/dev/null 2>&1
+	then
+		ph_run_with_rollback -c true -m "Nothing to do"
+	else
+        	if ! "$PH_SUDO" systemctl start "getty@tty${PH_APP_TTY}" >/dev/null 2>&1
+		then
+			ph_run_with_rollback -c false -m "Could not start" || \
+				return 1
+		fi
+		ph_add_value_to_param -p PH_STOP_TTYS -v "${PH_APP_TTY}"
+		ph_run_with_rollback -c true
+	fi
+done
+return 0
 }
 
 function ph_enable_app_tty {
