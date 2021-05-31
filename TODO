@@ -1,3 +1,7 @@
+* use new PH_RET_CODE var in ph_show_menu to allow for stuff like unsupport/uninstall piehelper etc
+* add argument check stuff to ph_do_app_action
+* update confopts_ph.sh and confoper_ph.sh and confapps_ph.sh to be compatible with all new changes to menu
+* create new toggle option for enabling/disabling variable expansion and adapt scripts and menus to use it
 * add support for new XBOX controller
 * create and source a new config file for user-defined variables + mention in *_conf.template files
 * maybe also resolve function for dynamic var ?

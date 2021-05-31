@@ -1,0 +1,9 @@
+Change system settings (Method='Interactive'):ph_show_menu SystemInteractive
+Change system settings (Method='Retained'):ph_show_menu SystemRetained
+Retain system settings:ph_show_menu SystemRetaineds
+Update system:"${PH_SUDO}" confoper_ph.sh -p update
+Reboot system:"${PH_SUDO}" confoper_ph.sh -p boot
+Go to Main:ph_show_menu Main
+Open a shell (Type 'CTRL-D' to return):cd;/bin/bash
+Quit:break
+Return to previous screen:return

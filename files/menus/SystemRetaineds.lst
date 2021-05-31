@@ -1,0 +1,20 @@
+Retain/Update value for the PieHelper user:"${PH_SUDO}" confoper_ph.sh -p savedef -i user
+Retain/Update value for the default raspberry user:"${PH_SUDO}" confoper_ph.sh -p savedef -i user
+Retain/Update value for the SSH keypair user:"${PH_SUDO}" confoper_ph.sh -p savedef -i sshkey
+Retain/Update value for the SSH status:"${PH_SUDO}" confoper_ph.sh -p savedef -i ssh
+Retain/Update value for the system hostname:"${PH_SUDO}" confoper_ph.sh -p savedef -i host
+Retain/Update value for the system timezone:"${PH_SUDO}" confoper_ph.sh -p savedef -i tzone
+Retain/Update value for the system locales:"${PH_SUDO}" confoper_ph.sh -p savedef -i locale
+Retain/Update value for the system audio channel:"${PH_SUDO}" confoper_ph.sh -p savedef -i audio
+Retain/Update value for the keyboard layout:"${PH_SUDO}" confoper_ph.sh -p savedef -i keyb
+Retain/Update value for the default boot environment:"${PH_SUDO}" confoper_ph.sh -p savedef -i bootenv
+Retain/Update value for the GPU-reserved memory:"${PH_SUDO}" confoper_ph.sh -p savedef -i memsplit
+Retain/Update value for wether to wait for network on boot:"${PH_SUDO}" confoper_ph.sh -p savedef -i netwait
+Retain/Update value for display overscan:"${PH_SUDO}" confoper_ph.sh -p savedef -i overscan
+Retain/Update all defaults:"${PH_SUDO}" confoper_ph.sh -p savedef -i
+List all retained values:"${PH_SUDO}" confoper_ph.sh -p dispdef
+Go to System:ph_show_menu System
+Go to Main:ph_show_menu Main
+Open a shell (Type 'CTRL-D' to return):cd;/bin/bash
+Quit:break
+Return to previous screen:return

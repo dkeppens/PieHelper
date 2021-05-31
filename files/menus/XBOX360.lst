@@ -1,6 +1,8 @@
-Show configuration help for 'usb XBOX360' controller:confctrl_ph.sh -p help -c usb -t XBOX360 | more
-Show configuration help for 'wireless XBOX360' controller:confctrl_ph.sh -p help -c xboxurecv -t XBOX360 | more
-Go to 'Main menu':ph_show_menu Main
-Go to 'Controllers' menu:ph_show_menu Controllers
-Open Shell to home directory (Type 'CTRL-D' to return):cd;/bin/bash
+Display instructions for manual USB setup:confctrl_ph.sh -p help -c usb -t XBOX360 | more
+Display instructions for manual bluetooth setup:confctrl_ph.sh -p help -c bluetooth -t XBOX360 | more
+Setup bluetooth controllers:confctrl_ph.sh -p prompt -t XBOX360
+Go to Controllers:ph_show_menu Controllers
+Go to Main:ph_show_menu Main
+Open a shell (Type 'CTRL-D' to return):cd;/bin/bash
+Quit:break
 Return to previous screen:return

@@ -40,7 +40,10 @@ do
 			exit 1
 		PH_MODE="pts" ;;
 			     m)
-		[[ -n "${PH_MENU}" || "${OPTARG}" != @(Main|@(Controller|App|Setting)s|Advanced|PS@(3|4)|XBOX360|@(App|Opts|TTY)Management*) ]] && \
+                [[ -n "${PH_MENU}" || \
+			"${OPTARG}" != @(Main|@(Controller|Application)s|PS@(3|4)|XBOX@(360|SX)|@(Status|Options|TTY)Management@(|_*)|Support) && \
+			"${OPTARG}" != @(Supported|Integrated|Halted|Running|Default|Out-of-scope) && \
+			"${OPTARG}" != @(System@(|Interactive|Retained@(|s))|$(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")) ]] && \
 			(! "restart${PH_RUNAPPL}.sh" -h) && \
 			OPTIND="${PH_OLDOPTIND}" && \
 			OPTARG="${PH_OLDOPTARG}" && \
@@ -87,11 +90,14 @@ do
 		>&2 printf "%12s%s\n" "" "- If 'PH_PIEH_CMD_OPTS' has no value, it will priorly be set to 'Main'"
 		>&2 printf "%12s%s\n" "" "- Specifying -m is optional"
 		>&2 printf "%12s%s\n" "" "- Allowed values for [menu] are :"
-		>&2 printf "%15s%s\n" "" "- 'Main' or 'Controllers' or 'Apps' or 'Advanced' or 'Settings'"
-		>&2 printf "%15s%s\n" "" "- 'PS3' or 'PS4' or 'XBOX360'"
-		>&2 printf "%15s%s\n" "" "- 'AppManagement' or 'AppManagement_[appname]' where [appname] is the name of a supported application, e.g. 'AppManagement_PieHelper'"
-		>&2 printf "%15s%s\n" "" "- 'OptsManagement' or 'OptsManagement_[appname]' where [appname] is the name of a supported application, e.g. 'OptsManagement_PieHelper'"
-		>&2 printf "%15s%s\n" "" "- 'TTYManagement' or 'TTYManagement_[appname]' where [appname] is the name of a supported application, e.g. 'TTYManagement_PieHelper'"
+		>&2 printf "%15s%s\n" "" "- 'Main' or 'Applications' or 'Support' or"
+		>&2 printf "%15s%s\n" "" "- 'System' or 'SystemInteractive' or 'SystemRetained' or 'SystemRetaineds' or"
+		>&2 printf "%15s%s\n" "" "- 'Controllers' or 'PS3' or 'PS4' or 'XBOX360' or 'XBOXSX' or"
+		>&2 printf "%15s%s\n" "" "- 'Supported' or 'Integrated' or 'Halted' or 'Running' or 'Default' or 'Out-of-scope' or"
+		>&2 printf "%15s%s\n" "" "- [appname] where [appname] is the name of a Supported or Default application or"
+		>&2 printf "%15s%s\n" "" "- 'AppManagement' or 'AppManagement_[appname]' where [appname] is 'Controllers' or the name of a Supported or Default application or"
+		>&2 printf "%15s%s\n" "" "- 'OptsManagement' or 'OptsManagement_[appname]' where [appname] is 'Controllers' or the name of a Supported or Default application or"
+		>&2 printf "%15s%s\n" "" "- 'TTYManagement' or 'TTYManagement_[appname]' where [appname] is the name of a Supported or Default application"
 		>&2 printf "%12s%s\n" "" "- Specifying [menu] is optional"
 		>&2 printf "%15s%s\n" "" "- Omitting a value for [menu] will revert to using the default"
 		>&2 printf "%12s%s\033[0;0m\n" "" "- This option will be ignored when switching to an active persistent instance of '${PH_RUNAPP}'"
