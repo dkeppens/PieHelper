@@ -2453,31 +2453,34 @@ do
 			fi
 		fi ;;
 	esac
-	for PH_j in "Go to ${PH_APP}:ph_show_menu \"${PH_APP}\"" \
-		"Go to Running:ph_show_menu Running"  "Go to Halted:ph_show_menu Halted" \
-		"Go to Integrated:ph_show_menu Integrated" "Go to Out-of-scope:ph_show_menu Supported" \
-		"Go to Default:ph_show_menu Default" "Go to Out-of-scope:ph_show_menu Out-of-scope" \
-		"Go to Applications:ph_show_menu Applications" "Go to Controllers:ph_show_menu Controllers" \
-		"Go to Main:ph_show_menu Main" \
-		"Open a shell (Type 'CTRL-D' to return):cd;/bin/bash" \
-		"Quit:break" \
-		"Return to previous screen:return"
-	do
-		[[ ( "${PH_i}" == "${PH_MENUS_DIR}/${PH_APP}.lst" && "${PH_j}" == "${PH_APP}:ph_show_menu \"${PH_APP}\"" ) || \
-			( "${PH_APP}" == "Controllers" && "${PH_j##* }" == @(Running|Halted|Integrated|Supported|Default|Out-of-scope|Applications) ) || \
-			( "${PH_APP}" != "Controllers" && "${PH_j##* }" == "Controllers" ) ]] && \
-			continue
-		if [[ "${PH_j##* }" == @(Running|Halted|Integrated|Supported|Default|Out-of-scope) ]]
-		then
-			if ph_check_app_state_validity -a "${PH_APP}" -q -"$(cut -c1<<<"${PH_j##* }" | tr '[:upper:]' '[:lower:]')"
+	if [[ ! ( "${PH_APP}" == "Controllers" && "${PH_i}" == "${PH_MENUS_DIR}/TTYManagement_${PH_APP}.lst" ) ]]
+	then
+		for PH_j in "Go to ${PH_APP}:ph_show_menu \"${PH_APP}\"" \
+			"Go to Running:ph_show_menu Running"  "Go to Halted:ph_show_menu Halted" \
+			"Go to Integrated:ph_show_menu Integrated" "Go to Out-of-scope:ph_show_menu Supported" \
+			"Go to Default:ph_show_menu Default" "Go to Out-of-scope:ph_show_menu Out-of-scope" \
+			"Go to Applications:ph_show_menu Applications" "Go to Controllers:ph_show_menu Controllers" \
+			"Go to Main:ph_show_menu Main" \
+			"Open a shell (Type 'CTRL-D' to return):cd;/bin/bash" \
+			"Quit:break" \
+			"Return to previous screen:return"
+		do
+			[[ ( "${PH_i}" == "${PH_MENUS_DIR}/${PH_APP}.lst" && "${PH_j}" == "${PH_APP}:ph_show_menu \"${PH_APP}\"" ) || \
+				( "${PH_APP}" == "Controllers" && "${PH_j##* }" == @(Running|Halted|Integrated|Supported|Default|Out-of-scope|Applications) ) || \
+				( "${PH_APP}" != "Controllers" && "${PH_j##* }" == "Controllers" ) ]] && \
+				continue
+			if [[ "${PH_j##* }" == @(Running|Halted|Integrated|Supported|Default|Out-of-scope) ]]
 			then
-				ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
-					break 2
+				if ph_check_app_state_validity -a "${PH_APP}" -q -"$(cut -c1<<<"${PH_j##* }" | tr '[:upper:]' '[:lower:]')"
+				then
+					ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
+						break 2
+				fi
 			fi
-		fi
-		ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
-			break 2
-	done
+			ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
+				break 2
+		done
+	fi
 	ph_run_with_rollback -c "ph_secure_pieh -q -f '${PH_i}'" || \
 		break
 	if [[ "${PH_i}" == "${PH_MENUS_DIR}/StatusManagement_${PH_APP}.lst" ]]
