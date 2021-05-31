@@ -3636,7 +3636,7 @@ case "$PH_APP_TYPE" in Default)
 	cut -f1 "${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null && \
 		PH_APP_STATE="Default" ;;
 		       Out-of-scope)
-	! cut -f1 "${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null && \
+	cut -f1 "${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null || \
 		PH_APP_STATE="Out-of-scope" ;;
 		       *)
 	if [[ "$PH_APPL" == @(none|all|prom) ]]
@@ -5099,7 +5099,7 @@ then
 			PH_CMD="ph_create_empty_file -t '${PH_FILE_TYPE}' -d '${PH_FILE_DEST}' -s '${PH_FILE_SOURCE}' ${PH_PARAMS}" ;;
 				PH_REMOVE_EMPTY_FILES)
 			PH_FILE_DEST="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_FILE_TYPE="$(echo -n "${{PH_VALUE}" | cut -f2 -d"'")"
+			PH_FILE_TYPE="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
 			PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
 			PH_CMD="ph_remove_empty_file -t '${PH_FILE_TYPE}' -d '${PH_FILE_DEST}' ${PH_PARAMS}" ;;
 				PH_UNSUP_APPS)
