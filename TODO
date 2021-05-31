@@ -1,3 +1,5 @@
+* Rename OS.defaults to System.Retaineds
+* check why TTY meu items for Controllers app are being created non-empty
 * finish new menu structure in ph_show_menu : what with application menus and are Go to parent menus for all ok ?
 * finish change with menu app linked stuff in ph_remove_app_menus
 * adapt ph_check_pieh_configured and ph_repair_pieh to new menu structure and remove comments in main.sh
