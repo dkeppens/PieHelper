@@ -2463,7 +2463,7 @@ do
 			continue
 		if [[ "${PH_j##* }" == @(Running|Halted|Integrated|Supported|Default|Out-of-scope) ]]
 		then
-			if ph_check_app_state_validity -a "${PH_APP}" -q -s "${PH_j##* }"
+			if ph_check_app_state_validity -a "${PH_APP}" -q -"$(cut -c1<<<"${PH_j##* }" | tr '[:upper:]' '[:lower:]')"
 			then
 				ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
 					break 2
