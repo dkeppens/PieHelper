@@ -5114,7 +5114,7 @@ then
 				declare -n PH_VAR="PH_APP_${PH_i}"
 				if [[ -n "${PH_VAR}" ]]
 				then
-					PH_PARAMS="${PH_PARAMS} -$(cut -c2<<<"${PH_i}" | tr "[:upper:]" "[:lower:]") '${PH_VAR}'"
+					PH_PARAMS="${PH_PARAMS} -$(cut -c1<<<"${PH_i}" | tr "[:upper:]" "[:lower:]") '${PH_VAR}'"
 				fi
 				unset -n PH_VAR
 			done
@@ -5140,7 +5140,7 @@ then
 				declare -n PH_VAR="PH_APP_${PH_i}"
 				if [[ -n "${PH_VAR}" ]]
 				then
-					PH_PARAMS="${PH_PARAMS} -$(cut -c2<<<"${PH_i}" | tr "[:upper:]" "[:lower:]") '${PH_VAR}'"
+					PH_PARAMS="${PH_PARAMS} -$(cut -c1<<<"${PH_i}" | tr "[:upper:]" "[:lower:]") '${PH_VAR}'"
 				fi
 				unset -n PH_VAR
 			done

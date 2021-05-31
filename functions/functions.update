@@ -2167,17 +2167,23 @@ function ph_remove_app_menus {
 
 declare PH_i
 declare PH_APP
+declare PH_LINKED_MENU_APP
 declare -i PH_COUNT
 
 PH_i=""
 PH_APP="${1}"
+PH_LINKED_MENU_APP=""
 PH_COUNT="0"
 
 [[ -z "${PH_APP}" || "${#}" -ne "1" ]] && \
         ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-ph_run_with_rollback -c "ph_unlink_app_from_menu -a '${PH_APP}'" || \
-	return 1
+PH_LINKED_MENU_APP="$(ph_get_linked_menu_app)"
+if [[ "${PH_LINKED_MENU_APP}" == "${PH_APP}" ]]
+then
+	ph_run_with_rollback -c "ph_unlink_app_from_menu -a '${PH_APP}'" || \
+		return 1
+fi
 for PH_i in "${PH_APP}" "TTYManagement_${PH_APP}" "OptionsManagement_${PH_APP}" "StatusManagement_${PH_APP}"
 do
 	if [[ -f "${PH_MENUS_DIR}/${PH_i}.lst" ]]
