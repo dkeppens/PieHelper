@@ -1050,7 +1050,7 @@ do
 		exit "$?"
 	fi
 done
-for PH_i in Advanced Controllers Main OS OSdefaults PS3 PS4 XBOX360 Settings
+for PH_i in Support System Applications Main PS3 PS4 XBOX360 XBOXSX SystemRetained SystemInteractive SystemRetaineds
 do
 	if ! ph_check_object_existence -q -o "${PH_MENUS_DIR}/${PH_i}.lst"
         then
@@ -1445,7 +1445,7 @@ do
 		PH_RET_CODE="1"
 	fi
 done
-for PH_i in $(ls "${PH_MENUS_DIR}/"!(@(Advanced|XBOX360|PS@(3|4)|OS|OSdefaults|Settings|Controllers|Main).lst) 2>/dev/null | \
+for PH_i in $(ls "${PH_MENUS_DIR}/"!(@().lst) 2>/dev/null | \
 	nawk 'BEGIN { \
 		ORS =  " " \
 	} { \
@@ -1676,7 +1676,7 @@ else
 			PH_OBJECT_TYPE="link" ;;
 			*.conf)
 		: ;;
-			*/PieHelper.lst|*/OptsManagement_PieHelper.lst|*/AppManagement_PieHelper.lst|*/TTYManagement_PieHelper.lst)
+			*/TTYManagement_*.lst|*/StatusManagement_*.lst|*/OptionsManagement_*.lst)
 		PH_OBJECT_TYPE="menu item"
 		PH_TYPE="Unique" ;;
 			*/TTYManagement.lst|*/OptsManagement.lst|*/AppManagement.lst)
@@ -9573,8 +9573,7 @@ do
 	ph_check_object_existence -o "${PH_FILES_DIR}/${PH_i}" || \
 		return 1
 done
-for PH_i in Advanced Controllers Main PieHelper OptsManagement_PieHelper AppManagement_PieHelper TTYManagement_PieHelper OS PS3 \
-	PS4 OSdefaults Settings XBOX360
+for PH_i in Support System Applications Main SystemRetaineds SystemRetained SystemInteractive PS3 PS4 XBOX360 XBOXSX
 do
 	ph_check_object_existence -o "${PH_MENUS_DIR}/${PH_i}.lst" || \
 		return 1
@@ -9841,7 +9840,7 @@ rm -r "$PH_SCRIPTS_DIR/"!(temp) 2>/dev/null
 mv "$PH_SCRIPTS_DIR/temp/"* "$PH_SCRIPTS_DIR" 2>/dev/null
 rmdir "$PH_SCRIPTS_DIR/temp" 2>/dev/null
 mkdir -p "$PH_MENUS_DIR/temp" 2>/dev/null
-mv "$PH_MENUS_DIR/"@(Advanced.lst|Controllers.lst|Main.lst|PieHelper.lst|OptsManagement_PieHelper.lst|AppManagement_PieHelper.lst|TTYManagement_PieHelper.lst|OS.lst|PS3.lst|PS4.lst|XBOX360.lst|OSdefaults.lst|Settings.lst) "$PH_MENUS_DIR/temp" 2>/dev/null
+mv "$PH_MENUS_DIR/"@(Support.lst|Main.lst|PS3.lst|PS4.lst|System.lst|Applications.lst|SystemRetaineds.lst|SystemRetained.lst|SystemInteractive.lst|XBOX360.lst|XBOXSX.lst) "$PH_MENUS_DIR/temp" 2>/dev/null
 rm -r "$PH_MENUS_DIR/"!(temp) 2>/dev/null
 for PH_APP in $(echo -n "$PH_SUPAPPS")
 do
