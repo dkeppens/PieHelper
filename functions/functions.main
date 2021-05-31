@@ -1445,7 +1445,7 @@ do
 		PH_RET_CODE="1"
 	fi
 done
-for PH_i in $(ls "${PH_MENUS_DIR}/"!(@().lst) 2>/dev/null | \
+for PH_i in $(ls "${PH_MENUS_DIR}/"!(@(System|SystemRetaineds|SystemRetained|SystemInteractive|Support|PS3|PS4|XBOX360|XBOXSX|Main|Applications).lst) 2>/dev/null | \
 	nawk 'BEGIN { \
 		ORS =  " " \
 	} { \

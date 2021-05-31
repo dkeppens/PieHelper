@@ -338,11 +338,11 @@ then
 				then
 					printf "%2s%s\n" "" "OR" >>"${PH_TMP_DIR}/.reported_issues"
 					ph_check_pieh_shared_config
-					ph_check_pieh_configured_config
+#					ph_check_pieh_configured_config
 				fi
 			else
 				ph_check_pieh_shared_config
-				ph_check_pieh_configured_config
+#				ph_check_pieh_configured_config
 				if [[ -f "${PH_TMP_DIR}/.reported_issues" ]]
 				then
 					printf "%2s%s\n" "" "OR" >>"${PH_TMP_DIR}/.reported_issues"

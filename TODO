@@ -1,5 +1,5 @@
 * finish new menu structure in ph_show_menu : what with application menus and are Go to parent menus for all ok ?
-* adapt ph_check_pieh_configured, ph_check_pieh_unconfigured and ph_repair_pieh to new menu structure and remove comments in main.sh
+* adapt ph_check_pieh_configured and ph_repair_pieh to new menu structure and remove comments in main.sh
 * test new menu structure and adapt code ordering for esthaetics where required
 * use new PH_RET_CODE var in ph_show_menu to allow for stuff like unsupport/uninstall piehelper etc
 * add argument check stuff to ph_do_app_action
