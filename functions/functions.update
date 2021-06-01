@@ -2376,9 +2376,9 @@ do
 	ph_run_with_rollback -c "ph_create_empty_file -q -t file -d '${PH_i}'" || \
 		break
 	case "${PH_i}" in "${PH_MENUS_DIR}/${PH_APP}.lst")
-		for PH_j in "Go to TTYManagement:ph_show_menu TTYManagement_${PH_APP}" \
+		for PH_j in "Go to StatusManagement:ph_show_menu StatusManagement_${PH_APP}" \
 			"Go to OptionsManagement:ph_show_menu OptionsManagement_${PH_APP}" \
-			"Go to StatusManagement:ph_show_menu StatusManagement_${PH_APP}"
+			"Go to TTYManagement:ph_show_menu TTYManagement_${PH_APP}"
 		do
 			[[ "${PH_APP}" == "Controllers" && "${PH_j}" == *TTYManagement* ]] && \
 				continue
@@ -2465,13 +2465,13 @@ do
 			"Quit:break" \
 			"Return to previous screen:return"
 		do
-			[[ ( "${PH_i}" == "${PH_MENUS_DIR}/${PH_APP}.lst" && "${PH_j}" == "${PH_APP}:ph_show_menu \"${PH_APP}\"" ) || \
-				( "${PH_APP}" == "Controllers" && "${PH_j##* }" == @(Running|Halted|Integrated|Supported|Default|Out-of-scope|Applications) ) || \
-				( "${PH_APP}" != "Controllers" && "${PH_j##* }" == "Controllers" ) ]] && \
+			[[ ( "${PH_APP}" == "Controllers" && "${PH_j##* }" != @(Main|Controllers) && "${PH_j}" != @(Open|Quit|Return)* ) || \
+				( "${PH_APP}" != "Controllers" && "${PH_j##* }" == "Controllers" ) || \
+				( "${PH_i}" == "${PH_MENUS_DIR}/${PH_APP}.lst" && "${PH_j##* }" != "Main" && "${PH_j}" != @(Open|Quit|Return)* ) ]] && \
 				continue
 			if [[ "${PH_j##* }" == @(Running|Halted|Integrated|Supported|Default|Out-of-scope) ]]
 			then
-				if ph_check_app_state_validity -a "${PH_APP}" -q -"$(cut -c1<<<"${PH_j##* }" | tr '[:upper:]' '[:lower:]')"
+				if ph_check_app_state_validity -a "${PH_APP}" -q "-$(cut -c1<<<"${PH_j##* }" | tr '[:upper:]' '[:lower:]')"
 				then
 					ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
 						break 2
@@ -2509,25 +2509,25 @@ declare -u PH_APPU
 declare "PH_${PH_APPU}_OPTS"
 
 PH_i=""
-PH_APP="$1"
+PH_APP="${1}"
 PH_APP_DISPLAY="${PH_APP} option"
 PH_LINE=""
 PH_APPU="${PH_APP:0:4}"
 eval "PH_${PH_APPU}_OPTS=\"USE_CTRL NUM_CTRL PERSISTENT CIFS_SHARE CIFS_USER CIFS_PASS CIFS_SRV CIFS_DIR CIFS_SUBDIR CIFS_MPT PRE_CMD POST_CMD\""
 
-[[ -z "$PH_APP" || "$#" -ne "1" ]] && \
+[[ -z "${PH_APP}" || "${#}" -ne "1" ]] && \
         ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 declare -n PH_OPTS="PH_${PH_APPU}_OPTS"
-case "$PH_APP" in Moonlight)
-                PH_OPTS="$PH_OPTS RES WIDTH HEIGHT FPS BITRATE PCKETSIZE SRV" ;;
+case "${PH_APP}" in Moonlight)
+                PH_OPTS="${PH_OPTS} RES WIDTH HEIGHT FPS BITRATE PCKETSIZE SRV" ;;
                       Controllers)
 		PH_APP_DISPLAY="controller settings"
                 PH_OPTS="MAP TYPE PIN_PS3 PIN_PS4 BLUE_ADAPT" ;;
 		      Emulationstation)
-                PH_OPTS="$PH_OPTS DIR SETUP_DIR" ;;
+                PH_OPTS="${PH_OPTS} DIR SETUP_DIR" ;;
 		      PieHelper)
-                PH_OPTS="$PH_OPTS STARTAPP SANITY" ;;
+                PH_OPTS="${PH_OPTS} STARTAPP SANITY" ;;
 esac
 unset -n PH_OPTS
 ph_run_with_rollback -c "ph_remove_app_alloweds '${PH_APP}'" || \
@@ -2536,38 +2536,38 @@ declare -n PH_OPTS="PH_${PH_APPU}_OPTS"
 printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Creating ${PH_APP_DISPLAY} alloweds in file " "'${PH_CONF_DIR}/options.alloweds'"
 for PH_i in ${PH_OPTS}
 do
-	case "$PH_i" in DIR|*_CMD)
-		PH_LINE='an empty string, variable or valid pathname:"$PH_OPTARG_VAL" == @(\$*|) || -f "$PH_OPTARG_VAL"' ;;
+	case "${PH_i}" in DIR|*_CMD)
+		PH_LINE='an empty string, variable or valid pathname:"${PH_OPTARG_VAL}" == @(\${*}|) || -f "${PH_OPTARG_VAL}"' ;;
 			CIFS_DIR|CIFS_SUBDIR|CIFS_MPT)
-		PH_LINE='an empty string, variable or starting with /:"$PH_OPTARG_VAL" == @(/*|\$*|)' ;;
+		PH_LINE='an empty string, variable or starting with /:"${PH_OPTARG_VAL}" == @(/*|\${*}|)' ;;
 			CIFS_PASS)
-		PH_LINE='an empty string or a string without single quotes:"$("$(ph_check_password_validity "$PH_OPTARG_VAL")" ; echo "$?")" -eq "0"' ;;
+		PH_LINE='an empty string or a string without single quotes:"$("$(ph_check_password_validity "${PH_OPTARG_VAL}")" ; echo "${?}")" -eq "0"' ;;
 			*SRV)
-		PH_LINE='a valid ipv4 address or an empty string:"$("$(ph_check_ip_validity "$PH_OPTARG_VAL")" ; echo "$?")" -eq "0"' ;;
+		PH_LINE='a valid ipv4 address or an empty string:"$("$(ph_check_ip_validity "${PH_OPTARG_VAL}")" ; echo "${?}")" -eq "0"' ;;
 			PERSISTENT|MAP|CIFS_SHARE|USE_CTRL|SANITY)
-		PH_LINE='yes or no:"$PH_OPTARG_VAL" == @(yes|no)' ;;
+		PH_LINE='yes or no:"${PH_OPTARG_VAL}" == @(yes|no)' ;;
 			NUM_CTRL)
-		PH_LINE='1, 2, 3 or 4:"$PH_OPTARG_VAL" == @(1|2|3|4)' ;;
+		PH_LINE='1, 2, 3 or 4:"${PH_OPTARG_VAL}" == @(1|2|3|4)' ;;
 			RES)
-		PH_LINE='720, 1080 or 4k:"$PH_OPTARG_VAL" == @(720|1080|4k)' ;;
+		PH_LINE='720, 1080 or 4k:"${PH_OPTARG_VAL}" == @(720|1080|4k)' ;;
 			WIDTH|HEIGHT)
-		PH_LINE='a whole number:"$PH_OPTARG_VAL" == +(0|1|2|3|4|5|6|7|8|9)' ;;
+		PH_LINE='a whole number:"${PH_OPTARG_VAL}" == +(0|1|2|3|4|5|6|7|8|9)' ;;
 			FPS)
-		PH_LINE='a whole number or -1:"$PH_OPTARG_VAL" == @(+(0|1|2|3|4|5|6|7|8|9)|-1)' ;;
+		PH_LINE='a whole number or -1:"${PH_OPTARG_VAL}" == @(+(0|1|2|3|4|5|6|7|8|9)|-1)' ;;
 			BITRATE)
-		PH_LINE='a multiple of 1024:"$PH_OPTARG_VAL" == +([0-9]) && "$(expr "$PH_OPTARG_VAL" % 1024 2>/dev/null)" -eq "0"' ;;
+		PH_LINE='a multiple of 1024:"${PH_OPTARG_VAL}" == +([0-9]) && "$(expr "${PH_OPTARG_VAL}" % 1024 2>/dev/null)" -eq "0"' ;;
 			PCKTSIZE)
-		PH_LINE='a multiple of 16:"$PH_OPTARG_VAL" == +([0-9]) && "$(expr "$PH_OPTARG_VAL" % 16 2>/dev/null)" -eq "0"' ;;
+		PH_LINE='a multiple of 16:"${PH_OPTARG_VAL}" == +([0-9]) && "$(expr "${PH_OPTARG_VAL}" % 16 2>/dev/null)" -eq "0"' ;;
 			PIN_PS3|PIN_PS4)
-		PH_LINE='a four-character word or an empty string:"$PH_OPTARG_VAL" == @({4}(@([a-Z]|[0-9]))|)' ;;
+		PH_LINE='a four-character word or an empty string:"${PH_OPTARG_VAL}" == @({4}(@([a-Z]|[0-9]))|)' ;;
 			BLUE_ADAPT)
-		PH_LINE='a valid mac address or none:"$("$(ph_check_mac_validity "$PH_OPTARG_VAL")" ; echo "$?")" -eq "0"' ;;
+		PH_LINE='a valid mac address or none:"$("$(ph_check_mac_validity "${PH_OPTARG_VAL}")" ; echo "${?}")" -eq "0"' ;;
 			TYPE)
-		PH_LINE='PS3, PS4 or XBOX360:"$PH_OPTARG_VAL" == @(PS3|PS4|XBOX360)' ;;
+		PH_LINE='PS3, PS4, XBOX360 or XBOXSX:"${PH_OPTARG_VAL}" == @(PS@(3|4)|XBOX@(360|SX))' ;;
 			CIFS_USER)
-		PH_LINE='a locally existing account or an empty string:"$("$(ph_check_user_validity "$PH_OPTARG_VAL")" ; echo "$?")" -eq "0"' ;;
+		PH_LINE='a locally existing account or an empty string:"$("$(ph_check_user_validity "${PH_OPTARG_VAL}")" ; echo "${?}")" -eq "0"' ;;
 			STARTAPP)
-		PH_LINE='an integrated application or none:"$("$(ph_check_app_state_validity -a "$PH_OPTARG_VAL" -q -i)" ; echo "$?")" -eq "0" || "$PH_OPTARG_VAL" == "none"' ;;
+		PH_LINE='an integrated application or none:"$("$(ph_check_app_state_validity -a "${PH_OPTARG_VAL}" -q -i)" ; echo "${?}")" -eq "0" || "${PH_OPTARG_VAL}" == "none"' ;;
 	esac
 	unset -n PH_OPTS
 	if ! ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/options.alloweds' -l 'PH_${PH_APPU}_${PH_i}:${PH_LINE}'"
@@ -2583,9 +2583,9 @@ then
 	ph_run_with_rollback -c false -m "Could not create" || \
 		return 1
 fi
-ph_add_value_to_param -p PH_REMOVE_APPS_ALLOWEDS -v "$PH_APP"
+ph_add_value_to_param -p PH_REMOVE_APPS_ALLOWEDS -v "${PH_APP}"
 ph_run_with_rollback -c true && \
-	return "$?"
+	return "${?}"
 }
 
 function ph_create_app_defaults {
@@ -2599,18 +2599,18 @@ declare -u PH_APPU
 declare "PH_${PH_APPU}_OPTS"
 
 PH_i=""
-PH_APP="$1"
+PH_APP="${1}"
 PH_APP_DISPLAY="${PH_APP} option"
 PH_OPT=""
 PH_LINE=""
 PH_APPU="${PH_APP:0:4}"
 eval "PH_${PH_APPU}_OPTS=\"USE_CTRL PKG_NAME CMD_OPTS NUM_CTRL PERSISTENT CIFS_PASS CIFS_SHARE CIFS_USER CIFS_SRV CIFS_DIR CIFS_SUBDIR CIFS_MPT PRE_CMD POST_CMD\""
 
-[[ -z "$PH_APP" || "$#" -ne "1" ]] && \
+[[ -z "${PH_APP}" || "${#}" -ne "1" ]] && \
         ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 declare -n PH_OPTS="PH_${PH_APPU}_OPTS"
-case "$PH_APP" in Moonlight)
+case "${PH_APP}" in Moonlight)
                 PH_OPTS="${PH_OPTS} RES WIDTH HEIGHT FPS BITRATE PCKTSIZE SRV GAME" ;;
                       Controllers)
 		PH_APP_DISPLAY="controller settings"
@@ -2630,10 +2630,10 @@ do
         PH_OPT="PH_${PH_APPU}_${PH_i}"
 	grep -E "^${PH_OPT}=" "${PH_CONF_DIR}/${PH_APP}.conf" >/dev/null 2>&1 || \
 		continue
-        case "$PH_i" in PERSISTENT)
+        case "${PH_i}" in PERSISTENT)
 		PH_LINE='yes' ;;
 			USE_CTRL)
-		if [[ "$PH_APP" == @(Emulationstation|Moonlight) ]]
+		if [[ "${PH_APP}" == @(Emulationstation|Moonlight) ]]
 		then
 			PH_LINE='yes'
 		else
@@ -2658,8 +2658,8 @@ do
 			PKG_NAME)
 		PH_LINE="${PH_APP_PKG}" ;;
 	esac
-	case "$PH_APP" in Kodi)
-		case "$PH_i" in PRE_CMD)
+	case "${PH_APP}" in Kodi)
+		case "${PH_i}" in PRE_CMD)
                 	PH_LINE='${PH_SCRIPTS_DIR}/app/pre_cmds/Kodi-PRE.sh' ;;
 				POST_CMD)
                 	PH_LINE='${PH_SCRIPTS_DIR}/app/post_cmds/Kodi-POST.sh' ;;
@@ -2667,13 +2667,13 @@ do
                 	PH_LINE='kodi' ;;
 		esac ;;
                         Emulationstation)
-		case "$PH_i" in CIFS_MPT)
+		case "${PH_i}" in CIFS_MPT)
                 	PH_LINE='${PH_EMUL_SETUP_DIR}/roms' ;;
 				PKG_NAME)
                 	PH_LINE='' ;;
 		esac ;;
                         Moonlight)
-		case "$PH_i" in BITRATE)
+		case "${PH_i}" in BITRATE)
                 	PH_LINE='20480' ;;
 				PCKTSIZE)
                 	PH_LINE='1472' ;;
@@ -2691,15 +2691,15 @@ do
                 	PH_LINE="-\${PH_MOON_RES} -bitrate \${PH_MOON_BITRATE} -packetsize \${PH_MOON_PCKTSIZE} -width \${PH_MOON_WIDTH} -height \${PH_MOON_HEIGHT} -app \"\${PH_MOON_GAME}\" -input /dev/input/eventPH_CTRL1 \"\${PH_MOON_SRV}\"" ;;
 		esac ;;
                         Bash)
-		case "$PH_i" in PKG_NAME)
+		case "${PH_i}" in PKG_NAME)
                 	PH_LINE='bash' ;;
 		esac ;;
                         X11)
-		case "$PH_i" in PKG_NAME)
+		case "${PH_i}" in PKG_NAME)
                 	PH_LINE='xinit' ;;
 		esac ;;
                         Controllers)
-		case "$PH_i" in MAP)
+		case "${PH_i}" in MAP)
                 	PH_LINE='no' ;;
 				PS3_PIN)
                 	PH_LINE='0000' ;;
@@ -2711,7 +2711,7 @@ do
                 	PH_LINE='PS4' ;;
 		esac ;;
                         PieHelper)
-		case "$PH_i" in CMD_OPTS)
+		case "${PH_i}" in CMD_OPTS)
                 	PH_LINE='Main' ;;
 				PRE_CMD)
                 	PH_LINE='${PH_SCRIPTS_DIR}/app/pre_cmds/PieHelper-PRE.sh' ;;
@@ -2737,7 +2737,7 @@ then
 	ph_run_with_rollback -c false -m "Could not create" || \
 		return 1
 fi
-ph_add_value_to_param -p PH_REMOVE_APPS_DEFAULTS -v "$PH_APP"
+ph_add_value_to_param -p PH_REMOVE_APPS_DEFAULTS -v "${PH_APP}"
 ph_run_with_rollback -c true && \
-	return "$?"
+	return "${?}"
 }
