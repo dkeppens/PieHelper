@@ -2549,7 +2549,7 @@ do
 			return 1
                 PH_APP_CMD="$OPTARG" ;;
                              i)
-		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(P|U)@(I|A) ]] && \
+		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(P|U)@(I|U) ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -2658,7 +2658,7 @@ declare PH_APP_INST_STATE
 PH_APP=""
 PH_APP_INST_STATE="$1"
 
-[[ "$PH_APP_INST_STATE" != @(P|U)@(I|A) || "$#" -ne "1" ]] && \
+[[ "$PH_APP_INST_STATE" != @(P|U)@(I|U) || "$#" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 PH_APP="$(nawk -v inst_state="^${PH_APP_INST_STATE}$" 'BEGIN { \
@@ -4327,60 +4327,64 @@ unset PH_LAST_RETURN_GLOB 2>/dev/null
 if [[ "${PH_MENU}" == "Main" ]]
 then
 	PH_MENU_TYPE="menu"
-	PH_MENU_HEADER="Welcome to PieHelper ${PH_VERSION} : ${PH_MENU} ${PH_MENU_TYPE}"
+	PH_MENU_HEADER="PieHelper ${PH_VERSION} > ${PH_MENU} ${PH_MENU_TYPE}"
 else
 	PH_MENU_TYPE="submenu"
 	case "${PH_MENU}" in System|Support|Applications|Controllers)
-		if [[ "${PH_MENU}" == S@(ystem|upport) ]]
-		then
-			PH_MENU_APP="${PH_MENU}"
-		else
-			PH_MENU_APP="${PH_MENU%.}"
-		fi
+		PH_MENU_APP="${PH_MENU}"
 		PH_MENU_PARENT="Main" ;;
 			SystemRetaineds)
 		PH_MENU_PARENT="System"
-		PH_MENU_APP="${PH_MENU_PARENT} ${PH_MENU#System}" ;;
+		PH_MENU_APP="Retain values for System configuration" ;;
 			SystemRetained|SystemInteractive)
 		PH_MENU_PARENT="System"
-		PH_MENU_APP="${PH_MENU_PARENT} by method ${PH_MENU#System}" ;;
-			StatusManagement_*|TTYManagement_*|OptionsManagement_*)
+		PH_MENU_APP="${PH_MENU#System} ${PH_MENU_PARENT} configuration" ;;
+			StatusManagement_*|OptionsManagement_*|TTYManagement_*)
 		PH_MENU_PARENT="{PH_MENU##*_}"
-		PH_MENU_APP="${PH_MENU%%Management*}" ;;
-			PS*|XBOX*)
-		PH_MENU_APP="${PH_MENU}"
-		PH_MENU_PARENT="Controllers" ;;
+		PH_MENU_APP="${PH_MENU%%Management*} management for ${PH_MENU_PARENT}" ;;
+			PS3|PS4|XBOX360|XBOXSX)
+		PH_MENU_PARENT="StatusManagement_Controllers"
+		PH_MENU_APP="${PH_MENU} controllers" ;;
 			StatusManagement|TTYManagement|OptionsManagement)
 		if PH_MENU_PARENT="$(ph_get_linked_menu_app)"
 		then
-			PH_MENU_APP="${PH_MENU%%Management}"
+			PH_MENU_APP="${PH_MENU%%Management} management for ${PH_MENU_PARENT}"
 			PH_MENU="${PH_MENU}_${PH_MENU_PARENT}"
 		else
 			return 1
 		fi ;;
-			Default|Running|Supported|Integrated|Out-of-scope|Halted)
+			Out-of-scope|Default|Supported|Integrated||Halted|Running)
 		PH_MENU_PARENT="Applications"
 		PH_MENU_APP="${PH_MENU} ${PH_MENU_PARENT}" ;;
 			*)
 		PH_MENU_APP="${PH_MENU}"
-		PH_MENU_PARENT="Supported" ;;
+		PH_MENU_PARENT="" ;;
 	esac
-	PH_MENU_HEADER="PieHelper ${PH_VERSION} > ${PH_MENU_PARENT} ${PH_MENU_TYPE} : Manage ${PH_MENU_APP}"
+	PH_MENU_HEADER="PieHelper ${PH_VERSION} > ${PH_MENU_PARENT} ${PH_MENU_TYPE} : ${PH_MENU_APP}"
 fi
 while true
 do
-	if [[ "${PH_MENU}" == @(@(TTY|Status|Options)Management@(|_*)|Controllers|"$(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")") ]]
+	if [[ -z "${PH_MENU_PARENT}" ]]
 	then
-		ph_run_with_rollback -c "ph_link_app_to_menu -a '${PH_MENU_PARENT}' -q" || \
-			return 1
+		:
+		PH_MENU_HEADER="PieHelper ${PH_VERSION} > ${PH_MENU_PARENT} ${PH_MENU_TYPE} : ${PH_MENU_APP}"
+	fi
+	if [[ "${PH_MENU}" == @(@(Status|Options|TTY)Management@(|_*)|Controllers|"$(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")") ]]
+	then
+		if [[ "${PH_MENU}" == @(@(Status|Options|TTY)Management@(|_*)|Controllers) ]]
+		then
+			ph_run_with_rollback -c "ph_link_app_to_menu -a '${PH_MENU_PARENT}' -q" || \
+				return 1
+		else
+			ph_run_with_rollback -c "ph_link_app_to_menu -a '${PH_MENU}' -q" || \
+				return 1
+		fi
 	fi
 	PH_ANSWER="0"
 	PH_COUNT="0"
-	if [[ "${PH_MENU}" == @(Running|Halted|Integrated|Supported|Default|Out-of-Scope) ]]
+	if [[ "${PH_MENU}" == @(Out-of-Scope|Default|Supported|Integrated|Halted|Running) ]]
 	then
-		case "${PH_MENU}" in Halted)
-			PH_MENU_KEYWORD="halt" ;;
-				     Out-of-scope)
+		case "${PH_MENU}" in Out-of-scope)
 			PH_MENU_KEYWORD="oos" ;;
 				     *)
 			PH_MENU_KEYWORD="$(cut -c1-3<<<"${PH_MENU}" | tr '[:upper:]' '[:lower:]')" ;;
@@ -4411,9 +4415,9 @@ do
 				'Integrate installed ${PH_MENU} applications:confapps_ph.sh -p int -k ${PH_MENU_KEYWORD} -s inst'" || \
 				return 1 ;;
 				     Integrated)
-			for PH_MENU_LINE in "Unintegrate ${PH_MENU} applications:confapps_ph.sh -p unint -k halt -s ${PH_MENU_KEYWORD}" \
-				"Unintegrate ${PH_MENU} Out-of-scope applications:confapps_ph.sh -p unint -k halt -s oos" \
-				"Unintegrate ${PH_MENU} Default applications:confapps_ph.sh -p unint -k halt -s def"
+			for PH_MENU_LINE in "Unintegrate ${PH_MENU} applications:confapps_ph.sh -p unint -k hal -s ${PH_MENU_KEYWORD}" \
+				"Unintegrate ${PH_MENU} Out-of-scope applications:confapps_ph.sh -p unint -k hal -s oos" \
+				"Unintegrate ${PH_MENU} Default applications:confapps_ph.sh -p unint -k hal -s def"
 			do
 				ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_MENUS_DIR}/${PH_MENU}.lst' -l '${PH_MENU_LINE}'" || \
 					return 1
@@ -4428,7 +4432,7 @@ do
 			done ;;
 				     Out-of-scope)
 			ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_MENUS_DIR}/${PH_MENU}.lst' -l \
-				'Unintegrate halted ${PH_MENU} applications:confapps_ph.sh -p unint -k halt -s oos'" || \
+				'Unintegrate halted ${PH_MENU} applications:confapps_ph.sh -p unint -k hal -s oos'" || \
 				return 1 ;;
 				     *)
 				: ;;
@@ -6625,7 +6629,7 @@ then
 				ph_apt_clean
 			printf "%s\n" "- Cleaning up"
 		fi ;;
-				     PA|UA)
+				     PU|UU)
 		ph_run_with_rollback -c true -m "Nothing to do" && \
 			return "$?" ;;
 				     *)
@@ -6765,7 +6769,7 @@ do
 			return 1 
                 PH_APP_CMD="$OPTARG" ;;
                              i)
-		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(P|U)@(I|A) ]] && \
+		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(P|U)@(I|U) ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1 
@@ -6951,7 +6955,7 @@ do
 			return 1
                 PH_APP_USER="$OPTARG" ;;
                              i)
-		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(P|U)@(I|A) ]] && \
+		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(P|U)@(I|U) ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -7199,7 +7203,7 @@ do
 			return 1
                 PH_APP_CMD="$OPTARG" ;;
 			     i)
-		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(P|U)@(I|A) ]] && \
+		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(P|U)@(I|U) ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -7441,7 +7445,7 @@ do
 			return 1
                 PH_APP_PKG="$OPTARG" ;;
                              i)
-		[[ -n "$PH_APP_INST_STATE" ]] && \
+		[[ -n "${PH_APP_INST_STATE}" || "${OPTARG}" != @(P|U)@(I|U) ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -7895,7 +7899,7 @@ then
 		then
 			PH_APP_INST_STATE="PI"
 		else
-			PH_APP_INST_STATE="PA"
+			PH_APP_INST_STATE="PU"
 		fi
 	else
 		ph_set_result -m "Configuration file '${PH_CONF_DIR}/${PH_APP}.conf' contains an invalid package name '${PH_APP_PKG}'"
@@ -7919,7 +7923,7 @@ else
 		then
 			PH_APP_INST_STATE="UI"
 		else
-			PH_APP_INST_STATE="UA"
+			PH_APP_INST_STATE="UU"
 		fi
 	fi
 fi
@@ -7980,7 +7984,7 @@ do
 			return 1
                 PH_APP_CMD="$OPTARG" ;;
                              i)
-		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(P|U)@(I|A) ]] && \
+		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(P|U)@(I|U) ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -8300,7 +8304,7 @@ PH_APP_INST_STATE="$(nawk -v app="^${PH_APP}$" '$1 ~ app { \
 	} { \
 		next \
 	}' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)"
-[[ "$PH_APP_INST_STATE" != @(Absent|Package@(d|less)) ]] && \
+[[ "$PH_APP_INST_STATE" != @(P|U)@(I|U) ]] && \
 	return 1
 echo -n "$PH_APP_INST_STATE"
 return 0
@@ -8351,7 +8355,7 @@ do
 			return 1
                 PH_PASS_APP_USER="$OPTARG" ;;
 			     i)
-		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(P|U)@(I|A) ]] && \
+		[[ -n "$PH_APP_INST_STATE" || "$OPTARG" != @(P|U)@(I|U) ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
 			OPTARG="$PH_OLDOPTARG" && \
 			return 1
@@ -10795,7 +10799,7 @@ case "$PH_KEYWORD" in def)
 		PH_FILE="supported_apps" ;;
 		      int)
 		PH_DISP_APP_STATE="Integrated" ;;
-		      halt)
+		      hal)
 		PH_DISP_APP_STATE="Halted" ;;
 		      run)
 		PH_DISP_APP_STATE="Running" ;;
@@ -10818,7 +10822,7 @@ case "$PH_ACTION" in list)
 		PH_REQ_APP_STATE="Supported" ;;
 			      def)
 		PH_REQ_APP_STATE="Default" ;;
-			      halt)
+			      hal)
 		PH_REQ_APP_STATE="Halted" ;;
 			      run)
 		PH_REQ_APP_STATE="Running" ;;
@@ -10887,7 +10891,7 @@ esac
 	PH_LIST="$PH_PIEH_STARTAPP"
 if [[ -z "$PH_APP" && -z "$PH_LIST" ]]
 then
-	case "$PH_KEYWORD" in halt)
+	case "$PH_KEYWORD" in hal)
 		for PH_i in $(ph_get_app_list_by_state -s Halted -t exact)
 		do
 			[[ -z "$PH_LIST" ]] && \

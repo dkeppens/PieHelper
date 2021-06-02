@@ -1,3 +1,6 @@
+* finish adapting actual code part (from after help) of confapps_ph.sh to all new changes
+* check everywhere where needed for *I installation state of the app or create general function that can be called for whatever 'action' that handles all such checks centralized
+* make option PH_PIEH_STARTAPP read-write
 * Rename OS.defaults to System.Retaineds
 * check why so many Appstate menus are listed as parents in all deep submenus
 * finish new menu structure in ph_show_menu : what with application menus and are Go to parent menus for all ok ?
