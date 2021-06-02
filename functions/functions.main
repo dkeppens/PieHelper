@@ -4319,7 +4319,6 @@ PH_COLUMNS="$(tput cols 2>/dev/null)"
 PH_MENU_COUNT="0"
 PH_RET_CODE="0"
 
-
 [[ "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
@@ -4340,7 +4339,7 @@ else
 		PH_MENU_PARENT="System"
 		PH_MENU_APP="${PH_MENU#System} ${PH_MENU_PARENT} configuration" ;;
 			StatusManagement_*|OptionsManagement_*|TTYManagement_*)
-		PH_MENU_PARENT="{PH_MENU##*_}"
+		PH_MENU_PARENT="${PH_MENU##*_}"
 		PH_MENU_APP="${PH_MENU%%Management*} management for ${PH_MENU_PARENT}" ;;
 			PS3|PS4|XBOX360|XBOXSX)
 		PH_MENU_PARENT="StatusManagement_Controllers"
@@ -4353,7 +4352,7 @@ else
 		else
 			return 1
 		fi ;;
-			Out-of-scope|Default|Supported|Integrated||Halted|Running)
+			Out-of-scope|Default|Supported|Integrated|Halted|Running)
 		PH_MENU_PARENT="Applications"
 		PH_MENU_APP="${PH_MENU} ${PH_MENU_PARENT}" ;;
 			*)
