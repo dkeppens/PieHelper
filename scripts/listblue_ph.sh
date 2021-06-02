@@ -2,43 +2,52 @@
 # List bluetooth adapter(s) (by Davy Keppens on 26/12/2018)
 # Enable/Disable debug by running 'confpieh_ph.sh -p debug -m listblue_ph.sh'
 
-if [[ -f "$(dirname "$0" 2>/dev/null)/app/main.sh" && -r "$(dirname "$0" 2>/dev/null)/app/main.sh" ]]
+if [[ -f "$(dirname "${0}" 2>/dev/null)/app/main.sh" && -r "$(dirname "${0}" 2>/dev/null)/app/main.sh" ]]
 then
-	source "$(dirname "$0" 2>/dev/null)/app/main.sh"
+	source "$(dirname "${0}" 2>/dev/null)/app/main.sh"
 	set +x
 else
-	printf "\n%2s\033[1;31m%s\033[0;0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '$(dirname "$0" 2>/dev/null)/app/main.sh'"
+	printf "\n%2s\033[1;31m%s\033[0;0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '$(dirname "${0}" 2>/dev/null)/app/main.sh'"
 	exit 1
 fi
 
 #set -x
 
-declare PH_OPTION=""
-declare PH_i=""
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
-declare -i PH_NR_ADAPTS="0"
-declare -i PH_RET_CODE="0"
+declare PH_i
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+declare -i PH_NR_ADAPTS
+declare -i PH_RET_CODE
+
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
+PH_i=""
+PH_OPTION=""
+PH_NR_ADAPTS="0"
+PH_RET_CODE="0"
 
 OPTIND="1"
 
-while getopts h PH_OPTION 2>/dev/null
+while getopts :h PH_OPTION
 do
-        case "$PH_OPTION" in *)
-                >&2 printf "\033[36m%s\033[0m\n" "Usage : listblue_ph.sh | -h"
-                >&2 printf "\n"
-                >&2 printf "%3s%s\n" "" "Where -h displays this usage"
-                >&2 printf "%9s%s\n" "" "- Running this script without parameters will provide a listing of the following : "
-                >&2 printf "%12s%s\n" "" "- The bluetooth adapter currently set as default"
-                >&2 printf "%12s%s\n" "" "- A summary of all bluetooth adapters available on the system"
-                >&2 printf "\n"
-                OPTIND="$PH_OLDOPTIND" ; OPTARG="$PH_OLDOPTARG" ; exit 1 ;;
-        esac
+	case "${PH_OPTION}" in *)
+		>&2 printf "\033[1;36m%s\033[0;0m\n" "Usage : listblue_ph.sh | -h"
+		>&2 printf "\n"
+		>&2 printf "%3s\033[1;37m%s\n" "" "Where -h displays this usage"
+		>&2 printf "%9s%s\n" "" "- Running this script without parameters will provide a listing of the following : "
+		>&2 printf "%12s%s\n" "" "- The bluetooth adapter currently set as default"
+		>&2 printf "%12s%s\033[0;0m\n" "" "- A summary of all bluetooth adapters available on the system"
+		>&2 printf "\n"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
+		exit 1 ;;
+	esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-printf "\n\033[36m%s\033[0m\n" "- Listing available bluetooth adapters"
+printf "\n\033[1;36m%s\033[0;0m\n" "- Listing available bluetooth adapters"
 "$PH_SUDO" systemctl enable bluetooth >/dev/null 2>&1 || PH_RET_CODE="1"
 if [[ "$PH_RET_CODE" -eq "0" ]]
 then

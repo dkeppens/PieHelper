@@ -2,37 +2,55 @@
 # List Moonlight shared games (by Davy Keppens on 23/11/2018)
 # Enable/Disable debug by running 'confpieh_ph.sh -p debug -m listmoon_ph.sh'
 
-. "$(dirname "$0")"/../main/main.sh || exit "$?" && set +x
+if [[ -f "$(dirname "${0}" 2>/dev/null)/app/main.sh" && -r "$(dirname "${0}" 2>/dev/null)/app/main.sh" ]]
+then
+	source "$(dirname "${0}" 2>/dev/null)/app/main.sh"
+	set +x
+else
+	printf "\n%2s\033[1;31m%s\033[0;0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '$(dirname "${0}" 2>/dev/null)/app/main.sh'"
+	exit 1
+fi
 
 #set -x
 
-typeset PH_MOON_PATH=""
-typeset PH_OPTION=""
-typeset PH_GAME=""
-typeset PH_OLDOPTARG="$OPTARG"
-typeset -i PH_OLDOPTIND="$OPTIND"
-typeset -i PH_COUNT="0"
-typeset -i PH_ANSWER="0"
-typeset -i PH_TOTAL="0"
+typeset PH_MOON_PATH
+typeset PH_GAME
+typeset PH_OPTION
+typeset PH_OLDOPTARG
+typeset -i PH_OLDOPTIND
+typeset -i PH_COUNT
+typeset -i PH_ANSWER
+typeset -i PH_TOTAL
+
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
+PH_MOON_PATH=""
+PH_GAME=""
+PH_OPTION=""
+PH_COUNT="0"
+PH_ANSWER="0"
+PH_TOTAL="0"
 
 OPTIND="1"
 
-while getopts h PH_OPTION 2>/dev/null
+while getopts :h PH_OPTION
 do
-        case "$PH_OPTION" in *)
-                >&2 printf "\033[36m%s\033[0m\n" "Usage : listmoon_ph.sh | -h"
-                >&2 printf "\n"
-                >&2 printf "%3s%s\n" "" "Where -h displays this usage"
-                >&2 printf "%9s%s\n" "" "- Running this script without parameters will attempt to connect with the remote host configured in option PH_MOON_SRV"
-                >&2 printf "%9s%s\n" "" "  and retrieve a list of all games shared to Moonlight from the NVIDIA Geforce Experience software running on that host"
-                >&2 printf "\n"
-                OPTIND="$PH_OLDOPTIND" ; OPTARG="$PH_OLDOPTARG" ; exit 1 ;;
-        esac
+	case "${PH_OPTION}" in *)
+		>&2 printf "\033[1;36m%s\033[0;0m\n" "Usage : listmoon_ph.sh | -h"
+		>&2 printf "\n"
+		>&2 printf "%3s\033[1;37m%s\n" "" "Where -h displays this usage"
+		>&2 printf "%9s%s\n" "" "- Running this script without parameters will attempt to connect with the remote host configured in option PH_MOON_SRV"
+		>&2 printf "%9s%s\033[0;0m\n" "" "  and retrieve a list of all games shared to Moonlight from the NVIDIA Geforce Experience software running on that host"
+		>&2 printf "\n"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
+		exit 1 ;;
+	esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-printf "\n\033[36m%s\033[0m\n\n" "- Listing/Selecting Moonlight shared game(s)"
+printf "\n\033[1;36m%s\033[0;0m\n\n" "- Listing/Selecting Moonlight shared game(s)"
 if ph_check_app_state_validity -s -a Moonlight
 then
 	PH_MOON_PATH="$(nawk '$1 ~ /^Moonlight$/ { printf $3 }' "$PH_CONF_DIR"/supported_apps 2>/dev/null)"
