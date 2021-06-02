@@ -1,6 +1,6 @@
-PieHelper	-	-	${PH_SCRIPTS_DIR}/startpieh.sh
-Bash	-	-	/bin/bash
-X11	-	-	/usr/bin/startx -- :1 vt#PH_TTY#
-Kodi	-	-	/usr/bin/xinit /usr/bin/kodi-standalone -- :0 -nolisten tcp vt#PH_TTY#
-Moonlight	-	-	/usr/local/bin/moonlight stream
-Emulationstation	-	-	/usr/bin/emulationstation
+PieHelper	-	UU	${PH_SCRIPTS_DIR}/startpieh.sh
+Bash	-	PI	/bin/bash
+X11	-	PU	/usr/bin/startx -- :1 vt#PH_TTY#
+Kodi	-	PU	/usr/bin/xinit /usr/bin/kodi-standalone -- :0 -nolisten tcp vt#PH_TTY#
+Moonlight	-	UU	/usr/local/bin/moonlight stream
+Emulationstation	-	UU	/usr/bin/emulationstation

@@ -8290,23 +8290,30 @@ ph_run_with_rollback -c true && \
 function ph_get_app_inst_state_from_app_name {
 
 declare PH_APP
+declare PH_FILE
 declare PH_APP_INST_STATE
 
-PH_APP="$1"
+PH_APP="${1}"
+PH_FILE=""
 PH_APP_INST_STATE=""
 
-[[ -z "$PH_APP" || "$#" -ne "1" ]] && \
+[[ -z "${PH_APP}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-PH_APP_INST_STATE="$(nawk -v app="^${PH_APP}$" '$1 ~ app { \
-		printf $3 ; \
-		exit 0 \
-	} { \
-		next \
-	}' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)"
-[[ "$PH_APP_INST_STATE" != @(P|U)@(I|U) ]] && \
+for PH_FILE in "${PH_CONF_DIR}/supported_apps" "${PH_FILES_DIR}/default_apps_${PH_FILE_SUFFIX}"
+do
+	PH_APP_INST_STATE="$(nawk -v app="^${PH_APP}$" '$1 ~ app { \
+			printf $3 ; \
+			exit 0 \
+		} { \
+			next \
+		}' "${PH_FILE}" 2>/dev/null)"
+	[[ -n "${PH_APP_INST_STATE}" ]] && \
+		break
+done
+[[ "${PH_APP_INST_STATE}" != @(P|U)@(I|U) ]] && \
 	return 1
-echo -n "$PH_APP_INST_STATE"
+echo -n "${PH_APP_INST_STATE}"
 return 0
 }
 

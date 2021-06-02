@@ -1,4 +1,6 @@
-* finish adapting actual code part (from after help) of confapps_ph.sh to all new changes
+* eliminate use of PH_KEYWORD as at least a user providable argument completely in confapps_ph.sh : not needed since can be replaced by PH_LIST
+* rename some vars in confapps_ph.sh to use _PH_APP_ (aesthetic)
+* change confapps_ph.sh code error to no longer replace user-provided PH_APP_SCOPE values in certain cases
 * check everywhere where needed for *I installation state of the app or create general function that can be called for whatever 'action' that handles all such checks centralized
 * make option PH_PIEH_STARTAPP read-write
 * Rename OS.defaults to System.Retaineds
