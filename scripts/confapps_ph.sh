@@ -147,10 +147,14 @@ do
 		>&2 printf "\n"
 		>&2 printf "\033[1;36m%s\033[0;0m\n" "Usage : Options when [routine] is \"nostart\" :"
 		>&2 printf "%23s\033[1;37m%s\033[0;0m\n" "" "-r \"nostart\""
-		>&2 printf "%8s\033[1;36m%s\033[0;0m\n" "" "Options when [routine] is \"move\" :"
-		>&2 printf "%23s\033[1;37m%s\033[0;0m\n" "" "-r \"move\" [-a [[appname]|\"prompt\"]|-k [keyword]|-l [[keyword],[keyword],...] '-s [scope]' '-t [[newtty]|\"prompt\"]' |"
+		>&2 printf "%8s\033[1;36m%s\033[0;0m\n" "" "Options when [routine] is \"sup\" :"
+		>&2 printf "%23s\033[1;37m%s\033[0;0m\n" "" "-r \"sup\" [-a [[appname]|\"prompt\"]|-k [keyword]|-l [[keyword],[keyword],...] '-s [scope]' '-c [[cmd]|\"prompt\"]' '-p [[pkg]|\"prompt\"]' '-u [[user]|\"prompt\"]' |"
+		>&2 printf "%8s\033[1;36m%s\033[0;0m\n" "" "Options when [routine] is \"inst\" or \"uninst\" :"
+		>&2 printf "%23s\033[1;37m%s\033[0;0m\n" "" "-r [\"inst\"|\"uninst\"] [-a [[appname]|\"prompt\"]|-k [keyword]|-l [[keyword],[keyword],...] '-s [scope]' '-p [[pkg]|\"prompt\"]' |"
+		>&2 printf "%8s\033[1;36m%s\033[0;0m\n" "" "Options when [routine] is \"int\" or \"move\" :"
+		>&2 printf "%23s\033[1;37m%s\033[0;0m\n" "" "-r \"int\" [-a [[appname]|\"prompt\"]|-k [keyword]|-l [[keyword],[keyword],...] '-s [scope]' '-t [[tty]|\"prompt\"]' |"
 		>&2 printf "%8s\033[1;36m%s\033[0;0m\n" "" "Options for all other routines :"
-		>&2 printf "%23s\033[1;37m%s\033[0;0m\n" "" "-r [routine] [-a [[appname]|\"prompt\"]|-k [keyword]|-l [[keyword],[keyword],...] '-s [scope]' '-o \"[[option1] [option2] ...]\"' |"
+		>&2 printf "%23s\033[1;37m%s\033[0;0m\n" "" "-r [routine] [-a [[appname]|\"prompt\"]|-k [keyword]|-l [[keyword],[keyword],...] '-s [scope]' |"
 		>&2 printf "%23s\033[1;37m%s\n" "" "-r [routine] -d |"
 		>&2 printf "%23s%s\n" "" "-h"
 		>&2 printf "\n"
@@ -253,6 +257,12 @@ do
 		>&2 printf "%18s%s\n" "" "- Applications with state 'Unused' or 'Running' will be skipped"
 		>&2 printf "%15s%s\n" "" "- \"move\" will change the allocated tty of selected applications to another tty"
 		>&2 printf "%18s%s\n" "" "- Applications with a maximum state of 'Integrated' will be skipped"
+		>&2 printf "%18s%s\n" "" "- If multiple applications were selected :"
+		>&2 printf "%21s%s\n" "" "- And a numeric [tty] value was passed as a routine option, it will only be used for the first application selected"
+		>&2 printf "%21s%s\n" "" "  All remaining selections will fall back to a default value for [tty]"
+		>&2 printf "%21s%s\n" "" "- And a 'prompt' value was passed as a routine option, the user will be prompted for the new tty of each application selected"
+		>&2 printf "%21s%s\n" "" "- And no routine option was passed, all selections will use a default value for [tty]"
+		>&2 printf "%18s%s\n" "" "- Running applications will first be stopped and restart on their new tty after a successful move"
 		>&2 printf "%15s%s\n" "" "- \"list\" will list the name of selected applications"
 		>&2 printf "%15s%s\n" "" "- \"info\" will display the name and general information of selected applications"
 		>&2 printf "%15s%s\n" "" "- \"tty\" will display the name and tty allocation of selected applications"
@@ -305,21 +315,31 @@ do
 		>&2 printf "%21s%s\n" "" "- \"rm_menus\", \"rm_defaults\", \"rm_alloweds\", \"rm_conf_file\""
 		>&2 printf "%18s%s\n" "" "- All other applications :"
 		>&2 printf "%21s%s\n" "" "- \"rm_cifs_mpt\", \"rm_scripts\", \"rm_menus\", \"rm_defaults\", \"rm_alloweds\", \"rm_conf_file\""
-		>&2 printf "%9s%s\n" "" "-t allows specifying the tty to move an application to as [newtty]"
-		>&2 printf "%12s%s\n" "" "- [newtty] can be :"
+		>&2 printf "%9s%s\n" "" "-t allows specifying a tty value [tty] as a routine option"
+		>&2 printf "%12s%s\n" "" "- [tty] can be :"
 		>&2 printf "%15s%s\n" "" "- A numeric value from '3' up to and including the value of PieHelper option 'PH_PIEH_MAX_TTYS'"
 		>&2 printf "%15s%s\n" "" "- 'prompt' which will prompt for the value to use"
-		>&2 printf "%18s%s\n" "" "- If multiple applications were selected :"
-		>&2 printf "%21s%s\n" "" "- And a tty number was passed, it will only be used for the first application selected"
-		>&2 printf "%21s%s\n" "" "  All remaining selections will fall back to the default"
-		>&2 printf "%21s%s\n" "" "- And 'prompt' was passed, the user will be prompted for the new tty of each application selected"
-		>&2 printf "%12s%s\n" "" "- Running applications will first be stopped and restart on their new tty after a successful move"
 		>&2 printf "%12s%s\n" "" "- Passing a value is optional"
-		>&2 printf "%12s%s\n" "" "- By default, moves will be performed to the lowest unallocated tty within range"
-		>&2 printf "%9s%s\n" "" "-o allows passing a double-quoted and space-separated list of supported routine options to a specified routine"
-		>&2 printf "%12s%s\n" "" "- Passing options to a routine is optional"
-		>&2 printf "%12s%s\n" "" "- No routine options are passed by default"
-		>&2 printf "%9s%s\033[0;0m\n" "" "-d will list all the options supported by a specified routine"
+		>&2 printf "%12s%s\n" "" "- By default, the lowest unallocated tty within range will be passed"
+		>&2 printf "%9s%s\n" "" "-u allows specifying a user account [user] as a routine option"
+		>&2 printf "%12s%s\n" "" "- [user] can be :"
+		>&2 printf "%15s%s\n" "" "- A valid name for a user account"
+		>&2 printf "%15s%s\n" "" "- 'prompt' which will prompt for the value to use"
+		>&2 printf "%12s%s\n" "" "- Passing a value is optional"
+		>&2 printf "%12s%s\n" "" "- By default, no user will be passed"
+		>&2 printf "%9s%s\n" "" "-p allows specifying a package name [pkg] as a routine option"
+		>&2 printf "%12s%s\n" "" "- [pkg] can be :"
+		>&2 printf "%15s%s\n" "" "- A valid package name"
+		>&2 printf "%15s%s\n" "" "- 'prompt' which will prompt for the value to use"
+		>&2 printf "%12s%s\n" "" "- Passing a value is optional"
+		>&2 printf "%12s%s\n" "" "- By default, no package will be passed"
+		>&2 printf "%9s%s\n" "" "-c allows specifying a start command [cmd] as a routine option"
+		>&2 printf "%12s%s\n" "" "- [cmd] can be :"
+		>&2 printf "%15s%s\n" "" "- A valid start command for an application"
+		>&2 printf "%15s%s\n" "" "- 'prompt' which will prompt for the value to use"
+		>&2 printf "%12s%s\n" "" "- Passing a value is optional"
+		>&2 printf "%12s%s\n" "" "- By default, no start command will be passed"
+		>&2 printf "%9s%s\033[0;0m\n" "" "-d will list the options supported by a specified routine [routine]"
 		>&2 printf "\n"
 		OPTARG="${PH_OLDOPTARG}"
 		OPTIND="${PH_OLDOPTIND}"
@@ -334,7 +354,8 @@ OPTIND="${PH_OLDOPTIND}"
 	( -n "${PH_LIST}" && ( -n "${PH_KEYWORD}" || -n "${PH_APP}" )) || \
 	( -n "${PH_KEYWORD}" && -n "${PH_APP}" ) || \
 	( "${PH_ROUTINE}" != @(int|move) && -n "${PH_APP_STR_TTY}" ) || \
-	( "${PH_ROUTINE}" != "sup" && ( -n "${PH_APP_CMD}" || -n "${PH_APP_USER}" || "${PH_PKG_RECEIVED_FLAG}" -eq "0" )) ]] &&  \
+	( "${PH_ROUTINE}" != "sup" && ( -n "${PH_APP_CMD}" || -n "${PH_APP_USER}" )) ||  \
+	( "${PH_ROUTINE}" != @(sup|inst|uninst) && "${PH_PKG_RECEIVED_FLAG}" -eq "0" ) ]] &&  \
 	(! confapps_ph.sh -h) && \
 	exit 1
 if [[ -n "${PH_LIST}" ]]
@@ -363,18 +384,36 @@ else
 			case "${PH_ROUTINE}" in mk_cifs_mpt|rm_cifs_mpt)
 				PH_LIST="int,hal,run" ;;
 				  	     inst)
-				PH_LIST="def,sup,int,halt"
-				if [[ -n "${PH_APP_SCOPE}" ]]
+				PH_LIST="oos,def,sup,int,halt"
+				if [[ -n "${PH_APP_SCOPE}" && "${PH_APP_SCOPE}" != "uninst" ]]
 				then
-					:
+					case "${PH_APP_SCOPE}" in oos|def)
+						PH_LIST="${PH_APP_SCOPE}" ;;
+							pkg|PU)
+						PH_APP_SCOPE="PU" ;;
+							unpkg|UU)
+						PH_APP_SCOPE="UU" ;;
+							*I|inst)
+						PH_APP_SCOPE="oos"
+						PH_LIST="def" ;;
+					esac
 				else
 					PH_APP_SCOPE="uninst"
 				fi ;;
 				  	     uninst)
-				PH_LIST="def,sup,int,halt"
-				if [[ -n "${PH_APP_SCOPE}" ]]
+				PH_LIST="oos,def,sup,int,halt"
+				if [[ -n "${PH_APP_SCOPE}" && "${PH_APP_SCOPE}" != "inst" ]]
 				then
-					:
+					case "${PH_APP_SCOPE}" in oos|def)
+						PH_LIST="${PH_APP_SCOPE}" ;;
+							pkg|PI)
+						PH_APP_SCOPE="PI" ;;
+							unpkg|UI)
+						PH_APP_SCOPE="UI" ;;
+							*U|uninst)
+						PH_APP_SCOPE="oos"
+						PH_LIST="def" ;;
+					esac
 				else
 					PH_APP_SCOPE="inst"
 				fi ;;
@@ -386,25 +425,52 @@ else
 				PH_LIST="hal" ;;
 				  	     conf|unconf)
 				PH_LIST="sup,int,hal"
-				if [[ -n "${PH_APP_SCOPE}" ]]
+				if [[ -n "${PH_APP_SCOPE}" && "${PH_APP_SCOPE}" != "inst" ]]
 				then
-					:
+					case "${PH_APP_SCOPE}" in oos|def)
+						PH_LIST="${PH_APP_SCOPE}" ;;
+							pkg|PI)
+						PH_APP_SCOPE="PI" ;;
+							unpkg|UI)
+						PH_APP_SCOPE="UI" ;;
+							*U|uninst)
+						PH_APP_SCOPE="oos"
+						PH_LIST="def" ;;
+					esac
 				else
 					PH_APP_SCOPE="inst"
 				fi ;;
 				  	     start)
 				PH_LIST="sup,int,hal,run"
-				if [[ -n "${PH_APP_SCOPE}" ]]
+				if [[ -n "${PH_APP_SCOPE}" && "${PH_APP_SCOPE}" != "inst" ]]
 				then
-					:
+					case "${PH_APP_SCOPE}" in oos|def)
+						PH_LIST="${PH_APP_SCOPE}" ;;
+							pkg|PI)
+						PH_APP_SCOPE="PI" ;;
+							unpkg|UI)
+						PH_APP_SCOPE="UI" ;;
+							*U|uninst)
+						PH_APP_SCOPE="oos"
+						PH_LIST="def" ;;
+					esac
 				else
 					PH_APP_SCOPE="inst"
 				fi ;;
 				  	     unstart)
 				PH_LIST="str"
-				if [[ -n "${PH_APP_SCOPE}" ]]
+				if [[ -n "${PH_APP_SCOPE}" && "${PH_APP_SCOPE}" != "inst" ]]
 				then
-					:
+					case "${PH_APP_SCOPE}" in oos|def)
+						PH_LIST="${PH_APP_SCOPE}" ;;
+							pkg|PI)
+						PH_APP_SCOPE="PI" ;;
+							unpkg|UI)
+						PH_APP_SCOPE="UI" ;;
+							*U|uninst)
+						PH_APP_SCOPE="oos"
+						PH_LIST="def" ;;
+					esac
 				else
 					PH_APP_SCOPE="inst"
 				fi ;;
@@ -450,6 +516,11 @@ then
 				PH_ROUTINE_OPTS="${PH_ROUTINE_OPTS} -p '${PH_APP_PKG}'"
 			fi
 		fi ;;
+			inst|uninst)
+		if [[ "${PH_PKG_RECEIVED_FLAG}" -eq "0" ]]
+		then
+			PH_ROUTINE_OPTS="-p '${PH_APP_PKG}'"
+		fi ;;
 			int|move)
 		if [[ -n "${PH_APP_STR_TTY}" ]]
 		then
@@ -487,10 +558,10 @@ then
 				printf "%4s\033[1;37m%-35s\033[1;33m%s\033[0;0m\n" "" "The package name for packaged applications or an empty string otherwise : " "-p \"package\""
 			fi
 		fi ;;
-			int)
+			inst|uninst)
+		printf "%4s\033[1;37m%-35s\033[1;33m%s\033[0;0m\n" "" "The package name for packaged applications or an empty string otherwise : " "-p \"package\"" ;;
+			int|move)
 		printf "%4s\033[1;37m%-35s\033[1;33m%s\033[0;0m\n" "" "The tty for the application : " "-t \"tty\"" ;;
-			move)
-		printf "%4s\033[1;37m%-35s\033[1;33m%s\033[0;0m\n" "" "The new tty for the application : " "-t \"tty\"" ;;
 			*)
 		printf "%4s\033[1;37m%-35s\033[0;0m\n" "" "No options supported" ;;
 	esac
@@ -499,7 +570,7 @@ then
 		printf "\n"
 		ph_run_with_rollback -c true
 	else
-		ph_set_result -m "An error occurred trying to list supported options of routine '${PH_ROUTINE}'"
+		ph_set_result -m "An error occurred trying to list the supported options of routine '${PH_ROUTINE}'"
 		ph_run_with_rollback -c false -m "Could not list"
 	fi
 else
