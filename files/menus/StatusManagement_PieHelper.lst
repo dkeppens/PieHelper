@@ -1,0 +1,22 @@
+Show PieHelper info:confapps_ph.sh -p info -a "PieHelper" | more
+Start PieHelper:echo "*Sigh* I am already running ! Stop buggering me..." | more
+Stop PieHelper:break
+Restart PieHelper:restartpieh.sh | more
+Update PieHelper:confapps_ph.sh -p update -a "PieHelper" | more
+Configure PieHelper:confapps_ph.sh -p conf -a "PieHelper"
+Unconfigure PieHelper:confpieh_ph.sh -u
+Uninstall PieHelper:confpieh_ph.sh -r
+Go to PieHelper:ph_show_menu "PieHelper"
+Go to Running:ph_show_menu Running
+Go to Halted:ph_show_menu Halted
+Go to Integrated:ph_show_menu Integrated
+Go to Out-of-scope:ph_show_menu Supported
+Go to Default:ph_show_menu Default
+Go to Default:ph_show_menu Default
+Go to Out-of-scope:ph_show_menu Out-of-scope
+Go to Out-of-scope:ph_show_menu Out-of-scope
+Go to Applications:ph_show_menu Applications
+Go to Main:ph_show_menu Main
+Open a shell (Type CTRL-D to return):cd;/bin/bash
+Quit:break
+Return to previous screen:return

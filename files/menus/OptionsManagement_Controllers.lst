@@ -1,0 +1,11 @@
+Show option values:confopts_ph.sh -p prompt -a "Controllers" -g
+Display option help:confopts_ph.sh -p prompt -a "Controllers" -d
+Change option values:confopts_ph.sh -p prompt -a "Controllers" -s
+Change all option values:confopts_ph.sh -p set -a "Controllers" | more
+Reset all option values:confopts_ph.sh -p reset -a "Controllers" | more
+List all options:confopts_ph.sh -p list -a "Controllers" | more
+Go to Controllers:ph_show_menu Controllers
+Go to Main:ph_show_menu Main
+Open a shell (Type CTRL-D to return):cd;/bin/bash
+Quit:break
+Return to previous screen:return
