@@ -1,11 +1,8 @@
-* Check problem of double OK outputs
 * handle having predefined installation states in default_apps_* files
 * rename other CTRL options such as NUM_CTRL etc EVERYWHERE.... sigh
-* Why are controller defaults not created
 * finish colour of scripts plus add examples to all scripts
-* eliminate use of PH_KEYWORD as at least a user providable argument completely in confapps_ph.sh : not needed since can be replaced by PH_LIST
 * rename some vars in confapps_ph.sh to use _PH_APP_ (aesthetic)
-* finish rewrite of confapps_pg.sh : formatting and accept PH_PIEH_MAX_TTYS routine options and pass as arrays -> then move to rewrite of ph_do_app_routine
+* now rewrite ph_do_app_routine
 * Rename OS.defaults to System.Retaineds
 * check everywhere where needed for *I installation state of the app or create general function that can be called for whatever 'action' that handles all such checks centralized
 * make option PH_PIEH_STARTAPP read-write
