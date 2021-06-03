@@ -224,7 +224,7 @@ do
 		>&2 printf "%29s%s\n" "" "- When unsupporting Out-of-scope applications, related routines allowing for end-user"
 		>&2 printf "%29s%s\n" "" "  development will be removed from '${PH_FUNCS_DIR}/functions.user'"
 		>&2 printf "%27s%s\n" "" "- \"int\" will integrate selected applications into the PieHelper framework"
-		>&2 printf "%27s%s\n" "" "  PieHelper integration will create management scripts and a default CIFS mountpoint"
+		>&2 printf "%27s%s\n" "" "  PieHelper integration will create management scripts and a default CIFS mountpoint if defined"
 		>&2 printf "%29s%s\n" "" "- Applications with state 'Unused' or a minimum state of 'Integrated' will be skipped"
 		>&2 printf "%27s%s\n" "" "- \"unint\" will unintegrate selected applications"
 		>&2 printf "%27s%s\n" "" "  Removing PieHelper integration will remove tty allocation, management scripts and the CIFS mountpoint if default"
@@ -326,9 +326,9 @@ do
 		>&2 printf "%25s%s\n" "" "- The default is not to pass a user name option to a routine"
 		>&2 printf "%23s%s\n" "" "-p allows specifying a package name [pkg] as a routine option"
 		>&2 printf "%25s%s\n" "" "- [pkg] can be :"
-		>&2 printf "%27s%s\n" "" "- A valid package name for packaged applications"
+		>&2 printf "%27s%s\n" "" "- A valid package name if [app] is a packaged application"
 		>&2 printf "%27s%s\n" "" "- 'prompt' which will prompt for the value to use"
-		>&2 printf "%27s%s\n" "" "- 'none' for unpackaged applications"
+		>&2 printf "%27s%s\n" "" "- 'none' for if [app] is an unpackaged application"
 		>&2 printf "%25s%s\n" "" "- Passing this option is optional"
 		>&2 printf "%25s%s\n" "" "- The default is not to pass a package option to a routine"
 		>&2 printf "%23s%s\n" "" "-c allows specifying a start command [cmd] as a routine option"
@@ -358,7 +358,7 @@ OPTIND="${PH_OLDOPTIND}"
 	( -n "${PH_LIST}" && -n "${PH_APP}" ) || \
 	( "${PH_ROUTINE}" != @(int|move) && "${#PH_APP_STR_TTYS[@]}" -gt "0" ) || \
 	( "${PH_ROUTINE}" != "sup" && ( "${#PH_APP_CMDS[@]}" -gt "0" || "${#PH_APP_USERS[@]}" -gt "0" )) ||  \
-	( "${PH_ROUTINE}" == "sup" && "${#PH_APP_CMDS[@]}" -ne "${#PH_APP_USERS[@]}" || )) ||  \
+	( "${PH_ROUTINE}" == "sup" && "${#PH_APP_CMDS[@]}" -ne "${#PH_APP_USERS[@]}" ) ||  \
 	( "${PH_ROUTINE}" != @(sup|inst|uninst) && "${#PH_APP_PKGS[@]}" -gt "0" ) ]] &&  \
 	(! confapps_ph.sh -h) && \
 	unset PH_APP_CMDS PH_APP_USERS PH_APP_PKGS PH_APP_STR_TTYS && \

@@ -1,4 +1,6 @@
-* split confapps_ph.sh into confapps_ph.sh and confttys_ph.sh
+* split confapps_ph.sh into confapps_ph.sh and confttys_ph.sh and change menus to use new script
+* add check for no routine options used for apps not Unused and Out-of-scope
+* change confapps_ph.sh to allow add mention -a option mainly but not exclusively for Unused Out-of-scope applications
 * handle having predefined installation states in default_apps_* files
 * rename other CTRL options such as NUM_CTRL etc EVERYWHERE.... sigh
 * finish colour of scripts plus add examples to all scripts
