@@ -7,17 +7,17 @@ declare PH_i
 
 PH_i=""
 
-[[ "$#" -gt "0" ]] && \
+[[ "${#}" -gt "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-for PH_i in $("$PH_SUDO" ls -lA "${PH_TMP_DIR}/" 2>/dev/null | nawk 'NR == "1" { \
+for PH_i in $("${PH_SUDO}" ls -lA "${PH_TMP_DIR}/" 2>/dev/null | nawk 'NR == "1" { \
                 next \
         } \
         $NF !~ /^\.(gitignore|first_run|reported_issues)/ { \
                 printf " " $NF \
         }')
 do
-        ! "$PH_SUDO" rm "${PH_TMP_DIR}/${PH_i}" >/dev/null 2>&1 && \
+        ! "${PH_SUDO}" rm "${PH_TMP_DIR}/${PH_i}" >/dev/null 2>&1 && \
                 ph_set_result -a -m "Could not clean temporary directory (Error trying to remove '${PH_TMP_DIR}/${PH_i}')"
 done
 return 0
@@ -35,8 +35,8 @@ declare -i PH_OLDOPTIND
 declare -i PH_QUIESCE
 declare -i PH_REMOVE_AS_ROOT
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_PARAMS=""
 PH_FILE_DEST=""
 PH_FILE_TYPE=""
@@ -49,88 +49,88 @@ OPTIND="1"
 
 while getopts :d:t:qr PH_OPTION
 do
-        case "$PH_OPTION" in d)
-		[[ -n "$PH_FILE_DEST" || -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+        case "${PH_OPTION}" in d)
+		[[ -n "${PH_FILE_DEST}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_FILE_DEST="$OPTARG" ;;
+		PH_FILE_DEST="${OPTARG}" ;;
                              t)
-		[[ -n "$PH_FILE_TYPE" || -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_FILE_TYPE}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_FILE_TYPE="$OPTARG" ;;
+		PH_FILE_TYPE="${OPTARG}" ;;
                              q)
-		[[ -z "$PH_PARAMS" ]] && \
+		[[ -z "${PH_PARAMS}" ]] && \
 			PH_PARAMS="-q" || \
 			PH_PARAMS="${PH_PARAMS} -q"
 		PH_QUIESCE="0" ;;
                              r)
-		[[ -z "$PH_PARAMS" ]] && \
+		[[ -z "${PH_PARAMS}" ]] && \
 			PH_PARAMS="-r" || \
 			PH_PARAMS="${PH_PARAMS} -r"
 		PH_REMOVE_AS_ROOT="0" ;;
 			     *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
         esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "$PH_FILE_DEST" || -z "$PH_FILE_TYPE" || \
-	( "$PH_FILE_TYPE" == "link" && ! -L "$PH_FILE_DEST" ) || \
-	( "$PH_FILE_TYPE" == "directory" && ! -d "$PH_FILE_DEST" ) || \
-	( "$PH_FILE_TYPE" == "file" && ( ! -f "$PH_FILE_DEST" || -L "$PH_FILE_DEST" || -s "$PH_FILE_DEST" )) || \
-	"$#" -lt "4" || "$#" -gt "6" ]] && \
+[[ -z "${PH_FILE_DEST}" || -z "${PH_FILE_TYPE}" || \
+	( "${PH_FILE_TYPE}" == "link" && ! -L "${PH_FILE_DEST}" ) || \
+	( "${PH_FILE_TYPE}" == "directory" && ! -d "${PH_FILE_DEST}" ) || \
+	( "${PH_FILE_TYPE}" == "file" && ( ! -f "${PH_FILE_DEST}" || -L "${PH_FILE_DEST}" || -s "${PH_FILE_DEST}" )) || \
+	"${#}" -lt "4" || "${#}" -gt "6" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-[[ "$PH_QUIESCE" -eq "1" ]] && \
+[[ "${PH_QUIESCE}" -eq "1" ]] && \
         printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing ${PH_FILE_TYPE} " "'${PH_FILE_DEST}'"
-if [[ ! -e "$PH_FILE_DEST" ]]
+if [[ ! -e "${PH_FILE_DEST}" ]]
 then
-	[[ "$PH_QUIESCE" -eq "1" ]] && \
+	[[ "${PH_QUIESCE}" -eq "1" ]] && \
 		ph_run_with_rollback -c true -m "Nothing to do"
 	return 0
 fi
-case "$PH_FILE_TYPE" in link)
-	PH_FILE_SOURCE="$(ph_get_link_target "$PH_FILE_DEST")"
-        [[ "$PH_FILE_SOURCE" != /* ]] && \
+case "${PH_FILE_TYPE}" in link)
+	PH_FILE_SOURCE="$(ph_get_link_target "${PH_FILE_DEST}")"
+        [[ "${PH_FILE_SOURCE}" != /* ]] && \
                 PH_FILE_SOURCE="${PH_FILE_DEST%/*}/${PH_FILE_SOURCE}"
-        if [[ "$PH_REMOVE_AS_ROOT" -eq "0" ]]
+        if [[ "${PH_REMOVE_AS_ROOT}" -eq "0" ]]
         then
-                "$PH_SUDO" unlink "$PH_FILE_DEST" 2>/dev/null
+                "${PH_SUDO}" unlink "${PH_FILE_DEST}" 2>/dev/null
         else
-                unlink "$PH_FILE_DEST" 2>/dev/null
+                unlink "${PH_FILE_DEST}" 2>/dev/null
         fi ;;
                         directory)
-        PH_FILE_SOURCE="$PH_FILE_DEST"
-        if [[ "$PH_REMOVE_AS_ROOT" -eq "0" ]]
+        PH_FILE_SOURCE="${PH_FILE_DEST}"
+        if [[ "${PH_REMOVE_AS_ROOT}" -eq "0" ]]
         then
-                "$PH_SUDO" rm -r "$PH_FILE_DEST" 2>/dev/null
+                "${PH_SUDO}" rm -r "${PH_FILE_DEST}" 2>/dev/null
         else
-                rm -r "$PH_FILE_DEST" 2>/dev/null
+                rm -r "${PH_FILE_DEST}" 2>/dev/null
         fi ;;
                         file)
-        PH_FILE_SOURCE="$PH_FILE_DEST"
-        if [[ "$PH_REMOVE_AS_ROOT" -eq "0" ]]
+        PH_FILE_SOURCE="${PH_FILE_DEST}"
+        if [[ "${PH_REMOVE_AS_ROOT}" -eq "0" ]]
         then
-                "$PH_SUDO" rm "$PH_FILE_DEST" 2>/dev/null
+                "${PH_SUDO}" rm "${PH_FILE_DEST}" 2>/dev/null
         else
-                rm "$PH_FILE_DEST" 2>/dev/null
+                rm "${PH_FILE_DEST}" 2>/dev/null
         fi ;;
 esac
-if [[ "$?" -eq "0" ]]
+if [[ "${?}" -eq "0" ]]
 then
         ph_add_value_to_param -p PH_CREATE_EMPTY_FILES -v "${PH_FILE_DEST}'${PH_FILE_TYPE}'${PH_FILE_SOURCE}'${PH_PARAMS}"
-        [[ "$PH_QUIESCE" -eq "1" ]] && \
+        [[ "${PH_QUIESCE}" -eq "1" ]] && \
                 ph_run_with_rollback -c true
         return 0
 else
 	ph_set_result -m "An error occurred trying to remove ${PH_FILE_TYPE} '${PH_FILE_DEST}'"
-        [[ "$PH_QUIESCE" -eq "1" ]] && \
+        [[ "${PH_QUIESCE}" -eq "1" ]] && \
 		ph_run_with_rollback -c false -m "Could not remove"
         return 1
 fi
@@ -148,8 +148,8 @@ declare -i PH_OLDOPTIND
 declare -i PH_QUIESCE
 declare -i PH_CREATE_AS_ROOT
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_PARAMS=""
 PH_FILE_DEST=""
 PH_FILE_SOURCE=""
@@ -162,102 +162,102 @@ OPTIND="1"
 
 while getopts :d:s:t:qr PH_OPTION
 do
-        case "$PH_OPTION" in d)
-		[[ -n "$PH_FILE_DEST" || -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+        case "${PH_OPTION}" in d)
+		[[ -n "${PH_FILE_DEST}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_FILE_DEST="$OPTARG" ;;
+		PH_FILE_DEST="${OPTARG}" ;;
                             s)
-		[[ -n "$PH_FILE_SOURCE" || -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_FILE_SOURCE}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_FILE_SOURCE="$OPTARG" ;;
+		PH_FILE_SOURCE="${OPTARG}" ;;
                             t)
-		[[ -n "$PH_FILE_TYPE" || -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_FILE_TYPE}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_FILE_TYPE="$OPTARG" ;;
+		PH_FILE_TYPE="${OPTARG}" ;;
                             q)
-		[[ -z "$PH_PARAMS" ]] && \
+		[[ -z "${PH_PARAMS}" ]] && \
 			PH_PARAMS="-q" || \
 			PH_PARAMS="${PH_PARAMS} -q"
 		PH_QUIESCE="0" ;;
                             r)
-		[[ -z "$PH_PARAMS" ]] && \
+		[[ -z "${PH_PARAMS}" ]] && \
 			PH_PARAMS="-r" || \
 			PH_PARAMS="${PH_PARAMS} -r"
 		PH_CREATE_AS_ROOT="0" ;;
 			    *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
         esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "$PH_FILE_DEST" || -z "$PH_FILE_TYPE" || ( "$PH_FILE_TYPE" == "link" && -z "$PH_FILE_SOURCE" ) || \
-	( -e "$PH_FILE_DEST" && (( "$PH_FILE_TYPE" == "directory" && ! -d "$PH_FILE_DEST" ) || 
-	( "$PH_FILE_TYPE" == "link" && ! -L "$PH_FILE_DEST" ) || \
-	( "$PH_FILE_TYPE" == "file" && ( ! -f "$PH_FILE_DEST" || -L "$PH_FILE_DEST" )))) || \
-	"$#" -lt "4" || "$#" -gt "8" ]] && \
+[[ -z "${PH_FILE_DEST}" || -z "${PH_FILE_TYPE}" || ( "${PH_FILE_TYPE}" == "link" && -z "${PH_FILE_SOURCE}" ) || \
+	( -e "${PH_FILE_DEST}" && (( "${PH_FILE_TYPE}" == "directory" && ! -d "${PH_FILE_DEST}" ) || 
+	( "${PH_FILE_TYPE}" == "link" && ! -L "${PH_FILE_DEST}" ) || \
+	( "${PH_FILE_TYPE}" == "file" && ( ! -f "${PH_FILE_DEST}" || -L "${PH_FILE_DEST}" )))) || \
+	"${#}" -lt "4" || "${#}" -gt "8" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-[[ "$PH_QUIESCE" -eq "1" ]] && \
+[[ "${PH_QUIESCE}" -eq "1" ]] && \
         printf "%8s%s\033[1;33m%s\033[0;0m" "" "--> Creating ${PH_FILE_TYPE} " "'${PH_FILE_DEST}'"
-if [[ ( "$PH_FILE_TYPE" == "link" && -e "$PH_FILE_DEST" && "$PH_FILE_SOURCE" == "$(ph_get_link_target "$PH_FILE_DEST")" ) || \
-	( "$PH_FILE_TYPE" == @(directory|file) && -e "$PH_FILE_DEST" ) ]]
+if [[ ( "${PH_FILE_TYPE}" == "link" && -e "${PH_FILE_DEST}" && "${PH_FILE_SOURCE}" == "$(ph_get_link_target "${PH_FILE_DEST}")" ) || \
+	( "${PH_FILE_TYPE}" == @(directory|file) && -e "${PH_FILE_DEST}" ) ]]
 then
-	[[ "$PH_QUIESCE" -eq "1" ]] && \
+	[[ "${PH_QUIESCE}" -eq "1" ]] && \
 		printf "\n" && \
 		ph_run_with_rollback -c true -m "Nothing to do"
 	return 0
 fi
-case "$PH_FILE_TYPE" in link)
-	[[ "$PH_QUIESCE" -eq "1" ]] && \
+case "${PH_FILE_TYPE}" in link)
+	[[ "${PH_QUIESCE}" -eq "1" ]] && \
         	printf "%s\033[1;33m%s\033[0;0m\n" " to " "'${PH_FILE_SOURCE}'"
-        if [[ "$PH_CREATE_AS_ROOT" -eq "0" ]]
+        if [[ "${PH_CREATE_AS_ROOT}" -eq "0" ]]
         then
-                "$PH_SUDO" ln -s "$PH_FILE_SOURCE" "$PH_FILE_DEST" 2>/dev/null
+                "${PH_SUDO}" ln -s "${PH_FILE_SOURCE}" "${PH_FILE_DEST}" 2>/dev/null
         else
-                ln -s "$PH_FILE_SOURCE" "$PH_FILE_DEST" 2>/dev/null
+                ln -s "${PH_FILE_SOURCE}" "${PH_FILE_DEST}" 2>/dev/null
         fi ;;
                         directory)
-        [[ "$PH_QUIESCE" -eq "1" ]] && \
+        [[ "${PH_QUIESCE}" -eq "1" ]] && \
                 printf "\n"
-        if [[ "$PH_CREATE_AS_ROOT" -eq "0" ]]
+        if [[ "${PH_CREATE_AS_ROOT}" -eq "0" ]]
         then
-                "$PH_SUDO" mkdir -p "$PH_FILE_DEST" 2>/dev/null
+                "${PH_SUDO}" mkdir -p "${PH_FILE_DEST}" 2>/dev/null
         else
-                mkdir -p "$PH_FILE_DEST" 2>/dev/null
+                mkdir -p "${PH_FILE_DEST}" 2>/dev/null
         fi ;;
                         file)
-        [[ "$PH_QUIESCE" -eq "1" ]] && \
+        [[ "${PH_QUIESCE}" -eq "1" ]] && \
                 printf "\n"
-        if [[ "$PH_CREATE_AS_ROOT" -eq "0" ]]
+        if [[ "${PH_CREATE_AS_ROOT}" -eq "0" ]]
         then
-                "$PH_SUDO" touch "$PH_FILE_DEST" 2>/dev/null
+                "${PH_SUDO}" touch "${PH_FILE_DEST}" 2>/dev/null
         else
-                touch "$PH_FILE_DEST" 2>/dev/null
+                touch "${PH_FILE_DEST}" 2>/dev/null
         fi ;;
 esac
-if [[ "$?" -eq "0" ]]
+if [[ "${?}" -eq "0" ]]
 then
         ph_add_value_to_param -p PH_REMOVE_EMPTY_FILES -v "${PH_FILE_DEST}'${PH_FILE_TYPE}'${PH_PARAMS}"
-        [[ "$PH_QUIESCE" -eq "1" ]] && \
+        [[ "${PH_QUIESCE}" -eq "1" ]] && \
                 ph_run_with_rollback -c true
         return 0
 else
-	if [[ "$PH_FILE_TYPE" == "link" ]]
+	if [[ "${PH_FILE_TYPE}" == "link" ]]
 	then
 		ph_set_result -m "An error occurred creating ${PH_FILE_TYPE} '${PH_FILE_DEST}' to '${PH_FILE_SOURCE}'"
 	else
 		ph_set_result -m "An error occurred creating ${PH_FILE_TYPE} '${PH_FILE_DEST}'"
 	fi
-        [[ "$PH_QUIESCE" -eq "1" ]] && \
+        [[ "${PH_QUIESCE}" -eq "1" ]] && \
 		ph_run_with_rollback -c false -m "Could not create"
         return 1
 fi
@@ -1237,8 +1237,8 @@ declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_i=""
 PH_APP=""
 PH_TYPE=""
@@ -1256,68 +1256,69 @@ OPTIND="1"
 
 while getopts :a:t:kldcms PH_OPTION
 do
-        case "$PH_OPTION" in a)
-		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+        case "${PH_OPTION}" in a)
+		[[ -n "${PH_APP}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-                PH_APP="$OPTARG" ;;
+                PH_APP="${OPTARG}" ;;
                              t)
-		[[ -n "$PH_TYPE" && "$OPTARG" != @(support|integrate|both) ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_TYPE}" && "$OPTARG" != @(support|integrate|both) ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-                PH_TYPE="$OPTARG" ;;
+                PH_TYPE="${OPTARG}" ;;
                              c)
-		[[ -n "$PH_CONF_FILE" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_CONF_FILE}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
                 PH_CONF_FILE="yes" ;;
                              l)
-		[[ -n "$PH_ALLOWEDS" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_ALLOWEDS}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
                 PH_ALLOWEDS="yes" ;;
                              d)
-		[[ -n "$PH_DEFAULTS" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_DEFAULTS}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
                 PH_DEFAULTS="yes" ;;
                              m)
-		[[ -n "$PH_MENUS" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_MENUS}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
                 PH_MENUS="yes" ;;
                              s)
-		[[ -n "$PH_SCRIPTS" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_SCRIPTS}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
                 PH_SCRIPTS="yes" ;;
                              k)
-		[[ -n "$PH_CIFS_MPT" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_CIFS_MPT}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
                 PH_CIFS_MPT="yes" ;;
 			     *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
         esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "$PH_APP" || "$#" -lt "4" || (( -n "$PH_CIFS_MPT" || -n "$PH_SCRIPTS" || -n "$PH_ALLOWEDS" || -n "$PH_DEFAULTS" || -n "$PH_CONF_FILE" || -n "$PH_MENUS" ) && ( -n "$PH_TYPE" )) || \
-	( -z "$PH_CIFS_MPT" && -z "$PH_SCRIPTS" && -z "$PH_ALLOWEDS" && -z "$PH_DEFAULTS" && -z "$PH_CONF_FILE" && -z "$PH_MENUS" && -z "$PH_TYPE" ) ]] && \
+[[ -z "${PH_APP}" || "${#}" -lt "4" || (( -n "${PH_CIFS_MPT}" || -n "${PH_SCRIPTS}" || -n "${PH_ALLOWEDS}" || -n "${PH_DEFAULTS}" || \
+	-n "${PH_CONF_FILE}" || -n "${PH_MENUS}" ) && ( -n "${PH_TYPE}" )) || ( -z "${PH_CIFS_MPT}" && -z "${PH_SCRIPTS}" && -z "${PH_ALLOWEDS}" && \
+	-z "${PH_DEFAULTS}" && -z "${PH_CONF_FILE}" && -z "${PH_MENUS}" && -z "${PH_TYPE}" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-case "$PH_TYPE" in support)
+case "${PH_TYPE}" in support)
 	PH_CONF_FILE="yes"
 	PH_ALLOWEDS="yes"
 	PH_DEFAULTS="yes"
@@ -1335,7 +1336,7 @@ case "$PH_TYPE" in support)
 esac
 for PH_i in PH_CONF_FILE PH_ALLOWEDS PH_DEFAULTS PH_MENUS PH_SCRIPTS PH_CIFS_MPT
 do
-	case "$PH_i" in *CONF_FILE)
+	case "${PH_i}" in *CONF_FILE)
 		PH_PARAM="-c" ;;
 			*ALLOWEDS)
 		PH_PARAM="-l" ;;
@@ -1352,8 +1353,8 @@ do
 	then
 		ph_run_with_rollback -c "ph_create_app_$(echo -n "${PH_i:3}" | tr "[:upper:]" "[:lower:]") '${PH_APP}'" || \
 			return 1
-		[[ -z "$PH_PARAMS" ]] && \
-			PH_PARAMS="$PH_PARAM" || \
+		[[ -z "${PH_PARAMS}" ]] && \
+			PH_PARAMS="${PH_PARAM}" || \
 			PH_PARAMS="${PH_PARAMS} ${PH_PARAM}"
 	fi
 done
@@ -1678,21 +1679,21 @@ function ph_remove_app_conf_file {
 
 declare PH_APP
 
-PH_APP="$1"
+PH_APP="${1}"
 
-[[ -z "$PH_APP" || "$#" -ne "1" ]] && \
+[[ -z "${PH_APP}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
+printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing ${PH_APP}'s config file " "'${PH_CONF_DIR}/${PH_APP}.conf'"
 if [[ -f "${PH_CONF_DIR}/${PH_APP}.conf" ]]
 then
-	printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing ${PH_APP}'s config file " "'${PH_CONF_DIR}/${PH_APP}.conf'"
 	if ph_run_with_rollback -c "ph_store_file -f '${PH_CONF_DIR}/${PH_APP}.conf'"
 	then
 		if source "${PH_TEMPLATES_DIR}/${PH_APP}_conf.template" >/dev/null 2>&1
 		then
-			ph_add_value_to_param -p PH_CREATE_APPS_CONF_FILE -v "$PH_APP"
+			ph_add_value_to_param -p PH_CREATE_APPS_CONF_FILE -v "${PH_APP}"
 			ph_run_with_rollback -c true && \
-				return "$?"
+				return "${?}"
 		else
 			ph_set_result -m "An error occurred trying to source default ${PH_APP} configuration as '${PH_TEMPLATES_DIR}/${PH_APP}_conf.template'"
 		fi
@@ -1701,7 +1702,7 @@ then
 	fi
 else
 	ph_run_with_rollback -c true -m "Nothing to do" && \
-		return "$?"
+		return "${?}"
 fi
 ph_run_with_rollback -c false -m "Could not remove" || \
 	return 1
@@ -1714,15 +1715,15 @@ declare PH_APP
 declare -i PH_COUNT
 
 PH_i=""
-PH_APP="$1"
+PH_APP="${1}"
 PH_COUNT="0"
 
-[[ -z "$PH_APP" || "$#" -ne "1" ]] && \
+[[ -z "${PH_APP}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-[[ "$PH_APP" == "Controllers" ]] && \
+[[ "${PH_APP}" == "Controllers" ]] && \
 	return 0
-for PH_i in $(nawk -v app="$PH_APP" -v mstring="^${PH_APP}$" 'BEGIN { \
+for PH_i in $(nawk -v app="${PH_APP}" -v mstring="^${PH_APP}$" 'BEGIN { \
 		ORS = " " ; \
 		appl = tolower(substr(app,1,4)) ; \
 		appl2 = "" \
@@ -1740,7 +1741,7 @@ for PH_i in $(nawk -v app="$PH_APP" -v mstring="^${PH_APP}$" 'BEGIN { \
 do
 	if [[ -f "${PH_SCRIPTS_DIR}/${PH_i}" ]]
 	then
-		[[ "$PH_COUNT" -eq "0" ]] && \
+		[[ "${PH_COUNT}" -eq "0" ]] && \
 			printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing the management scripts of " "'${PH_APP}'"
 		((PH_COUNT++))
 		if ! ph_run_with_rollback -c "ph_store_file -f '${PH_SCRIPTS_DIR}/${PH_i}'"
@@ -1751,11 +1752,11 @@ do
 		fi
 	fi
 done
-[[ "$PH_COUNT" -eq "0" ]] && \
+[[ "${PH_COUNT}" -eq "0" ]] && \
 	return 0
-ph_add_value_to_param -p PH_CREATE_APPS_SCRIPTS -v "$PH_APP"
+ph_add_value_to_param -p PH_CREATE_APPS_SCRIPTS -v "${PH_APP}"
 ph_run_with_rollback -c true && \
-	return "$?"
+	return "${?}"
 }
 
 function ph_remove_app_alloweds {
@@ -1765,22 +1766,22 @@ declare PH_APP_DISPLAY
 declare PH_TMP_FILE
 declare -u PH_APPU
 
-PH_APP="$1"
+PH_APP="${1}"
 PH_APP_DISPLAY="${PH_APP} option"
 PH_TMP_FILE=""
 PH_APPU="${PH_APP:0:4}"
 
-[[ -z "$PH_APP" || "$#" -ne "1" ]] && \
+[[ -z "${PH_APP}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-[[ "$PH_APP" == "Controllers" ]] && \
+[[ "${PH_APP}" == "Controllers" ]] && \
 	PH_APP_DISPLAY="controllers settings"
+printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing ${PH_APP_DISPLAY} alloweds from file " "'${PH_CONF_DIR}/options.alloweds'"
 if grep -E "^PH_${PH_APPU}_" "${PH_CONF_DIR}/options.alloweds" >/dev/null 2>&1
 then
-	printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing ${PH_APP_DISPLAY} alloweds from file " "'${PH_CONF_DIR}/options.alloweds'"
 	if ph_run_with_rollback -c "ph_store_file -f '${PH_CONF_DIR}/options.alloweds'"
 	then
-		if PH_TMP_FILE="$("$PH_SUDO" ls -lAt "${PH_TMP_DIR}/options_alloweds_tmp."* 2>/dev/null | nawk '{ \
+		if PH_TMP_FILE="$("${PH_SUDO}" ls -lAt "${PH_TMP_DIR}/options_alloweds_tmp."* 2>/dev/null | nawk '{ \
 				printf $NF ; \
 				exit \
 			}')"
@@ -1790,13 +1791,13 @@ then
 				} { \
 					print ; \
 					next \
-				}' "$PH_TMP_FILE" >"${PH_CONF_DIR}/options.alloweds" 2>/dev/null
+				}' "${PH_TMP_FILE}" >"${PH_CONF_DIR}/options.alloweds" 2>/dev/null
 			then
 				if ph_run_with_rollback -c "ph_secure_pieh -q -f '${PH_CONF_DIR}/options.alloweds'"
 				then
-					ph_add_value_to_param -p PH_CREATE_APPS_ALLOWEDS -v "$PH_APP"
+					ph_add_value_to_param -p PH_CREATE_APPS_ALLOWEDS -v "${PH_APP}"
 					ph_run_with_rollback -c true && \
-						return "$?"
+						return "${?}"
 				fi
 			else
 				ph_set_result -m "An error occurred trying to remove ${PH_APP_DISPLAY} alloweds from file '${PH_CONF_DIR}/options.alloweds'"
@@ -1805,10 +1806,11 @@ then
 			ph_set_result -m "An error occurred trying to remove ${PH_APP_DISPLAY} alloweds from file '${PH_CONF_DIR}/options.alloweds'"
 		fi
 	fi
-	ph_run_with_rollback -c false -m "Could not remove" || \
-		return 1
+	ph_run_with_rollback -c false -m "Could not remove"
+else
+	ph_run_with_rollback -c true -m "Nothing to do"
 fi
-return 0
+return "${?}"
 }
 
 function ph_remove_app_defaults {
@@ -1818,22 +1820,22 @@ declare PH_APP_DISPLAY
 declare PH_TMP_FILE
 declare -u PH_APPU
 
-PH_APP="$1"
+PH_APP="${1}"
 PH_APP_DISPLAY="${PH_APP} option"
 PH_TMP_FILE=""
 PH_APPU="${PH_APP:0:4}"
 
-[[ -z "$PH_APP" || "$#" -ne "1" ]] && \
+[[ -z "${PH_APP}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-[[ "$PH_APP" == "Controllers" ]] && \
+[[ "${PH_APP}" == "Controllers" ]] && \
 	PH_APP_DISPLAY="controller settings"
+printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing ${PH_APP_DISPLAY} defaults from file " "'${PH_CONF_DIR}/options.defaults'"
 if grep -E "^PH_${PH_APPU}_" "${PH_CONF_DIR}/options.defaults" >/dev/null 2>&1
 then
-	printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing ${PH_APP_DISPLAY} defaults from file " "'${PH_CONF_DIR}/options.defaults'"
 	if ph_run_with_rollback -c "ph_store_file -f '${PH_CONF_DIR}/options.defaults'"
 	then
-		if PH_TMP_FILE="$("$PH_SUDO" ls -lAt "${PH_TMP_DIR}/options_defaults_tmp."* 2>/dev/null | nawk '{ \
+		if PH_TMP_FILE="$("${PH_SUDO}" ls -lAt "${PH_TMP_DIR}/options_defaults_tmp."* 2>/dev/null | nawk '{ \
 				printf $NF ; \
 				exit \
 			}')"
@@ -1843,13 +1845,13 @@ then
 				} { \
 					print ; \
 					next \
-				}' "$PH_TMP_FILE" >"${PH_CONF_DIR}/options.defaults" 2>/dev/null
+				}' "${PH_TMP_FILE}" >"${PH_CONF_DIR}/options.defaults" 2>/dev/null
 			then
 				if ph_run_with_rollback -c "ph_secure_pieh -q -f '${PH_CONF_DIR}/options.defaults'"
 				then
-					ph_add_value_to_param -p PH_CREATE_APPS_DEFAULTS -v "$PH_APP"
+					ph_add_value_to_param -p PH_CREATE_APPS_DEFAULTS -v "${PH_APP}"
 					ph_run_with_rollback -c true && \
-						return "$?"
+						return "${?}"
 				fi
 			else
 				ph_set_result -m "An error occurred trying to remove ${PH_APP_DISPLAY} defaults from file '${PH_CONF_DIR}/options.defaults'"
@@ -1858,10 +1860,11 @@ then
 			ph_set_result -m "An error occurred trying to remove ${PH_APP_DISPLAY} defaults from file '${PH_CONF_DIR}/options.defaults'"
 		fi
 	fi
-	ph_run_with_rollback -c false -m "Could not remove" || \
-		return 1
+	ph_run_with_rollback -c false -m "Could not remove"
+else
+	ph_run_with_rollback -c -m "Nothing to do"
 fi
-return 0
+return "${?}"
 }
 
 function ph_get_link_target {
@@ -2219,7 +2222,7 @@ declare -l PH_APPL
 declare -l PH_APPL2
 
 PH_i=""
-PH_APP="$1"
+PH_APP="${1}"
 PH_APP2=""
 PH_SWAP=""
 PH_SCRIPT_PREFIX=""
@@ -2227,20 +2230,20 @@ PH_SCRIPT_SUFFIX=""
 PH_APPL=""
 PH_APPL2=""
 
-[[ -z "$PH_APP" || "$#" -ne "1" ]] && \
+[[ -z "${PH_APP}" || "${#}" -ne "1" ]] && \
         ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-[[ "$PH_APP" == "Controllers" ]] && \
+[[ "${PH_APP}" == "Controllers" ]] && \
 	return 0
 ph_run_with_rollback -c "ph_remove_app_scripts '${PH_APP}'" || \
 	return 1
 printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Creating the management scripts for " "'${PH_APP}'"
-[[ "$PH_APP" == "PieHelper" ]] && \
+[[ "${PH_APP}" == "PieHelper" ]] && \
 	PH_SCRIPT_SUFFIX="PieH"
 for PH_i in start stop restart
 do
 	PH_APPL="${PH_APP:0:4}"
-	PH_SCRIPT_PREFIX="$(echo -n "$PH_i" | cut -c1 | tr "[:lower:]" "[:upper:]")$(echo -n "$PH_i" | cut -c2-)"
+	PH_SCRIPT_PREFIX="$(cut -c1<<<"${PH_i}" | tr "[:lower:]" "[:upper:]")$(cut -c2-<<<"${PH_i}")"
 	if ph_run_with_rollback -c "ph_copy_file -q -s '${PH_TEMPLATES_DIR}/${PH_SCRIPT_PREFIX}Script${PH_SCRIPT_SUFFIX}.template' -d '${PH_SCRIPTS_DIR}/${PH_i}${PH_APPL}.sh'"
 	then
 		if sed -i "s/#PH_APPL#/${PH_APPL}/g;s/#PH_APP#/${PH_APP}/g" "${PH_SCRIPTS_DIR}/${PH_i}${PH_APPL}.sh" 2>/dev/null
@@ -2260,12 +2263,12 @@ for PH_APP2 in $(nawk 'BEGIN { \
 		print $1 \
 	}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null)
 do
-	[[ "$PH_APP" == "$PH_APP2" ]] && \
+	[[ "${PH_APP}" == "${PH_APP2}" ]] && \
 		continue
-	[[ "$PH_APP" == "PieHelper" ]] && \
+	[[ "${PH_APP}" == "PieHelper" ]] && \
 		PH_SCRIPT_SUFFIX="fromPieH" || \
 		PH_SCRIPT_SUFFIX=""
-	[[ "$PH_APP2" == "PieHelper" ]] && \
+	[[ "${PH_APP2}" == "PieHelper" ]] && \
 		PH_SCRIPT_SUFFIX="toPieH" || \
 		PH_SCRIPT_SUFFIX=""
         PH_APPL2="${PH_APP2:0:4}"
@@ -2273,7 +2276,8 @@ do
         do
 		if ph_run_with_rollback -c "ph_copy_file -q -s '${PH_TEMPLATES_DIR}/Move${PH_SCRIPT_SUFFIX}Script.template' -d '${PH_SCRIPTS_DIR}/${PH_APPL}to${PH_APPL2}.sh'"
 		then
-			if sed -i "s/#PH_APPL#/${PH_APPL}/g;s/#PH_APP#/${PH_APP}/g;s/#PH_APPL2#/${PH_APPL2}/g;s/#PH_APP2#/${PH_APP2}/g" "${PH_SCRIPTS_DIR}/${PH_APPL}to${PH_APPL2}.sh" 2>/dev/null
+			if sed -i "s/#PH_APPL#/${PH_APPL}/g;s/#PH_APP#/${PH_APP}/g;s/#PH_APPL2#/${PH_APPL2}/g;s/#PH_APP2#/${PH_APP2}/g" \
+				"${PH_SCRIPTS_DIR}/${PH_APPL}to${PH_APPL2}.sh" 2>/dev/null
 			then
 				ph_run_with_rollback -c "ph_secure_pieh -q -f '${PH_SCRIPTS_DIR}/${PH_APPL}to${PH_APPL2}.sh'" && \
 					continue
@@ -2285,17 +2289,17 @@ do
 		else
 			break
 		fi
-                PH_SWAP="$PH_APP" ; PH_APP="$PH_APP2" ; PH_APP2="$PH_SWAP"
-                PH_SWAP="$PH_APPL" ; PH_APPL="$PH_APPL2" ; PH_APPL2="$PH_SWAP"
-		[[ "$PH_i" -eq "2" ]] && \
+                PH_SWAP="${PH_APP}" ; PH_APP="${PH_APP2}" ; PH_APP2="${PH_SWAP}"
+                PH_SWAP="${PH_APPL}" ; PH_APPL="${PH_APPL2}" ; PH_APPL2="${PH_SWAP}"
+		[[ "${PH_i}" -eq "2" ]] && \
 			continue 2
 	done
 	ph_run_with_rollback -c false -m "Could not create" || \
 		return 1
 done
-ph_add_value_to_param -p PH_REMOVE_APPS_SCRIPTS -v "$PH_APP"
+ph_add_value_to_param -p PH_REMOVE_APPS_SCRIPTS -v "${PH_APP}"
 ph_run_with_rollback -c true && \
-	return "$?"
+	return "${?}"
 }
 
 function ph_create_app_conf_file {
@@ -2305,18 +2309,18 @@ declare PH_APP_DISPLAY
 declare PH_SOURCE_FILE
 declare -u PH_APPU
 
-PH_APP="$1"
+PH_APP="${1}"
 PH_APP_DISPLAY=""
 PH_SOURCE_FILE="${PH_APP}_conf"
 PH_APPU="${PH_APP:0:4}"
 
-[[ -z "$PH_APP" || "$#" -ne "1" ]] && \
+[[ -z "${PH_APP}" || "${#}" -ne "1" ]] && \
         ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-[[ "$(cut -f1 "${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null ; echo "$?")" -ne "0" && \
-	"$PH_APP" != "Controllers" ]] && \
+[[ "$(cut -f1 "${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null ; echo "${?}")" -ne "0" && \
+	"${PH_APP}" != "Controllers" ]] && \
 	PH_SOURCE_FILE="OOSapp_conf"
-if [[ "$PH_APP" == "Controllers" ]]
+if [[ "${PH_APP}" == "Controllers" ]]
 then
 	PH_APP_DISPLAY="controller settings"
 else
@@ -2333,9 +2337,9 @@ then
 		then
 			if source "${PH_CONF_DIR}/${PH_APP}.conf" >/dev/null 2>&1
 			then
-				ph_add_value_to_param -p PH_REMOVE_APPS_CONF_FILE -v "$PH_APP"
+				ph_add_value_to_param -p PH_REMOVE_APPS_CONF_FILE -v "${PH_APP}"
 				ph_run_with_rollback -c true && \
-					return "$?"
+					return "${?}"
 			else
 				ph_set_result -m "An error occurred trying to source '${PH_APP} configuration as '${PH_CONF_DIR}/${PH_APP}.conf'"
 			fi
