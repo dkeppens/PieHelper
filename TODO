@@ -1,3 +1,4 @@
+* split confapps_ph.sh into confapps_ph.sh and confttys_ph.sh
 * handle having predefined installation states in default_apps_* files
 * rename other CTRL options such as NUM_CTRL etc EVERYWHERE.... sigh
 * finish colour of scripts plus add examples to all scripts
