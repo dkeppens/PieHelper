@@ -83,7 +83,7 @@ OPTARG="${PH_OLDOPTARG}"
 [[ -z "${PH_FILE_DEST}" || -z "${PH_FILE_TYPE}" || \
 	( "${PH_FILE_TYPE}" == "link" && ! -L "${PH_FILE_DEST}" ) || \
 	( "${PH_FILE_TYPE}" == "directory" && ! -d "${PH_FILE_DEST}" ) || \
-	( "${PH_FILE_TYPE}" == "file" && ( ! -f "${PH_FILE_DEST}" || -L "${PH_FILE_DEST}" || -s "${PH_FILE_DEST}" )) || \
+	( "${PH_FILE_TYPE}" == "file" && (! -f "${PH_FILE_DEST}" || -L "${PH_FILE_DEST}" || -s "${PH_FILE_DEST}" )) || \
 	"${#}" -lt "4" || "${#}" -gt "6" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
@@ -1863,7 +1863,7 @@ then
 	fi
 	ph_run_with_rollback -c false -m "Could not remove"
 else
-	ph_run_with_rollback -c -m "Nothing to do"
+	ph_run_with_rollback -c true -m "Nothing to do"
 fi
 return "${?}"
 }
