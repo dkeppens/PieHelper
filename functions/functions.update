@@ -265,7 +265,7 @@ fi
 
 function ph_initialize_rollback {
 
-[[ "$#" -gt "0" ]] && \
+[[ "${#}" -gt "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 PH_ROLLBACK_USED="no"
@@ -286,8 +286,8 @@ declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_OPTION=""
 
 OPTIND="1"
@@ -295,25 +295,25 @@ PH_RESULT_TYPE_USED="Normal"
 
 while getopts :t PH_OPTION
 do
-        case "$PH_OPTION" in t)
-		[[ -n "$PH_RESULT_TYPE_USED" || -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+        case "${PH_OPTION}" in t)
+		[[ -n "${PH_RESULT_TYPE_USED}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
                 PH_RESULT_TYPE_USED="Total" ;;
 			     *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
         esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ "$#" -gt "1" ]] && \
+[[ "${#}" -gt "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-if [[ "$PH_RESULT_TYPE_USED" == "Total" ]]
+if [[ "${PH_RESULT_TYPE_USED}" == "Total" ]]
 then
         PH_TOTAL_RESULT="SUCCESS"
         PH_TOTAL_RESULT_COUNT="0"
@@ -335,8 +335,8 @@ declare -i PH_RET_CODE
 declare -i PH_RET_CODE_RECVD_FLAG
 declare -i PH_RECVD_FLAG
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_FIRST=""
 PH_OPTION=""
 PH_RET_CODE="0"
@@ -348,82 +348,82 @@ PH_RESULT_TYPE_USED="Normal"
 
 while getopts :r:m:taw PH_OPTION
 do
-	case "$PH_OPTION" in r)
-		[[ "$PH_RET_CODE_RECVD_FLAG" -eq "0" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+	case "${PH_OPTION}" in r)
+		[[ "${PH_RET_CODE_RECVD_FLAG}" -eq "0" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
 		PH_RET_CODE_RECVD_FLAG="0"
-		PH_RET_CODE="$OPTARG" ;;
+		PH_RET_CODE="${OPTARG}" ;;
 			     m)
-		[[ -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
 		PH_RECVD_FLAG="0"
-		PH_RESULT_MSG="$OPTARG" ;;
+		PH_RESULT_MSG="${OPTARG}" ;;
 			     t)
 		PH_RESULT_TYPE_USED="Total" ;;
 			     a)
 		PH_RECVD_FLAG="0"
 		PH_RESULT="Abort"
-		PH_RESULT_TYPE_USED="$PH_RESULT" ;;
+		PH_RESULT_TYPE_USED="${PH_RESULT}" ;;
 			     w)
 		PH_RECVD_FLAG="0"
 		PH_RESULT="Warning"
-		PH_RESULT_TYPE_USED="$PH_RESULT" ;;
+		PH_RESULT_TYPE_USED="${PH_RESULT}" ;;
 			     *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		>&2 printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" 
 		exit 1 ;;
 	esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ ( "$PH_RET_CODE_RECVD_FLAG" -eq "1" && "$PH_RECVD_FLAG" -eq "1" )  || "$#" -gt "6" ]] && \
+[[ ( "${PH_RET_CODE_RECVD_FLAG}" -eq "1" && "${PH_RECVD_FLAG}" -eq "1" )  || "${#}" -gt "6" ]] && \
         >&2 printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Incorrect arguments provided to function '${FUNCNAME[0]}'" && \
 	exit 1
 
-case "$PH_RESULT_TYPE_USED" in Warning|Abort|Normal)
+case "${PH_RESULT_TYPE_USED}" in Warning|Abort|Normal)
 		declare -n PH_RESULT_TYPE="PH_RESULT" ;;
 			       Total)
 		declare -n PH_RESULT_TYPE="PH_TOTAL_RESULT" ;;
 esac
-if [[ "$PH_RET_CODE_RECVD_FLAG" -eq "0" ]]
+if [[ "${PH_RET_CODE_RECVD_FLAG}" -eq "0" ]]
 then
-	if [[ "$PH_RESULT_TYPE_USED" == "Total" ]]
+	if [[ "${PH_RESULT_TYPE_USED}" == "Total" ]]
 	then
-		[[ "$PH_TOTAL_RESULT_COUNT" -eq "0" ]] && \
+		[[ "${PH_TOTAL_RESULT_COUNT}" -eq "0" ]] && \
 			PH_FIRST="yes"
 		((PH_TOTAL_RESULT_COUNT++))
 	else
-		[[ "$PH_RESULT_COUNT" -eq "0" ]] && \
+		[[ "${PH_RESULT_COUNT}" -eq "0" ]] && \
 			PH_FIRST="yes"
 		((PH_RESULT_COUNT++))
 	fi
-	case "$PH_RET_CODE" in 0)
-		[[ "$PH_RESULT_TYPE" == "FAILED" ]] && \
+	case "${PH_RET_CODE}" in 0)
+		[[ "${PH_RESULT_TYPE}" == "FAILED" ]] && \
 			PH_RESULT_TYPE="PARTIALLY FAILED" ;;
 			       *)
-		if [[ "$PH_FIRST" == "yes" ]]
+		if [[ "${PH_FIRST}" == "yes" ]]
 		then
-			[[ "$PH_RESULT_TYPE" == @(SUCCESS|Warning) ]] && \
+			[[ "${PH_RESULT_TYPE}" == @(SUCCESS|Warning) ]] && \
 				PH_RESULT_TYPE="FAILED"
 		else
-			[[ "$PH_RESULT_TYPE" == @(SUCCESS|Warning) ]] && \
+			[[ "${PH_RESULT_TYPE}" == @(SUCCESS|Warning) ]] && \
 				PH_RESULT_TYPE="PARTIALLY FAILED"
 		fi ;;
 	esac
 fi
 PH_RESULT_TYPE_USED="Normal"
 unset -n PH_RESULT_TYPE
-if [[ "$PH_RESULT" == "Abort" ]]
+if [[ "${PH_RESULT}" == "Abort" ]]
 then
 	ph_clean_tmp_dir
 	ph_show_result
-	return "$?"
+	return "${?}"
 fi
 return 0
 }
@@ -437,8 +437,8 @@ declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 declare -i PH_RESULT_INDENT
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_RESULT_PREFIX="Result > "
 PH_RESULT_SUFFIX=""
 PH_OPTION=""
@@ -448,53 +448,53 @@ OPTIND="1"
 
 while getopts :i:t PH_OPTION
 do
-        case "$PH_OPTION" in i)
-		[[ "$PH_RESULT_INDENT" -gt "0" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+        case "${PH_OPTION}" in i)
+		[[ "${PH_RESULT_INDENT}" -gt "0" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-                PH_RESULT_INDENT="$OPTARG" ;;
+                PH_RESULT_INDENT="${OPTARG}" ;;
                              t)
                 PH_RESULT_TYPE_USED="Total" ;;
                              *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		>&2 printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" 
 		exit 1 ;;
         esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ "$#" -gt "3" ]] && \
+[[ "${#}" -gt "3" ]] && \
         >&2 printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Incorrect arguments provided to function '${FUNCNAME[0]}'" && \
 	exit 1
 
-if [[ "$PH_RESULT_TYPE_USED" == @(Warning|Abort|Normal) ]]
+if [[ "${PH_RESULT_TYPE_USED}" == @(Warning|Abort|Normal) ]]
 then
 	declare -n PH_RESULT_TYPE="PH_RESULT"
 else
 	PH_RESULT_PREFIX="##### Total Result > "
 	declare -n PH_RESULT_TYPE="PH_TOTAL_RESULT"
 fi
-[[ "$PH_RESULT_INDENT" -eq "0" ]] && \
+[[ "${PH_RESULT_INDENT}" -eq "0" ]] && \
 	PH_RESULT_INDENT="2"
-if [[ -n "$PH_RESULT_MSG" ]]
+if [[ -n "${PH_RESULT_MSG}" ]]
 then
 	PH_RESULT_SUFFIX=" : ${PH_RESULT_MSG}"
 fi
-case "$PH_RESULT_TYPE" in Warning)
-	printf "\n%${PH_RESULT_INDENT}s\033[36m%s\033[33m%s%s\033[0m\n\n" "" "$PH_RESULT_PREFIX" "$PH_RESULT_TYPE" "$PH_RESULT_SUFFIX" ;;
+case "${PH_RESULT_TYPE}" in Warning)
+	printf "\n%${PH_RESULT_INDENT}s\033[36m%s\033[33m%s%s\033[0m\n\n" "" "${PH_RESULT_PREFIX}" "${PH_RESULT_TYPE}" "${PH_RESULT_SUFFIX}" ;;
 			  SUCCESS)
-	printf "\n%${PH_RESULT_INDENT}s\033[36m%s\033[32m%s%s\033[0m\n\n" "" "$PH_RESULT_PREFIX" "$PH_RESULT_TYPE" "$PH_RESULT_SUFFIX" ;;
+	printf "\n%${PH_RESULT_INDENT}s\033[36m%s\033[32m%s%s\033[0m\n\n" "" "${PH_RESULT_PREFIX}" "${PH_RESULT_TYPE}" "${PH_RESULT_SUFFIX}" ;;
 			  *)
-	>&2 printf "\n%${PH_RESULT_INDENT}s\033[36m%s\033[1;31m%s%s\033[0;0m\n\n" "" "$PH_RESULT_PREFIX" "$PH_RESULT_TYPE" "$PH_RESULT_SUFFIX" ;;
+	>&2 printf "\n%${PH_RESULT_INDENT}s\033[36m%s\033[1;31m%s%s\033[0;0m\n\n" "" "${PH_RESULT_PREFIX}" "${PH_RESULT_TYPE}" "${PH_RESULT_SUFFIX}" ;;
 esac
 PH_RESULT_MSG=""
 unset -n PH_RESULT_TYPE
-if [[ "$PH_RESULT_TYPE_USED" == "Total" ]]
+if [[ "${PH_RESULT_TYPE_USED}" == "Total" ]]
 then
-	if [[ "$PH_TOTAL_RESULT" == "SUCCESS" ]]
+	if [[ "${PH_TOTAL_RESULT}" == "SUCCESS" ]]
 	then
 		ph_reset_result -t
 		return 0
@@ -503,7 +503,7 @@ then
 		return 1
 	fi
 else
-	if [[ "$PH_RESULT" == @(SUCCESS|Warning) ]]
+	if [[ "${PH_RESULT}" == @(SUCCESS|Warning) ]]
 	then
 		ph_reset_result
 		return 0
@@ -522,8 +522,8 @@ declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_PARAM_USED=""
 PH_VALUE=""
 PH_OPTION=""
@@ -532,35 +532,35 @@ OPTIND="1"
 
 while getopts :p:v: PH_OPTION
 do
-	case "$PH_OPTION" in p)
-		[[ -n "$PH_PARAM_USED" || -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+	case "${PH_OPTION}" in p)
+		[[ -n "${PH_PARAM_USED}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_PARAM_USED="$OPTARG" ;;
+		PH_PARAM_USED="${OPTARG}" ;;
 			     v)
-		[[ -n "$PH_VALUE" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_VALUE}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_VALUE="$OPTARG" ;;
+		PH_VALUE="${OPTARG}" ;;
                              *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ "$#" -ne "4" || -z "$PH_PARAM_USED" ]] && \
+[[ "${#}" -ne "4" || -z "${PH_PARAM_USED}" ]] && \
         ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-[[ "$PH_ROLLBACK_USED" == "no" ]] && \
+[[ "${PH_ROLLBACK_USED}" == "no" ]] && \
 	return 0
-eval "$PH_PARAM_USED"+=\("\"\$PH_VALUE\""\)
-PH_DEPTH_PARAMS+=("$PH_PARAM_USED")
-PH_DEPTH+=("$PH_ROLLBACK_DEPTH")
+eval "${PH_PARAM_USED}"+=\("\"\${PH_VALUE}\""\)
+PH_DEPTH_PARAMS+=("${PH_PARAM_USED}")
+PH_DEPTH+=("${PH_ROLLBACK_DEPTH}")
 return 0
 }
 
@@ -578,7 +578,7 @@ PH_MOVE_SCRIPTS_REGEX=""
 PH_APPL=""
 PH_APPL2=""
 
-[[ "$#" -gt "0" ]] && \
+[[ "${#}" -gt "0" ]] && \
         ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 for PH_APP in $(nawk 'BEGIN { \
@@ -596,12 +596,12 @@ do
 		}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null)
 	do
 		PH_APPL2="${PH_APP2:0:4}"
-		[[ -z "$PH_MOVE_SCRIPTS_REGEX" ]] && \
+		[[ -z "${PH_MOVE_SCRIPTS_REGEX}" ]] && \
 			PH_MOVE_SCRIPTS_REGEX="|${PH_APPL}to${PH_APPL2}" || \
 			PH_MOVE_SCRIPTS_REGEX="${PH_MOVE_SCRIPTS_REGEX}|${PH_APPL}to${PH_APPL2}"
 	done
 done
-echo -n "$PH_MOVE_SCRIPTS_REGEX"
+echo -n "${PH_MOVE_SCRIPTS_REGEX}"
 return 0
 }
 
@@ -616,8 +616,8 @@ declare -i PH_ARRAY_INDEX
 declare -i PH_RET_CODE
 declare -i PH_COUNT
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_CMD=""
 PH_CMD_MSG=""
 PH_OPTION=""
@@ -629,55 +629,55 @@ OPTIND="1"
 
 while getopts :c:m: PH_OPTION
 do
-	case "$PH_OPTION" in c)
-		[[ -n "$PH_CMD" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+	case "${PH_OPTION}" in c)
+		[[ -n "${PH_CMD}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_CMD="$OPTARG" ;;
+		PH_CMD="${OPTARG}" ;;
 			     m)
-		[[ -n "$PH_CMD_MSG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_CMD_MSG}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_CMD_MSG="$OPTARG" ;;
+		PH_CMD_MSG="${OPTARG}" ;;
 			     *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "$PH_CMD" || ( "$PH_CMD" == "false" && ( -z "$PH_CMD_MSG" || "$#" -ne "4" )) || \
-	"$PH_CMD" != @(ph_*|true|false) || "$#" -lt "2" ]] && \
+[[ -z "${PH_CMD}" || ( "${PH_CMD}" == "false" && ( -z "${PH_CMD_MSG}" || "${#}" -ne "4" )) || \
+	"${PH_CMD}" != @(ph_*|true|false) || "${#}" -lt "2" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-[[ "$PH_ROLLBACK_USED" == "yes" ]] && \
+[[ "${PH_ROLLBACK_USED}" == "yes" ]] && \
 	((PH_ROLLBACK_DEPTH++))
-eval "$PH_CMD"
-PH_RET_CODE="$?"
-if [[ "$PH_CMD" == @(true|false) ]]
+eval "${PH_CMD}"
+PH_RET_CODE="${?}"
+if [[ "${PH_CMD}" == @(true|false) ]]
 then
-	ph_set_result -r "$PH_RET_CODE"
-	if [[ "$PH_CMD" == "true" ]]
+	ph_set_result -r "${PH_RET_CODE}"
+	if [[ "${PH_CMD}" == "true" ]]
 	then
-		if [[ -z "$PH_CMD_MSG" ]]
+		if [[ -z "${PH_CMD_MSG}" ]]
 		then
 			printf "%10s\033[32m%s\033[0m\n" "" "OK"
 		else
-			printf "%10s\033[32m%s\033[1;37m%s\033[0;0m\n" "" "OK : " "$PH_CMD_MSG"
+			printf "%10s\033[32m%s\033[1;37m%s\033[0;0m\n" "" "OK : " "${PH_CMD_MSG}"
 		fi
 	else
-		>&2 printf "%10s\033[1;31m%s\033[1;37m%s\033[0;0m\n" "" "ERROR : " "$PH_CMD_MSG"
+		>&2 printf "%10s\033[31m%s\033[1;37m%s\033[0;0m\n" "" "ERROR : " "${PH_CMD_MSG}"
 	fi
 fi
-if [[ "$PH_ROLLBACK_USED" == "yes" ]]
+if [[ "${PH_ROLLBACK_USED}" == "yes" ]]
 then
-	if [[ "$PH_RET_CODE" -ne "0" ]]
+	if [[ "${PH_RET_CODE}" -ne "0" ]]
 	then
-		if [[ "$PH_ROLLBACK_DEPTH" -eq "1" ]]
+		if [[ "${PH_ROLLBACK_DEPTH}" -eq "1" ]]
 		then
 			ph_show_result
 			for PH_ARRAY_INDEX in "${!PH_DEPTH[@]}"
@@ -693,18 +693,18 @@ then
 	else
 		for PH_ARRAY_INDEX in "${!PH_DEPTH[@]}"
 		do
-			if [[ "${PH_DEPTH["${PH_ARRAY_INDEX}"]}" -gt "$PH_ROLLBACK_DEPTH" ]]
+			if [[ "${PH_DEPTH["${PH_ARRAY_INDEX}"]}" -gt "${PH_ROLLBACK_DEPTH}" ]]
 			then
 				PH_COUNT="0"
 				for PH_COMPARE_INDEX in "${!PH_DEPTH_PARAMS[@]}"
 				do
 					[[ "${PH_DEPTH_PARAMS["${PH_COMPARE_INDEX}"]}" == "${PH_DEPTH_PARAMS["${PH_ARRAY_INDEX}"]}" ]] && \
 						((PH_COUNT++))
-					[[ "$PH_COMPARE_INDEX" -eq "$PH_ARRAY_INDEX" ]] && \
+					[[ "${PH_COMPARE_INDEX}" -eq "${PH_ARRAY_INDEX}" ]] && \
 						break
 				done
 				declare -n PH_PARAM_ARRAY="${PH_DEPTH_PARAMS["${PH_ARRAY_INDEX}"]}"
-				unset PH_PARAM_ARRAY["$(echo "${!PH_PARAM_ARRAY[@]}" | nawk -v cnt="$PH_COUNT" '{ printf $cnt ; exit }')"]
+				unset PH_PARAM_ARRAY["$(echo "${!PH_PARAM_ARRAY[@]}" | nawk -v cnt="${PH_COUNT}" '{ printf $cnt ; exit }')"]
 				unset PH_DEPTH_PARAMS["${PH_ARRAY_INDEX}"]
 				unset PH_DEPTH["${PH_ARRAY_INDEX}"]
 				unset -n PH_PARAM_ARRAY
@@ -713,7 +713,7 @@ then
 	fi
 	((PH_ROLLBACK_DEPTH--))
 fi
-return "$PH_RET_CODE"
+return "${PH_RET_CODE}"
 }
 
 function ph_secure_pieh {
@@ -729,8 +729,8 @@ declare -i PH_OLDOPTIND
 declare -i PH_QUIESCE
 declare -i PH_RET_CODE
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_i=""
 PH_FILE=""
 PH_CMD=""
@@ -744,76 +744,76 @@ OPTIND="1"
 
 while getopts :f:t:q PH_OPTION
 do
-	case "$PH_OPTION" in t)
-		[[ "$OPTARG" != @(immediate|delayed|never) || -n "$PH_ROLLBACK_TIME" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+	case "${PH_OPTION}" in t)
+		[[  -n "${PH_ROLLBACK_TIME}" || "${OPTARG}" != @(immediate|delayed|never) ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_ROLLBACK_TIME="$OPTARG" ;;
+		PH_ROLLBACK_TIME="${OPTARG}" ;;
 			     f)
-		[[ -n "$PH_FILE" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_FILE}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_FILE="$OPTARG" ;;
+		PH_FILE="${OPTARG}" ;;
 			     q)
-		[[ "$PH_QUIESCE" -eq "0" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ "${PH_QUIESCE}" -eq "0" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
 		PH_QUIESCE="0" ;;
 			     *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ ( -n "$PH_FILE" && ! -f "$PH_FILE" && ! -L "$PH_FILE" && ! -d "$PH_FILE" ) || \
-	"$#" -gt "5" ]] && \
+[[ ( -n "${PH_FILE}" && ! -f "${PH_FILE}" && ! -L "${PH_FILE}" && ! -d "${PH_FILE}" ) || \
+	"${#}" -gt "5" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-[[ -z "$PH_ROLLBACK_TIME" ]] && \
+[[ -z "${PH_ROLLBACK_TIME}" ]] && \
 	PH_ROLLBACK_TIME="delayed"
-[[ -z "$PH_FILE" ]] && \
-	PH_FILE="$PH_BASE_DIR"
+[[ -z "${PH_FILE}" ]] && \
+	PH_FILE="${PH_BASE_DIR}"
 for PH_i in ownership permissions
 do
-	case "$PH_i" in ownership)
-				PH_CMD="${PH_SUDO} chown ${PH_RUN_USER}:$("$PH_SUDO" id -gn "$PH_RUN_USER" 2>/dev/null)" ;;
+	case "${PH_i}" in ownership)
+				PH_CMD="${PH_SUDO} chown ${PH_RUN_USER}:$("${PH_SUDO}" id -gn "${PH_RUN_USER}" 2>/dev/null)" ;;
 			permissions)
 				PH_CMD="${PH_SUDO} chmod 770" ;;
 	esac
 	PH_CMD="xargs -I '{}' ${PH_CMD} {}"
-	[[ "$PH_QUIESCE" -eq "1" ]] && \
+	[[ "${PH_QUIESCE}" -eq "1" ]] && \
 		printf "%8s%s\n" "" "--> Applying default file ${PH_i}"
 	! eval "'${PH_SUDO}' find '${PH_FILE}' -mount ! -wholename \"${PH_MNT_DIR}/*\" -print 2>/dev/null | ${PH_CMD}" 2>/dev/null && \
 		PH_RET_CODE="1" && \
 		break
-	[[ "$PH_QUIESCE" -eq "1" ]] && \
+	[[ "${PH_QUIESCE}" -eq "1" ]] && \
 		ph_run_with_rollback -c true
 done
-if [[ "$PH_RET_CODE" -ne "0" ]]
+if [[ "${PH_RET_CODE}" -ne "0" ]]
 then
 	ph_set_result -m "An error occurred trying to apply the default file ${PH_i} to one or more files"
-	if [[ "$PH_QUIESCE" -eq "1" ]]
+	if [[ "${PH_QUIESCE}" -eq "1" ]]
 	then
 		ph_run_with_rollback -c false -m "Could not apply"
 	fi
 else
 	PH_PARAMS="-p create -o acls"
-	[[ "$PH_QUIESCE" -eq "0" ]] && \
+	[[ "${PH_QUIESCE}" -eq "0" ]] && \
 		PH_PARAMS="${PH_PARAMS} -q"
-	ph_all_users_rights -f "$PH_FILE" ${PH_PARAMS} || \
+	ph_all_users_rights -f "${PH_FILE}" ${PH_PARAMS} || \
 		return 1
-	[[ "$PH_QUIESCE" -eq "0" ]] && \
+	[[ "${PH_QUIESCE}" -eq "0" ]] && \
 		PH_PARAMS="-q" || \
 		PH_PARAMS=""
 	ph_add_value_to_param -p PH_SECURE -v "${PH_ROLLBACK_TIME}'${PH_PARAMS}'${PH_FILE}"
 fi
-return "$PH_RET_CODE"
+return "${PH_RET_CODE}"
 }
 
 function ph_all_users_rights {
@@ -829,8 +829,8 @@ declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 declare -i PH_QUIESCE
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_APP_USER=""
 PH_ACTION=""
 PH_PARAMS=""
@@ -844,62 +844,62 @@ OPTIND="1"
 
 while getopts :p:t:o:f:q PH_OPTION
 do
-	case "$PH_OPTION" in q)
-		[[ "$PH_QUIESCE" -eq "0" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+	case "${PH_OPTION}" in q)
+		[[ "${PH_QUIESCE}" -eq "0" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
 		PH_QUIESCE="0" ;;
 		     f)
-		[[ -n "$PH_FILE" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_FILE}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_FILE="$OPTARG" ;;
+		PH_FILE="${OPTARG}" ;;
 		     t)
-		[[ "$OPTARG" != @(immediate|delayed|never) || -n "$PH_ROLLBACK_TIME" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_ROLLBACK_TIME}" || "${OPTARG}" != @(immediate|delayed|never) ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_ROLLBACK_TIME="$OPTARG" ;;
+		PH_ROLLBACK_TIME="${OPTARG}" ;;
 		     p)
-		[[ "$OPTARG" != @(remove|create) || -n "$PH_ACTION" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_ACTION}" || "${OPTARG}" != @(remove|create) ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_ACTION="$OPTARG" ;;
+		PH_ACTION="${OPTARG}" ;;
 		     o)
-		[[ "$OPTARG" != @(acls|sudo_rights) || -n "$PH_OBJECT" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[  -n "${PH_OBJECT}" || "${OPTARG}" != @(acls|sudo_rights) ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_OBJECT="$OPTARG" ;;
+		PH_OBJECT="${OPTARG}" ;;
 		     *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "$PH_OBJECT" || -z "$PH_ACTION" || "$#" -lt "4" || ( "$PH_OBJECT" == "sudo_rights" && -n "$PH_FILE" ) || \
-	( -n "$PH_FILE" && ! -f "$PH_FILE" && ! -L "$PH_FILE" && ! -d "$PH_FILE" ) ]] && \
+[[ -z "${PH_OBJECT}" || -z "${PH_ACTION}" || "${#}" -lt "4" || ( "${PH_OBJECT}" == "sudo_rights" && -n "${PH_FILE}" ) || \
+	( -n "${PH_FILE}" && ! -f "${PH_FILE}" && ! -L "${PH_FILE}" && ! -d "${PH_FILE}" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-if [[ "$PH_OBJECT" == "acls" ]]
+if [[ "${PH_OBJECT}" == "acls" ]]
 then
 	PH_PARAMS="-p ${PH_ACTION}"
-	[[ -z "$PH_ROLLBACK_TIME" ]] && \
+	[[ -z "${PH_ROLLBACK_TIME}" ]] && \
 		PH_ROLLBACK_TIME="delayed"
 	PH_PARAMS="${PH_PARAMS} -t ${PH_ROLLBACK_TIME}"
-	[[ -z "$PH_FILE" ]] && \
-		PH_FILE="$PH_BASE_DIR"
+	[[ -z "${PH_FILE}" ]] && \
+		PH_FILE="${PH_BASE_DIR}"
 	PH_PARAMS="${PH_PARAMS} -f '${PH_FILE}'"
 fi
-if [[ "$PH_QUIESCE" -eq "0" ]]
+if [[ "${PH_QUIESCE}" -eq "0" ]]
 then
-	[[ -z "$PH_PARAMS" ]] && \
+	[[ -z "${PH_PARAMS}" ]] && \
 		PH_PARAMS="-q" || \
 		PH_PARAMS="${PH_PARAMS} -q"
 fi
@@ -916,7 +916,7 @@ for PH_APP_USER in $(nawk -v runuser="^${PH_RUN_USER}$" 'BEGIN { \
 		printf users \
 	}' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)
 do
-	if [[ "$PH_OBJECT" == "acls" ]]
+	if [[ "${PH_OBJECT}" == "acls" ]]
 	then
 		ph_run_with_rollback -c "ph_user_${PH_OBJECT} -u '${PH_APP_USER}' ${PH_PARAMS}" || \
 			return 1
@@ -937,8 +937,8 @@ declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 declare -i PH_QUIESCE
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_APP_USER=""
 PH_PARAMS=""
 PH_OPTION=""
@@ -948,36 +948,36 @@ OPTIND="1"
 
 while getopts :u:q PH_OPTION
 do
-	case "$PH_OPTION" in q)
-		[[ "$PH_QUIESCE" -eq "0" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+	case "${PH_OPTION}" in q)
+		[[ "${PH_QUIESCE}" -eq "0" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
 		PH_PARAMS="-q"
 		PH_QUIESCE="0" ;;
 		     u)
-		[[ -n "$PH_APP_USER" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_APP_USER}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_APP_USER="$OPTARG" ;;
+		PH_APP_USER="${OPTARG}" ;;
 		     *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "$PH_APP_USER" || "$#" -lt "2" || "$#" -gt "3" ]] && \
+[[ -z "${PH_APP_USER}" || "${#}" -lt "2" || "${#}" -gt "3" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-if [[ "$PH_APP_USER" != @(root|${PH_RUN_USER}) ]]
+if [[ "${PH_APP_USER}" != @(root|${PH_RUN_USER}) ]]
 then
 	if [[ -f "/etc/sudoers.d/020_pieh-${PH_APP_USER}" ]]
 	then
-		if [[ "$("$PH_SUDO" cat "/etc/sudoers.d/020_pieh-${PH_APP_USER}" 2>/dev/null)" != "${PH_APP_USER} ALL=(ALL) NOPASSWD: ALL" ]]
+		if [[ "$("${PH_SUDO}" cat "/etc/sudoers.d/020_pieh-${PH_APP_USER}" 2>/dev/null)" != "${PH_APP_USER} ALL=(ALL) NOPASSWD: ALL" ]]
 		then
 			ph_run_with_rollback -c "ph_remove_user_sudo_rights -u '${PH_APP_USER}' ${PH_PARAMS}" || \
 				return 1 
@@ -985,16 +985,16 @@ then
 			return 0
 		fi
 	fi
-	[[ "$PH_QUIESCE" -eq "1" ]] && \
+	[[ "${PH_QUIESCE}" -eq "1" ]] && \
 		printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Creating sudo rights for user " "'${PH_APP_USER}'"
 	if ph_run_with_rollback -c "ph_create_empty_file -r -q -d '/etc/sudoers.d/020_pieh-${PH_APP_USER}'"
 	then
 		if ph_run_with_rollback -c "ph_add_line_to_file -r -f '/etc/sudoers.d/020_pieh-${PH_APP_USER}' -l '${PH_APP_USER} ALL=(ALL) NOPASSWD: ALL'"
 		then
-			if "$PH_SUDO" chmod 440 "/etc/sudoers.d/020_pieh-${PH_APP_USER}" 2>/dev/null
+			if "${PH_SUDO}" chmod 440 "/etc/sudoers.d/020_pieh-${PH_APP_USER}" 2>/dev/null
 			then
 				ph_add_value_to_param -p PH_REMOVE_RIGHTS_USERS -v "${PH_PARAMS}'${PH_APP_USER}"
-				[[ "$PH_QUIESCE" -eq "1" ]] && \
+				[[ "${PH_QUIESCE}" -eq "1" ]] && \
 					ph_run_with_rollback -c true
 				return 0
 			else
@@ -1002,7 +1002,7 @@ then
 			fi
 		fi
 	fi
-	[[ "$PH_QUIESCE" -eq "1" ]] && \
+	[[ "${PH_QUIESCE}" -eq "1" ]] && \
 		ph_run_with_rollback -c false -m "Could not create"
 	return 1
 fi
@@ -1018,8 +1018,8 @@ declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 declare -i PH_QUIESCE
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_APP_USER=""
 PH_PARAMS=""
 PH_OPTION=""
@@ -1029,43 +1029,43 @@ OPTIND="1"
 
 while getopts :u:q PH_OPTION
 do
-	case "$PH_OPTION" in q)
-		[[ "$PH_QUIESCE" -eq "0" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+	case "${PH_OPTION}" in q)
+		[[ "${PH_QUIESCE}" -eq "0" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
 		PH_PARAMS="-q"
 		PH_QUIESCE="0" ;;
 			     u)
-		[[ -n "$PH_APP_USER" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_APP_USER}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_APP_USER="$OPTARG" ;;
+		PH_APP_USER="${OPTARG}" ;;
 			     *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "$PH_APP_USER" || "$#" -lt "2" || "$#" -gt "3" ]] && \
+[[ -z "${PH_APP_USER}" || "${#}" -lt "2" || "${#}" -gt "3" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-if [[ "$PH_APP_USER" != @(root|${PH_RUN_USER}) && -f "/etc/sudoers.d/020_pieh-${PH_APP_USER}" ]]
+if [[ "${PH_APP_USER}" != @(root|${PH_RUN_USER}) && -f "/etc/sudoers.d/020_pieh-${PH_APP_USER}" ]]
 then
-	[[ "$PH_QUIESCE" -eq "1" ]] && \
+	[[ "${PH_QUIESCE}" -eq "1" ]] && \
 		printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing sudo rights for user " "'${PH_APP_USER}'"
 	if ph_run_with_rollback -c "ph_store_file -r -f '/etc/sudoers.d/020_pieh-${PH_APP_USER}'"
 	then
 		ph_add_value_to_param -p PH_CREATE_RIGHTS_USERS -v "${PH_PARAMS}'${PH_APP_USER}"
-		[[ "$PH_QUIESCE" -eq "1" ]] && \
+		[[ "${PH_QUIESCE}" -eq "1" ]] && \
 			ph_run_with_rollback -c true
 		return 0
 	fi
-	[[ "$PH_QUIESCE" -eq "1" ]] && \
+	[[ "${PH_QUIESCE}" -eq "1" ]] && \
 		ph_run_with_rollback -c false -m "Could not remove"
 	return 1
 fi
@@ -1086,8 +1086,8 @@ declare -i PH_OLDOPTIND
 declare -i PH_QUIESCE
 declare -u PH_ACTIONU
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_APP_USER=""
 PH_ACTION=""
 PH_FILE=""
@@ -1102,80 +1102,80 @@ OPTIND="1"
 
 while getopts :u:f:t:p:q PH_OPTION
 do
-	case "$PH_OPTION" in q)
-		[[ "$PH_QUIESCE" -eq "0" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+	case "${PH_OPTION}" in q)
+		[[ "${PH_QUIESCE}" -eq "0" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
 		PH_QUIESCE="0" ;;
 			     p)
-		[[ "$OPTARG" != @(remove|create) || -n "$PH_ACTION" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_ACTION}" || "${OPTARG}" != @(remove|create) ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_ACTION="$OPTARG"
-		PH_ACTIONU="$PH_ACTION" ;;
+		PH_ACTION="${OPTARG}"
+		PH_ACTIONU="${PH_ACTION}" ;;
 			     f)
-		[[ -n "$PH_FILE" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_FILE}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_FILE="$OPTARG" ;;
+		PH_FILE="${OPTARG}" ;;
 			     t)
-		[[ "$OPTARG" != @(immediate|delayed|never) || -n "$PH_ROLLBACK_TIME" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_ROLLBACK_TIME}" || "${OPTARG}" != @(immediate|delayed|never) ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_ROLLBACK_TIME="$OPTARG" ;;
+		PH_ROLLBACK_TIME="${OPTARG}" ;;
 			     u)
-		[[ -n "$PH_APP_USER" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_APP_USER}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_APP_USER="$OPTARG" ;;
+		PH_APP_USER="${OPTARG}" ;;
 			     *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "$PH_APP_USER" || -z "$PH_ACTION" || "$#" -lt "4" || \
-	( -n "$PH_FILE" && ! -f "$PH_FILE" && ! -L "$PH_FILE" && ! -d "$PH_FILE" ) ]] && \
+[[ -z "${PH_APP_USER}" || -z "${PH_ACTION}" || "${#}" -lt "4" || \
+	( -n "${PH_FILE}" && ! -f "${PH_FILE}" && ! -L "${PH_FILE}" && ! -d "${PH_FILE}" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-[[ -z "$PH_ROLLBACK_TIME" ]] && \
+[[ -z "${PH_ROLLBACK_TIME}" ]] && \
 	PH_ROLLBACK_TIME="delayed"
-[[ -z "$PH_FILE" ]] && \
-	PH_FILE="$PH_BASE_DIR"
-if [[ "$PH_ACTION" == "create" ]]
+[[ -z "${PH_FILE}" ]] && \
+	PH_FILE="${PH_BASE_DIR}"
+if [[ "${PH_ACTION}" == "create" ]]
 then
 	PH_CMD="${PH_SUDO} setfacl -R -m u:${PH_APP_USER}:rwx"
 else
 	PH_CMD="${PH_SUDO} setfacl -R -x u:${PH_APP_USER}"
 fi
 PH_CMD="xargs -I '{}' ${PH_CMD} {}"
-if [[ "$PH_QUIESCE" -eq "1" ]]
+if [[ "${PH_QUIESCE}" -eq "1" ]]
 then
-	printf "%8s%s%s%s\n" "" "--> $(echo -n "$PH_ACTIONU" | cut -c1)" "$(echo -n "${PH_ACTION%?}" | cut -c2-)" "ing ACLs for user '${PH_APP_USER}'"
+	printf "%8s%s%s%s\n" "" "--> $(cut -c1<<<"${PH_ACTIONU}")" "$(cut -c2-<<<"${PH_ACTION%?}")" "ing ACLs for user '${PH_APP_USER}'"
 else
 	PH_PARAMS="-q"
 fi
-if "$PH_SUDO" find "$PH_FILE" -mount ! -wholename "${PH_MNT_DIR}/*" -print 2>/dev/null | eval "$PH_CMD" 2>/dev/null
+if "${PH_SUDO}" find "${PH_FILE}" -mount ! -wholename "${PH_MNT_DIR}/*" -print 2>/dev/null | eval "${PH_CMD}" 2>/dev/null
 then
-	[[ "$PH_ACTION" == "create" ]] && \
+	[[ "${PH_ACTION}" == "create" ]] && \
 		PH_ACTION="remove" || \
 		PH_ACTION="create"
-	PH_ACTIONU="$PH_ACTION"
+	PH_ACTIONU="${PH_ACTION}"
 	ph_add_value_to_param -p "PH_${PH_ACTIONU}_ACLS_USERS" -v "${PH_ROLLBACK_TIME}'${PH_PARAMS}'${PH_APP_USER}'${PH_FILE}"
-	[[ "$PH_QUIESCE" -eq "1" ]] && \
+	[[ "${PH_QUIESCE}" -eq "1" ]] && \
 		ph_run_with_rollback -c true
 	return 0
 fi
 ph_set_result -m "An error occurred trying to ${PH_ACTION} ACLs for user '${PH_APP_USER}'"
-[[ "$PH_QUIESCE" -eq "1" ]] && \
+[[ "${PH_QUIESCE}" -eq "1" ]] && \
 	ph_run_with_rollback -c false -m "Could not create"
 return 1
 }
@@ -1186,11 +1186,11 @@ declare PH_i
 
 PH_i=""
 
-[[ "$#" -gt "0" ]] && \
+[[ "${#}" -gt "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 clear 2>/dev/null
-printf "\033[36m%s\033[0m\n\n" "- List of available tools : "
+printf "\033[1;36m%s\033[0m\n\n" "- List of available tools : "
 declare -a PH_SCRIPTS
 if ! read -rd '' -a PH_SCRIPTS < <(find "${PH_SCRIPTS_DIR}/"* -maxdepth 1 -type f -exec basename {} \; 2>/dev/null)
 then
@@ -1199,11 +1199,11 @@ else
 	echo "${PH_SCRIPTS[@]}"
 fi
 unset PH_SCRIPTS
-printf "\n%s\n" "Type the name of any tool and press 'Enter' to run it"
+printf "\n\033[1;37m%s\n" "Type the name of any tool and press 'Enter' to run it"
 printf "\n%s\n" "Some tools accept additional arguments to modify their default action"
 printf "\n%s\n" "Adding the '-h' parameter will display help"
 printf "%s\n\n" "Check the help page of a tool for a list of other possible arguments and their effect"
-printf "\033[36m%s" "- Quitting PieHelper -> "
+printf "%s" "- Quitting PieHelper -> "
 if pgrep -f "${PH_SCRIPTS_DIR}/startpieh.sh" >/dev/null 2>&1
 then
 	if pgrep -f "${PH_SCRIPTS_DIR}/startpieh.sh.*-p$|${PH_SCRIPTS_DIR}/startpieh.sh[[:space:]]*-p[[:space:]].*$" >/dev/null
@@ -1213,10 +1213,10 @@ then
                 printf "%s\n" "PieHelper was last running on a tty"
         fi
 fi
-printf "\033[0m\n"
+printf "\n"
 printf "%s\n" "Run 'startpieh.sh' to (re)start on a tty"
 printf "%s\n" "Run 'startpieh.sh -p' to (re)start on a pseudo-terminal"
-printf "\n"
+printf "\033[0m\n"
 exit 0
 }
 
@@ -1367,23 +1367,23 @@ function ph_remove_app_cifs_mpt {
 declare PH_APP
 declare PH_APP_CIFS_MPT
 
-PH_APP="$1"
+PH_APP="${1}"
 PH_APP_CIFS_MPT=""
 
-[[ -z "$PH_APP" || "$#" -ne "1" ]] && \
+[[ -z "${PH_APP}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-[[ "$PH_APP" == @(Controllers|Moonlight) ]] && \
+[[ "${PH_APP}" == @(Controllers|Moonlight) ]] && \
 	return 0
-PH_APP_CIFS_MPT="$(ph_get_app_cifs_mpt -a "$PH_APP" -r)"
-if [[ -n "$PH_APP_CIFS_MPT" ]]
+PH_APP_CIFS_MPT="$(ph_get_app_cifs_mpt -a "${PH_APP}" -r)"
+if [[ -n "${PH_APP_CIFS_MPT}" ]]
 then
 	printf "%8s%s\033[1;33m%s\033[0;0m%s\n" "" "--> Removing CIFS mountpoint " "'${PH_APP_CIFS_MPT}'" " for ${PH_APP}"
-	if [[ -e "$PH_APP_CIFS_MPT" ]]
+	if [[ -e "${PH_APP_CIFS_MPT}" ]]
 	then
-		if [[ -d "$PH_APP_CIFS_MPT" ]]
+		if [[ -d "${PH_APP_CIFS_MPT}" ]]
 		then
-			if [[ "$("$PH_SUDO" find "$PH_APP_CIFS_MPT" -maxdepth 1 ! -wholename "$PH_APP_CIFS_MPT" 2>/dev/null | wc -l)" -eq "0" ]]
+			if [[ "$("${PH_SUDO}" find "${PH_APP_CIFS_MPT}" -maxdepth 1 ! -wholename "${PH_APP_CIFS_MPT}" 2>/dev/null | wc -l)" -eq "0" ]]
 			then
 				if [[ "$(mount 2>/dev/null | nawk -v mstring="^${PH_APP_CIFS_MPT}$" '$3 ~ mstring { \
 						print \
@@ -1393,9 +1393,9 @@ then
 				then
 					if ph_run_with_rollback -c "ph_remove_empty_file -r -q -t directory -d '${PH_APP_CIFS_MPT}'"
 					then
-						ph_add_value_to_param -p PH_CREATE_APPS_CIFS_MPT -v "$PH_APP"
+						ph_add_value_to_param -p PH_CREATE_APPS_CIFS_MPT -v "${PH_APP}"
 						ph_run_with_rollback -c true && \
-							return "$?"
+							return "${?}"
 					else
 						ph_set_result -m "An error occurred trying to remove ${PH_APP} mountpoint '${PH_APP_CIFS_MPT}'"
 					fi
@@ -1410,7 +1410,7 @@ then
 		fi
 	else
 		ph_run_with_rollback -c true -m "Nothing to do" && \
-			return "$?"
+			return "${?}"
 	fi
 	ph_run_with_rollback -c false -m "Could not remove" || \
 		return 1
@@ -1481,23 +1481,23 @@ function ph_create_app_cifs_mpt {
 declare PH_APP
 declare PH_APP_CIFS_MPT
 
-PH_APP="$1"
+PH_APP="${1}"
 PH_APP_CIFS_MPT=""
 
-[[ -z "$PH_APP" || "$#" -ne "1" ]] && \
+[[ -z "${PH_APP}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-[[ "$PH_APP" == @(Moonlight|Controllers) ]] && \
+[[ "${PH_APP}" == @(Moonlight|Controllers) ]] && \
 	return 0
 ph_run_with_rollback -c "ph_remove_app_cifs_mpt '${PH_APP}'" || \
 	return 1
-PH_APP_CIFS_MPT="$(ph_get_app_cifs_mpt -a "$PH_APP" -r)"
-if [[ -n "$PH_APP_CIFS_MPT" ]]
+PH_APP_CIFS_MPT="$(ph_get_app_cifs_mpt -a "${PH_APP}" -r)"
+if [[ -n "${PH_APP_CIFS_MPT}" ]]
 then
 	printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Creating CIFS mountpoint for ${PH_APP} as " "'${PH_APP_CIFS_MPT}'"
-	if [[ -d "$PH_APP_CIFS_MPT" ]]
+	if [[ -d "${PH_APP_CIFS_MPT}" ]]
 	then
-		if [[ "$("$PH_SUDO" find "$PH_APP_CIFS_MPT" -maxdepth 1 ! -wholename "$PH_APP_CIFS_MPT" 2>/dev/null | wc -l)" -ne "0" ]]
+		if [[ "$("${PH_SUDO}" find "${PH_APP_CIFS_MPT}" -maxdepth 1 ! -wholename "${PH_APP_CIFS_MPT}" 2>/dev/null | wc -l)" -ne "0" ]]
 		then
 			ph_set_result -m "Could not accept '${PH_APP_CIFS_MPT}' as a mountpoint since it's not an empty directory"
 		else
@@ -1510,11 +1510,11 @@ then
 				ph_set_result -m "Could not accept '${PH_APP_CIFS_MPT}' as a mountpoint since the directory is an active mountpoint"
 			else
 				ph_run_with_rollback -c true -m "Nothing to do" && \
-					return "$?"
+					return "${?}"
 			fi
 		fi
 	else
-		if [[ -e "$PH_APP_CIFS_MPT" ]]
+		if [[ -e "${PH_APP_CIFS_MPT}" ]]
 		then
 			ph_set_result -m "Refusing to accept '${PH_APP_CIFS_MPT}' as a mountpoint since it's not an empty directory"
 		else
@@ -1524,7 +1524,7 @@ then
 			else
 				ph_add_value_to_param -p PH_REMOVE_APPS_CIFS_MPT -v "$PH_APP"
 				ph_run_with_rollback -c true && \
-					return "$?"
+					return "${?}"
 			fi
 		fi
 	fi
@@ -1551,8 +1551,8 @@ declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_i=""
 PH_APP=""
 PH_TYPE=""
@@ -1570,68 +1570,69 @@ OPTIND="1"
 
 while getopts :a:t:kldcms PH_OPTION
 do
-        case "$PH_OPTION" in a)
-		[[ -n "$PH_APP" || -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+        case "${PH_OPTION}" in a)
+		[[ -n "${PH_APP}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-                PH_APP="$OPTARG" ;;
+                PH_APP="${OPTARG}" ;;
                              t)
-		[[ -n "$PH_TYPE" && "$OPTARG" != @(unsupport|unintegrate|both) ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_TYPE}" && "${OPTARG}" != @(unsupport|unintegrate|both) ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-                PH_TYPE="$OPTARG" ;;
+                PH_TYPE="${OPTARG}" ;;
                              c)
-		[[ -n "$PH_CONF_FILE" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_CONF_FILE}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
                 PH_CONF_FILE="yes" ;;
                              l)
-		[[ -n "$PH_ALLOWEDS" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_ALLOWEDS}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
                 PH_ALLOWEDS="yes" ;;
                              d)
-		[[ -n "$PH_DEFAULTS" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_DEFAULTS}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
                 PH_DEFAULTS="yes" ;;
                              m)
-		[[ -n "$PH_MENUS" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_MENUS}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
                 PH_MENUS="yes" ;;
                              s)
-		[[ -n "$PH_SCRIPTS" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_SCRIPTS}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
                 PH_SCRIPTS="yes" ;;
                              k)
-		[[ -n "$PH_CIFS_MPT" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_CIFS_MPT}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
                 PH_CIFS_MPT="yes" ;;
                              *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
         esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "$PH_APP" || "$#" -lt "4" || (( -n "$PH_CIFS_MPT" || -n "$PH_ALLOWEDS" || -n "$PH_DEFAULTS" || -n "$PH_CONF_FILE" || -n "$PH_MENUS" || -n "$PH_SCRIPTS" ) && ( -n "$PH_TYPE" )) || \
-	( -z "$PH_CIFS_MPT" && -z "$PH_ALLOWEDS" && -z "$PH_DEFAULTS" && -z "$PH_CONF_FILE" && -z "$PH_MENUS" && -z "$PH_SCRIPTS" && -z "$PH_TYPE" ) ]] && \
+[[ -z "${PH_APP}" || "${#}" -lt "4" || (( -n "${PH_CIFS_MPT}" || -n "${PH_ALLOWEDS}" || -n "${PH_DEFAULTS}" || -n "${PH_CONF_FILE}" || \
+	-n "${PH_MENUS}" || -n "${PH_SCRIPTS}" ) && ( -n "${PH_TYPE}" )) || ( -z "${PH_CIFS_MPT}" && -z "${PH_ALLOWEDS}" && -z "${PH_DEFAULTS}" && \
+	-z "${PH_CONF_FILE}" && -z "${PH_MENUS}" && -z "${PH_SCRIPTS}" && -z "${PH_TYPE}" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-case "$PH_TYPE" in unsupport)
+case "${PH_TYPE}" in unsupport)
 	PH_MENUS="yes"
 	PH_DEFAULTS="yes"
 	PH_ALLOWEDS="yes"
@@ -1649,7 +1650,7 @@ case "$PH_TYPE" in unsupport)
 esac
 for PH_i in PH_CIFS_MPT PH_SCRIPTS PH_MENUS PH_DEFAULTS PH_ALLOWEDS PH_CONF_FILE
 do
-	case "$PH_i" in *CIFS_MPT)
+	case "${PH_i}" in *CIFS_MPT)
 		PH_PARAM="-k" ;;
 			*SCRIPTS)
 		PH_PARAM="-s" ;;
@@ -1666,8 +1667,8 @@ do
 	then
 		ph_run_with_rollback -c "ph_remove_app_$(echo -n "${PH_i:3}" | tr "[:upper:]" "[:lower:]") '${PH_APP}'" || \
 			return 1
-		[[ -z "$PH_PARAMS" ]] && \
-			PH_PARAMS="$PH_PARAM" || \
+		[[ -z "${PH_PARAMS}" ]] && \
+			PH_PARAMS="${PH_PARAM}" || \
 			PH_PARAMS="${PH_PARAMS} ${PH_PARAM}"
 	fi
 done
