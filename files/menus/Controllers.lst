@@ -1,6 +1,0 @@
-Go to StatusManagement:ph_show_menu StatusManagement_Controllers
-Go to OptionsManagement:ph_show_menu OptionsManagement_Controllers
-Go to Main:ph_show_menu Main
-Open a shell (Type CTRL-D to return):cd;/bin/bash
-Quit:break
-Return to previous screen:return

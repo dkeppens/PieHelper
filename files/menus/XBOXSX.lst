@@ -1,6 +1,7 @@
-Display instructions for manual USB setup:confctrl_ph.sh -p help -c usb -t XBOXSX | more
-Display instructions for manual bluetooth setup:confctrl_ph.sh -p help -c bluetooth -t XBOXSX | more
-Setup bluetooth controllers:confctrl_ph.sh -p prompt -t XBOXSX
+Display instructions for manual USB setup of XBOXS/X controller:confctrl_ph.sh -p help -c usb -t XBOXSX | more
+Display instructions for manual bluetooth setup of XBOXS/X controller:confctrl_ph.sh -p help -c bluetooth -t XBOXSX | more
+Setup bluetooth XBOXS/X controllers:confctrl_ph.sh -p prompt -t XBOXSX
+Go to StatusManagement_Controllers:ph_show_menu StatusManagement_Controllers
 Go to Controllers:ph_show_menu Controllers
 Go to Main:ph_show_menu Main
 Open a shell (Type 'CTRL-D' to return):cd;/bin/bash

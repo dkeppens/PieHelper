@@ -1,9 +1,0 @@
-Go to PS3:ph_show_menu PS3
-Go to PS4:ph_show_menu PS4
-Go to XBOX360:ph_show_menu XBOX360
-Go to XBOXS/X:ph_show_menu XBOXSX
-Go to Controllers:ph_show_menu Controllers
-Go to Main:ph_show_menu Main
-Open a shell (Type CTRL-D to return):cd;/bin/bash
-Quit:break
-Return to previous screen:return

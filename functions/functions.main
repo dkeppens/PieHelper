@@ -3199,7 +3199,7 @@ declare -i PH_EVDEVS
 
 PH_i=""
 PH_j=""
-PH_MAP="$PH_CTRL_MAP"
+PH_MAP="$PH_CONT_MAP"
 PH_ADD_CTRL_TYPE=""
 PH_PARENT_DEV_PATH=""
 PH_PRINT_FLAG="1"
@@ -3216,7 +3216,7 @@ then
 		return 1
 fi
 ph_cleanup_controllers reset
-[[ "$PH_CTRL_TYPE" == "XBOX360" ]] && \
+[[ "${PH_CONT_TYPE}" == "XBOX360" ]] && \
 	PH_MAP="no"
 PH_EVDEVS="$(ls -l /dev/input/event+([[:digit:]]) 2>/dev/null | wc -l)"
 if [[ "$PH_EVDEVS" -eq "0" ]]
@@ -3234,9 +3234,9 @@ do
 	printf "%8s%s\n" "" "--> Running type verification of input device '${PH_i##*event}'"
 	PH_PARENT_DEV_PATH="$(udevadm info "$PH_i" 2>/dev/null | nawk -F'=' '$0 ~ /.: DEVPATH=/ { print $2 }')"
 	PH_PARENT_DEV_PATH="${PH_PARENT_DEV_PATH%/*}"
-	[[ "$PH_CTRL_TYPE" == "PS4" ]] && \
+	[[ "$PH_CONT_TYPE" == "PS4" ]] && \
 		PH_ADD_CTRL_TYPE="PS4A"
-	for PH_j in "$PH_CTRL_TYPE" ${PH_ADD_CTRL_TYPE}
+	for PH_j in "$PH_CONT_TYPE" ${PH_ADD_CTRL_TYPE}
 	do
 		[[ "$PH_j" != "PS4A" ]] && \
 			PH_PRINT_FLAG="0"
@@ -3279,30 +3279,30 @@ do
 			declare -n PH_CLI_ID="PH_CTRL_CLI_ID${PH_CTRL_CLI_ID}"
 			PH_CONN="$PH_CTRL_CONN"
 			PH_CLI_ID="$PH_CTRL_CLI_ID"
-			printf "%10s\033[32m%s\033[0m\n" "" "OK '${PH_CTRL_TYPE}:${PH_CONN}:id ${PH_CLI_ID}'"
+			printf "%10s\033[32m%s\033[0m\n" "" "OK '${PH_CONT_TYPE}:${PH_CONN}:id ${PH_CLI_ID}'"
 			[[ "$PH_j" == "PS4" ]] && \
 				PH_PRINT_FLAG="1"
 			echo "$PH_CLI_ID" >>"${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null
 			unset -n PH_CLI_ID PH_CONN
 		else
 			[[ "$PH_j" != "PS4" && "$PH_PRINT_FLAG" -eq "0" ]] && \
-				printf "%10s\033[32m%s\033[0m\n" "" "OK (Not a '${PH_CTRL_TYPE}' controller)"
+				printf "%10s\033[32m%s\033[0m\n" "" "OK (Not a '${PH_CONT_TYPE}' controller)"
 		fi
 	done
 done
-printf "%8s%s\n" "" "--> Verifying '${PH_CTRL_TYPE}' controller count"
+printf "%8s%s\n" "" "--> Verifying '${PH_CONT_TYPE}' controller count"
 if [[ "$(cat "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null | wc -l)" -eq "$PH_NUM_CTRL" ]]
 then
         printf "%10s\033[32m%s\033[0m\n" "" "OK"
 else
         if [[ "$(cat "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null | wc -l)" -lt "$PH_NUM_CTRL" ]]
 	then
-                printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Insufficient number of '${PH_CTRL_TYPE}' controllers connected ($(cat "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null | wc -l)<->${PH_NUM_CTRL} requested)"
+                printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Insufficient number of '${PH_CONT_TYPE}' controllers connected ($(cat "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null | wc -l)<->${PH_NUM_CTRL} requested)"
 		return 1
 	fi
         declare -n PH_CONN="PH_CTRL_CONN$(sed -n '1p' "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null)"
         declare -n PH_CLI_ID="PH_CTRL_CLI_ID$(sed -n '1p' "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null)"
-        printf "%10s\033[33m%s\033[0m" "" "Warning : Greater number of '${PH_CTRL_TYPE}' controllers connected than requested ($(cat "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null | wc -l)<->${PH_NUM_CTRL} requested) -> Using '${PH_CONN}:CLI id ${PH_CLI_ID}'"
+        printf "%10s\033[33m%s\033[0m" "" "Warning : Greater number of '${PH_CONT_TYPE}' controllers connected than requested ($(cat "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null | wc -l)<->${PH_NUM_CTRL} requested) -> Using '${PH_CONN}:CLI id ${PH_CLI_ID}'"
         if [[ "$PH_NUM_CTRL" -ne "1" ]]
         then
 		for ((PH_i=2;PH_i<="${PH_NUM_CTRL}";PH_i++))
@@ -3332,7 +3332,7 @@ then
 	do
 		declare -n PH_CLI_ID="PH_CTRL_CLI_ID$(sed -n "${PH_CTRL_CLI_ID}p" "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null)"
 		declare -n PH_CONN="PH_CTRL_CONN$(sed -n "${PH_CTRL_CLI_ID}p" "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null)"
-		case "${PH_CTRL_TYPE}_${PH_CONN}" in PS4_bluetooth)
+		case "${PH_CONT_TYPE}_${PH_CONN}" in PS4_bluetooth)
 			("$PH_SUDO" nice --adjustment="-9" "$(command -v xboxdrv 2>/dev/null)" \
 				--evdev "/dev/input/event${PH_CLI_ID}" \
 				--evdev-absmap ABS_X=x1,ABS_Y=y1 \
@@ -3632,14 +3632,15 @@ OPTARG="$PH_OLDOPTARG"
 
 [[ "$PH_QUIESCE" -eq "1" ]] && \
 	printf "%8s%s\n" "" "--> Checking the application state of ${PH_APP}"
-case "$PH_APP_TYPE" in Default)
-	cut -f1 "${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null && \
-		PH_APP_STATE="Default" ;;
-		       Out-of-scope)
-	cut -f1 "${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null || \
-		PH_APP_STATE="Out-of-scope" ;;
+case "$PH_APP_TYPE" in Default|Out-of-scope)
+	if cut -f1 "${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
+	then
+		PH_APP_STATE="Default"
+	else
+		PH_APP_STATE="Out-of-scope"
+	fi ;;
 		       *)
-	if [[ "$PH_APPL" == @(none|all|prom) ]]
+	if [[ "$PH_APPL" == @(none|all|prom|cont) ]]
 	then
 		PH_APP_STATE="Reserved"
 	else
@@ -11402,8 +11403,8 @@ case "${PH_ACTION}" in start)
 					ph_run_with_rollback -c true -m "Command arguments"
 					for ((PH_i=1;PH_i<="${PH_APPU_NUM_CTRL}";PH_i++))
 					do
-						printf "%8s%s\n" "" "--> Determining the event-based device ID corresponding to ${PH_CTRL_TYPE} controller ID ${PH_i}"
-						if [[ "${PH_CTRL_MAP}" == "no" ]]
+						printf "%8s%s\n" "" "--> Determining the event-based device ID corresponding to ${PH_CONT_TYPE} controller ID ${PH_i}"
+						if [[ "${PH_CONT_MAP}" == "no" ]]
 						then
 							eval declare -i "PH_EVENT${PH_i}=\"$(ph_get_controller_cli_id "${PH_i}")\""
 						else
@@ -11411,7 +11412,7 @@ case "${PH_ACTION}" in start)
 						fi
 						declare -n PH_EVENT="PH_EVENT${PH_i}"
 						ph_run_with_rollback -c -m "Event ID ${PH_EVENT}"
-						printf "%8s%s\n" "" "--> Mapping event id ${PH_EVENT} to ${PH_CTRL_TYPE} controller ID ${PH_i}"
+						printf "%8s%s\n" "" "--> Mapping event id ${PH_EVENT} to ${PH_CONT_TYPE} controller ID ${PH_i}"
 						PH_APPU_CMD_OPTS="$(sed "s/PH_CTRL${PH_i}/${PH_EVENT}/g;s/\"/\\\"/g"<<<"${PH_APPU_CMD_OPTS}")"
 						ph_run_with_rollback -c true
 						unset "PH_EVENT${PH_i}"

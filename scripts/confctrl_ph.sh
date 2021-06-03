@@ -229,21 +229,21 @@ case "$PH_ACTION" in help)
 			 return $?
 	fi
         printf "%8s%s\n" "" "--> Detecting $PH_CONN adapter(s)"
-        if [[ "$PH_CTRL_BLUE_ADAPT" == "none" ]]
+        if [[ "$PH_CONT_BLUE_ADAPT" == "none" ]]
         then
                 PH_ADAPTER=`$PH_SCRIPTS_DIR/listblue_ph.sh | tail -n +5 | nawk '$0 !~ /SUCCESS/ { print $1 ; exit 0 }'`
                 [[ -z "$PH_ADAPTER" ]] && (printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Not found" ; \
                                                         printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 0) && exit 1
                 printf "%10s%s\n" "" "OK (Using first available : $PH_ADAPTER) -> Setting as default"
-                ph_set_option_to_value Ctrls -r "PH_CTRL_BLUE_ADAPT'$PH_ADAPTER" || \
+                ph_set_option_to_value Ctrls -r "PH_CONT_BLUE_ADAPT'$PH_ADAPTER" || \
                                 (printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 1) || exit $?
         else
-                printf "%10s%s\n" "" "OK (Using default : $PH_CTRL_BLUE_ADAPT)"
+                printf "%10s%s\n" "" "OK (Using default : $PH_CONT_BLUE_ADAPT)"
         fi
         for PH_i in Powered Pairable
         do
                 printf "%8s%s\n" "" "--> Enabling bluetooth adapter \"$PH_i\" mode"
-                $PH_SUDO bt-adapter -a "$PH_CTRL_BLUE_ADAPT" -s "$PH_i" 1 >/dev/null 2>&1 && printf "%10s%s\n" "" "OK" || \
+                $PH_SUDO bt-adapter -a "$PH_CONT_BLUE_ADAPT" -s "$PH_i" 1 >/dev/null 2>&1 && printf "%10s%s\n" "" "OK" || \
 						(printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not enable $PH_i mode" ; \
 						 printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 1) || \
 						 exit $?
@@ -286,16 +286,16 @@ case "$PH_ACTION" in help)
 	printf "%10s%s\n" "" "OK"
         printf "%8s%s\n" "" "--> Checking for bluetooth devices"
 	sleep 3
-        PH_ALL_CTRL=`$PH_SUDO bt-device -a "$PH_CTRL_BLUE_ADAPT" -l 2>/dev/null | nawk -F'\(' 'BEGIN { ORS = " " } $0 ~ /No devices found/ { print "none" ; exit 0 } \
+        PH_ALL_CTRL=`$PH_SUDO bt-device -a "$PH_CONT_BLUE_ADAPT" -l 2>/dev/null | nawk -F'\(' 'BEGIN { ORS = " " } $0 ~ /No devices found/ { print "none" ; exit 0 } \
                                                         $0 ~ /PLAYSTATION\(R\)3 Controller/ { print "PS3:" substr($NF,1,length($NF)-1) }
                                                         $0 ~ /Wireless Controller/ { print "PS4:" substr($NF,1,length($NF)-1) } { next }'`
 	[[ "$PH_ALL_CTRL" == "none" ]] && (printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Not found" ; printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 0) && exit 1 
         for PH_i in `echo -n "$PH_ALL_CTRL"`
         do
-		$PH_SUDO bt-device -a "$PH_CTRL_BLUE_ADAPT" -i "${PH_i#*:}" 2>/dev/null | nawk '$0 ~ /Paired:/ { exit $2 } { next }'
+		$PH_SUDO bt-device -a "$PH_CONT_BLUE_ADAPT" -i "${PH_i#*:}" 2>/dev/null | nawk '$0 ~ /Paired:/ { exit $2 } { next }'
 		if [[ $? -ne 0 ]]
 		then
-			$PH_SUDO bt-device -a "$PH_CTRL_BLUE_ADAPT" -i "${PH_i#*:}" 2>/dev/null | nawk '$0 ~ /Connected:/ { exit $2 } { next }'
+			$PH_SUDO bt-device -a "$PH_CONT_BLUE_ADAPT" -i "${PH_i#*:}" 2>/dev/null | nawk '$0 ~ /Connected:/ { exit $2 } { next }'
 			if [[ $? -ne 0 ]]
 			then
 				printf "%10s%s\n" "" "(Found connected ${PH_i%%:*} controller : ${PH_i#*:})"
@@ -331,7 +331,7 @@ case "$PH_ACTION" in help)
 		for PH_i in `echo -n "$PH_NEW_CTRL"`
 		do
 			printf "%8s%s\n" "" "--> Checking for existing trust for controller ($PH_i)"
-			$PH_SUDO bt-device -a "$PH_CTRL_BLUE_ADAPT" -i "$PH_i" 2>/dev/null | nawk '$0 ~ /Trusted:/ { exit $2 } { next }'
+			$PH_SUDO bt-device -a "$PH_CONT_BLUE_ADAPT" -i "$PH_i" 2>/dev/null | nawk '$0 ~ /Trusted:/ { exit $2 } { next }'
 			if [[ $? -ne 0 ]]
 			then
 				printf "%10s%s\n" "" "OK (Trusted)"
@@ -342,8 +342,8 @@ case "$PH_ACTION" in help)
 			fi
 			echo "$PH_PAIRED_CTRL" | grep "$PH_i" >/dev/null 2>&1 && PH_PAIRED="yes" || PH_PAIRED="no"
 			printf "%8s%s\n" "" "--> Connecting to $PH_TYPE controller ($PH_i)"
-			declare -n PH_CTRL_PIN=PH_CTRL_"$PH_TYPE"_PIN
-			"$PH_SUDO" "${PH_SCRIPTS_DIR}/../app/expect/confctrls.expect" "$PH_CTRL_BLUE_ADAPT" "$PH_i" "$PH_PAIRED" "$PH_TRUSTED" ${PH_CTRL_PIN} >/dev/null 2>&1
+			declare -n PH_CTRL_PIN=PH_CONT_"$PH_TYPE"_PIN
+			"$PH_SUDO" "${PH_SCRIPTS_DIR}/../app/expect/confctrls.expect" "$PH_CONT_BLUE_ADAPT" "$PH_i" "$PH_PAIRED" "$PH_TRUSTED" ${PH_CTRL_PIN} >/dev/null 2>&1
 			if [[ "$?" -eq "0" ]]
 			then
 				printf "%10s%s\n" "" "OK"

@@ -1,7 +1,0 @@
-Go to StatusManagement:ph_show_menu StatusManagement_PieHelper
-Go to OptionsManagement:ph_show_menu OptionsManagement_PieHelper
-Go to TTYManagement:ph_show_menu TTYManagement_PieHelper
-Go to Main:ph_show_menu Main
-Open a shell (Type CTRL-D to return):cd;/bin/bash
-Quit:break
-Return to previous screen:return

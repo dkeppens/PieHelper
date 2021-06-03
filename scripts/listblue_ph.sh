@@ -61,7 +61,7 @@ then
 		then
 			for PH_i in `"$PH_SUDO" bt-adapter -l 2>/dev/null | nawk -F'\(' 'BEGIN { ORS = " " } $0 !~ /Available adapters/ { print substr($2,1,length($2)-1) } { next }'`
 			do
-				if [[ "$PH_CTRL_BLUE_ADAPT" == "$PH_i" ]]
+				if [[ "$PH_CONT_BLUE_ADAPT" == "$PH_i" ]]
 				then
 					printf "%4s%s\n" "" "'$PH_i' (Default)"
 				else
