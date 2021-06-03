@@ -1,3 +1,4 @@
+* Check problem of double OK outputs
 * handle having predefined installation states in default_apps_* files
 * rename other CTRL options such as NUM_CTRL etc EVERYWHERE.... sigh
 * Why are controller defaults not created
