@@ -1032,7 +1032,7 @@ PH_i=""
 [[ "${#}" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-for PH_i in Controllers OOsapp $(ph_get_app_list_by_state -s Default -t minimum)
+for PH_i in Controllers OOSapp $(ph_get_app_list_by_state -s Default -t minimum)
 do
 	if ! ph_check_object_existence -q -o "${PH_TEMPLATES_DIR}/${PH_i}_conf.template"
 	then
