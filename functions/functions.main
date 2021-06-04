@@ -1029,12 +1029,19 @@ declare PH_i
 
 PH_i=""
 
-[[ "$#" -ne "0" ]] && \
+[[ "${#}" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-for PH_i in Bash_conf Controllers_conf Emulationstation_conf Kodi_conf Moonlight_conf MovefromPieHScript LoginScript \
-	MoveScript MovetoPieHScript OOSapp_conf PieHelper_conf RestartScriptPieH RestartScript StartScriptPieH \
-	StartScript StopScriptPieH StopScript X11_conf
+for PH_i in Controllers OOsapp $(ph_get_app_list_by_app_state -s Default -t minimum)
+do
+	if ! ph_check_object_existence -q -o "${PH_TEMPLATES_DIR}/${PH_i}_conf.template"
+	then
+		ph_show_result
+		exit "$?"
+        fi
+done
+for PH_i in MovefromPieHScript LoginScript MoveScript MovetoPieHScript RestartScriptPieH \
+	RestartScript StartScriptPieH StartScript StopScriptPieH StopScript
 do
 	if ! ph_check_object_existence -q -o "${PH_TEMPLATES_DIR}/${PH_i}.template"
 	then
@@ -1053,6 +1060,14 @@ done
 for PH_i in Support System Applications Main PS3 PS4 XBOX360 XBOXSX SystemRetained SystemInteractive SystemRetaineds
 do
 	if ! ph_check_object_existence -q -o "${PH_MENUS_DIR}/${PH_i}.lst"
+        then
+		ph_show_result
+		exit "$?"
+        fi
+done
+for PH_i in confapps confpieh confttys confgena confctrl confoper confopts listblue listmoon
+do
+	if ! ph_check_object_existence -q -o "${PH_SCRIPTS_DIR}/${PH_i}_ph.sh"
         then
 		ph_show_result
 		exit "$?"
