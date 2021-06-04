@@ -1,6 +1,6 @@
 #!/bin/bash
 # Run application management routines (by Davy Keppens on 03/11/2018)
-# Enable/Disable debug by running 'confpieh_ph.sh -p debug -m confapps_ph.sh'
+# Enable/Disable debug by running 'confpieh_ph.sh -p debug -m confttys_ph.sh'
 
 if [[ -f "$(dirname "${0}" 2>/dev/null)/app/main.sh" && -r "$(dirname "${0}" 2>/dev/null)/app/main.sh" ]]
 then
@@ -15,15 +15,10 @@ fi
 
 declare PH_i
 declare PH_APP
-declare PH_APP_CMD
-declare PH_APP_USER
-declare PH_APP_PKG
-declare PH_APP_SCOPE
+declare PH_APP_STR_TTY
 declare PH_HEADER
 declare PH_ROUTINE
 declare PH_LIST
-declare PH_DISP_HELP
-declare PH_OLD_PIEH_SANITY
 declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
@@ -36,15 +31,10 @@ PH_OLDOPTARG="${OPTARG}"
 PH_OLDOPTIND="${OPTIND}"
 PH_i=""
 PH_APP=""
-PH_APP_CMD=""
-PH_APP_USER=""
-PH_APP_PKG=""
-PH_APP_SCOPE=""
-PH_HEADER="Run a specified routine successively on selected applications"
+PH_APP_STR_TTY=""
+PH_HEADER="Run a specified routine successively on selected ttys"
 PH_ROUTINE=""
 PH_LIST=""
-PH_DISP_HELP=""
-PH_OLD_PIEH_SANITY="${PH_PIEH_SANITY}"
 PH_OPTION=""
 
 OPTIND="1"
@@ -52,78 +42,43 @@ PH_ROUTINE_DEPTH="0"
 PH_SKIP_DEPTH_MEMBERS="0"
 PH_ROUTINE_FLAG="1"
 
-while getopts :r:a:l:s:c:u:p:dh PH_OPTION
+while getopts :r:t:l:h PH_OPTION
 do
 	case "${PH_OPTION}" in r)
-		[[ -n "${PH_ROUTINE}" || ( "${OPTARG}" != @(inst|uninst|sup|unsup|int|unint|conf|unconf|start|unstart|update|list|info|tty) && \
-			"${OPTARG}" != @(mk|rm)_@(conf_file|defaults|alloweds|menus|scripts|cifs_mpt|all) ) ]] && \
-			(! confapps_ph.sh -h) && \
+		[[ -n "${PH_ROUTINE}" || "${OPTARG}" != @(move|list|info|tty) ]] && \
+			(! confttys_ph.sh -h) && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			OPTIND="${PH_OLDOPTIND}" && \
 			exit 1
 		PH_ROUTINE="${OPTARG}" ;;
-			   a)
-		[[ -n "${PH_APP}" || -z "${OPTARG}" ]] && \
-			(! confapps_ph.sh -h) && \
+			   t)
+		[[ -n "${PH_APP_STR_TTY}" || "${OPTARG}" != @(+([[:digit:]])|prompt|auto) || \
+			( "${OPTARG}" == @(+([[:digit:]])) && ( "${OPTARG}" -le "1" || "${OPTARG}" -gt "${PH_PIEH_MAX_TTYS}" )) ]] && \
+			(! confttys_ph.sh -h) && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			OPTIND="${PH_OLDOPTIND}" && \
 			exit 1
-		PH_APP="${OPTARG}" ;;
+		PH_APP_STR_TTY="${OPTARG}" ;;
 			   l)
 		[[ -n "${PH_LIST}" || -z "${OPTARG}" ]] && \
-			(! confapps_ph.sh -h) && \
+			(! confttys_ph.sh -h) && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			OPTIND="${PH_OLDOPTIND}" && \
 			exit 1
 		for PH_i in ${OPTARG//,/ }
 		do
-			if [[ "${PH_i}" != @(def|sup|int|hal|run|str|all) ]]
+			if [[ "${PH_i}" != @(@(un|)allocated|all) ]]
 			then
-				(! confapps_ph.sh -h)
+				(! confttys_ph.sh -h)
 				OPTARG="${PH_OLDOPTARG}"
 				OPTIND="${PH_OLDOPTIND}"
 				exit 1
 			fi
 		done
 		PH_LIST="${OPTARG}" ;;
-			   s)
-		[[ -n "${PH_APP_SCOPE}" || "${OPTARG}" != @(oos|def|inst|uninst|pkg|unpkg|PI|PU|UI|UU) ]] && \
-			(! confapps_ph.sh -h) && \
-			OPTARG="${PH_OLDOPTARG}" && \
-			OPTIND="${PH_OLDOPTIND}" && \
-			exit 1
-		PH_APP_SCOPE="${OPTARG}" ;;
-			   c)
-		[[ -n "${PH_APP_CMD}" || -z "${OPTARG}" ]] && \
-			(! confapps_ph.sh -h) && \
-			OPTARG="${PH_OLDOPTARG}" && \
-			OPTIND="${PH_OLDOPTIND}" && \
-			exit 1
-		PH_APP_CMD="-c '${OPTARG}'" ;;
-			   u)
-		[[ -n "${PH_APP_USER}" || -z "${OPTARG}" ]] && \
-			(! confapps_ph.sh -h) && \
-			OPTARG="${PH_OLDOPTARG}" && \
-			OPTIND="${PH_OLDOPTIND}" && \
-			exit 1
-		PH_APP_USER="-u '${OPTARG}'" ;;
-			   p)
-		[[ -n "${PH_APP_PKG}" || -z "${OPTARG}" ]] && \
-			(! confapps_ph.sh -h) && \
-			OPTARG="${PH_OLDOPTARG}" && \
-			OPTIND="${PH_OLDOPTIND}" && \
-			exit 1
-		PH_APP_PKG="-p '${OPTARG}'" ;;
-			   d)
-		[[ -n "${PH_DISP_HELP}" ]] && \
-			(! confapps_ph.sh -h) && \
-			OPTARG="${PH_OLDOPTARG}" && \
-			OPTIND="${PH_OLDOPTIND}" && \
-			exit 1
-		PH_DISP_HELP="yes" ;;
 			   *)
 		>&2 printf "\n\n"
-		>&2 printf "%2s\033[1;36m%s%s\033[1;4;35m%s\033[0m\n" "" "Applications" " : " "${PH_HEADER}"
+		>&2 printf "%2s\033[1;36m%s%s\033[1;4;35m%s\033[0m\n" "" "Ttys" " : " "${PH_HEADER}"
 		>&2 printf "\n\n"
 		>&2 printf "%4s\033[1;5;33m%s\033[0m\n" "" "General options"
 		>&2 printf "\n\n"
@@ -191,6 +146,7 @@ do
 		>&2 printf "%27s%s\n" "" "- 'sup' and 'unsup'"
 		>&2 printf "%27s%s\n" "" "- 'int' and 'unint'"
 		>&2 printf "%27s%s\n" "" "- 'inst' and 'uninst'"
+		>&2 printf "%27s%s\n" "" "- 'move'"
 		>&2 printf "%25s%s\n" "" "- Application Controllers will always be skipped except by the following routines :"
 		>&2 printf "%27s%s\n" "" "- 'list' and 'info'"
 		>&2 printf "%27s%s\n" "" "- 'sup' and 'unsup'"
@@ -230,6 +186,9 @@ do
 		>&2 printf "%29s%s\n" "" "- Applications that are not the current Start application and uninstalled applications will be skipped"
 		>&2 printf "%27s%s\n" "" "- \"update\" will check for available updates of selected applications and apply them when found"
 		>&2 printf "%29s%s\n" "" "- Unused and Running applications will be skipped"
+		>&2 printf "%27s%s\n" "" "- \"move\" will change the allocated tty of selected applications to another tty"
+		>&2 printf "%29s%s\n" "" "- Running applications will first be stopped and restart on their new tty after a successful move"
+		>&2 printf "%29s%s\n" "" "- Applications with a maximum state of Integrated will be skipped"
 		>&2 printf "%27s%s\n" "" "- \"list\" will list the name of selected applications"
 		>&2 printf "%27s%s\n" "" "- \"info\" will display the name and general information of selected applications"
 		>&2 printf "%27s%s\n" "" "- \"tty\" will display the name and tty allocation of selected applications"
@@ -445,7 +404,7 @@ else
 			fi ;;
 			  	     update|mk_conf_file|mk_defaults|mk_alloweds|mk_menus|mk_scripts|rm_conf_file|rm_defaults|rm_alloweds|rm_menus|rm_scripts)
 			PH_LIST="sup,int,hal" ;;
-			  	     tty)
+			  	     move|tty)
 			PH_LIST="hal,run" ;;
 			  	     list|info)
 			PH_LIST="oos,def,sup,int,hal,run" ;;
