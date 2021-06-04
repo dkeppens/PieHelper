@@ -325,10 +325,10 @@ OPTIND="${PH_OLDOPTIND}"
 	-n "${PH_APP_CMD}" || -n "${PH_APP_USER}" || -n "${PH_APP_PKG}" )) || \
 	( -n "${PH_LIST}" && -n "${PH_APP}" ) || \
 	(( "${PH_ROUTINE}" != "sup" || -n "${PH_LIST}" || \
-	"$(ph_check_app_state_validity -a "${PH_APP}" -q -o; echo "${?}")" -ne "0")" ) && \
+	"$(ph_check_app_state_validity -a "${PH_APP}" -q -o; echo "${?}")" -ne "0" ) && \
 	( -n "${PH_APP_CMD}" || -n "${PH_APP_USER}" )) ||  \
 	(( "${PH_ROUTINE}" != @(sup|inst|uninst) || -n "${PH_LIST}" || \
-	"$(ph_check_app_state_validity -a "${PH_APP}" -q -o; echo "${?}")" -ne "0")" ) && \
+	"$(ph_check_app_state_validity -a "${PH_APP}" -q -o; echo "${?}")" -ne "0" ) && \
 	-n "${PH_APP_PKG}" ) ]] &&  \
 	(! confapps_ph.sh -h) && \
 	exit 1
