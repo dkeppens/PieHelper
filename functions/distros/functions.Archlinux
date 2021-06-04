@@ -4,116 +4,126 @@ function ph_install_pkg {
 
 declare PH_APP_PKG
 
-PH_APP_PKG="$(ph_resolve_dynamic_value "$1")"
+PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
 
-[[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
+[[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m\n" "" "--> Installing package " "'${PH_APP_PKG}'" " (This may take a while)"
-if ! "$PH_SUDO" pacman -S "$PH_APP_PKG" --noconfirm >/dev/null 2>&1
+printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
+if ph_get_pkg_inst_state "${PH_APP_PKG}"
 then
-	ph_set_result -m "An error occurred trying to install package '${PH_APP_PKG}'"
-	ph_run_with_rollback -c false -m "Could not install" || \
-		return 1
+	ph_run_with_rollback -c true -m "Nothing to do"
+else
+	ph_run_with_rollback -c true -m "Not found"
+	printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0m\n" "" "--> Installing package " "'${PH_APP_PKG}'" " (This may take a while)"
+	if ! "${PH_SUDO}" pacman -S "${PH_APP_PKG}" --noconfirm >/dev/null 2>&1
+	then
+		ph_set_result -m "An error occurred trying to install package '${PH_APP_PKG}'"
+		ph_run_with_rollback -c false -m "Could not install"
+	else
+		ph_add_value_to_param -p PH_REMOVE_PKGS -v "${PH_APP_PKG}"
+		ph_run_with_rollback -c true
+	fi
 fi
-ph_add_value_to_param -p PH_REMOVE_PKGS -v "$PH_APP_PKG"
-ph_run_with_rollback -c true && \
-	return "$?"
+return "${?}"
 }
 
 function ph_update_pkg {
 
 declare PH_APP_PKG
 
-PH_APP_PKG="$(ph_resolve_dynamic_value "$1")"
+PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
 
-[[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
+[[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
-if ph_get_pkg_inst_state "$PH_APP_PKG"
+printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
+if ph_get_pkg_inst_state "${PH_APP_PKG}"
 then
 	ph_run_with_rollback -c true -m "Found"
-	ph_run_with_rollback -c "ph_install_pkg '${PH_APP_PKG}'"
-	return "$?"
-else
-	ph_set_result -m "Could not update package '${PH_APP_PKG}' since it is not installed"
-	ph_run_with_rollback -c false -m "Not found" || \
+	ph_run_with_rollback -c "ph_remove_pkg '${PH_APP_PKG}'" || \
 		return 1
+else
+	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found"
+	ph_set_result -r 0
 fi
+ph_run_with_rollback -c "ph_install_pkg '${PH_APP_PKG}'"
+return "${?}"
 }
 
 function ph_remove_pkg {
 
 declare PH_APP_PKG
 
-PH_APP_PKG="$(ph_resolve_dynamic_value "$1")"
+PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
 
-[[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
+[[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
-if ph_get_pkg_inst_state "$PH_APP_PKG"
+printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
+if ph_get_pkg_inst_state "${PH_APP_PKG}"
 then
 	ph_run_with_rollback -c true -m "Found"
 	printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m\n" "" "--> Uninstalling package " "'${PH_APP_PKG}'" " (This may take a while)"
-	if "$PH_SUDO" pacman -Rs "$PH_APP_PKG" --noconfirm >/dev/null 2>&1
+	if "${PH_SUDO}" pacman -Rs "${PH_APP_PKG}" --noconfirm >/dev/null 2>&1
 	then
-		if "$PH_SUDO" pacman -Rns "$(pacman -Qtdq)" --noconfirm >/dev/null 2>&1
+		if "${PH_SUDO}" pacman -Rns "$(pacman -Qtdq 2>/dev/null)" --noconfirm >/dev/null 2>&1
 		then
-			ph_add_value_to_param -p PH_INSTALL_PKGS -v "$PH_APP_PKG"
-			ph_run_with_rollback -c true && \
-				return "$?"
+			ph_add_value_to_param -p PH_INSTALL_PKGS -v "${PH_APP_PKG}"
+			ph_run_with_rollback -c true
 		fi
+	else
+		ph_set_result -m "An error occurred trying to uninstall package '${PH_APP_PKG}'"
+		ph_run_with_rollback -c false -m "Could not uninstall"
 	fi
-	ph_set_result -m "An error occurred trying to uninstall package '${PH_APP_PKG}'"
 else
-	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not uninstall package '${PH_APP_PKG}' since it is not installed"
-	ph_set_result -r 0
-	return 0
+	ph_run_with_rollback -c true -m "Nothing to do"
 fi
-ph_run_with_rollback -c false -m "Could not uninstall" || \
-	return 1
-}
-
-function ph_check_pkg_validity {
-
-declare PH_APP_PKG
-
-PH_APP_PKG="$(ph_resolve_dynamic_value "$1")"
-
-[[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
-	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
-
-"$PH_SUDO" pacman -Ss "$PH_APP_PKG" --noconfirm >/dev/null 2>&1
-return "$?"
+return "${?}"
 }
 
 function ph_get_pkg_inst_state {
 
 declare PH_APP_PKG
 
-PH_APP_PKG="$(ph_resolve_dynamic_value "$1")"
+PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
 
-[[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
+[[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-"$PH_SUDO" pacman -Qs "$PH_APP_PKG" >/dev/null 2>&1
-return "$?"
+"${PH_SUDO}" pacman -Qs "${PH_APP_PKG}" >/dev/null 2>&1
+return "${?}"
+}
+
+function ph_check_pkg_validity {
+
+declare PH_APP_PKG
+
+PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
+
+[[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+if ! "${PH_SUDO}" pacman -Ss "${PH_APP_PKG}" --noconfirm >/dev/null 2>&1
+then
+	ph_set_result -m "An error occurred since package '${PH_APP_PKG}' is not available"
+	return 1
+fi
+return 0
 }
 
 function ph_update_system {
 
-[[ "$#" -ne "0" ]] && \
+[[ "${#}" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\033[1;37m%s\033[0;0m\n" "" "--> Updating your system" " (This may take a while)"
-if "$PH_SUDO" pacman -Syu --noconfirm >/dev/null 2>&1
+printf "%8s%s\033[1;37m%s\033[0m\n" "" "--> Updating your system" " (This may take a while)"
+if "${PH_SUDO}" pacman -Syu --noconfirm >/dev/null 2>&1
 then
 	ph_run_with_rollback -c true
 else
 	ph_set_result -m "At least one of the attempted package upgrades failed"
 	ph_run_with_rollback -c false -m "Could not update"
 fi
-return "$?"
+return "${?}"
 }

@@ -2,16 +2,16 @@
 
 function ph_apt_clean {
 
-[[ "$#" -ne "0" ]] && \
+[[ "${#}" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 printf "%8s%s\n" "" "--> Cleaning up after upgrade"
-if "$PH_SUDO" apt-get -qq clean >/dev/null 2>&1
+if "${PH_SUDO}" apt-get -qq clean >/dev/null 2>&1
 then
-	if "$PH_SUDO" apt-get -qq auto-remove >/dev/null 2>&1
+	if "${PH_SUDO}" apt-get -qq auto-remove >/dev/null 2>&1
 	then
 		ph_run_with_rollback -c true && \
-			return 0
+			return "${?}"
 	fi
 fi
 printf "%10s\033[33m%s\033[0m\n" "" "Warning : An error occurred trying to cleanup after package operations"
@@ -23,139 +23,136 @@ function ph_install_pkg {
 
 declare PH_APP_PKG
 
-PH_APP_PKG="$(ph_resolve_dynamic_value "$1")"
+PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
 
-[[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
+[[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m\n" "" "--> Installing package " "'${PH_APP_PKG}'" " (This may take a while)"
-if ! ph_get_pkg_inst_state "$PH_APP_PKG"
+printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0m\n" "" "--> Installing package " "'${PH_APP_PKG}'" " (This may take a while)"
+if ! ph_get_pkg_inst_state "${PH_APP_PKG}"
 then
-	if "$PH_SUDO" apt-get -qq install --no-install-recommends "$PH_APP_PKG" >/dev/null 2>&1
+	if "${PH_SUDO}" apt-get -qq install --no-install-recommends "${PH_APP_PKG}" >/dev/null 2>&1
 	then
-		ph_add_value_to_param -p PH_REMOVE_PKGS -v "$PH_APP_PKG"
-		ph_run_with_rollback -c true && \
-			return "$?"
+		ph_add_value_to_param -p PH_REMOVE_PKGS -v "${PH_APP_PKG}"
+		ph_run_with_rollback -c true
 	else
 		ph_set_result -m "An error occurred trying to install package '${PH_APP_PKG}'"
+		ph_run_with_rollback -c false -m "Could not install"
 	fi
 else
-	ph_run_with_rollback -c true -m "Nothing to do" && \
-		return "$?"
+	ph_run_with_rollback -c true -m "Nothing to do"
 fi
-ph_run_with_rollback -c false -m "Could not install" || \
-	return 1
+return "${?}"
 }
 
 function ph_update_pkg_index {
 
-[[ "$#" -ne "0" ]] && \
+[[ "${#}" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 printf "%8s%s\n" "" "--> Updating package database index"
-if ! "$PH_SUDO" apt-get -qq update >/dev/null 2>&1
+if ! "${PH_SUDO}" apt-get -qq update >/dev/null 2>&1
 then
 	ph_set_result -m "An error occurred updating the index of the package database"
-	ph_run_with_rollback -c false -m "Could not update" || \
-		return 1
+	ph_run_with_rollback -c false -m "Could not update"
 else
-	ph_run_with_rollback -c true && \
-		return "$?"
+	ph_run_with_rollback -c true
 fi
+return "${?}"
 }
 
 function ph_update_pkg {
 
 declare PH_APP_PKG
 
-PH_APP_PKG="$(ph_resolve_dynamic_value "$1")"
+PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
 
-[[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
+[[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 ph_update_pkg_index || \
 	return 1
-printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
-if ph_get_pkg_inst_state "$PH_APP_PKG"
+printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
+if ph_get_pkg_inst_state "${PH_APP_PKG}"
 then
 	ph_run_with_rollback -c true -m "Found"
-	ph_run_with_rollback -c "ph_install_pkg '${PH_APP_PKG}'" && \
-		return "$?"
-else
-	ph_set_result -m "Could not update package '${PH_APP_PKG}' since it is not installed"
-	ph_run_with_rollback -c false -m "Not found" || \
+	ph_run_with_rollback -c "ph_remove_pkg '${PH_APP_PKG}'" || \
 		return 1
+else
+	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found"
+	ph_set_result -r 0
 fi
+ph_run_with_rollback -c "ph_install_pkg '${PH_APP_PKG}'"
+return "${?}"
 }
 
 function ph_remove_pkg {
 
 declare PH_APP_PKG
 
-PH_APP_PKG="$(ph_resolve_dynamic_value "$1")"
+PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
 
-[[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
+[[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
-if ph_get_pkg_inst_state "$PH_APP_PKG"
+printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
+if ph_get_pkg_inst_state "${PH_APP_PKG}"
 then
 	ph_run_with_rollback -c true -m "Found"
 	printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m\n" "" "--> Uninstalling package " "'${PH_APP_PKG}'" " (This may take a while)"
-	if "$PH_SUDO" apt-get -qq --auto-remove --purge remove "$PH_APP_PKG" >/dev/null 2>&1
+	if "${PH_SUDO}" apt-get -qq --auto-remove --purge remove "${PH_APP_PKG}" >/dev/null 2>&1
 	then
-		ph_add_value_to_param -p PH_INSTALL_PKGS -v "$PH_APP_PKG"
-		ph_run_with_rollback -c true && \
-			return "$?"
+		ph_add_value_to_param -p PH_INSTALL_PKGS -v "${PH_APP_PKG}"
+		ph_run_with_rollback -c true
 	else
 		ph_set_result -m "An error occurred trying to uninstall package '${PH_APP_PKG}'"
-		ph_run_with_rollback -c false -m "Could not uninstall" || \
-			return 1
+		ph_run_with_rollback -c false -m "Could not uninstall"
 	fi
 else
-	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not uninstall package '${PH_APP_PKG}' since it is not installed"
-	ph_set_result -r 0
-	return 0
+	ph_run_with_rollback -c true -m "Nothing to do"
 fi
-ph_run_with_rollback -c false -m "Not found" || \
-	return 1
+return "${?}"
 }
 
 function ph_get_pkg_inst_state {
 
 declare PH_APP_PKG
 
-PH_APP_PKG="$(ph_resolve_dynamic_value "$1")"
+PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
 
-[[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
+[[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-"$PH_SUDO" dpkg-query -s "$PH_APP_PKG" >/dev/null 2>&1
-return "$?"
+"${PH_SUDO}" dpkg-query -s "${PH_APP_PKG}" >/dev/null 2>&1
+return "${?}"
 }
 
 function ph_check_pkg_validity {
 
 declare PH_APP_PKG
 
-PH_APP_PKG="$(ph_resolve_dynamic_value "$1")"
+PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
 
-[[ -z "$PH_APP_PKG" || "$#" -ne "1" ]] && \
+[[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-"$PH_SUDO" apt-cache show "$PH_APP_PKG" >/dev/null 2>&1
-return "$?"
+if ! "${PH_SUDO}" apt-cache show "${PH_APP_PKG}" >/dev/null 2>&1
+then
+	ph_set_result -m "An error occurred since package '${PH_APP_PKG}' is not available"
+	return 1
+fi
+return 0
 }
 
 function ph_update_system {
 
-[[ "$#" -ne "0" ]] && \
+[[ "${#}" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 ph_update_pkg_index || \
 	return 1
-printf "%8s%s\033[1;37m%s\033[0;0m\n" "" "--> Updating your system" " (This may take a while)"
-if "$PH_SUDO" apt-get -qq upgrade >/dev/null 2>&1
+printf "%8s%s\033[1;37m%s\033[0m\n" "" "--> Updating your system" " (This may take a while)"
+if "${PH_SUDO}" apt-get -qq upgrade >/dev/null 2>&1
 then
 	ph_run_with_rollback -c true
 	ph_apt_clean
@@ -164,8 +161,7 @@ else
 	
 	ph_set_result -m "At least one of the attempted package upgrades failed"
 	ph_run_with_rollback -c false -m "Could not update"
-	"$PH_SUDO" apt-get -qq clean >/dev/null 2>&1
-	"$PH_SUDO" apt-get -qq auto-remove >/dev/null 2>&1
+	ph_apt_clean
 	return 1
 fi
 }
