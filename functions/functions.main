@@ -4371,7 +4371,12 @@ else
 		PH_MENU_APP="${PH_MENU} ${PH_MENU_PARENT}" ;;
 			*)
 		PH_MENU_APP="${PH_MENU}"
-		PH_MENU_PARENT="" ;;
+		if [[ "${#BASH_ARGC[@]}" -gt "0" ]]
+		then
+			PH_MENU_PARENT="Applications"
+		else
+			PH_MENU_PARENT="${BASH_ARGC[1]}"
+		fi ;;
 	esac
 	PH_MENU_HEADER="PieHelper ${PH_VERSION} > ${PH_MENU_PARENT} ${PH_MENU_TYPE} : ${PH_MENU_APP}"
 fi
@@ -4381,20 +4386,18 @@ do
 	then
 		PH_MENU_HEADER="PieHelper ${PH_VERSION} > ${PH_MENU_PARENT} ${PH_MENU_TYPE} : ${PH_MENU_APP}"
 	fi
-	if [[ "${PH_MENU}" == @(@(Status|Options|TTY)Management@(|_*)|Controllers|"$(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")") ]]
-	then
-		if [[ "${PH_MENU}" == @(@(Status|Options|TTY)Management@(|_*)|Controllers) ]]
+	case "${PH_MENU}" in StatusManagement*|OptionsManagement*|TTYManagement*)
+		ph_run_with_rollback -c "ph_link_app_to_menu -a '${PH_MENU_PARENT}' -q" || \
+			return 1 ;;
+			*)
+		if [[ "${PH_MENU}" == @($(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")|Controllers) ]]
 		then
-			ph_run_with_rollback -c "ph_link_app_to_menu -a '${PH_MENU_PARENT}' -q" || \
-				return 1
-		else
 			ph_run_with_rollback -c "ph_link_app_to_menu -a '${PH_MENU}' -q" || \
 				return 1
-		fi
-	fi
+		fi ;;
+	esac
 	declare -a PH_MENU_LINES
-	if [[ "${PH_MENU}" == @(Out-of-Scope|Default|Supported|Integrated|Halted|Running) ]]
-	then
+	case "${PH_MENU}" in Out-of-Scope|Default|Supported|Integrated|Halted|Running)
 		case "${PH_MENU}" in Out-of-scope)
 			PH_MENU_KEYWORD="oos" ;;
 				     *)
@@ -4405,7 +4408,7 @@ do
 			"List installed ${PH_MENU} applications:confapps_ph.sh -p list -k ${PH_MENU_KEYWORD} -s inst" \
 			"Uninstall installed ${PH_MENU} applications:confapps_ph.sh -p uninst -k ${PH_MENU_KEYWORD} -s inst"
 		do
-			[[ "${PH_MENU}" == "Running" && "${PH_MENU_LINE}" == @(Un|)install* ]] && \
+			[[ "${PH_MENU}" == "Running" && "${PH_MENU_LINE}" == @(Uninstall|Install)* ]] && \
 				continue
 			PH_MENU_LINES+=("${PH_MENU_LINE}")
 		done
@@ -4445,21 +4448,46 @@ do
 			"Quit:break" "Return to previous screen:return"
 		do
 			PH_MENU_LINES+=("${PH_MENU_LINE}")
+		done ;;
+			     *)
+		if [[ "${PH_MENU}" == @($(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")) ]]
+		then
+			for PH_i in Running Halted Integrated Supported Default Out-of-scope
+			do
+				if ph_check_app_state_validity -a "${PH_MENU}" -q "-$(cut -c1<<<"${PH_i}" | tr '[:upper:]' '[:lower:]')"
+				then
+					PH_MENU_LINES+=("Go to ${PH_i}:ph_show_menu ${PH_i}")
+				fi
+			done
+		fi ;;
+	esac
+	if [[ "${PH_MENU}" == @($(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")|Out-of-Scope|Default|Supported|Integrated|Halted|Running) ]]
+	then
+		if [[ "${PH_MENU}" == @($(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")) ]]
+		then
+			PH_MENU_LINES+=("Go to ${PH_PARENT_MENU}:ph_show_menu ${PH_PARENT_MENU}")
+		fi
+		for PH_MENU_LINE in "Go to Applications:ph_show_menu Applications" \
+			"Go to Main:ph_show_menu Main" \
+			"Open a shell (Type 'CTRL-D' to return):cd;/bin/bash" \
+			"Quit:break" "Return to previous screen:return"
+		do
+			PH_MENU_LINES+=("${PH_MENU_LINE}")
 		done
 	fi
-	if [[ "${#PH_MENU_LINES[@]}" -eq "0" ]]
+	if [[ -e "${PH_MENUS_DIR}/${PH_MENU}.lst" ]]
 	then
-		read -rd '' -e -a PH_MENU_ITEMS -u >(nawk -F':' '{ \
+		read -er -a PH_MENU_ITEMS -d '' > >(nawk -F':' '{ \
 				print $1 ; \
 				next \
 			}' "${PH_MENUS_DIR}/${PH_MENU}.lst")
-		read -rd '' -e -a PH_MENU_CMDS -u >(nawk -F':' '{ \
+		read -er -a PH_MENU_CMDS -d '' > >(nawk -F':' '{ \
 				print $2 ; \
 				next \
 			}' "${PH_MENUS_DIR}/${PH_MENU}.lst")
 	else
-		declare PH_MENU_ITEMS PH_MENU_CMDS
-		for PH_MENU_LINE in "${PH_MENU_LINES[@]}"
+		declare -a PH_MENU_ITEMS PH_MENU_CMDS
+		for PH_MENU_LINE in $(echo "${PH_MENU_LINES[@]}" | tac -s " ")
 		do
 			PH_MENU_ITEMS+=("$(cut -d':' -f1<<<"${PH_MENU_LINE}")")
 			PH_MENU_CMDS+=("$(cut -d':' -f2<<<"${PH_MENU_LINE}")")
@@ -4467,7 +4495,7 @@ do
 	fi
 	unset PH_MENU_LINES
 	PH_MENU_COUNT="${#PH_MENU_ITEMS[@]}"
-	#clear
+	clear
 	ph_print_bannerline
 	printf "\n%$(echo -n $(($((PH_COLUMNS/2))-$(($(echo -n ${PH_MENU_HEADER} | wc -c)/2)))))s\033[1;036m%s\033[0;0m\n\n" "" "${PH_MENU_HEADER}"
 	ph_print_bannerline
@@ -4489,15 +4517,15 @@ do
 	unset PH_MENU_ITEMS PH_MENU_CMDS
 	if [[ "${PH_ANSWER}" -ne "${PH_MENU_COUNT}" ]]
 	then
-		if [[ "${PH_MENU_CMD}" != ph_show_menu* && "${PH_ANSWER}" -lt "$((PH_MENU_COUNT-3))" ]]
+		if [[ "${PH_MENU_CMD}" != ph_show_menu* && "${PH_ANSWER}" -lt "$((PH_MENU_COUNT-2))" ]]
 		then
 			printf "\n\033[1;37m%s\033[0;0m\n\n" "Output of running commands :"
 			ph_print_bannerline
 			printf "\n"
 		fi
 		eval "${PH_MENU_CMD}"
-		PH_RET_CODE="${?}"
-		if [[ "${PH_MENU_CMD}" != ph_show_menu* && "${PH_ANSWER}" -lt "$((PH_MENU_COUNT-3))" ]]
+		PH_ANSWER="${?}"
+		if [[ "${PH_MENU_CMD}" != ph_show_menu* && "${PH_ANSWER}" -lt "$((PH_MENU_COUNT-2))" ]]
 		then
 			printf "\n"
 			ph_print_bannerline
@@ -4515,31 +4543,31 @@ do
 			printf "\n"
 		fi
 	fi
-	if [[ "${PH_MENU_CMD}" != ph_show_menu* && "${PH_ANSWER}" -ne "$((PH_MENU_COUNT-1))" && \
-		"${PH_ANSWER}" -ne "$((PH_MENU_COUNT-2))" ]]
+	if [[ "${PH_MENU_CMD}" != @(ph_show_menu*|return) && "${PH_ANSWER}" -lt "$((PH_MENU_COUNT-2))" ]]
 	then
 		printf "\033[1;37m%s\033[0;0m\n" "Press Enter to continue"
 		read -r 2>/dev/null
 	fi
 done
+shopt +s extdebug
 ph_quit_pieh
 }
 
 function ph_do_escape_paths {
 
-[[ "$#" -eq "0" ]] && \
+[[ "${#}" -eq "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-echo "$@"| sed 's/\//\\\//g;s/ /\\ /g'
+echo "${@}"| sed 's/\//\\\//g;s/ /\\ /g'
 return 0
 }
 
 function ph_undo_escape_paths {
 
-[[ "$#" -eq "0" ]] && \
+[[ "${#}" -eq "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-echo "$@" | sed 's/\\//g'
+echo "${@}" | sed 's/\\//g'
 return 0
 }
 
@@ -11448,6 +11476,10 @@ case "${PH_ACTION}" in start)
 			then
 				"${PH_SUDO}" -u "${PH_APP_USER}" -c "LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib eval '${PH_APP_CMD}' '$(ph_resolve_dynamic_value "${PH_APPU_CMD_OPTS}")'"
 			else
+				if [[ "${PH_APP}" == "PieHelper" ]]
+				then
+					shopt -s extdebug
+				fi
 				eval "${PH_APP_CMD}" "$(ph_resolve_dynamic_value "${PH_APPU_CMD_OPTS}")"
 			fi
 		else
@@ -11522,6 +11554,7 @@ case "${PH_ACTION}" in start)
 						sleep 2
 					done ;;
 						    PieHelper) 
+					shopt +s extdebug
 					"${PH_SUDO}" chvt 1 2>/dev/null ;;
 						    *) 
 					"${PH_SUDO}" chvt "${PH_PIEH_TTY}" 2>/dev/null ;;
