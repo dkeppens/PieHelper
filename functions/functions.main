@@ -4312,7 +4312,6 @@ declare PH_MENU_PARENT
 declare PH_MENU_CMD
 declare PH_LAST_RETURN
 declare -i PH_ANSWER
-declare -i PH_i
 declare -i PH_COUNT
 declare -i PH_COLUMNS
 declare -i PH_MENU_COUNT
@@ -4329,7 +4328,6 @@ PH_MENU_PARENT=""
 PH_MENU_CMD=""
 PH_LAST_RETURN="${PH_LAST_RETURN_GLOB}"
 PH_ANSWER="0"
-PH_i="0"
 PH_COUNT="0"
 PH_COLUMNS="$(tput cols 2>/dev/null)"
 PH_MENU_COUNT="0"
@@ -4379,9 +4377,8 @@ else
 fi
 while true
 do
-	if [[ -z "${PH_MENU_PARENT}" ]]
+	if [[ -n "${PH_MENU_PARENT}" ]]
 	then
-		:
 		PH_MENU_HEADER="PieHelper ${PH_VERSION} > ${PH_MENU_PARENT} ${PH_MENU_TYPE} : ${PH_MENU_APP}"
 	fi
 	if [[ "${PH_MENU}" == @(@(Status|Options|TTY)Management@(|_*)|Controllers|"$(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")") ]]
@@ -4395,8 +4392,7 @@ do
 				return 1
 		fi
 	fi
-	PH_ANSWER="0"
-	PH_COUNT="0"
+	declare -a PH_MENU_LINES
 	if [[ "${PH_MENU}" == @(Out-of-Scope|Default|Supported|Integrated|Halted|Running) ]]
 	then
 		case "${PH_MENU}" in Out-of-scope)
@@ -4404,13 +4400,6 @@ do
 				     *)
 			PH_MENU_KEYWORD="$(cut -c1-3<<<"${PH_MENU}" | tr '[:upper:]' '[:lower:]')" ;;
 		esac
-		if [[ -e "${PH_MENUS_DIR}/${PH_MENU}.lst" ]]
-		then
-			ph_run_with_rollback -c "ph_store_file -f '${PH_MENUS_DIR}/${PH_MENU}.lst'" || \
-				return 1
-		fi
-		ph_run_with_rollback -c "ph_create_empty_file -d '${PH_MENUS_DIR}/${PH_MENU}.lst' -t file -q" || \
-			return 1
 		for PH_MENU_LINE in "List uninstalled ${PH_MENU} applications:confapps_ph.sh -p list -k ${PH_MENU_KEYWORD} -s uninst" \
 			"Install uninstalled ${PH_MENU} applications:confapps_ph.sh -p inst -k ${PH_MENU_KEYWORD} -s uninst" \
 			"List installed ${PH_MENU} applications:confapps_ph.sh -p list -k ${PH_MENU_KEYWORD} -s inst" \
@@ -4418,49 +4407,36 @@ do
 		do
 			[[ "${PH_MENU}" == "Running" && "${PH_MENU_LINE}" == @(Un|)install* ]] && \
 				continue
-			ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_MENUS_DIR}/${PH_MENU}.lst' -l '${PH_MENU_LINE}'" || \
-				return 1
+			PH_MENU_LINES+=("${PH_MENU_LINE}")
 		done
 		case "${PH_MENU}" in Default)
-			ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_MENUS_DIR}/${PH_MENU}.lst' -l \
-				'Support installed ${PH_MENU} applications:confapps_ph.sh -p sup -k ${PH_MENU_KEYWORD} -s inst'" || \
-				return 1 ;;
+			PH_MENU_LINES+=("Support installed ${PH_MENU} applications:confapps_ph.sh -p sup -k ${PH_MENU_KEYWORD} -s inst") ;;
 				     Supported)
-			ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_MENUS_DIR}/${PH_MENU}.lst' -l \
-				'Integrate installed ${PH_MENU} applications:confapps_ph.sh -p int -k ${PH_MENU_KEYWORD} -s inst'" || \
-				return 1 ;;
+			PH_MENU_LINES+=("Integrate installed ${PH_MENU} applications:confapps_ph.sh -p int -k ${PH_MENU_KEYWORD} -s inst") ;;
 				     Integrated)
 			for PH_MENU_LINE in "Unintegrate ${PH_MENU} applications:confapps_ph.sh -p unint -k hal -s ${PH_MENU_KEYWORD}" \
 				"Unintegrate ${PH_MENU} Out-of-scope applications:confapps_ph.sh -p unint -k hal -s oos" \
 				"Unintegrate ${PH_MENU} Default applications:confapps_ph.sh -p unint -k hal -s def"
 			do
-				ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_MENUS_DIR}/${PH_MENU}.lst' -l '${PH_MENU_LINE}'" || \
-					return 1
+				PH_MENU_LINES+=("${PH_MENU_LINE}")
 			done ;;
 				     Halted)
 			for PH_MENU_LINE in "Unintegrate ${PH_MENU} applications:confapps_ph.sh -p unint -k ${PH_MENU_KEYWORD}" \
 				"Unintegrate ${PH_MENU} Out-of-scope applications:confapps_ph.sh -p unint -k ${PH_MENU_KEYWORD} -s oos" \
 				"Unintegrate ${PH_MENU} Default applications:confapps_ph.sh -p unint -k ${PH_MENU_KEYWORD} -s def"
 			do
-				ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_MENUS_DIR}/${PH_MENU}.lst' -l '${PH_MENU_LINE}'" || \
-					return 1
+				PH_MENU_LINES+=("${PH_MENU_LINE}")
 			done ;;
 				     Out-of-scope)
-			ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_MENUS_DIR}/${PH_MENU}.lst' -l \
-				'Unintegrate halted ${PH_MENU} applications:confapps_ph.sh -p unint -k hal -s oos'" || \
-				return 1 ;;
+			PH_MENU_LINES+=("Unintegrate halted ${PH_MENU} applications:confapps_ph.sh -p unint -k hal -s oos") ;;
 				     *)
 				: ;;
 		esac
 		declare -a PH_APPS_LIST
-		read -rd '' -a PH_APPS_LIST < <(ph_get_app_list_by_state -s "${PH_MENU}" -t minimum)
+		read -rd '' -a PH_APPS_LIST -u >(ph_get_app_list_by_state -s "${PH_MENU}" -t minimum)
 		for PH_i in "${PH_APPS_LIST[@]}"
 		do
-			if ! ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_MENUS_DIR}/${PH_MENU}.lst' -l 'Go to ${PH_i}:ph_show_menu \"${PH_i}\"'"
-			then
-				unset PH_APPS_LIST
-				return 1
-			fi
+			PH_MENU_LINES+=("Go to ${PH_i}:ph_show_menu \"${PH_i}\"")
 		done
 		unset PH_APPS_LIST
 		for PH_MENU_LINE in "Go to Applications:ph_show_menu Applications" \
@@ -4468,27 +4444,39 @@ do
 			"Open a shell (Type 'CTRL-D' to return):cd;/bin/bash" \
 			"Quit:break" "Return to previous screen:return"
 		do
-			ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_MENUS_DIR}/${PH_MENU}.lst' -l '${PH_MENU_LINE}'" || \
-				return 1
+			PH_MENU_LINES+=("${PH_MENU_LINE}")
 		done
 	fi
-	read -rd '' -a PH_MENU_ITEMS < <(nawk -F':' '{ \
-			print $1 ; \
-			next \
-		}' "${PH_MENUS_DIR}/${PH_MENU}.lst")
-	read -rd '' -a PH_MENU_CMDS < <(nawk -F':' '{ \
-			print $2 ; \
-			next \
-		}' "${PH_MENUS_DIR}/${PH_MENU}.lst")
+	if [[ "${#PH_MENU_LINES[@]}" -eq "0" ]]
+	then
+		read -rd '' -e -a PH_MENU_ITEMS -u >(nawk -F':' '{ \
+				print $1 ; \
+				next \
+			}' "${PH_MENUS_DIR}/${PH_MENU}.lst")
+		read -rd '' -e -a PH_MENU_CMDS -u >(nawk -F':' '{ \
+				print $2 ; \
+				next \
+			}' "${PH_MENUS_DIR}/${PH_MENU}.lst")
+	else
+		declare PH_MENU_ITEMS PH_MENU_CMDS
+		for PH_MENU_LINE in "${PH_MENU_LINES[@]}"
+		do
+			PH_MENU_ITEMS+=("$(cut -d':' -f1<<<"${PH_MENU_LINE}")")
+			PH_MENU_CMDS+=("$(cut -d':' -f2<<<"${PH_MENU_LINE}")")
+		done
+	fi
+	unset PH_MENU_LINES
 	PH_MENU_COUNT="${#PH_MENU_ITEMS[@]}"
-	clear
+	#clear
 	ph_print_bannerline
 	printf "\n%$(echo -n $(($((PH_COLUMNS/2))-$(($(echo -n ${PH_MENU_HEADER} | wc -c)/2)))))s\033[1;036m%s\033[0;0m\n\n" "" "${PH_MENU_HEADER}"
 	ph_print_bannerline
-	for ((PH_i=1;PH_i<="$((PH_MENU_COUNT-1))";PH_i++))
+	for ((PH_COUNT=0;PH_COUNT<="$((PH_MENU_COUNT-1))";PH_COUNT++))
 	do
-		printf "\033[1;37m%-4s%-30s\033[0;0m\n" "${PH_i}. " "${PH_MENU_ITEMS["${PH_i}"]}"
+		printf "\033[1;37m%-4s%-30s\033[0m\n" "$((PH_COUNT+1)). " "${PH_MENU_ITEMS["${PH_COUNT}"]}"
 	done
+	PH_ANSWER="0"
+	PH_COUNT="0"
 	while [[ "${PH_ANSWER}" -lt "1" || "${PH_ANSWER}" -gt "$((PH_MENU_COUNT-1))" ]]
 	do
 		[[ "${PH_COUNT}" -gt "0" ]] && \
@@ -4499,7 +4487,7 @@ do
 	done
 	PH_MENU_CMD="${PH_MENU_CMDS["$((PH_ANSWER-1))"]}"
 	unset PH_MENU_ITEMS PH_MENU_CMDS
-	if [[ "${PH_ANSWER}" -ne "$((PH_MENU_COUNT-1))" ]]
+	if [[ "${PH_ANSWER}" -ne "${PH_MENU_COUNT}" ]]
 	then
 		if [[ "${PH_MENU_CMD}" != ph_show_menu* && "${PH_ANSWER}" -lt "$((PH_MENU_COUNT-3))" ]]
 		then
@@ -4518,17 +4506,17 @@ do
 	else
 		if [[ -z "${PH_LAST_RETURN}" ]]
 		then
-			eval "${PH_MENU_CMD} ${PH_ANSWER}" 2>/dev/null
+			eval "${PH_MENU_CMD}" "${PH_ANSWER}" 2>/dev/null
 		else
 			printf "\n"
 			ph_print_bannerline
 			printf "\n\033[1;37m%s\033[0;0m\n\n" "Already on first screen"
 			ph_print_bannerline
 			printf "\n"
-			sleep 3
 		fi
 	fi
-	if [[ "${PH_ANSWER}" -gt "0" && "${PH_ANSWER}" -lt "$((PH_MENU_COUNT-1))" ]]
+	if [[ "${PH_MENU_CMD}" != ph_show_menu* && "${PH_ANSWER}" -ne "$((PH_MENU_COUNT-1))" && \
+		"${PH_ANSWER}" -ne "$((PH_MENU_COUNT-2))" ]]
 	then
 		printf "\033[1;37m%s\033[0;0m\n" "Press Enter to continue"
 		read -r 2>/dev/null
@@ -10226,7 +10214,7 @@ declare PH_REQ_APP_STATE_PARAM
 declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
-declare -i PH_PIEH_ADDED_FLAG
+declare -i PH_INDEX
 
 PH_OLDOPTARG="$OPTARG"
 PH_OLDOPTIND="$OPTIND"
@@ -10236,7 +10224,7 @@ PH_REQ_APP_STATE=""
 PH_STATE_MATCH_TYPE=""
 PH_REQ_APP_STATE_PARAM=""
 PH_OPTION=""
-PH_PIEH_ADDED_FLAG="1"
+PH_INDEX="0"
 
 OPTIND="1"
 
@@ -10316,19 +10304,23 @@ do
 		fi
 	fi
 done
-for PH_i in "${PH_APP_LIST[@]}"
+for PH_INDEX in "${!PH_APP_LIST[@]}"
 do
-	[[ "$PH_i" == "PieHelper" ]] && \
-		PH_PIEH_ADDED_FLAG="0" && \
+	if [[ "${PH_APP_LIST["${PH_INDEX}"]}" == "PieHelper" ]]
+	then
+		unset PH_APP_LIST["${PH_INDEX}"]
+		echo -n PieHelper
+		echo -n " "
 		break
+	fi
 		
 done
-if [[ "$PH_PIEH_ADDED_FLAG" -eq "0" ]]
-then
-	echo -n PieHelper "${PH_APP_LIST[@]//PieHelper/}"
-else
-	echo -n "${PH_APP_LIST[@]}"
-fi
+for PH_INDEX in "${!PH_APP_LIST[@]}"
+do
+	echo "${PH_APP_LIST["${PH_INDEX}"]}"
+	[[ "${PH_INDEX}" -ne "${#PH_APP_LIST[@]}" ]] && \
+		echo " "
+done
 unset PH_APP_LIST
 return 0
 }
