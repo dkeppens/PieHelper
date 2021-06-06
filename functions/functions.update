@@ -1152,9 +1152,9 @@ OPTARG="${PH_OLDOPTARG}"
 	PH_FILE="${PH_BASE_DIR}"
 if [[ "${PH_ACTION}" == "create" ]]
 then
-	PH_CMD="${PH_SUDO} setfacl -R -m u:${PH_APP_USER}:rwx"
+	PH_CMD="${PH_SUDO} setfacl -m u:${PH_APP_USER}:rwx"
 else
-	PH_CMD="${PH_SUDO} setfacl -R -x u:${PH_APP_USER}"
+	PH_CMD="${PH_SUDO} setfacl -x u:${PH_APP_USER}"
 fi
 PH_CMD="xargs -I '{}' ${PH_CMD} {}"
 if [[ "${PH_QUIESCE}" -eq "1" ]]
