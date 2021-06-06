@@ -2409,7 +2409,7 @@ do
 		break
 	if [[ "${PH_APP}" == "Controllers" ]]
 	then
-		PH_APP_DISPLAY="${PH_APP%.}"
+		PH_APP_DISPLAY="${PH_APP%s}"
 	else
 		PH_APP_DISPLAY="${PH_APP}"
 	fi

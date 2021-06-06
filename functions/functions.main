@@ -4436,37 +4436,26 @@ do
 		done
 		unset PH_APPS_LIST ;;
 			     *)
-		if [[ "${PH_MENU}" == @(Applications|"$(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")") ]]
+		if [[ "${PH_MENU}" == "Applications" ]]
 		then
-			if [[ "${PH_MENU}" == "Applications" ]]
-			then
-				for PH_MENU_LINE in "List all applications:confapps_ph.sh -r list -l all | more" \
-					"List packaged ${PH_MENU} applications:confapps_ph.sh -r list -l all -s pkg | more" \
-					"List unpackaged ${PH_MENU} applications:confapps_ph.sh -r list -l all -s unpkg | more" \
-					"List installed ${PH_MENU} applications:confapps_ph.sh -r list -l all -s inst | more" \
-					"List uninstalled ${PH_MENU} applications:confapps_ph.sh -r list -l all -s uninst | more" \
-					"List the Start application:confapps_ph.sh -r list -l start | more" \
-					"Set the Start application:confapps_ph.sh -r start -a prompt" \
-					"Unset the Start application:confapps_ph.sh -r unstart -l start"
-				do
-					PH_MENU_LINES+=("${PH_MENU_LINE}")
-				done
-				for PH_i in Running Halted Integrated Supported Default Out-of-scope
-				do
-					if [[ -n "$(ph_get_app_list_by_state -s "${PH_i}" -t minimum)" ]]
-					then
-						PH_MENU_LINES+=("Go to ${PH_MENU}:ph_show_menu ${PH_MENU}")
-					fi
-				done
-			else
-				for PH_i in Running Halted Integrated Supported Default Out-of-scope
-				do
-					if ph_check_app_state_validity -a "${PH_i}" -q "-$(cut -c1<<<"${PH_i}" | tr '[:upper:]' '[:lower:]')"
-					then
-						PH_MENU_LINES+=("Go to ${PH_i} Applications:ph_show_menu ${PH_i}")
-					fi
-				done
-			fi
+			for PH_MENU_LINE in "List all applications:confapps_ph.sh -r list -l all | more" \
+				"List all packaged applications:confapps_ph.sh -r list -l all -s pkg | more" \
+				"List all unpackaged applications:confapps_ph.sh -r list -l all -s unpkg | more" \
+				"List all installed applications:confapps_ph.sh -r list -l all -s inst | more" \
+				"List all uninstalled applications:confapps_ph.sh -r list -l all -s uninst | more" \
+				"List the Start application:confapps_ph.sh -r list -l start | more" \
+				"Set the Start application:confapps_ph.sh -r start -a prompt" \
+				"Unset the Start application:confapps_ph.sh -r unstart -l start"
+			do
+				PH_MENU_LINES+=("${PH_MENU_LINE}")
+			done
+			for PH_i in Running Halted Integrated Supported Default Out-of-scope
+			do
+				if [[ -n "$(ph_get_app_list_by_state -s "${PH_i}" -t minimum)" ]]
+				then
+					PH_MENU_LINES+=("Go to ${PH_i} Applications:ph_show_menu ${PH_i}")
+				fi
+			done
 		fi ;;
 	esac
 	declare -a PH_MENU_ITEMS PH_MENU_CMDS
@@ -4487,8 +4476,18 @@ do
 		done
 	fi
 	if [[ ! ( -e "${PH_MENUS_DIR}/${PH_MENU}.lst" ) || \
-		"${PH_MENU}" == @(TTY|Options|Status)Management_@("$(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")") ]]
+		"${PH_MENU}" == @(@(TTY|Options|Status)Management_|)@("$(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")") ]]
 	then
+		if [[ "${PH_MENU}" == @(Applications|"$(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")") ]]
+		then
+			for PH_i in Running Halted Integrated Supported Default Out-of-scope
+			do
+				if ph_check_app_state_validity -a "${PH_MENU}" -q "-$(cut -c1<<<"${PH_i}" | tr '[:upper:]' '[:lower:]')"
+				then
+					PH_MENU_LINES+=("Go to ${PH_i} Applications:ph_show_menu ${PH_i}")
+				fi
+			done
+		fi
 		if [[ "${PH_MENU}" == @("$(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")") && \
 			"${PH_MENU_PARENT}" != "Applications" ]]
 		then
