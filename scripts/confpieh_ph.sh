@@ -263,17 +263,17 @@ case "$PH_ACTION" in repair)
 		ph_show_result
 		exit "$?" ;;
 		  configure)
-		confapps_ph.sh -p conf -a PieHelper
+		confapps_ph.sh -r conf -a PieHelper
 		exit "$?" ;;
 	        unconfigure)
 		printf "\033[36m%s\033[0m\n\n" "- Unconfiguring ${PH_APP}"
 		ph_unconfigure_pieh -u
 		exit "$?" ;;
 		     remove)
-		confapps_ph.sh -p uninst -a PieHelper
+		confapps_ph.sh -r uninst -a PieHelper
 		exit "$?" ;;
 		     update)
-		confapps_ph.sh -p update -a PieHelper
+		confapps_ph.sh -r update -a PieHelper
 		exit "$?" ;;
 		      debug)
 		[[ "$PH_MODULES" == @(all|enabled|disabled) ]] && \

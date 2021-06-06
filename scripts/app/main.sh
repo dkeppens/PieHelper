@@ -166,11 +166,6 @@ then
 	export TERM="xterm"
 fi
 
-# Override terminal color settings
-
-printf %b '\e[0;37m'
-printf %b '\e[0;40m' '\e[8]' '\e[H\e[J'
-
 # Load all relevant module declarations
 
 for PH_i in functions.main functions.user functions.update $(echo -n "${PH_SUPPORTED_DISTROS[@]}" | nawk '{ \

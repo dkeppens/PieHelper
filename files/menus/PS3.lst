@@ -1,7 +1,7 @@
 Display instructions for manual USB setup of DualShock3:confctrl_ph.sh -p help -c usb -t PS3 | more
 Display instructions for manual bluetooth setup of Dualshock3:confctrl_ph.sh -p help -c bluetooth -t PS3 | more
 Setup bluetooth DualShock3 controllers:confctrl_ph.sh -p prompt -t PS3
-Go to StatusManagement_Controllers:ph_show_menu StatusManagement_Controllers
+Go to Controller Status:ph_show_menu StatusManagement_Controllers
 Go to Controllers:ph_show_menu Controllers
 Go to Main:ph_show_menu Main
 Open a shell (Type 'CTRL-D' to return):cd;/bin/bash

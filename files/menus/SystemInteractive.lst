@@ -1,17 +1,17 @@
-Create/Modify a user:"${PH_SUDO}" confoper_ph.sh -p user -i
-Delete the default raspberry user:"${PH_SUDO}" confoper_ph.sh -p del_stduser -i
-Create SSH keypair for a user:"${PH_SUDO}" confoper_ph.sh -p sshkey -i
-Enable/Disable SSH:"${PH_SUDO}" confoper_ph.sh -p ssh -i
-Change the system hostname:"${PH_SUDO}" confoper_ph.sh -p host -i
-Change the system timezone:"${PH_SUDO}" confoper_ph.sh -p tzone -i
-Change the system locales:"${PH_SUDO}" confoper_ph.sh -p locale -i
-Change the system audio channel:"${PH_SUDO}" confoper_ph.sh -p audio -i
-Change the keyboard layout:"${PH_SUDO}" confoper_ph.sh -p keyb -i
-Change the default boot environment:"${PH_SUDO}" confoper_ph.sh -p bootenv -i
-Change the GPU-reserved memory:"${PH_SUDO}" confoper_ph.sh -p memsplit -i
-Change wether to wait for network on boot:"${PH_SUDO}" confoper_ph.sh -p netwait -i
-Change the display overscan:"${PH_SUDO}" confoper_ph.sh -p overscan -i
-Change all settings:"${PH_SUDO}" confoper_ph.sh -p all -i
+Create/Modify a user:\"${PH_SUDO}\" confoper_ph.sh -p user -i
+Delete the default raspberry user:\"${PH_SUDO}\" confoper_ph.sh -p del_stduser -i
+Create SSH keypair for a user:\"${PH_SUDO}\" confoper_ph.sh -p sshkey -i
+Enable/Disable SSH:\"${PH_SUDO}\" confoper_ph.sh -p ssh -i
+Change the system hostname:\"${PH_SUDO}\" confoper_ph.sh -p host -i
+Change the system timezone:\"${PH_SUDO}\" confoper_ph.sh -p tzone -i
+Change the system locales:\"${PH_SUDO}\" confoper_ph.sh -p locale -i
+Change the system audio channel:\"${PH_SUDO}\" confoper_ph.sh -p audio -i
+Change the keyboard layout:\"${PH_SUDO}\" confoper_ph.sh -p keyb -i
+Change the default boot environment:\"${PH_SUDO}\" confoper_ph.sh -p bootenv -i
+Change the GPU-reserved memory:\"${PH_SUDO}\" confoper_ph.sh -p memsplit -i
+Change wether to wait for network on boot:\"${PH_SUDO}\" confoper_ph.sh -p netwait -i
+Change the display overscan:\"${PH_SUDO}\" confoper_ph.sh -p overscan -i
+Change all settings:\"${PH_SUDO}\" confoper_ph.sh -p all -i
 Go to Main:ph_show_menu Main
 System:ph_show_menu System
 Open a shell (Type 'CTRL-D' to return):cd;/bin/bash
