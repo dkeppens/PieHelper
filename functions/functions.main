@@ -4314,6 +4314,7 @@ declare PH_MENU_ITEM
 declare PH_LAST_RETURN
 declare -i PH_ANSWER
 declare -i PH_COUNT
+declare -i PH_RET_CODE
 declare -i PH_COLUMNS
 declare -i PH_MENU_COUNT
 
@@ -4330,6 +4331,7 @@ H_MENU_ITEM=""
 PH_LAST_RETURN="${PH_LAST_RETURN_GLOB}"
 PH_ANSWER="0"
 PH_COUNT="0"
+PH_RET_CODE="0"
 PH_COLUMNS="$(tput cols 2>/dev/null)"
 PH_MENU_COUNT="0"
 
@@ -4343,18 +4345,15 @@ then
 	PH_MENU_HEADER="PieHelper ${PH_VERSION} > ${PH_MENU} ${PH_MENU_TYPE}"
 else
 	PH_MENU_TYPE="submenu"
-	case "${PH_MENU}" in Support|Applications|Controllers)
+	case "${PH_MENU}" in System|Support|Applications|Controllers)
 		PH_MENU_APP="${PH_MENU}"
 		PH_MENU_PARENT="Main" ;;
-			System)
-		PH_MENU_APP="${PH_MENU} Management"
-		PH_MENU_PARENT="Main" ;;
 			SystemRetaineds)
-		PH_MENU_PARENT="System Management"
+		PH_MENU_PARENT="System"
 		PH_MENU_APP="Retain System" ;;
 			SystemRetained|SystemInteractive)
-		PH_MENU_PARENT="System Management"
-		PH_MENU_APP="${PH_MENU#System} ${PH_MENU_PARENT}" ;;
+		PH_MENU_PARENT="System"
+		PH_MENU_APP="${PH_MENU#System} ${PH_MENU_PARENT} Management" ;;
 			StatusManagement_*|OptionsManagement_*|TTYManagement_*)
 		PH_MENU_PARENT="${PH_MENU##*_}"
 		if [[ "${PH_MENU_PARENT}" == "Controllers" ]]
@@ -4365,7 +4364,7 @@ else
 		fi ;;
 			PS3|PS4|XBOX360|XBOXSX)
 		PH_MENU_PARENT="Controller Status"
-		PH_MENU_APP="${PH_MENU} Controllers" ;;
+		PH_MENU_APP="${PH_MENU} Status" ;;
 			StatusManagement|TTYManagement|OptionsManagement)
 		if PH_MENU_PARENT="$(ph_get_linked_menu_app)"
 		then
@@ -4403,7 +4402,7 @@ do
 		ph_run_with_rollback -c "ph_link_app_to_menu -a '${PH_MENU_PARENT}' -q" || \
 			return 1 ;;
 			*)
-		if [[ "${PH_MENU}" == @("$(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")"|Controllers) ]]
+		if [[ "${PH_MENU}" == @($(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")|Controllers) ]]
 		then
 			ph_run_with_rollback -c "ph_link_app_to_menu -a '${PH_MENU}' -q" || \
 				return 1
@@ -4476,9 +4475,9 @@ do
 		done
 	fi
 	if [[ ! ( -e "${PH_MENUS_DIR}/${PH_MENU}.lst" ) || \
-		"${PH_MENU}" == @(@(TTY|Options|Status)Management_|)@("$(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")") ]]
+		"${PH_MENU}" == @(@(TTY|Options|Status)Management_|)@($(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")) ]]
 	then
-		if [[ "${PH_MENU}" == @(Applications|"$(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")") ]]
+		if [[ "${PH_MENU}" == @(Applications|$(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")) ]]
 		then
 			for PH_i in Running Halted Integrated Supported Default Out-of-scope
 			do
@@ -4488,7 +4487,7 @@ do
 				fi
 			done
 		fi
-		if [[ "${PH_MENU}" == @("$(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")") && \
+		if [[ "${PH_MENU}" == @($(ph_get_app_list_by_state -s Unused -t minimum | sed "s/ /|/g")) && \
 			"${PH_MENU_PARENT}" != "Applications" ]]
 		then
 			PH_MENU_LINES+=("Go to ${PH_MENU_PARENT}:ph_show_menu ${PH_MENU_PARENT% *}")
@@ -4558,7 +4557,7 @@ do
 			shopt -u extdebug
 		fi
 		eval "${PH_MENU_CMD}"
-		PH_ANSWER="${?}"
+		PH_RET_CODE="${?}"
 		if [[ "${PH_MENU_CMD}" != ph_show_menu* && "${PH_MENU_ITEM}" != Show*manual && "${PH_ANSWER}" -lt "$((PH_MENU_COUNT-2))" ]]
 		then
 			shopt -s extdebug
@@ -10381,9 +10380,9 @@ do
 done
 for PH_INDEX in "${!PH_APP_LIST[@]}"
 do
-	echo "${PH_APP_LIST["${PH_INDEX}"]}"
+	echo -n "${PH_APP_LIST["${PH_INDEX}"]}"
 	[[ "${PH_INDEX}" -ne "${#PH_APP_LIST[@]}" ]] && \
-		echo " "
+		echo -n " "
 done
 unset PH_APP_LIST
 return 0

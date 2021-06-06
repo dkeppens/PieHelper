@@ -1,3 +1,4 @@
+* change return option of menu to 0. : easier
 * add checks for missing menu items etc to ph_check_pieh_configured
 * split confapps_ph.sh into confapps_ph.sh and confttys_ph.sh and change menus to use new script
 * add check for no routine options used for apps not Unused and Out-of-scope
