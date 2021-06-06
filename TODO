@@ -1,3 +1,4 @@
+* add checks for missing menu items etc to ph_check_pieh_configured
 * split confapps_ph.sh into confapps_ph.sh and confttys_ph.sh and change menus to use new script
 * add check for no routine options used for apps not Unused and Out-of-scope
 * change confapps_ph.sh to allow add mention -a option mainly but not exclusively for Unused Out-of-scope applications

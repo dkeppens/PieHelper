@@ -1057,7 +1057,7 @@ do
 		exit "$?"
 	fi
 done
-for PH_i in Support System Applications Main PS3 PS4 XBOX360 XBOXSX SystemRetained SystemInteractive SystemRetaineds
+for PH_i in Support System Main PS3 PS4 XBOX360 XBOXSX SystemRetained SystemInteractive SystemRetaineds
 do
 	if ! ph_check_object_existence -q -o "${PH_MENUS_DIR}/${PH_i}.lst"
         then
@@ -1460,7 +1460,7 @@ do
 		PH_RET_CODE="1"
 	fi
 done
-for PH_i in $(ls "${PH_MENUS_DIR}/"!(@(System|SystemRetaineds|SystemRetained|SystemInteractive|Support|PS3|PS4|XBOX360|XBOXSX|Main|Applications).lst) 2>/dev/null | \
+for PH_i in $(ls "${PH_MENUS_DIR}/"!(@(System|SystemRetaineds|SystemRetained|SystemInteractive|Support|PS3|PS4|XBOX360|XBOXSX|Main).lst) 2>/dev/null | \
 	nawk 'BEGIN { \
 		ORS =  " " \
 	} { \
