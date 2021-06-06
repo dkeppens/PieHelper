@@ -4359,7 +4359,7 @@ else
 		PH_MENU_PARENT="${PH_MENU##*_}"
 		if [[ "${PH_MENU_PARENT}" == "Controllers" ]]
 		then
-			PH_MENU_APP="${PH_MENU_PARENT%.} ${PH_MENU%%Management*}"
+			PH_MENU_APP="${PH_MENU_PARENT%s} ${PH_MENU%%Management*}"
 		else
 			PH_MENU_APP="${PH_MENU_PARENT} ${PH_MENU%%Management*}"
 		fi ;;
@@ -4371,7 +4371,7 @@ else
 		then
 			if [[ "${PH_MENU_PARENT}" == "Controllers" ]]
 			then
-				PH_MENU_APP="${PH_MENU_PARENT%.} ${PH_MENU%%Management}"
+				PH_MENU_APP="${PH_MENU_PARENT%s} ${PH_MENU%%Management}"
 			else
 				PH_MENU_APP="${PH_MENU_PARENT} ${PH_MENU%%Management}"
 			fi
