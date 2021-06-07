@@ -10638,13 +10638,13 @@ function ph_set_bootenv {
 declare PH_ENV
 declare PH_ENV_ACTION
 
-PH_ENV="$1"
+PH_ENV="${1}"
 PH_ENV_ACTION=""
 
-[[ -z "$PH_ENV" || "$#" -ne "1" ]] && \
+[[ -z "${PH_ENV}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-if [[ "$PH_ENV" == "multi-user.target" ]]
+if [[ "${PH_ENV}" == "multi-user.target" ]]
 then 
 	PH_ENV_ACTION="disable"
 	printf "%8s%s\n" "" "--> Disabling the graphical environment"
@@ -10652,14 +10652,14 @@ else
 	PH_ENV_ACTION="enable"
 	printf "%8s%s\n" "" "--> Enabling the graphical environment"
 fi
-if "$PH_SUDO" systemctl set-default "$PH_ENV" >/dev/null 2>&1
+if "${PH_SUDO}" systemctl set-default "${PH_ENV}" >/dev/null 2>&1
 then
-	[[ "$PH_ENV" == "graphical.target" ]] && \
+	[[ "${PH_ENV}" == "graphical.target" ]] && \
 		PH_ENV="multi-user.target" || \
 		PH_ENV="graphical.target"
-	ph_add_value_to_param -p PH_BOOTENV -v "$PH_ENV"
+	ph_add_value_to_param -p PH_BOOTENV -v "${PH_ENV}"
 	ph_run_with_rollback -c true && \
-		return "$?"
+		return "${?}"
 fi
 ph_set_result -m "An error occured trying to ${PH_ENV_ACTION} the graphical environment"
 ph_run_with_rollback -c false -m "Could not ${PH_ENV_ACTION}" || \
@@ -10670,22 +10670,23 @@ function ph_do_app_routine {
 
 declare PH_i
 declare PH_APP
+declare PH_APP_CMD
+declare PH_APP_PKG
 declare PH_APP_SCOPE
 declare PH_APP_USER
+declare PH_APP_STR_TTY
 declare PH_APP_INST_STATE
 declare PH_APP_STATE
 declare PH_REQ_APP_STATE
 declare PH_REQ_APP_STATE_PARAM
 declare PH_DISP_APP_STATE
 declare PH_ITEMS
-declare PH_ROUTINE_OPTS
 declare PH_LIST
 declare PH_FILE
-declare PH_KEYWORD
 declare PH_STRING
 declare PH_CMD
 declare PH_SKIPPING
-declare PH_ACTION
+declare PH_ROUTINE
 declare PH_HEADER
 declare PH_OPTION
 declare PH_OLDOPTARG
@@ -10694,278 +10695,296 @@ declare -i PH_COUNT
 declare -i PH_TOT_LIST_MEMBERS
 declare -i PH_SKIP_LIST_MEMBERS
 declare -i PH_RET_CODE
-declare -i PH_APP_TTY
 declare -u PH_APPU
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_i=""
 PH_APP=""
+PH_APP_CMD=""
+PH_APP_PKG=""
 PH_APP_SCOPE=""
 PH_APP_USER=""
+PH_APP_STR_TTY=""
 PH_APP_INST_STATE=""
 PH_APP_STATE=""
 PH_REQ_APP_STATE=""
 PH_REQ_APP_STATE_PARAM=""
 PH_DISP_APP_STATE=""
 PH_ITEMS=""
-PH_ROUTINE_OPTS=""
 PH_LIST=""
 PH_FILE="integrated_apps"
-PH_KEYWORD=""
 PH_STRING=""
 PH_CMD=""
 PH_SKIPPING="no"
-PH_ACTION=""
+PH_ROUTINE=""
 PH_HEADER=""
 PH_OPTION=""
 PH_COUNT="0"
 PH_TOT_LIST_MEMBERS="0"
 PH_SKIP_LIST_MEMBERS="0"
 PH_RET_CODE="0"
-PH_APP_TTY="0"
 PH_APPU=""
 
 OPTIND="1"
 
-while getopts :a:p:s:k:l:o:u: PH_OPTION
+while getopts :a:c:p:r:s:l:u:t: PH_OPTION
 do
-        case "$PH_OPTION" in a)
-		[[ -n "$PH_APP" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+        case "${PH_OPTION}" in a)
+		[[ -n "${PH_APP}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-                PH_APP="$OPTARG" ;;
+                PH_APP="${OPTARG}" ;;
+			     c)
+		[[ -n "${PH_APP_CMD}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+                PH_APP_CMD="-c '${OPTARG}'" ;;
 			     p)
-		[[ -n "$PH_ACTION" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_APP_PKG}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-                PH_ACTION="$OPTARG" ;;
+                PH_APP_PKG="-p '${OPTARG}'" ;;
+			     r)
+		[[ -n "${PH_ROUTINE}" || ( "${OPTARG}" != @(inst|uninst|sup|unsup|int|unint|conf|unconf|start|unstart|update|list|info|tty) && \
+			"${OPTARG}" != @(mk|rm)_@(conf_file|defaults|alloweds|menus|scripts|cifs_mpt|all) ) ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+                PH_ROUTINE="${OPTARG}" ;;
 			     s) 
-		[[ -n "$PH_APP_SCOPE" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_APP_SCOPE}" || "${OPTARG}" != @(oos|def|inst|uninst|pkg|unpkg|PI|PU|UI|UU) ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-                PH_APP_SCOPE="$OPTARG" ;;
-			     k)
-		[[ -n "$PH_KEYWORD" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
-			return 1
-                PH_KEYWORD="$OPTARG" ;;
+                PH_APP_SCOPE="${OPTARG}" ;;
 			     l)
-		[[ -n "$PH_LIST" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_LIST}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-                PH_LIST="$OPTARG" ;;
-			     o)
-		[[ -n "$PH_ROUTINE_OPTS" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		for PH_i in ${OPTARG//,/ }
+		do
+			if [[ "${PH_i}" != @(def|sup|int|hal|run|str|all) ]]
+			then
+				OPTARG="${PH_OLDOPTARG}"
+				OPTIND="${PH_OLDOPTIND}"
+				exit 1
+			fi
+		done
+                PH_LIST="${OPTARG}" ;;
+			     u)
+		[[ -n "${PH_APP_USER}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-                PH_ROUTINE_OPTS="$OPTARG" ;;
+                PH_APP_USER="-u '${OPTARG}'" ;;
+			     t)
+		[[ -n "${PH_APP_STR_TTY}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+                PH_APP_STR_TTY="-t '${OPTARG}'" ;;
 			     *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
         esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-if [[ -n "$PH_LIST" ]]
+[[ -z "${PH_ROUTINE}" || ( -z "${PH_APP}" && -z "${PH_LIST}" ) || "${#}" -gt "14" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+if [[ -n "${PH_LIST}" ]]
 then
-	PH_CMD="ph_do_app_routine -p '${PH_ACTION}' -k '${PH_i}' -s '${PH_APP_SCOPE}' -o '${PH_ROUTINE_OPTS}'"
-fi
-if [[ -n "$PH_APP" ]]
-then
-	PH_LIST="$PH_APP"
-	PH_APP_STATE="$(ph_get_app_state_from_app_name "$PH_APP")"
-	case "$PH_ACTION" in list)
-			PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_name "$PH_APP")"
-			PH_CMD="printf \"%4s%s\\n\" \"\" \"${PH_APP} : ${PH_APP_INST_STATE}\"" ;;
-			     tty)
-			PH_APP_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
-			if [[ "$PH_APP_TTY" -eq "1" ]]
-			then
-				PH_CMD="printf \"%4s%s\\n\" \"\" \"${PH_APP} : None\""
-			else
-				PH_CMD="printf \"%4s%s\\n\" \"\" \"${PH_APP} : tty${PH_APP_TTY}\""
-			fi ;;
-			     info)
-			PH_CMD="ph_show_app_info '${PH_APP}'" ;;
-			     sup)
-			PH_CMD="ph_support_app -a '${PH_APP}' ${PH_ROUTINE_OPTS}" ;;
-			     unsup)
-			PH_CMD="ph_unsupport_app -a '${PH_APP}' ${PH_ROUTINE_OPTS}" ;;
-			     int)
-			PH_CMD="ph_integrate_app -a '${PH_APP}' ${PH_ROUTINE_OPTS}" ;;
-			     unint)
-			PH_CMD="ph_unintegrate_app -a '${PH_APP}' ${PH_ROUTINE_OPTS}" ;;
-			     inst)
-			PH_CMD="ph_install_app -a '${PH_APP}' -u '${PH_APP_USER}'" ;;
-			     uninst)
-			PH_CMD="ph_uninstall_app -a '${PH_APP}'" ;;
-			     update)
-			PH_CMD="ph_update_app -a '${PH_APP}'" ;;
-			     conf)
-			PH_CMD="ph_configure_app -a '${PH_APP}'" ;;
-			     move)
-			PH_CMD="ph_move_app -a '${PH_APP}' ${PH_ROUTINE_OPTS}" ;;
-			     start)
-			PH_CMD="ph_set_app_for_start '${PH_APP}'" ;;
-			     mk_conf)
-			PH_CMD="ph_create_app_conf_file '${PH_APP}'" ;;
-			     mk_defaults)
-			PH_CMD="ph_create_app_defaults '${PH_APP}'" ;;
-			     mk_alloweds)
-			PH_CMD="ph_create_app_alloweds '${PH_APP}'" ;;
-			     mk_menus)
-			PH_CMD="ph_create_app_menus '${PH_APP}'" ;;
-			     mk_scripts)
-			PH_CMD="ph_create_app_scripts '${PH_APP}'" ;;
-			     mk_dir)
-			PH_CMD="ph_create_app_cifs_mpt '${PH_APP}'" ;;
-			     mk_all)
-			if [[ "$PH_APP_STATE" == "Integrated" ]]
-			then
-				PH_ITEMS="conf,defaults,alloweds,menus,scripts,dir"
-			else
-				PH_ITEMS="conf,defaults,alloweds,menus"
-			fi ;;
-			     rm_conf)
-			PH_CMD="ph_remove_app_conf_file '${PH_APP}'" ;;
-			     rm_defaults)
-			PH_CMD="ph_remove_app_defaults '${PH_APP}'" ;;
-			     rm_alloweds)
-			PH_CMD="ph_remove_app_alloweds '${PH_APP}'" ;;
-			     rm_menus)
-			PH_CMD="ph_remove_app_menus '${PH_APP}'" ;;
-			     rm_scripts)
-			PH_CMD="ph_remove_app_scripts '${PH_APP}'" ;;
-			     rm_dir)
-			PH_CMD="ph_remove_app_cifs_mpt '${PH_APP}'" ;;
-			     rm_all)
-			if [[ "$PH_APP_STATE" == "Integrated" ]]
-			then
-				PH_ITEMS="dir,scripts,menus,alloweds,defaults,conf"
-			else
-				PH_ITEMS="menus,alloweds,defaults,conf"
-			fi ;;
-	esac
-fi
-if [[ -n "$PH_ITEMS" && -n "$PH_APP" ]]
-then
-	for PH_i in ${PH_ITEMS//,/ }
+	for PH_i in ${PH_LIST//,/ }
 	do
-		((PH_COUNT++))
-		confapps_ph.sh -p "${PH_ACTION:0:3}${PH_i}" -a "$PH_APP"
-		ph_set_result -t -r "$?"
+		PH_CMD="ph_do_app_routine -r '${PH_ROUTINE}' -l '${PH_i}' -s '${PH_APP_SCOPE}' ${PH_APP_STR_TTY} ${PH_APP_USER} ${PH_APP_CMD} ${PH_APP_PKG}"
 	done
-	unset PH_ROUTINE_DEPTH PH_ROUTINE_FLAG PH_SKIP_DEPTH_MEMBERS
-	ph_show_result -t
-	exit "$?"
 fi
-case "$PH_KEYWORD" in def)
-		PH_DISP_APP_STATE="Default"
-		PH_FILE="default_apps${PH_FILE_SUFFIX}" ;;
-		      sup)
-		PH_DISP_APP_STATE="Supported"
-		PH_FILE="supported_apps" ;;
-		      int)
-		PH_DISP_APP_STATE="Integrated" ;;
-		      hal)
-		PH_DISP_APP_STATE="Halted" ;;
-		      run)
-		PH_DISP_APP_STATE="Running" ;;
-		      start)
-		PH_DISP_APP_STATE="StartApp" ;;
-		      unu)
-		PH_DISP_APP_STATE="Unused"
-		PH_FILE="/dev/null" ;;
-		      res)
-		PH_DISP_APP_STATE="Reserved"
-		PH_FILE="/dev/null" ;;
-		      oos)
-		PH_DISP_APP_STATE="Out-of-scope"
-		PH_FILE="/dev/null" ;;
+if [[ -n "${PH_APP}" ]]
+then
+	PH_LIST="${PH_APP}"
+	PH_APP_STATE="$(ph_get_app_state_from_app_name "${PH_APP}")"
+	case "${PH_ROUTINE}" in list)
+		PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_name "${PH_APP}")"
+		PH_CMD="printf \"%4s\\033\[1\;37m%s\\033\[1\;33m%s\\033\[0m\\n\" \"\" \"${PH_APP} : \" \"${PH_APP_INST_STATE}\"" ;;
+			tty)
+		PH_APP_STR_TTY="$(ph_get_app_tty_from_app_name "${PH_APP}")"
+		if [[ "${PH_APP_STR_TTY}" == @(-|1) ]]
+		then
+			PH_CMD="printf \"%4s\\033\[1\;37m%s\\033\[1\;33m%s\\033\[0m\\n\" \"\" \"${PH_APP} : \" \"None\""
+		else
+			PH_CMD="printf \"%4s\\033\[1\;37m%s\\033\[1\;33m%s\\033\[0m\\n\" \"\" \"${PH_APP} : \" \"tty${PH_APP_STR_TTY}\""
+		fi ;;
+			info)
+		PH_CMD="ph_show_app_info '${PH_APP}'" ;;
+			sup)
+		PH_CMD="ph_support_app -a '${PH_APP}' ${PH_APP_CMD} ${PH_APP_PKG} ${PH_APP_USER}" ;;
+			unsup)
+		PH_CMD="ph_unsupport_app -a '${PH_APP}'" ;;
+			int)
+		PH_CMD="ph_integrate_app -a '${PH_APP}'" ;;
+			unint)
+		PH_CMD="ph_unintegrate_app -a '${PH_APP}'" ;;
+			inst)
+		PH_CMD="ph_install_app -a '${PH_APP}' ${PH_APP_PKG}" ;;
+			uninst)
+		PH_CMD="ph_uninstall_app -a '${PH_APP}'" ;;
+			update)
+		PH_CMD="ph_update_app -a '${PH_APP}'" ;;
+			conf)
+		PH_CMD="ph_configure_app -a '${PH_APP}'" ;;
+			unconf)
+		PH_CMD="ph_unconfigure_app -a '${PH_APP}'" ;;
+			move)
+		PH_CMD="ph_move_app -a '${PH_APP}' ${PH_APP_STR_TTY}" ;;
+			start)
+		PH_CMD="ph_set_app_for_start '${PH_APP}'" ;;
+			unstart)
+		PH_CMD="ph_set_app_for_start 'none'" ;;
+			mk_conf)
+		PH_CMD="ph_create_app_conf_file '${PH_APP}'" ;;
+			mk_defaults)
+		PH_CMD="ph_create_app_defaults '${PH_APP}'" ;;
+			mk_alloweds)
+		PH_CMD="ph_create_app_alloweds '${PH_APP}'" ;;
+			mk_menus)
+		PH_CMD="ph_create_app_menus '${PH_APP}'" ;;
+			mk_scripts)
+		PH_CMD="ph_create_app_scripts '${PH_APP}'" ;;
+			mk_cifs_mpt)
+		PH_CMD="ph_create_app_cifs_mpt '${PH_APP}'" ;;
+			mk_all)
+		if [[ "${PH_APP_STATE}" == @(Integra|Hal)ted ]]
+		then
+			PH_ITEMS="conf_file,alloweds,defaults,menus,scripts,cifs_mpt"
+		else
+			PH_ITEMS="conf_file,alloweds,defaults,menus"
+		fi ;;
+			rm_conf)
+		PH_CMD="ph_remove_app_conf_file '${PH_APP}'" ;;
+			rm_defaults)
+		PH_CMD="ph_remove_app_defaults '${PH_APP}'" ;;
+			rm_alloweds)
+		PH_CMD="ph_remove_app_alloweds '${PH_APP}'" ;;
+			rm_menus)
+		PH_CMD="ph_remove_app_menus '${PH_APP}'" ;;
+			rm_scripts)
+		PH_CMD="ph_remove_app_scripts '${PH_APP}'" ;;
+			rm_cifs_mpt)
+		PH_CMD="ph_remove_app_cifs_mpt '${PH_APP}'" ;;
+			rm_all)
+		if [[ "${PH_APP_STATE}" == @(Integra|Hal)ted ]]
+		then
+			PH_ITEMS="cifs_mpt,scripts,menus,defaults,alloweds,conf_file"
+		else
+			PH_ITEMS="menus,defaults,alloweds,conf_file"
+		fi ;;
+			*)
+		: ;;
+	esac
+	if [[ -n "${PH_ITEMS}" ]]
+	then
+		for PH_i in ${PH_ITEMS//,/ }
+		do
+			confapps_ph.sh -r "${PH_ROUTINE:0:3}${PH_i}" -a "${PH_APP}"
+		done
+		unset PH_ROUTINE_DEPTH PH_ROUTINE_FLAG PH_SKIP_DEPTH_MEMBERS
+		exit 0
+	fi
+fi
+case "${PH_LIST}" in oos)
+	PH_DISP_APP_STATE="Out-of-scope"
+	PH_FILE="/dev/null" ;;
+		def)
+	PH_DISP_APP_STATE="Default"
+	PH_FILE="default_apps${PH_FILE_SUFFIX}" ;;
+		sup)
+	PH_DISP_APP_STATE="Supported"
+	PH_FILE="supported_apps" ;;
+		int)
+	PH_DISP_APP_STATE="Integrated" ;;
+		hal)
+	PH_DISP_APP_STATE="Halted" ;;
+		run)
+	PH_DISP_APP_STATE="Running" ;;
+		str)
+	PH_DISP_APP_STATE="StartApp" ;;
+		all)
+	PH_DISP_APP_STATE="Unused"
+	PH_FILE="/dev/null" ;;
+		*)
+	: ;;
 esac
-case "$PH_ACTION" in list)
-	case "$PH_KEYWORD" in int)
-		PH_REQ_APP_STATE="Integrated" ;;
-			      sup)
-		PH_REQ_APP_STATE="Supported" ;;
-			      def)
-		PH_REQ_APP_STATE="Default" ;;
-			      hal)
-		PH_REQ_APP_STATE="Halted" ;;
-			      run)
-		PH_REQ_APP_STATE="Running" ;;
-			      start)
-		PH_REQ_APP_STATE="Halted" ;;
-			      unu)
-		PH_REQ_APP_STATE="Unused" ;;
-			      res)
-		PH_REQ_APP_STATE="Reserved" ;;
-			      oos)
-		PH_REQ_APP_STATE="Out-of-scope" ;;
-	esac ;;
-		     tty)
+case "${PH_ROUTINE}" in list)
+	if [[ "${PH_LIST}" == "str" ]]
+	then
+		PH_REQ_APP_STATE="Halted"
+	else
+		PH_REQ_APP_STATE="${PH_DISP_APP_STATE}"
+	fi ;;
+		tty)
 	PH_REQ_APP_STATE="Halted" ;;
-		     info)
+		info)
 	PH_REQ_APP_STATE="Supported" ;;
-		     sup)
+		sup)
 	PH_REQ_APP_STATE="Unused" ;;
-		     unsup)
+		unsup)
 	PH_REQ_APP_STATE="Supported" ;;
-		     int)
+		int)
 	PH_REQ_APP_STATE="Supported" ;;
-		     unint)
+		unint)
 	PH_REQ_APP_STATE="Integrated" ;;
-		     inst)
-	PH_REQ_APP_STATE="All" ;;
-		     uninst)
-	PH_REQ_APP_STATE="All" ;;
-		     update)
+		inst)
+	PH_REQ_APP_INST_STATE='*U' ;;
+		uninst)
+	PH_REQ_APP_INST_STATE='*I' ;;
+		update)
 	PH_REQ_APP_STATE="Supported" ;;
-		     conf)
+		conf)
 	PH_REQ_APP_STATE="Supported" ;;
-		     move)
+		unconf)
+	PH_REQ_APP_STATE="Supported" ;;
+		move)
 	PH_REQ_APP_STATE="Halted" ;;
-		     start)
-	PH_REQ_APP_STATE="Integrated" ;;
-		     mk_conf|mk_defaults|mk_alloweds|mk_menus)
+		start)
+	PH_REQ_APP_STATE="Supported" ;;
+		unstart)
+	PH_REQ_APP_STATE="Halted" ;;
+		mk_conf|mk_defaults|mk_alloweds|mk_menus)
 	PH_REQ_APP_STATE="Unused" ;;
-		     mk_scripts|mk_dir)
+		mk_scripts|mk_cifs_mpt)
 	PH_REQ_APP_STATE="Supported" ;;
-		     rm_conf|rm_defaults|rm_alloweds|rm_menus)
+		rm_conf|rm_defaults|rm_alloweds|rm_menus)
 	PH_REQ_APP_STATE="Supported" ;;
-		     rm_scripts|rm_dir)
+		rm_scripts|rm_cifs_mpt)
 	PH_REQ_APP_STATE="Integrated" ;;
 esac
-case "$PH_REQ_APP_STATE" in Integrated)
-	PH_REQ_APP_STATE_PARAM="-i" ;;
-	    		    Supported)
-	PH_REQ_APP_STATE_PARAM="-s" ;;
-			    Default)
-	PH_REQ_APP_STATE_PARAM="-u" ;;
-			    Halted)
-	PH_REQ_APP_STATE_PARAM="-h" ;;
-			    Running)
-	PH_REQ_APP_STATE_PARAM="-r" ;;
-			    StartApp)
-	PH_REQ_APP_STATE_PARAM="-i" ;;
-			    Unused)
-	PH_REQ_APP_STATE_PARAM="-u" ;;
-			    Reserved)
-	PH_REQ_APP_STATE_PARAM="-v" ;;
-			    Out-of-scope)
+case "${PH_REQ_APP_STATE}" in Out-of-scope)
 	PH_REQ_APP_STATE_PARAM="-o" ;;
+		Default)
+	PH_REQ_APP_STATE_PARAM="-d" ;;
+		Supported)
+	PH_REQ_APP_STATE_PARAM="-s" ;;
+		Integrated)
+	PH_REQ_APP_STATE_PARAM="-i" ;;
+		Halted)
+	PH_REQ_APP_STATE_PARAM="-h" ;;
+		Running)
+	PH_REQ_APP_STATE_PARAM="-r" ;;
+		StartApp)
+	PH_REQ_APP_STATE_PARAM="-h" ;;
+		Unused)
+	PH_REQ_APP_STATE_PARAM="-u" ;;
 esac
-[[ "$PH_KEYWORD" == "start" ]] && \
-	PH_LIST="$PH_PIEH_STARTAPP"
+[[ "${PH_LIST}" == "start" ]] && \
+	PH_LIST="${PH_PIEH_STARTAPP}"
 if [[ -z "$PH_APP" && -z "$PH_LIST" ]]
 then
 	case "$PH_KEYWORD" in hal)
