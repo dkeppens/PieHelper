@@ -14,12 +14,12 @@ declare PH_KODI_HOME
 declare PH_KODI_LOC_DIR
 declare PH_KODI_REM_DIR
 
-PH_KODI_HOME="$(getent passwd "$PH_APP_USER" 2>/dev/null | head -1 | cut -d':' -f6)"
+PH_KODI_HOME="$(getent passwd "${PH_APP_USER}" 2>/dev/null | head -1 | cut -d':' -f6)"
 PH_KODI_LOC_DIR="$(ph_get_app_cifs_mpt -a Kodi -r)"
 PH_KODI_REM_DIR="$(ph_resolve_dynamic_value "${PH_KODI_CIFS_DIR}${PH_KODI_CIFS_SUBDIR}")"
 
 printf "%8s%s\n" "" "--> Checking for Kodi POST-command prerequisite : CIFS configured"
-if [[ "$PH_KODI_CIFS_SHARE" == "yes" ]]
+if [[ "${PH_KODI_CIFS_SHARE}" == "yes" ]]
 then
 	ph_run_with_rollback -c true -m Yes
 	printf "%8s%s\n" "" "--> Checking for Kodi POST-command prerequisite : CIFS mounted"
@@ -46,16 +46,16 @@ then
 					return 1
 				fi
 			fi
-			if ( cd "$PH_KODI_HOME" ; "$PH_SUDO" tar -X "${PH_EXCLUDES_DIR}/kodi.excludes" -cf "${PH_TMP_DIR}/Kodi-Prefs.tar" ./.kodi >/dev/null 2>&1 )
+			if ( cd "${PH_KODI_HOME}" ; "${PH_SUDO}" tar -X "${PH_EXCLUDES_DIR}/kodi.excludes" -cf "${PH_TMP_DIR}/Kodi-Prefs.tar" ./.kodi >/dev/null 2>&1 )
 			then
-				if "$PH_SUDO" chown "${PH_PIEH_USER}:$(id -gn 2>/dev/null)" "${PH_TMP_DIR}/Kodi-Prefs.tar" 2>/dev/null
+				if "${PH_SUDO}" chown "${PH_PIEH_USER}:$(id -gn 2>/dev/null)" "${PH_TMP_DIR}/Kodi-Prefs.tar" 2>/dev/null
 				then
 					if mv "${PH_TMP_DIR}/Kodi-Prefs.tar" "${PH_KODI_LOC_DIR}/" 2>/dev/null
 					then
-						"$PH_SUDO" rm "${PH_TMP_DIR}/Kodi-Prefs.tar_tmp" 2>/dev/null
+						"${PH_SUDO}" rm "${PH_TMP_DIR}/Kodi-Prefs.tar_tmp" 2>/dev/null
 						unset PH_KODI_HOME PH_KODI_LOC_DIR PH_KODI_REM_DIR
 						ph_run_with_rollback -c true -m "${PH_KODI_LOC_DIR}/Kodi-Prefs.tar" && \
-							return "$?"
+							return "${?}"
 					else
 						printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not move '${PH_TMP_DIR}/Kodi-Prefs.tar' to '${PH_KODI_LOC_DIR}/' -> Skipping"
 					fi
@@ -66,7 +66,7 @@ then
 				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not backup '${PH_KODI_HOME}/.kodi' as '${PH_TMP_DIR}/Kodi-Prefs.tar' -> Skipping"
 			fi
 			mv "${PH_TMP_DIR}/Kodi-Prefs.tar_tmp" "${PH_KODI_LOC_DIR}/Kodi-Prefs.tar" 2>/dev/null
-			"$PH_SUDO" rm "${PH_TMP_DIR}/Kodi-Prefs.tar" 2>/dev/null
+			"${PH_SUDO}" rm "${PH_TMP_DIR}/Kodi-Prefs.tar" 2>/dev/null
 		else
 			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not access '${PH_KODI_HOME}/.kodi' -> Skipping" 
 		fi

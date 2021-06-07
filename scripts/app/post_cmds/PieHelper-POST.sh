@@ -17,7 +17,7 @@ PH_PIEH_LOC_DIR="$(ph_get_app_cifs_mpt -a PieHelper -r)"
 PH_PIEH_REM_DIR="$(ph_resolve_dynamic_value "${PH_PIEH_CIFS_DIR}${PH_PIEH_CIFS_SUBDIR}")"
 
 printf "%8s%s\n" "" "--> Checking for PieHelper POST-command prerequisite : CIFS configured"
-if [[ "$PH_PIEH_CIFS_SHARE" == "yes" ]]
+if [[ "${PH_PIEH_CIFS_SHARE}" == "yes" ]]
 then
 	ph_run_with_rollback -c true -m Yes
         printf "%8s%s\n" "" "--> Checking for PieHelper POST-command prerequisite : CIFS mounted"
@@ -45,10 +45,10 @@ then
 			fi
 			if cp "${PH_CONF_DIR}/OS.defaults" "${PH_PIEH_LOC_DIR}/" 2>/dev/null
 			then
-				"$PH_SUDO" rm "${PH_TMP_DIR}/OS.defaults_tmp" 2>/dev/null
+				"${PH_SUDO}" rm "${PH_TMP_DIR}/OS.defaults_tmp" 2>/dev/null
 				unset PH_PIEH_LOC_DIR PH_PIEH_REM_DIR
 				ph_run_with_rollback -c true -m "${PH_PIEH_LOC_DIR}/OS.defaults" && \
-					return "$?"
+					return "${?}"
 			else
 				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not backup '${PH_CONF_DIR}/OS.defaults' to '${PH_PIEH_LOC_DIR}/' -> Skipping"
 			fi

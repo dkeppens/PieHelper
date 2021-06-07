@@ -18,7 +18,7 @@ PH_PIEH_LOC_DIR="$(ph_get_app_cifs_mpt -a PieHelper -r)"
 PH_PIEH_REM_DIR="$(ph_resolve_dynamic_value "${PH_PIEH_CIFS_DIR}${PH_PIEH_CIFS_SUBDIR}")"
 
 printf "%8s%s\n" "" "--> Checking for PieHelper PRE-command prerequisite : CIFS configured"
-if [[ "$PH_PIEH_CIFS_SHARE" == "yes" ]]
+if [[ "${PH_PIEH_CIFS_SHARE}" == "yes" ]]
 then
 	ph_run_with_rollback -c true -m Yes
 	printf "%8s%s\n" "" "--> Checking for PieHelper PRE-command prerequisite : CIFS mounted"
@@ -53,10 +53,10 @@ then
 				then
 					if ph_secure_pieh -q -f "${PH_CONF_DIR}/OS.defaults" 2>/dev/null
 					then
-						"$PH_SUDO" rm "${PH_TMP_DIR}/OS.defaults_tmp" 2>/dev/null
+						"${PH_SUDO}" rm "${PH_TMP_DIR}/OS.defaults_tmp" 2>/dev/null
 						unset PH_PIEH_LOC_DIR PH_PIEH_REM_DIR
 						ph_run_with_rollback -c true && \
-							return "$?"
+							return "${?}"
 					else
 						printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not set ownership of '${PH_CONF_DIR}/OS.defaults' to '${PH_APP_USER}:$(id -gn 2>/dev/null)' -> Skipping"
 						PH_RESULT_MSG=""
