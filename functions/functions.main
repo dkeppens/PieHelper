@@ -4498,7 +4498,7 @@ do
 			fi
 		fi
 		for PH_MENU_LINE in "Go to Main:ph_show_menu Main" \
-			"Open a shell (Type 'CTRL-D' to return):cd;/bin/bash" \
+			"Open a shell (Type 'CTRL-D' to return):echo;cd;/bin/bash" \
 			"Quit:break" "Return to previous screen:return"
 		do
 			PH_MENU_LINES+=("${PH_MENU_LINE}")

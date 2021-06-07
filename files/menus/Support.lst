@@ -4,6 +4,6 @@ Check PieHelper configuration:echo \"Quit PieHelper from the menu and run '${PH_
 List modules:confpieh_ph.sh -p list -m prompt
 Toggle module debug:confpieh_ph.sh -p debug -m prompt
 Go to Main:ph_show_menu Main
-Open a shell (Type 'CTRL-D' to return):cd;/bin/bash
+Open a shell (Type 'CTRL-D' to return):echo;cd;/bin/bash
 Quit:break
 Return to previous screen:return

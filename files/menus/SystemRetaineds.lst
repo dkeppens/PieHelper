@@ -15,6 +15,6 @@ Retain/Update all defaults:confoper_ph.sh -p savedef -i
 List all retained values:confoper_ph.sh -p dispdef
 Go to System:ph_show_menu System
 Go to Main:ph_show_menu Main
-Open a shell (Type 'CTRL-D' to return):cd;/bin/bash
+Open a shell (Type 'CTRL-D' to return):echo;cd;/bin/bash
 Quit:break
 Return to previous screen:return

@@ -14,6 +14,6 @@ Change the display overscan:\"${PH_SUDO}\" confoper_ph.sh -p overscan -i
 Change all settings:\"${PH_SUDO}\" confoper_ph.sh -p all -i
 Go to Main:ph_show_menu Main
 System:ph_show_menu System
-Open a shell (Type 'CTRL-D' to return):cd;/bin/bash
+Open a shell (Type 'CTRL-D' to return):echo;cd;/bin/bash
 Quit:break
 Return to previous screen:return
