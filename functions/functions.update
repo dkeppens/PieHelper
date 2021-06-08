@@ -1408,7 +1408,7 @@ PH_APP_CIFS_MPT=""
 PH_APP_CIFS_MPT="$(ph_get_app_cifs_mpt -a "${PH_APP}" -r)"
 if [[ -n "${PH_APP_CIFS_MPT}" ]]
 then
-	printf "%8s%s\033[1;33m%s\033[0;0m%s\n" "" "--> Removing CIFS mountpoint " "'${PH_APP_CIFS_MPT}'" " for ${PH_APP}"
+	printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Removing the CIFS mountpoint for " "'${PH_APP}'" " as " "'${PH_APP_CIFS_MPT}'"
 	if [[ -e "${PH_APP_CIFS_MPT}" ]]
 	then
 		if [[ -d "${PH_APP_CIFS_MPT}" ]]
@@ -1427,16 +1427,16 @@ then
 						ph_run_with_rollback -c true && \
 							return "${?}"
 					else
-						ph_set_result -m "An error occurred trying to remove ${PH_APP} mountpoint '${PH_APP_CIFS_MPT}'"
+						ph_set_result -m "An error occurred trying to remove the CIFS mountpoint for '${PH_APP}' as '${PH_APP_CIFS_MPT}'"
 					fi
 				else
-					ph_set_result -m "Refusing to remove since the directory is an active mountpoint"
+					ph_set_result -m "Refusing to remove the CIFS mountpoint for '${PH_APP}' as '${PH_APP_CIFS_MPT}' since it's an active mountpoint"
 				fi
 			else
-				ph_set_result -m "Refusing to remove '${PH_APP_CIFS_MPT}' since the directory is not empty"
+				ph_set_result -m "Refusing to remove the CIFS mountpoint for '${PH_APP}' as '${PH_APP_CIFS_MPT}' since it's not empty"
 			fi
 		else
-			ph_set_result -m "Refusing to remove '${PH_APP_CIFS_MPT}' since it's not a directory"
+			ph_set_result -m "Refusing to remove the CIFS mountpoint for '${PH_APP}' as '${PH_APP_CIFS_MPT}' since it's not a directory"
 		fi
 	else
 		ph_run_with_rollback -c true -m "Nothing to do" && \
@@ -1524,12 +1524,12 @@ ph_run_with_rollback -c "ph_remove_app_cifs_mpt '${PH_APP}'" || \
 PH_APP_CIFS_MPT="$(ph_get_app_cifs_mpt -a "${PH_APP}" -r)"
 if [[ -n "${PH_APP_CIFS_MPT}" ]]
 then
-	printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Creating CIFS mountpoint for ${PH_APP} as " "'${PH_APP_CIFS_MPT}'"
+	printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Creating the CIFS mountpoint for " "'${PH_APP}'" " as " "'${PH_APP_CIFS_MPT}'"
 	if [[ -d "${PH_APP_CIFS_MPT}" ]]
 	then
 		if [[ "$("${PH_SUDO}" find "${PH_APP_CIFS_MPT}" -maxdepth 1 ! -wholename "${PH_APP_CIFS_MPT}" 2>/dev/null | wc -l)" -ne "0" ]]
 		then
-			ph_set_result -m "Could not accept '${PH_APP_CIFS_MPT}' as a mountpoint since it's not an empty directory"
+			ph_set_result -m "Refusing to accept '${PH_APP_CIFS_MPT}' as CIFS mountpoint for '${PH_APP}' since it's not an empty directory"
 		else
 			if [[ "$(mount 2>/dev/null | nawk -v mstring="^${PH_APP_CIFS_MPT}$" '$3 ~ mstring { \
 					print \
@@ -1537,7 +1537,7 @@ then
 					next \
 				}' | wc -l)" -gt "0" ]]
 			then
-				ph_set_result -m "Could not accept '${PH_APP_CIFS_MPT}' as a mountpoint since the directory is an active mountpoint"
+				ph_set_result -m "Refusing to accept '${PH_APP_CIFS_MPT}' as CIFS mountpoint for '${PH_APP}' since it's an active mountpoint"
 			else
 				ph_run_with_rollback -c true -m "Nothing to do" && \
 					return "${?}"
@@ -1546,13 +1546,13 @@ then
 	else
 		if [[ -e "${PH_APP_CIFS_MPT}" ]]
 		then
-			ph_set_result -m "Refusing to accept '${PH_APP_CIFS_MPT}' as a mountpoint since it's not an empty directory"
+			ph_set_result -m "Refusing to accept '${PH_APP_CIFS_MPT}' as CIFS mountpoint for '${PH_APP}' since it's not an empty directory"
 		else
 			if ! ph_run_with_rollback -c "ph_create_empty_file -r -q -t directory -d '${PH_APP_CIFS_MPT}'"
 			then
-				ph_set_result -m "An error occurred trying to create mountpoint '${PH_APP_CIFS_MPT}' for ${PH_APP}"
+				ph_set_result -m "An error occurred trying to create the CIFS mountpoint for '${PH_APP}' as '${PH_APP_CIFS_MPT}'"
 			else
-				ph_add_value_to_param -p PH_REMOVE_APPS_CIFS_MPT -v "$PH_APP"
+				ph_add_value_to_param -p PH_REMOVE_APPS_CIFS_MPT -v "${PH_APP}"
 				ph_run_with_rollback -c true && \
 					return "${?}"
 			fi
