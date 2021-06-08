@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/bin/bash
 # List games for Moonlight shared by an NVIDIA SHIELD server (by Davy Keppens on 23/11/2018)
 # Enable/Disable debug by running 'confpieh_ph.sh -p debug -m listmoon_ph.sh'
 
@@ -13,21 +13,27 @@ fi
 
 #set -x
 
-typeset PH_APP_EXEC
-typeset PH_APP_USER
-typeset PH_MOON_GAME
-typeset PH_OPTION
-typeset PH_OLDOPTARG
-typeset -i PH_OLDOPTIND
-typeset -i PH_COUNT
-typeset -i PH_ANSWER
-typeset -i PH_INDEX
+declare PH_APP_EXEC
+declare PH_APP_USER
+declare PH_APP_STATE
+declare PH_APP_INST_STATE
+declare PH_MOON_GAME
+declare PH_MESSAGE
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+declare -i PH_COUNT
+declare -i PH_ANSWER
+declare -i PH_INDEX
 
 PH_OLDOPTARG="${OPTARG}"
 PH_OLDOPTIND="${OPTIND}"
 PH_APP_EXEC=""
 PH_APP_USER=""
+PH_APP_STATE=""
+PH_APP_INST_STATE=""
 PH_MOON_GAME=""
+PH_MESSAGE="Moonlight has not been"
 PH_OPTION=""
 PH_COUNT="0"
 PH_ANSWER="0"
@@ -55,8 +61,12 @@ OPTIND="${PH_OLDOPTIND}"
 OPTARG="${PH_OLDOPTARG}"
 
 printf "\n\033[1;36m%s\033[0m\n\n" "- Listing shared games"
-if ph_check_app_state_validity -s -a Moonlight
+printf "%8s%s\n" "" "--> Checking Moonlight states"
+PH_APP_STATE="$(ph_get_app_state_from_app_name Moonlight)"
+PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_name Moonlight)"
+if [[ "${PH_APP_STATE}" != "Default" && "${PH_APP_INST_STATE}" == *I ]]
 then
+	ph_run_with_rollback -c true -m "${PH_APP_STATE}"
 	printf "%8s%s\n" "" "--> Checking for an NVIDIA SHIELD server"
 	if [[ -z "${PH_MOON_SRV}" ]]
 	then
@@ -141,12 +151,30 @@ then
 				ph_show_result
 				exit "${?}"
 			else
+				unset PH_MOON_GAMES 2>/dev/null
 				ph_set_result -r 1 -m "An error occurred trying to list games shared by NVIDIA SHIELD server '${PH_MOON_SRV}'"
 			fi
 		else
 			ph_set_result -m "Could not list games since NVIDIA SHIELD server '${PH_MOON_SRV}' is unavailable"
 		fi
 	fi
+	ph_run_with_rollback -c false -m "Could not list"
+else
+	if [[ "${PH_APP_STATE}" == "Default" ]]
+	then
+		PH_MESSAGE="${PH_MESSAGE} supported"
+	fi
+	if [[ "${PH_APP_INST_STATE}" == *U ]]
+	then
+		if [[ "${PH_MESSAGE}" == *supported ]]
+		then
+			PH_MESSAGE="${PH_MESSAGE} and installed"
+		else
+			PH_MESSAGE="${PH_MESSAGE} installed"
+		fi
+	fi
+	ph_set_result -m "${PH_MESSAGE} yet"
+	ph_run_with_rollback -c false -m "Invalid state"
 fi
-ph_run_with_rollback -c false -m "Could not list"
+ph_show_result
 exit "${?}"

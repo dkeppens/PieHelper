@@ -31,7 +31,7 @@ do
 		>&2 printf "\033[1;36m%s\033[0;0m\n" "Usage : listblue_ph.sh | -h"
 		>&2 printf "\n"
 		>&2 printf "%3s\033[1;37m%s\n" "" "Where -h displays this usage"
-		>&2 printf "%9s%s\n" "" "- Running this script without parameters will list : "
+		>&2 printf "%9s%s\n" "" "- Running this script without parameters will list :"
 		>&2 printf "%12s%s\n" "" "- A summary of all available bluetooth adapters"
 		>&2 printf "%12s%s\033[0m\n" "" "- The bluetooth adapter currently set as default"
 		>&2 printf "\n"
