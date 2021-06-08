@@ -85,8 +85,8 @@ while getopts :a:c: PH_OPTION
 do
 	case "${PH_OPTION}" in a)
 		[[ -n "${PH_APP}" || -z "${OPTARG}" ]] && \
-			OPTIND="${PH_OLDOPTIN}D}" && \
-			OPTARG="${PH_OLDOPTARG" && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
 		PH_APP="${OPTARG}" ;;
 			     c)
