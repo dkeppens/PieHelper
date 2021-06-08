@@ -8952,7 +8952,7 @@ then
 	return 1
 else
 	ph_run_with_rollback -c true -m "${PH_APP}"
-	printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking the application state of "'${PH_APP}'"
+	printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking the application state of " "'${PH_APP}'"
 	PH_APP_STATE="$(ph_get_app_state_from_app_name "$PH_APP")"
 	case "$PH_APP_STATE" in Supported)
 			ph_run_with_rollback -c true -m "${PH_APP_STATE}" ;;
@@ -9925,7 +9925,7 @@ ph_secure_pieh -t never
 if [[ "$PH_NEED_BOOT" == "yes" ]]
 then
 	ph_show_result
-	printf "\n%s\033[1;33m%s\033[0m%s\n\n" "" "A reboot is required since the PATH and LD_LIBRARY_PATH extension for " 'PieHelper'" " was reinstalled"
+	printf "\n%s\033[1;33m%s\033[0m%s\n\n" "" "A reboot is required since the PATH and LD_LIBRARY_PATH extension for " "'PieHelper'" " was reinstalled"
 	printf "%s" "Press 'Enter' to reboot and continue"
 	read -r 2>/dev/null
 	chvt 1
