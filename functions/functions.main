@@ -4583,7 +4583,7 @@ do
 			PH_ANSWER="0"
 		fi
 	fi
-	if [[ "${PH_MENU_CMD}" != ph_show_menu* && "${PH_MENU_ITEM}" != Show*manual ]]
+	if [[ "${PH_MENU_CMD}" != ph_show_menu* && "${PH_ANSWER}" -lt "$((PH_MENU_COUNT-2))" ]]
 	then
 		printf "\033[1;37m%s\033[0;0m\n" "Press Enter to continue"
 		read -r 2>/dev/null
@@ -10369,27 +10369,30 @@ function ph_configure_pieh {
 
 declare PH_i
 declare PH_ANSWER
+declare PH_RUN_GROUP
 declare PH_CONF_STATE
 declare -i PH_COUNT
 
 PH_i=""
 PH_ANSWER=""
+PH_RUN_GROUP=""
 PH_CONF_STATE=""
 PH_COUNT="0"
 
 PH_ROLLBACK_USED="yes"
 
-[[ "$#" -ne "0" ]] && \
+[[ "${#}" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 PH_CONF_STATE="$(ph_get_pieh_conf_state -q)"
-if [[ "$PH_CONF_STATE" == "configured" ]]
+if [[ "${PH_CONF_STATE}" == "configured" ]]
 then
 	ph_set_result -r 0 -w -m "PieHelper is already ${PH_CONF_STATE}"
 	return 0
 fi
 [[ -z "${PH_RUN_USER}" ]] && \
 	PH_RUN_USER="$(whoami 2>/dev/null)"
+PH_RUN_GROUP="$(id -gn "${PH_RUN_USER}" 2>/dev/null)"
 printf "%2s\033[1;37m%s\n\n" "" "This will :"
 printf "%4s%s\033[1;33m%s\033[1;37m%s\n" "" "- Configure " "'${PH_RUN_USER}'" " as the user account for the PieHelper application"
 printf "%4s%s\n" "" "- Install all required packages"
@@ -10403,28 +10406,28 @@ printf "%4s%s\n" "" "- Setup PieHelper as an Integrated application"
 printf "%4s%s\n" "" "- Configure PieHelper as the system's StartApp"
 printf "%4s%s\n" "" "- Disable the graphical environment"
 printf "%4s%s\n" "" "- Allow you to update your system"
-printf "%4s%s\033[0;0m\n\n" "" "- Reboot the system into the PieHelper menu"
-while [[ "$PH_ANSWER" != @(y@(es|)|n@(o|)) ]]
+printf "%4s%s\033[0m\n\n" "" "- Reboot the system into the PieHelper menu"
+while [[ "${PH_ANSWER}" != @(y@(es|)|n@(o|)) ]]
 do
-	[[ "$PH_COUNT" -gt "0" ]] && \
+	[[ "${PH_COUNT}" -gt "0" ]] && \
 		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
-	printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m%s" "" "--> Continue configuring PieHelper under account " "'${PH_RUN_USER}'" " (y/n)" " ? "
+	printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0m%s" "" "--> Continue configuring PieHelper under account " "'${PH_RUN_USER}'" " (y/n)" " ? "
 	read -r PH_ANSWER 2>/dev/null
-	ph_screen_input "$PH_ANSWER" || \
+	ph_screen_input "${PH_ANSWER}" || \
 		return 1
 	((PH_COUNT++))
 done
-ph_run_with_rollback -c true -m "$PH_ANSWER"
-if [[ "$PH_ANSWER" == n@(o|) ]]
+ph_run_with_rollback -c true -m "${PH_ANSWER}"
+if [[ "${PH_ANSWER}" == n@(o|) ]]
 then
 	ph_set_result -w -m "Quitting at user request"
 	ph_show_result
-	return "$?"
+	return "${?}"
 fi
-if [[ "$PH_RUN_USER" != "root" ]]
+if [[ "${PH_RUN_USER}" != "root" ]]
 then
-	printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Checking privilege elevation rights of user " "'${PH_RUN_USER}'"
-	if [[ -n "$PH_SUDO" ]]
+	printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking privilege elevation rights of user " "'${PH_RUN_USER}'"
+	if [[ -n "${PH_SUDO}" ]]
 	then
 		ph_run_with_rollback -c true
 	else
@@ -10433,7 +10436,7 @@ then
 			return 1
 	fi
 fi
-if [[ "$PH_DISTRO" == "Debian" ]]
+if [[ "${PH_DISTRO}" == "Debian" ]]
 then
 	ph_update_pkg_index || \
 		return 1
@@ -10442,21 +10445,21 @@ ph_run_with_rollback -c "ph_create_empty_file -t file -d '${PH_TMP_DIR}/.configu
 	return 1
 ph_run_with_rollback -c "ph_install_pkg lsb-release" || \
 	return 1
-if [[ "$PH_DISTRO" == "Debian" ]]
+if [[ "${PH_DISTRO}" == "Debian" ]]
 then
-	printf "%8s%s\n" "" "--> Determining currently installed ${PH_DISTRO} release"
+	printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Determining currently installed release of " "'${PH_DISTRO}'"
         PH_DISTRO_REL="$(lsb_release -a 2>/dev/null | nawk '$1 ~ /^Codename:/ { \
 			printf $2 \
 		}')"
-	if [[ -z "$PH_DISTRO_REL" ]]
+	if [[ -z "${PH_DISTRO_REL}" ]]
 	then
-		ph_set_result -m "Unable to determine the currently installed ${PH_DISTRO} release"
+		ph_set_result -m "Unable to determine the currently installed release of '${PH_DISTRO}'"
 		ph_run_with_rollback -c false -m "Could not determine" || \
 			return 1
 	fi
 	if [[ ! -f "${PH_CONF_DIR}/distros/${PH_DISTRO_REL}.conf" ]]
 	then
-		ph_set_result -m "${PH_DISTRO} release '${PH_DISTRO_REL}' is currently not supported"
+		ph_set_result -m "Release '${PH_DISTRO_REL}' of distribution '${PH_DISTRO}' is currently not supported"
 		ph_run_with_rollback -c false -m "$PH_DISTRO_REL" || \
 			return 1
 	else
@@ -10477,22 +10480,22 @@ then
 			return 1
 	fi
 fi
-printf "%8s%s\n" "" "--> Checking parent directory"
-if [[ "$PH_BASE_DIR" == "${PH_INST_DIR}/PieHelper" ]]
+printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking the parent directory of " "'PieHelper'"
+if [[ "${PH_BASE_DIR}" == "${PH_INST_DIR}/PieHelper" ]]
 then
-	if "$PH_SUDO" chmod -R 750 "$PH_BASE_DIR" >/dev/null 2>&1
+	if "${PH_SUDO}" chmod -R 750 "${PH_BASE_DIR}" >/dev/null 2>&1
 	then
-		if "$PH_SUDO" chown -R "${PH_RUN_USER}:$("$PH_SUDO" id -gn "$PH_RUN_USER" 2>/dev/null)" "$PH_BASE_DIR" >/dev/null 2>&1
+		if "${PH_SUDO}" chown -R "${PH_RUN_USER}:${PH_RUN_GROUP}" "${PH_BASE_DIR}" >/dev/null 2>&1
 		then
 			ph_run_with_rollback -c true
 			ph_run_with_rollback -c "ph_set_user_group_membership -u '${PH_RUN_USER}' -g 'tty,audio,video,input'" || \
 				return 1
-			for PH_i in acl xboxdrv git make bluez bluez-tools expect less ${PH_DISTRO_PKGS}
+			for PH_i in acl xboxdrv git make bluez bluez-tools expect less at ${PH_DISTRO_PKGS}
 			do
 				ph_run_with_rollback -c "ph_install_pkg '${PH_i}'" || \
 					return 1
 			done
-			printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Checking for the presence of " "'Emulationstation' (RetroPie)"
+			printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0m\n" "" "--> Checking for the presence of " "'Emulationstation'" " (RetroPie)"
 			if [[ -f /usr/bin/emulationstation ]]
 			then
 				ph_run_with_rollback -c true -m "Found"
@@ -10503,7 +10506,7 @@ then
 			fi
 			for PH_i in sup defaults alloweds int os cont
 			do
-				ph_create_base_conf_file "$PH_i" || \
+				ph_create_base_conf_file "${PH_i}" || \
 					return 1
 			done
 			ph_run_with_rollback -c "ph_pieh_configured_path_conf" || \
@@ -10540,21 +10543,21 @@ then
 				return 1
 			PH_ANSWER=""
 			PH_COUNT="0"
-			while [[ "$PH_ANSWER" != @(y@(es|)|n@(o|)) ]]
+			while [[ "${PH_ANSWER}" != @(y@(es|)|n@(o|)) ]]
 			do
-				[[ "$PH_COUNT" -gt "0" ]] && \
+				[[ "${PH_COUNT}" -gt "0" ]] && \
 					printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
 				printf "%8s%s\033[1;37m%s\n\n" "" "--> Perform full system update before reboot " "(Recommended)"
 				printf "%12s%s\n" "" "- System updates can take a long time depending on the system's current version and configuration"
-				printf "%12s%s\033[0;0m\n\n" "" "- Please note that system updates are not reversible"
-				printf "%12s%s\033[1;37m%s\033[0;0m%s" "" "Perform update " "(y/n)" " ? "
+				printf "%12s%s\033[0m\n\n" "" "- Please note that system updates are not reversible"
+				printf "%12s%s\033[1;37m%s\033[0m%s" "" "Perform update " "(y/n)" " ? "
 				read -r PH_ANSWER 2>/dev/null
-				ph_screen_input "$PH_ANSWER" || \
+				ph_screen_input "${PH_ANSWER}" || \
 					return 1
 				((PH_COUNT++))
 			done
-			ph_run_with_rollback -c true -m "$PH_ANSWER"
-			if [[ "$PH_ANSWER" == y@(es|) ]]
+			ph_run_with_rollback -c true -m "${PH_ANSWER}"
+			if [[ "${PH_ANSWER}" == y@(es|) ]]
 			then
 				ph_update_system || \
 					return 1
@@ -10568,17 +10571,17 @@ then
 				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not display"
 				ph_set_result -r 0
 			fi
-			printf "\n\033[1;37m%s\033[0;0m\n" "Press Enter to reboot into the PieHelper menu"
+			printf "\n\033[1;37m%s\033[0m\n" "Press Enter to reboot into the PieHelper menu"
 			read -r 2>/dev/null
-			"$PH_SUDO" init 6
+			"${PH_SUDO}" init 6
 		else
-			ph_set_result -m "Could not recursively set ownership of directory '${PH_BASE_DIR}' to '${PH_RUN_USER}:$("$PH_SUDO" id -gn "$PH_RUN_USER" 2>/dev/null)'"
+			ph_set_result -m "Could not recursively set ownership of directory '${PH_BASE_DIR}' to '${PH_RUN_USER}:${PH_RUN_GROUP}'"
 		fi
 	else
 		ph_set_result -m "Could not recursively set permissions for directory '${PH_BASE_DIR}' to '750'"
 	fi
 else
-	ph_set_result -m "The directory that contains PieHelper should be called 'PieHelper' (Correct by running 'sudo mv ${PH_BASE_DIR} ${PH_BASE_DIR%/*}/PieHelper')"
+	ph_set_result -m "The directory that contains PieHelper should be called 'PieHelper' (Correct by running '${PH_SUDO} mv ${PH_BASE_DIR} ${PH_BASE_DIR%/*}/PieHelper')"
 	ph_run_with_rollback -c false -m "Incorrect parent" || \
 		return 1
 fi

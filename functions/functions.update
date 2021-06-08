@@ -2455,14 +2455,14 @@ do
 			"${PH_MENUS_DIR}/StatusManagement_${PH_APP}.lst")
 		if [[ "${PH_APP}" == "PieHelper" ]]
 		then
-			for PH_j in 'Start ${PH_APP_DISPLAY}:echo \"*Sigh* I am already running ! Stop buggering me...\" | more' \
+			for PH_j in "Start ${PH_APP_DISPLAY}:echo \"*Sigh* I am already running ! Stop buggering me...\"" \
 				"Stop ${PH_APP_DISPLAY}:break" \
-				"Restart ${PH_APP_DISPLAY}:restart${PH_APPL}.sh | more" \
+				"Restart ${PH_APP_DISPLAY} (Only if on a tty):echo restartpieh.sh | at -M -t \"$(date +%Y%m)$(date +%d%H%M).$(($(date +%S)+2))\"" \
 				"Show ${PH_APP_DISPLAY} info:confapps_ph.sh -r info -a ${PH_APP} | more" \
 				"Update ${PH_APP_DISPLAY}:confpieh_ph.sh -u" \
-				"Configure ${PH_APP_DISPLAY}:confpieh_ph.sh -c" \
-				"Unconfigure ${PH_APP_DISPLAY}:confpieh_ph.sh -u" \
-				"Uninstall ${PH_APP_DISPLAY}:confpieh_ph.sh -r"
+				"Configure ${PH_APP_DISPLAY}:echo \"*Sigh* I am already configured ! Stop buggering me...\"" \
+				"Unconfigure ${PH_APP_DISPLAY}:echo \"Unconfigure by quitting PieHelper from the menu and running 'confpieh_ph.sh -u'\"" \
+				"Uninstall ${PH_APP_DISPLAY}:echo \"Uninstall by quitting PieHelper from the menu and running 'confpieh_ph.sh -r'\""
 			do
 				ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
 					break 2
