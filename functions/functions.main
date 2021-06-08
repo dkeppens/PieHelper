@@ -3702,7 +3702,7 @@ case "$PH_APP_TYPE" in Default|Out-of-scope)
 						PH_APP_STATE="Running"
 					else
 						if [[ "$PH_APP" == "PieHelper" && \
-							"$(pgrep -f "^/bin/bash ${PH_SCRIPTS_DIR}/startpieh.sh.*-p$|${PH_SCRIPTS_DIR}/startpieh.sh[[:space:]]*-p[[:space:]].*$" >/dev/null ; echo "$?")" -eq "0" ]]
+							"$(pgrep -f "^/bin/bash .*/startpieh.sh[[:space:]]*-p$|.*/startpieh.sh[[:space:]]*-p[[:space:]]*.*$" >/dev/null; echo "$?")" -eq "0" ]]
 						then
 							PH_APP_STATE="Running"
 						fi
@@ -4463,6 +4463,7 @@ do
 		fi ;;
 	esac
 	declare -a PH_MENU_ITEMS PH_MENU_CMDS
+set -x
 	if [[ -e "${PH_MENUS_DIR}/${PH_MENU}.lst" ]]
 	then
 		for PH_i in ITEM CMD
@@ -4517,9 +4518,10 @@ do
 			PH_MENU_CMDS+=("$(cut -d':' -f2<<<"${PH_MENU_LINE}")")
 		done
 	fi
-	unset PH_MENU_LINES PH_MENU_LINES_INVERTED
+set +x
+	unset PH_MENU_LINES
 	PH_MENU_COUNT="${#PH_MENU_ITEMS[@]}"
-	clear
+	#clear
 	ph_print_bannerline
 	printf "\n%$(echo -n $(($((PH_COLUMNS/2))-$(($(echo -n ${PH_MENU_HEADER} | wc -c)/2)))))s\033[1;036m%s\033[0;0m\n\n" "" "${PH_MENU_HEADER}"
 	ph_print_bannerline
