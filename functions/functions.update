@@ -2461,8 +2461,8 @@ do
 				'Show ${PH_APP_DISPLAY} info:confapps_ph.sh -r info -a ${PH_APP} | more' \
 				'Update ${PH_APP_DISPLAY}:confpieh_ph.sh -u' \
 				'Configure ${PH_APP_DISPLAY}:echo "*Sigh* I am already configured ! Stop buggering me..."' \
-				'Unconfigure ${PH_APP_DISPLAY}:echo "Unconfigure by quitting PieHelper from the menu and running '\''confpieh_ph.sh -u'\''"' \
-				'Uninstall ${PH_APP_DISPLAY}:echo "Uninstall by quitting PieHelper from the menu and running '\''confpieh_ph.sh -r'\''"'
+				'Unconfigure ${PH_APP_DISPLAY}:echo "Unconfigure by quitting PieHelper from the menu and running \"confpieh_ph.sh -u\""' \
+				'Uninstall ${PH_APP_DISPLAY}:echo "Uninstall by quitting PieHelper from the menu and running \"confpieh_ph.sh -r\""'
 			do
 				ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
 					break 2
