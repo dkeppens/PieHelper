@@ -1,5 +1,5 @@
 #!/bin/ksh
-# List Moonlight shared games (by Davy Keppens on 23/11/2018)
+# List games for Moonlight shared by an NVIDIA SHIELD server (by Davy Keppens on 23/11/2018)
 # Enable/Disable debug by running 'confpieh_ph.sh -p debug -m listmoon_ph.sh'
 
 if [[ -f "$(dirname "${0}" 2>/dev/null)/app/main.sh" && -r "$(dirname "${0}" 2>/dev/null)/app/main.sh" ]]
@@ -7,40 +7,44 @@ then
 	source "$(dirname "${0}" 2>/dev/null)/app/main.sh"
 	set +x
 else
-	printf "\n%2s\033[1;31m%s\033[0;0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '$(dirname "${0}" 2>/dev/null)/app/main.sh'"
+	printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '$(dirname "${0}" 2>/dev/null)/app/main.sh'"
 	exit 1
 fi
 
 #set -x
 
-typeset PH_MOON_PATH
-typeset PH_GAME
+typeset PH_APP_EXEC
+typeset PH_APP_USER
+typeset PH_MOON_GAME
 typeset PH_OPTION
 typeset PH_OLDOPTARG
 typeset -i PH_OLDOPTIND
 typeset -i PH_COUNT
 typeset -i PH_ANSWER
-typeset -i PH_TOTAL
+typeset -i PH_INDEX
 
 PH_OLDOPTARG="${OPTARG}"
 PH_OLDOPTIND="${OPTIND}"
-PH_MOON_PATH=""
-PH_GAME=""
+PH_APP_EXEC=""
+PH_APP_USER=""
+PH_MOON_GAME=""
 PH_OPTION=""
 PH_COUNT="0"
 PH_ANSWER="0"
-PH_TOTAL="0"
+PH_INDEX="0"
 
 OPTIND="1"
 
 while getopts :h PH_OPTION
 do
 	case "${PH_OPTION}" in *)
-		>&2 printf "\033[1;36m%s\033[0;0m\n" "Usage : listmoon_ph.sh | -h"
+		>&2 printf "\033[1;36m%s\033[0m\n" "Usage : listmoon_ph.sh | -h"
 		>&2 printf "\n"
 		>&2 printf "%3s\033[1;37m%s\n" "" "Where -h displays this usage"
-		>&2 printf "%9s%s\n" "" "- Running this script without parameters will attempt to connect with the remote host configured in option PH_MOON_SRV"
-		>&2 printf "%9s%s\033[0;0m\n" "" "  and retrieve a list of all games shared to Moonlight from the NVIDIA Geforce Experience software running on that host"
+		>&2 printf "%9s%s\n" "" "- Running this script without parameters will :"
+		>&2 printf "%12s%s\033[1;33m%s\033[0m\n" "" "- Connect to an NVIDIA SHIELD server, defined by Moonlight option " "'PH_MOON_SRV'"
+		>&2 printf "%12s\033[1;37m%s\n" "" "- Retrieve a list of shared games that can be streamed to Moonlight"
+		>&2 printf "%12s%s\033[0m\n" "" "- Allow setting one of those games as the default game for Moonlight"
 		>&2 printf "\n"
 		OPTIND="${PH_OLDOPTIND}"
 		OPTARG="${PH_OLDOPTARG}"
@@ -50,54 +54,99 @@ done
 OPTIND="${PH_OLDOPTIND}"
 OPTARG="${PH_OLDOPTARG}"
 
-printf "\n\033[1;36m%s\033[0;0m\n\n" "- Listing/Selecting Moonlight shared game(s)"
+printf "\n\033[1;36m%s\033[0m\n\n" "- Listing shared games"
 if ph_check_app_state_validity -s -a Moonlight
 then
-	PH_MOON_PATH="$(nawk '$1 ~ /^Moonlight$/ { printf $3 }' "$PH_CONF_DIR"/supported_apps 2>/dev/null)"
-	PH_MOON_USER="$(nawk '$1 ~ /^Moonlight$/ { printf $2 }' "$PH_CONF_DIR"/integrated_apps 2>/dev/null)"
-	PH_MOON_USER="moonlight"
-	if [[ -z "$PH_MOON_SRV" ]]
+	printf "%8s%s\n" "" "--> Checking for an NVIDIA SHIELD server"
+	if [[ -z "${PH_MOON_SRV}" ]]
 	then
-		ph_set_result -r 1 -m "Option 'PH_MOON_SRV' is unconfigured"
+		ph_set_result -m "Could not list games since the NVIDIA SHIELD server is unknown (option 'PH_MOON_SRV' has no value)"
 	else
-		if ! "$PH_SUDO" -E su "$PH_MOON_USER" -c "LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib $PH_MOON_PATH list $PH_MOON_SRV" >/dev/null 2>&1
+		if ping -c 1 "${PH_MOON_SRV}" >/dev/null 2>&1
 		then
-			ph_set_result -r 1 -m "'Moonlight' is unconfigured : First configure 'Moonlight' through the PieHelper menu or run 'confapps_ph.sh -p conf -a Moonlight'"
-		else
-			PH_TOTAL="$("$PH_SUDO" -E su "$PH_MOON_USER" -c "LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib $PH_MOON_PATH list $PH_MOON_SRV | tail -n +2" | wc -l)"
-			while [[ "$PH_ANSWER" -eq "0" || "$PH_ANSWER" -gt "$((PH_TOTAL+1))" ]]
-			do
-				[[ "$PH_COUNT" -gt "0" ]] && printf "\n%2s\033[31m%s\033[0m\n\n" "" "ERROR : Invalid response"
-				printf "%8s%s\n\n" "" "--> Choose NVIDIA SHIELD default game for streaming"
-				if [[ -z "$PH_MOON_GAME" ]]
-				then
-					printf "%2s%s\n\n" "" "INFO : No default set"
-					"$PH_SUDO" -E su "$PH_MOON_USER" -c "LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib $PH_MOON_PATH list $PH_MOON_SRV | tail -n +2"
-				else
-					"$PH_SUDO" -E su "$PH_MOON_USER" -c "LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib $PH_MOON_PATH list $PH_MOON_SRV | tail -n +2" | \
-						nawk -v curr=^"$PH_MOON_GAME"$ '$2 ~ curr { printf "%-40s%s%s\n", $0, "\t", "default" ; next } { printf "%s\n", $0 }' 2>/dev/null
-				fi
-				printf "%s\n" "$((PH_TOTAL+1)). Exit"
-				printf "\n"
-				printf "%10s%s" "" "Your choice : "
-				read PH_ANSWER 2>/dev/null
-				((PH_COUNT++))
-			done
-			printf "\n"
-			if [[ "$PH_ANSWER" -ne "$((PH_TOTAL+1))" ]]
+			ph_run_with_rollback -c true -m "${PH_MOON_SRV}"
+			PH_APP_EXEC="$(ph_get_app_executable -a Moonlight)"
+			PH_APP_USER="$(ph_get_app_user_from_app_name Moonlight)"
+			printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking pairing with SHIELD server " "'${PH_MOON_SRV}'"
+			if ! "${PH_SUDO}" -u "${PH_APP_USER}" LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib "${PH_APP_EXEC}" list "${PH_MOON_SRV}" >/dev/null 2>&1
 			then
-				PH_GAME="$("$PH_SUDO" -E su "$PH_MOON_USER" -c "LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib $PH_MOON_PATH list $PH_MOON_SRV | tail -n +2" 2>/dev/null | \
-						nawk -v game="$PH_ANSWER" 'NR ~ game { print $2 ; exit 0 } { next }' 2>/dev/null)"
-				printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_GAME')"
+				printf "%10s\033[33m%s\n" "" "Warning : Not paired"
 				ph_set_result -r 0
-				ph_set_option_to_value Moonlight -r "PH_MOON_GAME'$PH_GAME"
-				ph_set_result -r "$?"
-			else
-				printf "%10s\033[32m%s\033[0m\n" "" "OK"
-				ph_set_result -r 0 -m "Quit by user" -w
+				printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Pairing with SHIELD server " "'${PH_MOON_SRV}'"
+				if ! "${PH_SUDO}" -u "${PH_APP_USER}" LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib "${PH_APP_EXEC}" pair "${PH_MOON_SRV}" 2>/dev/null
+				then
+					ph_set_result -m "An error occurred trying to pair with NVIDIA SHIELD server '${PH_MOON_SRV}'"
+					ph_run_with_rollback -c false -m "Could not pair"
+					exit "${?}"
+				fi
 			fi
+			ph_run_with_rollback -c true
+			printf "%8s%s\n" "" "--> Choose the default game for Moonlight streaming"
+			if read -r -a PH_MOON_GAMES -d ';' < <("${PH_SUDO}" -u "${PH_APP_USER}" LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib "${PH_APP_EXEC}" list "${PH_MOON_SRV}" 2>/dev/null | nawk ' \
+				$1 ~ /^[[:digit:]]+\.$/ { \
+					$1 = "" ; \
+					print $0 \
+				} { \
+					next \
+				} END { \
+					printf ";" \
+				}')
+			then
+				if [[ "${#PH_MOON_GAMES[@]}" -eq "0" ]]
+				then
+					printf "%10s\033[33m%s\033[0m\n" "" "Warning : No shared games found"
+					ph_set_result -r 0 -w -m "No games are currently shared by NVIDIA SHIELD server '${PH_MOON_SRV}'"
+				else
+					while [[ "${PH_ANSWER}" -lt "1" || "${PH_ANSWER}" -gt "$(("${#PH_MOON_GAMES[@]}"+1))" ]]
+					do
+						if [[ "${PH_COUNT}" -gt "0" ]]
+						then
+							printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
+							printf "%8s%s\n\n" "" "--> Choose the default game for Moonlight streaming"
+						else
+							printf "\n"
+						fi
+						if [[ -z "${PH_MOON_GAME}" ]]
+						then
+							printf "%10s%s\033[1;37m%s\033[0m\n\n" "" "INFO : " "No default set"
+						fi
+						for PH_INDEX in "${!PH_MOON_GAMES[@]}"
+						do
+							if [[ "${PH_MOON_GAMES["${PH_INDEX}"]}" == "${PH_MOON_GAME}" ]]
+							then
+								printf "%12s\033[1;37m%-4s\033[1;33m%-10s\t\033[1;37m%s\033[0m" "" "$((PH_INDEX+1))." "${PH_MOON_GAMES["${PH_INDEX}"]}" "(Default)"
+							else
+								printf "%12s\033[1;37m%-4s\033[1;33m%-10s\033[0m" "" "$((PH_INDEX+1))." "${PH_MOON_GAMES["${PH_INDEX}"]}"
+							fi
+						done
+						printf "%12s\033[1;37m%-4s\033[1;33m%-10s\033[0m\n" "" "$(("${#PH_MOON_GAMES[@]}"+1))." "Exit"
+						printf "\n"
+						printf "%10s\033[1;37m%s\033[0m" "" "Your choice : "
+						read -r PH_ANSWER 2>/dev/null
+						((PH_COUNT++))
+					done
+					printf "\n"
+					if [[ "${PH_ANSWER}" -ne "$(("${#PH_MOON_GAMES[@]}"+1))" ]]
+					then
+						ph_run_with_rollback -c true -m "${PH_MOON_GAMES["$((PH_ANSWER-1))"]}"
+						ph_run_with_rollback -c "ph_set_option_to_value Moonlight -r \"PH_MOON_GAME'${PH_MOON_GAMES[$((PH_ANSWER-1))]}\"" || \
+							exit 1
+						ph_set_result -m "The default game for Moonlight streaming is now '${PH_MOON_GAMES[$((PH_ANSWER-1))]}'"
+					else
+						ph_run_with_rollback -c true
+						ph_set_result -w -m "Quitting at user request"
+					fi
+				fi
+				unset PH_MOON_GAMES
+				ph_show_result
+				exit "${?}"
+			else
+				ph_set_result -r 1 -m "An error occurred trying to list games shared by NVIDIA SHIELD server '${PH_MOON_SRV}'"
+			fi
+		else
+			ph_set_result -m "Could not list games since NVIDIA SHIELD server '${PH_MOON_SRV}' is unavailable"
 		fi
 	fi
 fi
-ph_show_result
-exit "$?"
+ph_run_with_rollback -c false -m "Could not list"
+exit "${?}"
