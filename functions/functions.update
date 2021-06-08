@@ -2439,8 +2439,8 @@ do
 				"Show PieHelper info:confapps_ph.sh -r info -a PieHelper | more" \
 				"Update PieHelper:confpieh_ph.sh -u" \
 				'Configure PieHelper:echo \"*Sigh* I am already configured ! Stop buggering me...\"' \
-				"Unconfigure PieHelper:echo Unconfigure by quitting PieHelper from the menu and running 'confpieh_ph.sh -u'" \
-				"Uninstall PieHelper:echo Uninstall by quitting PieHelper from the menu and running 'confpieh_ph.sh -r'"
+				"Unconfigure PieHelper:echo Unconfigure by quitting PieHelper from the menu and running ('confpieh_ph.sh -u')" \
+				"Uninstall PieHelper:echo Uninstall by quitting PieHelper from the menu and running ('confpieh_ph.sh -r')"
 			do
 				ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
 					break 2
