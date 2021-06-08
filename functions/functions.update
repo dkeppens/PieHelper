@@ -2424,12 +2424,19 @@ do
 				break 2
 		done ;;
 			"${PH_MENUS_DIR}/OptionsManagement_${PH_APP}.lst")
-		for PH_j in "Change a ${PH_APP_DISPLAY} option:confopts_ph.sh -p prompt -a ${PH_APP} -s" \
-			"Change all ${PH_APP_DISPLAY} options:confopts_ph.sh -p set -a ${PH_APP} | more" \
-			"Reset all ${PH_APP_DISPLAY} options:confopts_ph.sh -p reset -a ${PH_APP} | more" \
+		for PH_j in "List all bluetooth adapters:listblue_ph.sh | more" \
+			"List all Moonlight games:listmoon_ph.sh | more" \
 			"List all ${PH_APP_DISPLAY} options:confopts_ph.sh -p list -a ${PH_APP} | more" \
+			"Change a ${PH_APP_DISPLAY} option:confopts_ph.sh -p prompt -a ${PH_APP} -s" \
+			"Change all ${PH_APP_DISPLAY} options:confopts_ph.sh -p set -a ${PH_APP} | more" \
+			"Reset a ${PH_APP_DISPLAY} option:confopts_ph.sh -p prompt -a ${PH_APP} -r" \
+			"Reset all ${PH_APP_DISPLAY} options:confopts_ph.sh -p reset -a ${PH_APP} | more" \
 			"Display help for ${PH_APP_DISPLAY} options:confopts_ph.sh -p prompt -a ${PH_APP} -d"
 		do
+			[[ "${PH_j}" == "List all bluetooth adapters:listblue_ph.sh | more" && "${PH_APP}" != "Controllers" ]] && \
+				continue
+			[[ "${PH_j}" == "List all Moonlight games:listmoon_ph.sh | more" && "${PH_APP}" != "Moonlight" ]] && \
+				continue
 			ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
 				break 2
 		done ;;

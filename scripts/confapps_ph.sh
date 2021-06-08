@@ -129,7 +129,7 @@ do
 		>&2 printf "\n\n"
 		>&2 printf "%6s\033[1;36m%s\033[1;37m%s\n" "" "$(basename "${0}" 2>/dev/null) : " "-r [routine] [[-a [[app]|\"prompt\"|\"Controllers\"]|-l [[keyword],[keyword],...]] '-s [scope]' |"
 		>&2 printf "%23s%s\n" "" "-r [routine] -d |"
-		>&2 printf "%23s%s\n" "" "-h |"
+		>&2 printf "%23s%s\n" "" "-h"
 		>&2 printf "\n"
 		>&2 printf "%15s\033[0m\033[1;37m%s\n" "" "Where : - The PieHelper framework manages applications by their regular state and their install state"
 		>&2 printf "%27s%s\n" "" "- To manage the install state of applications (installing, uninstalling, updates, etc), they must be supported by the framework"
