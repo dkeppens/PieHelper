@@ -2461,8 +2461,8 @@ do
 				"Show PieHelper info:confapps_ph.sh -r info -a PieHelper | more" \
 				"Update PieHelper:confpieh_ph.sh -u" \
 				'Configure PieHelper:echo "*Sigh* I am already configured ! Stop buggering me..."' \
-				"Unconfigure PieHelper:echo Unconfigure by quitting PieHelper from the menu and running 'confpieh_ph.sh -u'" \
-				"Uninstall PieHelper:echo Uninstall by quitting PieHelper from the menu and running 'confpieh_ph.sh -r'"
+				'Unconfigure PieHelper:echo Unconfigure by quitting PieHelper from the menu and running "confpieh_ph.sh -u"' \
+				'Uninstall PieHelper:echo Uninstall by quitting PieHelper from the menu and running "confpieh_ph.sh -r"'
 			do
 				ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
 					break 2
@@ -2504,7 +2504,7 @@ do
 			ph_run_with_rollback -c "ph_add_line_to_file -l 'Go to ${PH_APP}:ph_show_menu ${PH_APP}' -f '${PH_i}'" || \
 				break
 		fi
-		for PH_j in "Go to Main:ph_show_menu Main" "Open a shell (Type 'CTRL-D' or 'exit' to return):echo;cd;/bin/bash" \
+		for PH_j in "Go to Main:ph_show_menu Main" "Open a shell (Type 'CTRL-D' to return):echo;cd;/bin/bash" \
 			"Quit:break" "Return to previous screen:return"
 		do
 			ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
