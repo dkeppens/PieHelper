@@ -2433,12 +2433,13 @@ do
 			"${PH_MENUS_DIR}/StatusManagement_${PH_APP}.lst")
 		if [[ "${PH_APP}" == "PieHelper" ]]
 		then
-			for PH_j in "Start PieHelper:echo \"*Sigh* I am already running ! Stop buggering me...\"" \
+set -x
+			for PH_j in 'Start PieHelper:echo "*Sigh* I am already running ! Stop buggering me..."' \
 				"Stop PieHelper:break" \
 				'Restart PieHelper (Only if on a tty):echo restartpieh.sh | at -M -t "$(date +%Y%m)$(date +%d%H%M).$(($(date +%S)+2))"' \
 				"Show PieHelper info:confapps_ph.sh -r info -a PieHelper | more" \
 				"Update PieHelper:confpieh_ph.sh -u" \
-				"Configure PieHelper:echo \"*Sigh* I am already configured ! Stop buggering me...\"" \
+				'Configure PieHelper:echo "*Sigh* I am already configured ! Stop buggering me..."' \
 				"Unconfigure PieHelper:echo \"Unconfigure by quitting PieHelper from the menu and running 'confpieh_ph.sh -u'\"" \
 				"Uninstall PieHelper:echo \"Uninstall by quitting PieHelper from the menu and running 'confpieh_ph.sh -r'\""
 			do
