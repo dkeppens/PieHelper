@@ -5293,15 +5293,6 @@ declare PH_SERVICE
 PH_SERVICES="${*}"
 PH_SERVICE=""
 
-for PH_SERVICE in ${PH_SERVICES}
-do
-	if ! systemctl list-units | nawk '$0 !~ /^(UNIT|)$/ {
-			print $1
-		}' | grep -E "^${PH_SERVICE}$" >/dev/null 2>&1
-	then
-		ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
-	fi
-done
 [[ "${#}" -lt "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
@@ -5343,15 +5334,6 @@ declare PH_SERVICE
 PH_SERVICES="${*}"
 PH_SERVICE=""
 
-for PH_SERVICE in ${PH_SERVICES}
-do
-	if ! systemctl list-units | nawk '$0 !~ /^(UNIT|)$/ {
-			print $1
-		}' | grep -E "^${PH_SERVICE}$" >/dev/null 2>&1
-	then
-		ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
-	fi
-done
 [[ "${#}" -lt "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
@@ -9959,15 +9941,6 @@ declare PH_SERVICE
 PH_SERVICES="${*}"
 PH_SERVICE=""
 
-for PH_SERVICE in ${PH_SERVICES}
-do
-	if ! systemctl list-units | nawk '$0 !~ /^(UNIT|)$/ {
-			print $1
-		}' | grep -E "^${PH_SERVICE}$" >/dev/null 2>&1
-	then
-		ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
-	fi
-done
 [[ "${#}" -lt "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
@@ -10009,15 +9982,6 @@ declare PH_SERVICE
 PH_SERVICES="${*}"
 PH_SERVICE=""
 
-for PH_SERVICE in ${PH_SERVICES}
-do
-	if ! systemctl list-units | nawk '$0 !~ /^(UNIT|)$/ {
-			print $1
-		}' | grep -E "^${PH_SERVICE}$" >/dev/null 2>&1
-	then
-		ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
-	fi
-done
 [[ "${#}" -lt "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 

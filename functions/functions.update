@@ -423,7 +423,7 @@ if [[ "${PH_RESULT}" == "Abort" ]]
 then
 	ph_clean_tmp_dir
 	ph_show_result
-	return "${?}"
+	exit "${?}"
 fi
 return 0
 }
