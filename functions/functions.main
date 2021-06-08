@@ -4462,7 +4462,6 @@ do
 			done
 		fi ;;
 	esac
-	[[ "${PH_MENU}" == "StatusManagement_PieHelper" ]] && set -x
 	declare -a PH_MENU_ITEMS PH_MENU_CMDS
 	if [[ -e "${PH_MENUS_DIR}/${PH_MENU}.lst" ]]
 	then
@@ -4518,10 +4517,9 @@ do
 			PH_MENU_CMDS+=("$(cut -d':' -f2<<<"${PH_MENU_LINE}")")
 		done
 	fi
-	[[ "${PH_MENU}" == "StatusManagement_PieHelper" ]] && set +x
 	unset PH_MENU_LINES
 	PH_MENU_COUNT="${#PH_MENU_ITEMS[@]}"
-	#clear
+	clear
 	ph_print_bannerline
 	printf "\n%$(echo -n $(($((PH_COLUMNS/2))-$(($(echo -n ${PH_MENU_HEADER} | wc -c)/2)))))s\033[1;036m%s\033[0;0m\n\n" "" "${PH_MENU_HEADER}"
 	ph_print_bannerline
