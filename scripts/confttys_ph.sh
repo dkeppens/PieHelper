@@ -13,7 +13,6 @@ fi
 
 #set -x
 
-declare PH_i
 declare PH_APP
 declare PH_APP_STR_TTY
 declare PH_HEADER
@@ -28,7 +27,6 @@ declare -ix PH_ROUTINE_FLAG
 
 PH_OLDOPTARG="${OPTARG}"
 PH_OLDOPTIND="${OPTIND}"
-PH_i=""
 PH_APP=""
 PH_APP_STR_TTY=""
 PH_HEADER="Run a specified routine successively on a tty"
@@ -79,15 +77,20 @@ do
 		>&2 printf "%21s%s\n" "" "- A numeric value from 2 up to and including the value of PieHelper option 'PH_PIEH_MAX_TTYS'"
 		>&2 printf "%21s%s\n" "" "- Reserved keyword 'prompt' which allows for interactive [tty] specification"
 		>&2 printf "%21s%s\n" "" "- Reserved keyword 'auto' which will select the first unallocated tty within the allowed numeric range"
-		>&2 printf "%15s%s\n" "" "-a Allows specifying an application named [app]"
+		>&2 printf "%23s%s\n" "" "-r allows specifying a tty routine [routine] to run"
+		>&2 printf "%25s%s\n" "" "- Supported values for [routine] are :"
+		>&2 printf "%27s%s\n" "" "- \"list\" will list all ttys allocated to an application and the name of that application"
+		>&2 printf "%27s%s\n" "" "- \"info\" will show general information about a specified tty [tty]"
+		>&2 printf "%27s%s\n" "" "- \"move\" will allocate the specified tty [tty] to an application named [app]"
+		>&2 printf "\n"
+		>&2 printf "%4s\033[1;5;33m%s\033[0m\n" "" "Routine-specific options"
+		>&2 printf "\n"
+		>&2 printf "%6s\033[1;36m%s\033[1;5;33m%s\033[0;1;37m\n" "" "$(basename "${0}" 2>/dev/null) : " "-r \"move\" -t [[tty]|\"prompt\"|\"auto\"] -a [[app]\"prompt\"]"
+		>&2 printf "\n"
+		>&2 printf "%15s\033[0m\033[1;37m%s\n" "" "Where : -a Allows specifying an application named [app]"
 		>&2 printf "%18s%s\n" "" "- Supported values for [app] are :"
 		>&2 printf "%21s%s\n" "" "- The name of an Integrated, Halted or Running application"
-		>&2 printf "%21s%s\n" "" "- Reserved keyword 'prompt' which allows for interactive [app] specification"
-                >&2 printf "%23s%s\n" "" "-r allows specifying a tty routine [routine] to run"
-		>&2 printf "%25s%s\n" "" "- Supported values for [routine] are :"
-                >&2 printf "%27s%s\n" "" "- \"list\" will list all ttys allocated to an application and the name of that application"
-                >&2 printf "%27s%s\n" "" "- \"info\" will show general information about a specified tty [tty]"
-                >&2 printf "%27s%s\033[0m\n" "" "- \"move\" will allocate the specified tty [tty] to an application named [app]"
+		>&2 printf "%21s%s\033[0m\n" "" "- Reserved keyword 'prompt' which allows for interactive [app] specification"
 		>&2 printf "\n"
 		OPTARG="${PH_OLDOPTARG}"
 		OPTIND="${PH_OLDOPTIND}"
