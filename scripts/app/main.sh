@@ -53,7 +53,7 @@ declare -ax PH_SUPPORTED_DISTROS
 declare -ax PH_SUPPORTED_DEBIAN_RELS
 declare -ax PH_CHECK_SUPPORTED
 
-PH_SCRIPTS_DIR="$(cd "$(dirname "$0")" && pwd)"
+PH_SCRIPTS_DIR="$(cd "$(dirname "${0}")" && pwd)"
 PH_INST_DIR="${PH_SCRIPTS_DIR%/PieHelper/scripts}"
 PH_BASE_DIR="${PH_INST_DIR}/PieHelper"
 PH_BUILD_DIR="${PH_BASE_DIR}/builds"
@@ -80,8 +80,8 @@ PH_PI_MODEL="$(nawk '$0 ~ /Raspberry Pi/ { \
 			} \
 		} \
 	}' /proc/cpuinfo 2>/dev/null)"
-if [[ "$(dtoverlay -l 2>/dev/null | grep -E "vc4-(f)*kms-v3d" >/dev/null ; echo "$?")" -eq "0" || \
-	( "$PH_PI_MODEL" == "pi4" && "$(dtoverlay -l 2>/dev/null | grep -E "vc4-kms-v3d-pi4" >/dev/null ; echo "$?")" -eq "0" ) || \
+if [[ "$(dtoverlay -l 2>/dev/null | grep -E "vc4-(f)*kms-v3d" >/dev/null ; echo "${?}")" -eq "0" || \
+	( "${PH_PI_MODEL}" == "pi4" && "$(dtoverlay -l 2>/dev/null | grep -E "vc4-kms-v3d-pi4" >/dev/null ; echo "${?}")" -eq "0" ) || \
 	"$(find /sys/firmware/devicetree/base/chosen -type d -name "framebuffer@*" 2>/dev/null | wc -l)" -gt "0" ]]
 then
 	PH_FILE_SUFFIX="_GL"
@@ -161,7 +161,7 @@ fi
 
 # Force color terminal
 
-if [[ "$TERM" != "xterm" ]]
+if [[ "${TERM}" != "xterm" ]]
 then
 	export TERM="xterm"
 fi
@@ -203,7 +203,7 @@ done
 # Set version
 
 PH_VERSION="$(cat "${PH_CONF_DIR}/VERSION" 2>/dev/null)"
-if [[ "$PH_VERSION" != +([[:digit:]])\.+([[:digit:]]) ]]
+if [[ "${PH_VERSION}" != +([[:digit:]])\.+([[:digit:]]) ]]
 then
 	ph_set_result -a -m "Reinstallation of PieHelper is required (Missing or corrupted critical config file '${PH_CONF_DIR}/VERSION')"
 fi
@@ -258,22 +258,22 @@ unset PH_PARSE_FILES
 
 # Handle modules xtrace
 
-if [[ -n "$PH_PIEH_DEBUG" ]]
+if [[ -n "${PH_PIEH_DEBUG}" ]]
 then
 	for PH_i in ${PH_PIEH_DEBUG//,/ }
 	do
-		if [[ "$PH_i" != *.sh ]]
+		if [[ "${PH_i}" != *.sh ]]
 		then
-			if ! functions -t "$PH_i" >/dev/null 2>&1
+			if ! functions -t "${PH_i}" >/dev/null 2>&1
 			then
-				[[ "$PH_FLAG" -eq "1" ]] && \
+				[[ "${PH_FLAG}" -eq "1" ]] && \
 					PH_FLAG="0" && \
 					printf "\n"
 				printf "\n%2s\033[33m%s\033[0m" "" "Warning : Failed to enable debug for module '${PH_i}'"
 			fi
 		fi
 	done
-	if [[ "$PH_FLAG" -eq "0" ]]
+	if [[ "${PH_FLAG}" -eq "0" ]]
 	then
 		printf "\n\n"
 		sleep 3
@@ -284,8 +284,8 @@ fi
 
 for PH_i in "${PH_ALL_ROLLBACK_PARAMS[@]}"
 do
-	unset "$PH_i" 2>/dev/null
-	declare -ax "$PH_i"
+	unset "${PH_i}" 2>/dev/null
+	declare -ax "${PH_i}"
 done
 ph_initialize_rollback
 
@@ -300,11 +300,11 @@ ph_clean_tmp_dir
 
 # Checking configuration
 
-if [[ "$(ps -p "$$" -o args 2>/dev/null | tail -1)" == "/bin/bash ${PH_SCRIPTS_DIR}/confpieh_ph.sh -v" ]]
+if [[ "$(ps -p "${$}" -o args 2>/dev/null | tail -1)" == "/bin/bash ${PH_SCRIPTS_DIR}/confpieh_ph.sh -v" ]]
 then
 	if [[ "$(whoami 2>/dev/null)" != "root" ]]
 	then
-		if [[ -n "$PH_SUDO" ]]
+		if [[ -n "${PH_SUDO}" ]]
 		then
 			printf "\n\033[31m%s\033[0m\n" "Run '${PH_SUDO} ${PH_SCRIPTS_DIR}/confpieh_ph.sh -v'"
 		else
@@ -313,12 +313,12 @@ then
 		ph_set_result -a -m "Privilege elevation is required to repair PieHelper : Use the method listed above to obtain elevation"
 	fi
 	ph_repair_pieh
-	exit "$?"
+	exit "${?}"
 fi
-if [[ "$PH_PIEH_SANITY" == "yes" ]]
+if [[ "${PH_PIEH_SANITY}" == "yes" ]]
 then
 	PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
-	if [[ "$("$PH_SUDO" cat "/proc/${PPID}/comm" 2>/dev/null)" != +(@(conf|list)*_ph|@(re|)start*|${PH_MOVE_SCRIPTS_REGEX}).sh ]]
+	if [[ "$("${PH_SUDO}" cat "/proc/${PPID}/comm" 2>/dev/null)" != +(@(conf|list)*_ph|@(re|)start*|${PH_MOVE_SCRIPTS_REGEX}).sh ]]
 	then
 		if [[ -f "${PH_TMP_DIR}/.reported_issues" ]]
 		then
@@ -333,11 +333,11 @@ then
 				then
 					printf "%2s%s\n" "" "OR" >>"${PH_TMP_DIR}/.reported_issues"
 					ph_check_pieh_shared_config
-#					ph_check_pieh_configured_config
+					ph_check_pieh_configured_config
 				fi
 			else
 				ph_check_pieh_shared_config
-#				ph_check_pieh_configured_config
+				ph_check_pieh_configured_config
 				if [[ -f "${PH_TMP_DIR}/.reported_issues" ]]
 				then
 					printf "%2s%s\n" "" "OR" >>"${PH_TMP_DIR}/.reported_issues"
@@ -362,8 +362,8 @@ ph_clean_tmp_dir
 
 for PH_i in "${PH_ALL_ROLLBACK_PARAMS[@]}"
 do
-	unset "$PH_i" 2>/dev/null
-	declare -ax "$PH_i"
+	unset "${PH_i}" 2>/dev/null
+	declare -ax "${PH_i}"
 done
 ph_initialize_rollback
 
@@ -374,7 +374,7 @@ then
 	clear
 	printf "\n\033[36m%s\033[0m\n\n" "- Configuring PieHelper '${PH_VERSION}'"
 	ph_configure_pieh
-	exit "$?"
+	exit "${?}"
 fi
 
 # Set the user account configured to run PieHelper
@@ -386,9 +386,9 @@ PH_RUN_USER="$(nawk -v mstring="^PieHelper$" '$1 ~ mstring { \
 # Set all user accounts allowed to run PieHelper
 
 declare -a PH_ALLOW_USERS
-[[ "$PH_RUN_USER" == "root" ]] && \
-	PH_ALLOW_USERS+=("$PH_RUN_USER")
-for PH_i in $("$PH_SUDO" find "/etc/sudoers.d" -name "020_pieh-*" -mount 2>/dev/null | paste -d " " -s)
+[[ "${PH_RUN_USER}" == "root" ]] && \
+	PH_ALLOW_USERS+=("${PH_RUN_USER}")
+for PH_i in $("${PH_SUDO}" find "/etc/sudoers.d" -name "020_pieh-*" -mount 2>/dev/null | paste -d " " -s)
 do
 	PH_ALLOW_USERS+=("${PH_i##/etc/sudoers.d/020_pieh-}")
 done
@@ -399,7 +399,7 @@ done
 
 if [[ "$(whoami 2>/dev/null)" != @("${PH_ALLOW_USERS[*]// /|}") ]]
 then
-	if [[ -z "$PH_RUN_USER" ]]
+	if [[ -z "${PH_RUN_USER}" ]]
 	then
 		touch "${PH_TMP_DIR}/.first_run" 2>/dev/null
 		ph_set_result -a -m "Unknown user account for PieHelper : Try configuring first by running '${PH_SCRIPTS_DIR}/confpieh_ph.sh -c'"
