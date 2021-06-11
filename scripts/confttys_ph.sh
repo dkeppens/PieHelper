@@ -54,14 +54,14 @@ do
 			OPTARG="${PH_OLDOPTARG}" && \
 			OPTIND="${PH_OLDOPTIND}" && \
 			exit 1
-		PH_APP_STR_TTY="${OPTARG}" ;;
+		PH_APP_STR_TTY="-t ${OPTARG}" ;;
 			   a)
 		[[ -n "${PH_APP}" || -z "${OPTARG}" ]] && \
 			(! confttys_ph.sh -h) && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			OPTIND="${PH_OLDOPTIND}" && \
 			exit 1
-		PH_APP="${OPTARG}" ;;
+		PH_APP="-a ${OPTARG}" ;;
 			   *)
 		>&2 printf "\n\n"
 		>&2 printf "%2s\033[1;36m%s%s\033[1;4;35m%s\033[0m\n" "" "TTYs" " : " "${PH_HEADER}"
@@ -100,8 +100,11 @@ done
 OPTARG="${PH_OLDOPTARG}"
 OPTIND="${PH_OLDOPTIND}"
 
-[[ -z "${PH_ROUTINE}" || \
-	"$(ph_check_app_state_validity -a "${PH_APP}" -q -o; echo "${?}")" -ne "0" ]] && \
+[[ -z "${PH_ROUTINE}" || ( "${PH_ROUTINE}" != "move" && -n "${PH_APP}" ) || ( "${PH_ROUTINE}" != @(info|move) && -n "${PH_APP_STR_TTY}" ) || \
+	( "${PH_ROUTINE}" == @(info|move) && -z "${PH_APP_STR_TTY}" ) || ( "${PH_ROUTINE}" == "move" && -z "${PH_APP}" ) || \
+	( -n "${PH_APP}" && "$(ph_check_app_state_validity -a "${PH_APP}" -q -i; echo "${?}")" -ne "0" ) ]] && \
 	(! confttys_ph.sh -h) && \
 	exit 1
-exit 0
+
+ph_do_app_routine -r "${PH_ROUTINE}" ${PH_APP} ${PH_APP_STR_TTY}
+exit "${?}"
