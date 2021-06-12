@@ -222,7 +222,7 @@ if [[ -f "${PH_CONF_DIR}/supported_apps" ]]
 then
 	PH_PARSE_FILES+=("${PH_CONF_DIR}/supported_apps")
 fi
-for PH_i in Ctrls $(nawk 'BEGIN { \
+for PH_i in Controllers $(nawk 'BEGIN { \
 		i = "1" \
 	} \
 	NR == "1" { \
@@ -308,7 +308,7 @@ then
 		then
 			printf "\n\033[31m%s\033[0m\n" "Run '${PH_SUDO} ${PH_SCRIPTS_DIR}/confpieh_ph.sh -v'"
 		else
-			printf "\n\033[31m%s\33[0m\n" "Run 'su' and provide the system's admin password to become user 'root' and try again"
+			printf "\n\033[31m%s\33[0m\n" "Run 'su' and provide the administrator password to become user 'root' and try again"
 		fi
 		ph_set_result -a -m "Privilege elevation is required to repair PieHelper : Use the method listed above to obtain elevation"
 	fi

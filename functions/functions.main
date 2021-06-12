@@ -1124,27 +1124,22 @@ else
 				print $3 \
 			}')" != "root" ]]
 		then
-			printf "%4s%s\n" "" "- The PATH and LD_LIBRARY_PATH extension " "'/etc/profile.d/PieHelper-path.sh'" " has a corrupted value for ownership -> Fix by running '${PH_SUDO} chown root:root /etc/profile.d/PieHelper-path.sh'" >>"${PH_TMP_DIR}/.reported_issues"
+			printf "%4s%s\n" "" "- The PATH and LD_LIBRARY_PATH extension '/etc/profile.d/PieHelper-path.sh' has a corrupted value for ownership -> Fix by running '${PH_SUDO} chown root:root /etc/profile.d/PieHelper-path.sh'" >>"${PH_TMP_DIR}/.reported_issues"
 			PH_RET_CODE="1"
 		fi
 	fi
 fi
-if [[ ! -L "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" && "$PH_DISTRO" == "Debian" ]]
+if [[ ! -L "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" && "${PH_DISTRO}" == "Debian" ]]
 then
         printf "%4s%s\n" "" "- ${PH_DISTRO} release symbolic link is missing" >>"${PH_TMP_DIR}/.reported_issues"
 	PH_RET_CODE="1"
 fi
-if [[ -f "$PH_FILES_DIR/auto_update_denied" ]]
+if [[ -f "${PH_TMP_DIR}/.auto_update_denied" ]]
 then
-        printf "%4s%s\n" "" "- Temporary file 'auto_update_denied' is present" >>"${PH_TMP_DIR}/.reported_issues"
+        printf "%4s%s\n" "" "- File '${PH_TMP_DIR}/.auto_update_denied' is present" >>"${PH_TMP_DIR}/.reported_issues"
 	PH_RET_CODE="1"
 fi
-if ! ph_check_object_existence -q -o "${PH_CONF_DIR}/Controllers.conf"
-then
-        printf "%4s%s\n" "" "- Configuration file 'Controllers.conf' is missing" >>"${PH_TMP_DIR}/.reported_issues"
-	PH_RET_CODE="1"
-fi
-for PH_APP in $(ph_get_app_list_by_state -s Supported -t minimum)
+for PH_APP in Controllers $(ph_get_app_list_by_state -s Supported -t minimum)
 do
 	PH_APPU="${PH_APP:0:4}"
 	if ! ph_check_object_existence -q -o "${PH_CONF_DIR}/${PH_APP}.conf"
@@ -1152,9 +1147,11 @@ do
        		printf "%4s%s\n" "" "- Supported application ${PH_APP} configuration file '${PH_APP}.conf' is missing" >>"${PH_TMP_DIR}/.reported_issues"
 		PH_RET_CODE="1"
 	fi
-	for PH_i in "AppManagement_${PH_APP}" "OptsManagement_${PH_APP}" "TTYManagement_${PH_APP}" "${PH_APP}"
+	for PH_i in "StatusManagement_${PH_APP}" "OptionsManagement_${PH_APP}" "TTYManagement_${PH_APP}" "${PH_APP}"
 	do
-		if [[ ! -f "${PH_MENUS_DIR}/${PH_i}.lst" ]]
+		[[ "${PH_i}" == "TTYManagement_${PH_APP}" && "${PH_APP}" == "Controllers" ]] && \
+			continue
+		if ! ph_check_object_existence -q -o "${PH_MENUS_DIR}/${PH_i}.lst"
 		then
        		 	printf "%4s%s\n" "" "- Integrated application ${PH_APP} menu item '${PH_i}.lst' is missing" >>"${PH_TMP_DIR}/.reported_issues"
 			PH_RET_CODE="1"
@@ -1172,12 +1169,12 @@ do
 		fi
 	done
 done
-read -rd '' -a PH_CIFS_MPTS < <("$PH_SUDO" find "${PH_MNT_DIR}/*" -maxdepth 1 -type d -exec basename {} \; 2>/dev/null)
+read -r -a PH_CIFS_MPTS -d';' < <("${PH_SUDO}" find "${PH_MNT_DIR}/*" -maxdepth 1 -type d -exec basename {} \; 2>/dev/null; echo -n ';')
 for PH_APP in "${PH_CIFS_MPTS[@]}"
 do
 	if ! cut -f1 "${PH_CONF_DIR}/integrated_apps" 2>&1 | grep -E "^${PH_APP}$" >/dev/null
 	then
-        	printf "%4s%s\n" "" "- Default CIFS mountpoint '${PH_MNT_DIR}/${PH_APP}' is present while ${PH_APP} application state is not 'Integrated'" >>"${PH_TMP_DIR}/.reported_issues"
+        	printf "%4s%s\n" "" "- The default CIFS mountpoint '${PH_MNT_DIR}/${PH_APP}' of '$(ph_get_app_state_from_app_name -a ${PH_APP})' application '${PH_APP}' is present" >>"${PH_TMP_DIR}/.reported_issues"
 		PH_RET_CODE="1"
 	fi
 done
@@ -1185,30 +1182,30 @@ unset PH_CIFS_MPTS
 for PH_APP in $(ph_get_app_list_by_state -s Integrated -t minimum)
 do
 	PH_APPU="${PH_APP:0:4}"
-	PH_APPU_CIFS_MPT="$(eval "echo -n \"\$PH_${PH_APPU}_CIFS_MPT\"")"
+	PH_APPU_CIFS_MPT="$(ph_get_app_cifs_mpt -a "${PH_APP}" -r)"
 	if ! cut -f1 "${PH_CONF_DIR}/supported_apps" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
 	then
-        	printf "%4s%s\n" "" "- Integrated application ${PH_APP} is missing in configuration file '${PH_CONF_DIR}/supported_apps'" >>"${PH_TMP_DIR}/.reported_issues"
+        	printf "%4s%s\n" "" "- Integrated application '${PH_APP}' is missing an entry in configuration file '${PH_CONF_DIR}/supported_apps'" >>"${PH_TMP_DIR}/.reported_issues"
 		PH_RET_CODE="1"
 	fi
-	if [[ ! -d "$(eval "echo -n \"${PH_APPU_CIFS_MPT}\"")" ]]
+	if [[ -n "${PH_APPU_CIFS_MPT}" && ! -d "${PH_APPU_CIFS_MPT}" ]]
 	then
-        	printf "%4s%s\n" "" "- Integrated application ${PH_APP} CIFS mountpoint '$(eval "echo -n \"${PH_APPU_CIFS_MPT}\"")' is missing" >>"${PH_TMP_DIR}/.reported_issues"
+        	printf "%4s%s\n" "" "- Integrated application '${PH_APP}' is missing CIFS mountpoint '${PH_APPU_CIFS_MPT}'" >>"${PH_TMP_DIR}/.reported_issues"
 		PH_RET_CODE="1"
 	fi
 done
 for PH_APP in $(ph_get_app_list_by_state -s Halted -t exact)
 do
 	PH_APPL="${PH_APP:0:4}"
-	PH_APP_STR_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
+	PH_APP_STR_TTY="$(ph_get_app_tty_from_app_name "${PH_APP}")"
 	if [[ ! -f "/etc/profile.d/PieHelper_tty${PH_APP_STR_TTY}.sh" ]]
 	then
-        	printf "%4s%s\n" "" "- Integrated application ${PH_APP} on 'tty${PH_APP_STR_TTY}' LoginScript is missing" >>"${PH_TMP_DIR}/.reported_issues"
+        	printf "%4s%s\n" "" "- Integrated application '${PH_APP}' is missing LoginScript '/etc/profile.d/PieHelper_tty${PH_APP_STR_TTY}.sh'" >>"${PH_TMP_DIR}/.reported_issues"
 		PH_RET_CODE="1"
 	fi
 	if [[ ! -f "/etc/systemd/system/getty@tty${PH_APP_STR_TTY}.service.d/autologin.conf" ]]
 	then
-        	printf "%4s%s\n" "" "- Integrated application ${PH_APP} on 'tty${PH_APP_STR_TTY}' autologin is missing" >>"${PH_TMP_DIR}/.reported_issues"
+        	printf "%4s%s\n" "" "- Integrated application '${PH_APP}' is missing autologin configuration '/etc/systemd/system/getty@tty${PH_APP_STR_TTY}.service.d/autologin.conf'" >>"${PH_TMP_DIR}/.reported_issues"
 		PH_RET_CODE="1"
 	fi
 	for PH_i in $(nawk -v app="^${PH_APP}$" -v appl="${PH_APPL}" -v scriptsdir="${PH_SCRIPTS_DIR}" 'BEGIN { \
@@ -1223,12 +1220,12 @@ do
 	do
 		if [[ ! -f "${PH_i}" ]]
 		then
-        		printf "%4s%s\n" "" "- Integrated application ${PH_APP} management script '${PH_i}' is missing" >>"${PH_TMP_DIR}/.reported_issues"
+        		printf "%4s%s\n" "" "- Integrated application '${PH_APP}' is missing management script '${PH_i}'" >>"${PH_TMP_DIR}/.reported_issues"
 			PH_RET_CODE="1"
 		else
 			if [[ ! -x "${PH_i}" ]]
 			then
-        			printf "%4s%s\n" "" "- Integrated application ${PH_APP} management script '${PH_i}' is not executable -> Should be '0770'" >>"${PH_TMP_DIR}/.reported_issues"
+        			printf "%4s%s\n" "" "- Integrated application '${PH_APP}' is missing execute permission for management script '${PH_i}'" >>"${PH_TMP_DIR}/.reported_issues"
 				PH_RET_CODE="1"
 			fi
 		fi
@@ -1698,7 +1695,7 @@ else
 			*/TTYManagement_*.lst|*/StatusManagement_*.lst|*/OptionsManagement_*.lst)
 		PH_OBJECT_TYPE="menu item"
 		PH_TYPE="Unique" ;;
-			*/TTYManagement.lst|*/OptsManagement.lst|*/AppManagement.lst)
+			*/TTYManagement.lst|*/OptionsManagement.lst|*/StatusManagement.lst)
 		PH_OBJECT_TYPE="link" ;;
 			*.lst)
 		PH_OBJECT_TYPE="menu item" ;;
@@ -1707,7 +1704,7 @@ else
 			*.template)
 		PH_OBJECT_TYPE="template"
 		PH_TYPE="Unique" ;;
-			*/auto_update_denied|*/.first_run)
+			*/.auto_update_denied|*/.first_run)
 		PH_OBJECT_TYPE="file"
 		PH_TYPE="Optional" ;;
 			*.expect)
@@ -1913,8 +1910,8 @@ then
 	else
 		printf "%10s\033[32m%s\033[0m\n" "" "OK (Found update '${PH_NEW_VERSION}')"
 	fi
-	printf "%8s%s\n" "" "--> Checking if auto_update is allowed"
-	if ph_check_object_existence -q -o "${PH_UPDATE_DIR}/PieHelper${PH_FILES_DIR##*PieHelper}/auto_update_denied"
+	printf "%8s%s\n" "" "--> Checking if auto-update is allowed"
+	if ph_check_object_existence -q -o "${PH_UPDATE_DIR}/PieHelper${PH_FILES_DIR##*PieHelper}/.auto_update_denied"
 	then
 		printf "%10s\033[33m%s\033[0m\n" "" "Warning : No"
 		printf "%8s%s\n\n" "" "--> Displaying reminder for manual updates"
@@ -2069,11 +2066,11 @@ then
 	do
 		[[ -d "${PH_BASE_DIR}/PieHelper${PH_MENUS_DIR##*PieHelper}/${PH_i}" ]] && \
 			continue
-		if [[ "$PH_i" != @(OptsManagement.lst|TTYManagement.lst|AppManagement.lst|$(nawk 'BEGIN { \
+		if [[ "$PH_i" != @(OptionsManagement.lst|TTYManagement.lst|StatusManagement.lst|$(nawk 'BEGIN { \
 				ORS = "|" \
 			} \
 			$1 !~ /^PieHelper$/ { \
-				print $1 ".lst|" "OptsManagement_" $1 ".lst|" "TTYManagement_" $1 ".lst|" "AppManagement_" $1 ".lst" \
+				print $1 ".lst|" "OptionsManagement_" $1 ".lst|" "TTYManagement_" $1 ".lst|" "StatusManagement_" $1 ".lst" \
 			}' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)) ]]
 		then
 			cp -p "${PH_UPDATE_DIR}/PieHelper${PH_MENUS_DIR##*PieHelper}/${PH_i}" "${PH_MENUS_DIR}/${PH_i}" 2>/dev/null
@@ -2099,7 +2096,7 @@ then
 	printf "%8s%s\n" "" "--> Cleaning up"
 	"$PH_SUDO" rm -r /${PH_UPDATE_DIR}/PieHelper 2>/dev/null
 	"$PH_SUDO" rm "${PH_TMP_DIR}/.first_run" 2>/dev/null
-	"$PH_SUDO" rm "${PH_FILES_DIR}/auto_update_denied" 2>/dev/null
+	"$PH_SUDO" rm "${PH_TMP_DIR}/.auto_update_denied" 2>/dev/null
 	printf "%10s\033[32m%s\033[0m\n\n" "" "OK"
 	printf "%s\n" "Restart PieHelper manually to finalize updating to version '${PH_NEW_VERSION}'"
 	printf "%s\n" "Press 'Enter' to quit"
