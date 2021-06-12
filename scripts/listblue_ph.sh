@@ -28,9 +28,14 @@ OPTIND="1"
 while getopts :h PH_OPTION
 do
 	case "${PH_OPTION}" in *)
-		>&2 printf "\033[1;36m%s\033[0;0m\n" "Usage : listblue_ph.sh | -h"
+		>&2 printf "\n\n"
+		>&2 printf "%2s\033[1;36m%s%s\033[1;4;35m%s\033[0m\n" "" "Bluetooth Adapters" " : " "${PH_HEADER}"
+		>&2 printf "\n\n"
+		>&2 printf "%4s\033[1;5;33m%s\033[0m\n" "" "General options"
+		>&2 printf "\n\n"
+		>&2 printf "%6s\033[1;36m%s\033[1;37m%s\n" "" "$(basename "${0}" 2>/dev/null) : " "| -h"
 		>&2 printf "\n"
-		>&2 printf "%3s\033[1;37m%s\n" "" "Where -h displays this usage"
+		>&2 printf "%15s\033[0m\033[1;37m%s\n" "" "Where : -h displays this usage"
 		>&2 printf "%9s%s\n" "" "- Running this script without parameters will list :"
 		>&2 printf "%12s%s\n" "" "- A summary of all available bluetooth adapters"
 		>&2 printf "%12s%s\033[0m\n" "" "- The bluetooth adapter currently set as default"

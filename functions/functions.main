@@ -460,18 +460,18 @@ function ph_git_add_local {
 
 declare PH_GIT_COMMIT_MSG
 
-PH_GIT_COMMIT_MSG="$1"
+PH_GIT_COMMIT_MSG="${1}"
 
-[[ "$#" -ne "1" ]] && \
+[[ "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Locally adding the latest modifications to git"
-if cd "$PH_BASE_DIR" >/dev/null 2>&1
+printf "%8s%s\033[1;33m%s\033[0m%s\n" "" "--> Adding build directory " "'${PH_BASE_DIR}'" " to the local git"
+if cd "${PH_BASE_DIR}" >/dev/null 2>&1
 then
-	if [[ -z "$PH_GIT_COMMIT_MSG" ]]
+	if [[ -z "${PH_GIT_COMMIT_MSG}" ]]
 	then
 		cd - >/dev/null 2>&1
-		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Empty commit message -> Skipping"
+		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Skipping the addition since the commit message is empty"
 		ph_set_result -r 0
 		return 0
 	else
@@ -480,9 +480,9 @@ then
 			cd - >/dev/null 2>&1
 			ph_add_value_to_param -p PH_GIT_ADD_LOCAL -v "yes"
 			ph_run_with_rollback -c true && \
-				return "$?"
+				return "${?}"
 		else
-			ph_set_result -m "An error occurred trying to locally add the latest modifications to git"
+			ph_set_result -m "An error occurred trying to add build directory '${PH_BASE_DIR}' to the local git"
 		fi
 	fi
 	cd - >/dev/null 2>&1
@@ -495,19 +495,19 @@ ph_run_with_rollback -c false -m "Could not add" || \
 
 function ph_undo_git_add_local {
 
-[[ "$#" -ne "0" ]] && \
+[[ "${#}" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Undoing latest local git addition"
-if cd "$PH_BASE_DIR" >/dev/null 2>&1
+printf "%8s%s\033[1;33m%s\033[0m%s\n" "" "--> Undoing the latest addition of build directory " "'${PH_BASE_DIR}'" " in the local git"
+if cd "${PH_BASE_DIR}" >/dev/null 2>&1
 then
 	if git reset >/dev/null 2>&1
 	then
 		cd - >/dev/null 2>&1
 		ph_run_with_rollback -c true && \
-			return "$?"
+			return "${?}"
 	else
-		ph_set_result -m "An error occurred trying to undo the latest local git addition"
+		ph_set_result -m "An error occurred trying to undo the latest addition of build directory '${PH_BASE_DIR}' in the local git"
 	fi
 	cd - >/dev/null 2>&1
 else
@@ -525,8 +525,8 @@ declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_NEW_VERSION=""
 PH_GIT_COMMIT_MSG=""
 PH_OPTION=""
@@ -535,73 +535,73 @@ OPTIND="1"
 
 while getopts :v:m: PH_OPTION
 do
-	case "$PH_OPTION" in v)
-		[[ -n "$PH_NEW_VERSION" || -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+	case "${PH_OPTION}" in v)
+		[[ -n "${PH_NEW_VERSION}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_NEW_VERSION="$OPTARG" ;;
+		PH_NEW_VERSION="${OPTARG}" ;;
 			     m)
-		[[ -n "$PH_GIT_COMMIT_MSG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_GIT_COMMIT_MSG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_GIT_COMMIT_MSG="$OPTARG" ;;
+		PH_GIT_COMMIT_MSG="${OPTARG}" ;;
 			     *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "$PH_NEW_VERSION" || "$#" -ne "4" ]] && \
+[[ -z "${PH_NEW_VERSION}" || "${#}" -ne "4" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Tagging local git build as '$PH_NEW_VERSION'"
-if cd "$PH_BASE_DIR" >/dev/null 2>&1
+printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Tagging the local git build as " "'${PH_NEW_VERSION}'"
+if cd "${PH_BASE_DIR}" >/dev/null 2>&1
 then
-	if [[ -z "$PH_GIT_COMMIT_MSG" ]]
+	if [[ -z "${PH_GIT_COMMIT_MSG}" ]]
 	then
 		cd - >/dev/null 2>&1
-		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Empty commit message -> Skipping"
+		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Skipping the tag since the commit message is empty"
 		ph_set_result -r 0
 		return 0
 	else
-		if git tag -a "$PH_NEW_VERSION" -m "$PH_GIT_COMMIT_MSG" >/dev/null 2>&1
+		if git tag -a "${PH_NEW_VERSION}" -m "${PH_GIT_COMMIT_MSG}" >/dev/null 2>&1
 		then
 			cd - >/dev/null 2>&1
 			ph_add_value_to_param -p PH_GIT_TAG_LOCAL -v "yes"
 			ph_run_with_rollback -c true && \
-				return "$?"
+				return "${?}"
 		else
-			ph_set_result -m "An error occurred trying to tag build '${PH_NEW_VERSION}' as '${PH_GIT_COMMIT_MSG}'"
+			ph_set_result -m "An error occurred trying to tag the local git build as '${PH_NEW_VERSION}'"
 		fi
 	fi
 	cd - >/dev/null 2>&1
 else
 	ph_set_result -m "An error occurred trying to change directory to '${PH_BASE_DIR}'"
 fi
-ph_run_with_rollback -c false -m "Could not commit" || \
+ph_run_with_rollback -c false -m "Could not tag" || \
 	return 1
 }
  
 function ph_undo_git_commit_local {
 
-[[ "$#" -ne "0" ]] && \
+[[ "${#}" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Undoing the latest local git commit"
-if cd "$PH_BASE_DIR" >/dev/null 2>&1
+printf "%8s%s\n" "" "--> Undoing the latest commit in the local git"
+if cd "${PH_BASE_DIR}" >/dev/null 2>&1
 then
 	if git reset --soft HEAD~1 >/dev/null 2>&1
 	then
 		cd - >/dev/null 2>&1
 		ph_run_with_rollback -c true && \
-			return "$?"
+			return "${?}"
 	else
-		ph_set_result -m "An error occurred trying to undo the latest local git commit"
+		ph_set_result -m "An error occurred trying to undo the latest commit in the local git"
 	fi
 	cd - >/dev/null 2>&1
 else
@@ -619,8 +619,8 @@ declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_NEW_VERSION=""
 PH_GIT_COMMIT_MSG=""
 PH_OPTION=""
@@ -629,48 +629,48 @@ OPTIND="1"
 
 while getopts :m:v: PH_OPTION
 do
-	case "$PH_OPTION" in m)
-		[[ -n "$PH_GIT_COMMIT_MSG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+	case "${PH_OPTION}" in m)
+		[[ -n "${PH_GIT_COMMIT_MSG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_GIT_COMMIT_MSG="$OPTARG" ;;
+		PH_GIT_COMMIT_MSG="${OPTARG}" ;;
 			     v)
-		[[ -n "$PH_NEW_VERSION" || -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_NEW_VERSION}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_NEW_VERSION="$OPTARG" ;;
+		PH_NEW_VERSION="${OPTARG}" ;;
 			     *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "$PH_NEW_VERSION" || "$#" -ne "4" ]] && \
+[[ -z "${PH_NEW_VERSION}" || "${#}" -ne "4" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Locally committing git build '${PH_NEW_VERSION}'"
-if cd "$PH_BASE_DIR" >/dev/null 2>&1
+printf "%8s%s\033[1;33m%s\033[0m%s\n" "" "--> Committing build " "'${PH_NEW_VERSION}'" " to the local git"
+if cd "${PH_BASE_DIR}" >/dev/null 2>&1
 then
-	if [[ -z "$PH_GIT_COMMIT_MSG" ]]
+	if [[ -z "${PH_GIT_COMMIT_MSG}" ]]
 	then
-		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Empty commit message -> Skipping"
+		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Skipping the commit since the commit message is empty"
 		ph_set_result -r 0
 		cd - >/dev/null 2>&1
 		return 0
 	else
-		if git commit -a --message="$PH_GIT_COMMSG" >/dev/null 2>&1
+		if git commit -a --message="${PH_GIT_COMMIT_MSG}" >/dev/null 2>&1
 		then
 			cd - >/dev/null 2>&1
 			ph_add_value_to_param -p PH_GIT_COMMIT_LOCAL -v "yes"
 			ph_run_with_rollback -c true && \
-				return "$?"
+				return "${?}"
 		else
-			ph_set_result -m "An error occurred trying to locally commit git build '${PH_NEW_VERSION}'"
+			ph_set_result -m "An error occurred trying to commit build '${PH_NEW_VERSION}' to the local git"
 		fi
 	fi
 	cd - >/dev/null 2>&1
@@ -689,8 +689,8 @@ declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_NEW_VERSION=""
 PH_GIT_COMMIT_MSG=""
 PH_OPTION=""
@@ -701,31 +701,31 @@ OPTIND="1"
 
 while getopts :m:v: PH_OPTION
 do
-	case "$PH_OPTION" in m)
-		[[ -n "$PH_GIT_COMMIT_MSG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+	case "${PH_OPTION}" in m)
+		[[ -n "${PH_GIT_COMMIT_MSG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_GIT_COMMIT_MSG="$OPTARG" ;;
+		PH_GIT_COMMIT_MSG="${OPTARG}" ;;
 			     v)
-		[[ -n "$PH_NEW_VERSION" || -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_NEW_VERSION}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_NEW_VERSION="$OPTARG" ;;
+		PH_NEW_VERSION="${OPTARG}" ;;
 			     *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "$PH_NEW_VERSION" || "$#" -ne "4" ]] && \
+[[ -z "${PH_NEW_VERSION}" || "${#}" -ne "4" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-ph_run_with_rollback -c "ph_git_add_local '${PH_GIT_COMMIT_MSG}" || \
+ph_run_with_rollback -c "ph_git_add_local '${PH_GIT_COMMIT_MSG}'" || \
 	return 1
 ph_run_with_rollback -c "ph_git_commit_local -v '${PH_NEW_VERSION}' -m '${PH_GIT_COMMIT_MSG}'" || \
 	return 1
@@ -744,8 +744,8 @@ declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_GIT_REPO_DIR=""
 PH_GIT_REPO_NAME=""
 PH_GIT_REPO_ARGS=""
@@ -756,56 +756,56 @@ OPTIND="1"
 
 while getopts :d:r:n:a: PH_OPTION
 do
-	case "$PH_OPTION" in d)
-		[[ -n "$PH_GIT_REPO_DIR" || -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+	case "${PH_OPTION}" in d)
+		[[ -n "${PH_GIT_REPO_DIR}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_GIT_REPO_DIR="$OPTARG" ;;
+		PH_GIT_REPO_DIR="${OPTARG}" ;;
 			     n)
-		[[ -n "$PH_GIT_REPO_NAME" || -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_GIT_REPO_NAME}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_GIT_REPO_NAME="$OPTARG" ;;
+		PH_GIT_REPO_NAME="${OPTARG}" ;;
 			     a)
-		[[ -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_GIT_REPO_ARGS="$OPTARG" ;;
+		PH_GIT_REPO_ARGS="${OPTARG}" ;;
 			     r)
-		[[ -n "$PH_GIT_REPO" || -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_GIT_REPO}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_GIT_REPO="$OPTARG" ;;
+		PH_GIT_REPO="${OPTARG}" ;;
 			     *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "$PH_GIT_REPO_DIR" || -z "$PH_GIT_REPO" || -z "$PH_GIT_REPO_NAME" ]] && \
+[[ -z "${PH_GIT_REPO_DIR}" || -z "${PH_GIT_REPO}" || -z "${PH_GIT_REPO_NAME}" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-if [[ ! -d "$PH_GIT_REPO_DIR" ]]
+if [[ ! -d "${PH_GIT_REPO_DIR}" ]]
 then
 	ph_run_with_rollback -c "ph_create_empty_file -t directory -d '${PH_GIT_REPO_DIR}'" || \
 		return 1
 fi
-printf "%8s%s\n" "" "--> Cloning master git repository '${PH_GIT_REPO}'"
-if cd "$PH_GIT_REPO_DIR" >/dev/null 2>&1
+printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Cloning master git repository " "'${PH_GIT_REPO}'"
+if cd "${PH_GIT_REPO_DIR}" >/dev/null 2>&1
 then
-	if git clone ${PH_GIT_REPO_ARGS} "$PH_GIT_REPO" >/dev/null 2>&1
+	if git clone ${PH_GIT_REPO_ARGS} "${PH_GIT_REPO}" >/dev/null 2>&1
 	then
 		cd - >/dev/null 2>&1
 		ph_add_value_to_param -p PH_GIT_UNDO_CLONE_MASTER -v "${PH_GIT_REPO_DIR}'${PH_GIT_REPO}'${PH_GIT_REPO_NAME}'${PH_GIT_REPO_ARGS}"
 		ph_run_with_rollback -c true && \
-			return 0
+			return "${?}"
 	else
 		ph_set_result -m "An error occurred trying to clone master git repository '${PH_GIT_REPO}'"
 	fi
@@ -827,8 +827,8 @@ declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_GIT_REPO=""
 PH_GIT_REPO_ARGS=""
 PH_GIT_REPO_DIR=""
@@ -839,56 +839,56 @@ OPTIND="1"
 
 while getopts :d:n:r:a: PH_OPTION
 do
-	case "$PH_OPTION" in d)
-		[[ -n "$PH_GIT_REPO_DIR" || -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+	case "${PH_OPTION}" in d)
+		[[ -n "${PH_GIT_REPO_DIR}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_GIT_REPO_DIR="$OPTARG" ;;
+		PH_GIT_REPO_DIR="${OPTARG}" ;;
 			     r)
-		[[ -n "$PH_GIT_REPO" || -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_GIT_REPO}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_GIT_REPO="$OPTARG" ;;
+		PH_GIT_REPO="${OPTARG}" ;;
 			     a)
-		[[ -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_GIT_REPO_ARGS="$OPTARG" ;;
+		PH_GIT_REPO_ARGS="${OPTARG}" ;;
 			     n)
-		[[ -n "$PH_GIT_REPO_NAME" || -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_GIT_REPO_NAME}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_GIT_REPO_NAME="$OPTARG" ;;
+		PH_GIT_REPO_NAME="${OPTARG}" ;;
 			     *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "$PH_GIT_REPO_DIR" || -z "$PH_GIT_REPO" || -z "$PH_GIT_REPO_NAME" || \
+[[ -z "${PH_GIT_REPO_DIR}" || -z "${PH_GIT_REPO}" || -z "${PH_GIT_REPO_NAME}" || \
 	( -e "${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}" && ! -d "${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Removing cloned git repository '${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}'"
+printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Removing cloned git repository " "'${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}'"
 if [[ ! -e "${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}" ]]
 then
 	ph_run_with_rollback -c true -m "Nothing to do" && \
-		return "$?"
+		return "${?}"
 else
-	if "$PH_SUDO" rm -r "${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}" 2>/dev/null
+	if "${PH_SUDO}" rm -r "${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}" 2>/dev/null
 	then
 		ph_add_value_to_param -p PH_GIT_CLONE_MASTER -v "${PH_GIT_REPO_DIR}'${PH_GIT_REPO}'${PH_GIT_REPO_NAME}'${PH_GIT_REPO_ARGS}"
 		ph_run_with_rollback -c true && \
-			return "$?"
+			return "${?}"
 	else
-		ph_set_result -m "An error occurred trying to recursively remove cloned git repository '${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}'"
+		ph_set_result -m "An error occurred trying to remove cloned git repository '${PH_GIT_REPO_DIR}/${PH_GIT_REPO_NAME}'"
 	fi
 fi
 ph_run_with_rollback -c false -m "Could not remove" || \
@@ -903,8 +903,8 @@ declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_NEW_VERSION=""
 PH_GIT_COMMIT_MSG=""
 PH_OPTION=""
@@ -913,36 +913,36 @@ OPTIND="1"
 
 while getopts :v:m: PH_OPTION
 do
-	case "$PH_OPTION" in v)
-		[[ -n "$PH_NEW_VERSION" || -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+	case "${PH_OPTION}" in v)
+		[[ -n "${PH_NEW_VERSION}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_NEW_VERSION="$OPTARG" ;;
+		PH_NEW_VERSION="${OPTARG}" ;;
 			     m)
-		[[ -n "$PH_GIT_COMMIT_MSG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_GIT_COMMIT_MSG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_GIT_COMMIT_MSG="$OPTARG" ;;
+		PH_GIT_COMMIT_MSG="${OPTARG}" ;;
 			     *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "$PH_NEW_VERSION" || "$#" -ne "4" ]] && \
+[[ -z "${PH_NEW_VERSION}" || "${#}" -ne "4" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Committing git build '${PH_NEW_VERSION}' to the master"
-if cd "$PH_BASE_DIR" >/dev/null 2>&1
+printf "%8s%s\033[1;33m%s\033[0m%s\n" "" "--> Committing build " "'${PH_NEW_VERSION}'" " to the master git repository"
+if cd "${PH_BASE_DIR}" >/dev/null 2>&1
 then
-	if [[ -z "$PH_GIT_COMMIT_MSG" ]]
+	if [[ -z "${PH_GIT_COMMIT_MSG}" ]]
 	then
-		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Empty commit message -> Skipping"
+		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Skipping the commit since the commit message is empty"
 		ph_set_result -r 0
 		cd - >/dev/null 2>&1
 		return 0
@@ -952,11 +952,10 @@ then
 			cd - >/dev/null 2>&1
 			ph_add_value_to_param -p PH_GIT_COMMIT_MASTER -v "yes"
 			ph_run_with_rollback -c true && \
-				return "$?"
-		else
-			ph_set_result -m "An error occurred committing git build '${PH_NEW_VERSION}' to the master"
+				return "${?}"
 		fi
 	fi
+	ph_set_result -m "An error occurred trying to commit build '${PH_NEW_VERSION}' to the master git repository"
 	cd - >/dev/null 2>&1
 else
 	ph_set_result -m "An error occurred trying to change directory to '${PH_BASE_DIR}'"
@@ -973,8 +972,8 @@ declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 
-PH_OLDOPTARG="$OPTARG"
-PH_OLDOPTIND="$OPTIND"
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_NEW_VERSION=""
 PH_GIT_COMMIT_MSG=""
 PH_OPTION=""
@@ -983,28 +982,28 @@ OPTIND="1"
 
 while getopts :v:m: PH_OPTION
 do
-	case "$PH_OPTION" in v)
-		[[ -n "$PH_NEW_VERSION" || -z "$OPTARG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+	case "${PH_OPTION}" in v)
+		[[ -n "${PH_NEW_VERSION}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_NEW_VERSION="$OPTARG" ;;
+		PH_NEW_VERSION="${OPTARG}" ;;
 			     m)
-		[[ -n "$PH_GIT_COMMIT_MSG" ]] && \
-			OPTIND="$PH_OLDOPTIND" && \
-			OPTARG="$PH_OLDOPTARG" && \
+		[[ -n "${PH_GIT_COMMIT_MSG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_GIT_COMMIT_MSG="$OPTARG" ;;
+		PH_GIT_COMMIT_MSG="${OPTARG}" ;;
 			     *)
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
 	esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "$PH_NEW_VERSION" || "$#" -ne "4" ]] && \
+[[ -z "${PH_NEW_VERSION}" || "${#}" -ne "4" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 ph_run_with_rollback -c "ph_git_commit_master -v '${PH_NEW_VERSION}' -m '${PH_GIT_COMMIT_MSG}'" || \
@@ -2376,22 +2375,22 @@ function ph_update_pieh_version {
 
 declare PH_NEW_VERSION
 
-PH_NEW_VERSION="$1"
+PH_NEW_VERSION="${1}"
 
-[[ -z "$PH_NEW_VERSION" || "$#" -ne "1" ]] && \
+[[ -z "${PH_NEW_VERSION}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Updating PieHelper version to '${PH_NEW_VERSION}'"
-if [[ "$PH_VERSION" != "$PH_NEW_VERSION" ]]
+printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Updating PieHelper version to " "'${PH_NEW_VERSION}'"
+if [[ "${PH_VERSION}" != "${PH_NEW_VERSION}" ]]
 then
 	if ph_run_with_rollback -c "ph_remove_line_from_file -r -f '${PH_CONF_DIR}/VERSION' -l '${PH_VERSION}"
 	then
 		if ph_run_with_rollback -c "ph_add_line_to_file -r -f '${PH_CONF_DIR}/VERSION' -l '${PH_NEW_VERSION}"
 		then
-			PH_VERSION="$PH_NEW_VERSION"
-			ph_add_value_to_param -p PH_PIEH_VERSION -v "$PH_VERSION"
+			PH_VERSION="${PH_NEW_VERSION}"
+			ph_add_value_to_param -p PH_PIEH_VERSION -v "${PH_VERSION}"
 			ph_run_with_rollback -c true && \
-				return "$?"
+				return "${?}"
 		fi
 	fi
 	ph_run_with_rollback -c false -m "Could not update" || \
@@ -4782,24 +4781,23 @@ fi
 
 function ph_pieh_unconfigured_path_conf {
 
-[[ "$#" -ne "0" ]] && \
+[[ "${#}" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-if [[ -f /etc/profile.d/PieHelper-path.sh ]]
+if [[ -f "/etc/profile.d/PieHelper-path.sh" ]]
 then
-	printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing PieHelper's PATH and LD_LIBRARY_PATH extension " "'/etc/profile.d/PieHelper-path.sh'"
+	printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Removing the PATH and LD_LIBRARY_PATH extension for " "'PieHelper'" " as " "'/etc/profile.d/PieHelper-path.sh'"
 	if ph_run_with_rollback -c "ph_store_file -r -f '/etc/profile.d/PieHelper-path.sh'"
 	then
 		ph_add_value_to_param -p PH_CONFIGURED_STATE -v path
 		ph_run_with_rollback -c true
 	else
-		ph_run_with_rollback -c false -m "Could not remove" || \
-			return 1
+		ph_run_with_rollback -c false -m "Could not remove"
 	fi
 else
 	ph_run_with_rollback -c true -m "Nothing to do"
 fi
-return 0
+return "${?}"
 }
 
 function ph_rollback_changes {
@@ -4840,8 +4838,8 @@ declare PH_VALUE
 declare -i PH_PARAM_INDEX
 declare -i PH_DATA_INDEX
 declare -i PH_APP_TTY
-declare -i PH_RET_CODE
 declare -i PH_PKG_FLAG
+declare -i PH_RET_CODE
 declare -a PH_RUN_ACLS
 
 PH_i=""
@@ -4880,8 +4878,8 @@ PH_VALUE=""
 PH_PARAM_INDEX="0"
 PH_DATA_INDEX="0"
 PH_APP_TTY="0"
-PH_RET_CODE="0"
 PH_PKG_FLAG="1"
+PH_RET_CODE="0"
 
 PH_ROLLBACK_USED="no"
 
@@ -5253,33 +5251,56 @@ then
 		then
 			continue
 		fi
+		PH_RET_CODE="1"
 		break
 	done
-	[[ "${PH_PKG_FLAG}" -eq "0" && "${PH_DISTRO}" == "Debian" ]] && \
-		ph_apt_clean
-fi
-if [[ -n "${PH_RUN_ACLS}" || -n "${PH_RUN_SECURE}" || -n "${PH_RUN_GIT_ADD_LOCAL}" || -n "${PH_RUN_GIT_TAG_LOCAL}" || -n "${PH_RUN_GIT_COMMIT_LOCAL}" || -n "${PH_RUN_GIT_COMMIT_MASTER}" ]]
-then
-	if [[ -n "${PH_RUN_SECURE}" ]]
-	then
-		ph_secure_pieh
-	else
-		if [[ "${#PH_RUN_ACLS[@]}" -gt "0" ]]
-		then
-			for PH_i in "${PH_RUN_ACLS[@]}"
-			do
-				ph_user_acls -q -p "$(echo -n "${PH_i}" | cut -d"'" -f1)" -u $(echo -n "${PH_RUN_ACLS}" | cut -d"'" -f2)
-			done
-		fi
-	fi
-	[[ "${PH_RUN_GIT_ADD_LOCAL}" == "yes" ]] && \
-		ph_undo_git_add_local
-	[[ "${PH_RUN_GIT_TAG_LOCAL}" == "yes" ]] && \
-		ph_undo_git_tag_local
-	[[ "${PH_RUN_GIT_COMMIT_LOCAL}" == "yes" ]] && \
-		ph_undo_git_commit_local
-	[[ "${PH_RUN_GIT_COMMIT_MASTER}" == "yes" ]] && \
-		ph_git_commit_master -m "${PH_OLD_GIT_COMMIT_MSG}" -v "${PH_OLD_VERSION}"
+	while true
+	do
+		while true
+		do
+			if [[ "${PH_PKG_FLAG}" -eq "0" && "${PH_DISTRO}" == "Debian" ]]
+			then
+				! ph_apt_clean && \
+					break
+			fi
+			if [[ "${#PH_RUN_ACLS[@]}" -gt "0" || -n "${PH_RUN_SECURE}" || -n "${PH_RUN_GIT_ADD_LOCAL}" || -n "${PH_RUN_GIT_TAG_LOCAL}" || \
+				-n "${PH_RUN_GIT_COMMIT_LOCAL}" || -n "${PH_RUN_GIT_COMMIT_MASTER}" ]]
+			then
+				if [[ -n "${PH_RUN_SECURE}" ]]
+				then
+					! ph_secure_pieh && \
+						break
+				else
+					if [[ "${#PH_RUN_ACLS[@]}" -gt "0" ]]
+					then
+						for PH_i in "${PH_RUN_ACLS[@]}"
+						do
+							! ph_user_acls -q -p "$(cut -d"'" -f1<<<"${PH_i}")" -u "$(cut -d"'" -f2<<<"${PH_i}")" && \
+								break
+						done
+					fi
+				fi
+				for PH_i in ADD_LOCAL TAG_LOCAL COMMIT_LOCAL COMMIT_MASTER
+				do
+					if [[ "$(eval "echo -n \"\$PH_RUN_GIT_${PH_i}\"")" == "yes" ]]
+					then
+						if [[ "${PH_i}" != "COMMIT_MASTER" ]]
+						then
+							if ! eval "ph_undo_git_$(echo -n "${PH_i}" | tr '[:upper:]' '[:lower:]')"
+							then
+								break
+							fi
+						else
+							! ph_git_commit_master -m "${PH_OLD_GIT_COMMIT_MSG}" -v "${PH_OLD_VERSION}" && \
+								break
+						fi
+					fi
+				done
+			fi
+			break 2
+		done
+		break
+	done
 fi
 ph_show_result
 return 1
@@ -10371,80 +10392,85 @@ declare PH_i
 declare PH_ANSWER
 declare PH_RUN_GROUP
 declare PH_CONF_STATE
+declare PH_MODE
 declare -i PH_COUNT
 
 PH_i=""
 PH_ANSWER=""
 PH_RUN_GROUP=""
 PH_CONF_STATE=""
+PH_MODE="${1}"
 PH_COUNT="0"
 
 PH_ROLLBACK_USED="yes"
 
-[[ "${#}" -ne "0" ]] && \
+[[ "${#}" -gt "0" || ( "${#}" -eq "1" && "${PH_MODE}" != "batch" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-PH_CONF_STATE="$(ph_get_pieh_conf_state -q)"
-if [[ "${PH_CONF_STATE}" == "configured" ]]
+if [[ -z "${PH_MODE}" ]]
 then
-	ph_set_result -r 0 -w -m "PieHelper is already ${PH_CONF_STATE}"
-	return 0
-fi
-[[ -z "${PH_RUN_USER}" ]] && \
-	PH_RUN_USER="$(whoami 2>/dev/null)"
-PH_RUN_GROUP="$(id -gn "${PH_RUN_USER}" 2>/dev/null)"
-printf "%2s\033[1;37m%s\n\n" "" "This will :"
-printf "%4s%s\033[1;33m%s\033[1;37m%s\033[1;33m%s\033[1;37m%s\n" "" "- Configure " "'${PH_RUN_USER}'" " as the user account for the " "'PieHelper'" " application"
-printf "%4s%s\n" "" "- Install all required packages"
-printf "%4s%s\033[1;33m%s\033[1;37m%s\n" "" "- Detect and backup existing StartApp configurations made by " "'Emulationstation'" " (RetroPie)"
-printf "%4s%s\n" "" "- Create all base configuration files"
-printf "%4s%s\033[1;33m%s\033[1;37m\n" "" "- Install the PATH and LD_LIBRARY_PATH extension for " "'PieHelper'"
-printf "%4s%s\033[1;33m%s\033[1;37m%s\n" "" "- Setup " "'PieHelper'" " as a Supported application"
-printf "%4s%s\n" "" "- Create all items for controller management"
-printf "%4s%s\n" "" "- Change a few system related settings"
-printf "%4s%s\033[1;33m%s\033[1;37m%s\n" "" "- Setup " "'PieHelper'" " as an Integrated application"
-printf "%4s%s\033[1;33m%s\033[1;37m%s\n" "" "- Configure " "'PieHelper'" " as the system's StartApp"
-printf "%4s%s\n" "" "- Disable the graphical environment"
-printf "%4s%s\n" "" "- Allow you to update your system"
-printf "%4s%s\033[1;33m%s\033[1;37m%s\033[0m\n\n" "" "- Reboot the system into the " "'PieHelper'" " menu"
-while [[ "${PH_ANSWER}" != @(y@(es|)|n@(o|)) ]]
-do
-	[[ "${PH_COUNT}" -gt "0" ]] && \
-		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
-	printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[1;37m%s\033[0m%s" "" "--> Continue configuring " "'PieHelper'" " under account " "'${PH_RUN_USER}'" " (y/n)" " ? "
-	read -r PH_ANSWER 2>/dev/null
-	ph_screen_input "${PH_ANSWER}" || \
-		return 1
-	((PH_COUNT++))
-done
-ph_run_with_rollback -c true -m "${PH_ANSWER}"
-if [[ "${PH_ANSWER}" == n@(o|) ]]
-then
-	ph_set_result -w -m "Quitting at user request"
-	ph_show_result
-	return "${?}"
-fi
-if [[ "${PH_RUN_USER}" != "root" ]]
-then
-	printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking privilege elevation rights of user " "'${PH_RUN_USER}'"
-	if [[ -n "${PH_SUDO}" ]]
+	PH_CONF_STATE="$(ph_get_pieh_conf_state -q)"
+	if [[ "${PH_CONF_STATE}" == "configured" ]]
 	then
-		ph_run_with_rollback -c true
-	else
-		ph_set_result -m "Run PieHelper as root or manually configure full sudo rights for user '${PH_RUN_USER}' as '/etc/sudoers.d/020_pieh-${PH_RUN_USER}' prior to installation"
-		ph_run_with_rollback -c false -m "Not found" || \
+		ph_set_result -r 0 -w -m "PieHelper is already ${PH_CONF_STATE}"
+		return 0
+	fi
+	[[ -z "${PH_RUN_USER}" ]] && \
+		PH_RUN_USER="$(whoami 2>/dev/null)"
+	printf "%2s\033[1;37m%s\n\n" "" "This will :"
+	printf "%4s%s\033[1;33m%s\033[1;37m%s\033[1;33m%s\033[1;37m%s\n" "" "- Configure " "'${PH_RUN_USER}'" " as the user account for the " "'PieHelper'" " application"
+	printf "%4s%s\n" "" "- Install all required packages"
+	printf "%4s%s\033[1;33m%s\033[1;37m%s\n" "" "- Detect and backup existing StartApp configurations made by " "'Emulationstation'" " (RetroPie)"
+	printf "%4s%s\n" "" "- Create all base configuration files"
+	printf "%4s%s\033[1;33m%s\033[1;37m\n" "" "- Install the PATH and LD_LIBRARY_PATH extension for " "'PieHelper'"
+	printf "%4s%s\033[1;33m%s\033[1;37m%s\n" "" "- Setup " "'PieHelper'" " as a Supported application"
+	printf "%4s%s\n" "" "- Create all items for controller management"
+	printf "%4s%s\n" "" "- Change a few system related settings"
+	printf "%4s%s\033[1;33m%s\033[1;37m%s\n" "" "- Setup " "'PieHelper'" " as an Integrated application"
+	printf "%4s%s\033[1;33m%s\033[1;37m%s\n" "" "- Configure " "'PieHelper'" " as the system's StartApp"
+	printf "%4s%s\n" "" "- Disable the graphical environment"
+	printf "%4s%s\n" "" "- Allow you to update your system"
+	printf "%4s%s\033[1;33m%s\033[1;37m%s\033[0m\n\n" "" "- Reboot the system into the " "'PieHelper'" " menu"
+	while [[ "${PH_ANSWER}" != @(y@(es|)|n@(o|)) ]]
+	do
+		[[ "${PH_COUNT}" -gt "0" ]] && \
+			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
+		printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[1;37m%s\033[0m%s" "" "--> Continue configuring " "'PieHelper'" " under account " "'${PH_RUN_USER}'" " (y/n)" " ? "
+		read -r PH_ANSWER 2>/dev/null
+		ph_screen_input "${PH_ANSWER}" || \
+			return 1
+		((PH_COUNT++))
+	done
+	ph_run_with_rollback -c true -m "${PH_ANSWER}"
+	if [[ "${PH_ANSWER}" == n@(o|) ]]
+	then
+		ph_set_result -w -m "Quitting at user request"
+		ph_show_result
+		return "${?}"
+	fi
+	if [[ "${PH_RUN_USER}" != "root" ]]
+	then
+		printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking privilege elevation rights of user " "'${PH_RUN_USER}'"
+		if [[ -n "${PH_SUDO}" ]]
+		then
+			ph_run_with_rollback -c true
+		else
+			ph_set_result -m "Run PieHelper as root or manually configure full sudo rights for user '${PH_RUN_USER}' as '/etc/sudoers.d/020_pieh-${PH_RUN_USER}' prior to installation"
+			ph_run_with_rollback -c false -m "Not found" || \
+				return 1
+		fi
+	fi
+	if [[ "${PH_DISTRO}" == "Debian" ]]
+	then
+		ph_update_pkg_index || \
 			return 1
 	fi
-fi
-if [[ "${PH_DISTRO}" == "Debian" ]]
-then
-	ph_update_pkg_index || \
+	ph_run_with_rollback -c "ph_create_empty_file -t file -d '${PH_TMP_DIR}/.configure_in_progress'" || \
+		return 1
+	ph_run_with_rollback -c "ph_install_pkg lsb-release" || \
 		return 1
 fi
-ph_run_with_rollback -c "ph_create_empty_file -t file -d '${PH_TMP_DIR}/.configure_in_progress'" || \
-	return 1
-ph_run_with_rollback -c "ph_install_pkg lsb-release" || \
-	return 1
+PH_RUN_GROUP="$(id -gn "${PH_RUN_USER}" 2>/dev/null)"
 if [[ "${PH_DISTRO}" == "Debian" ]]
 then
 	printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Determining currently installed release of " "'${PH_DISTRO}'"
@@ -10541,39 +10567,42 @@ then
 				return 1
 			ph_run_with_rollback -c "ph_remove_empty_file -t file -d '${PH_TMP_DIR}/.configure_in_progress'" || \
 				return 1
-			PH_ANSWER=""
-			PH_COUNT="0"
-			while [[ "${PH_ANSWER}" != @(y@(es|)|n@(o|)) ]]
-			do
-				[[ "${PH_COUNT}" -gt "0" ]] && \
-					printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
-				printf "%8s%s\033[1;37m%s\n\n" "" "--> Perform full system update before reboot " "(Recommended)"
-				printf "%12s%s\n" "" "- System updates can take a long time depending on the system's current version and configuration"
-				printf "%12s%s\033[0m\n\n" "" "- Please note that system updates are not reversible"
-				printf "%12s%s\033[1;37m%s\033[0m%s" "" "Perform update " "(y/n)" " ? "
-				read -r PH_ANSWER 2>/dev/null
-				ph_screen_input "${PH_ANSWER}" || \
-					return 1
-				((PH_COUNT++))
-			done
-			ph_run_with_rollback -c true -m "${PH_ANSWER}"
-			if [[ "${PH_ANSWER}" == y@(es|) ]]
+			if [[ -z "${PH_MODE}" ]]
 			then
-				ph_update_system || \
-					return 1
+				PH_ANSWER=""
+				PH_COUNT="0"
+				while [[ "${PH_ANSWER}" != @(y@(es|)|n@(o|)) ]]
+				do
+					[[ "${PH_COUNT}" -gt "0" ]] && \
+						printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
+					printf "%8s%s\033[1;37m%s\n\n" "" "--> Perform full system update before reboot " "(Recommended)"
+					printf "%12s%s\n" "" "- System updates can take a long time depending on the system's current version and configuration"
+					printf "%12s%s\033[0m\n\n" "" "- Please note that system updates are not reversible"
+					printf "%12s%s\033[1;37m%s\033[0m%s" "" "Perform update " "(y/n)" " ? "
+					read -r PH_ANSWER 2>/dev/null
+					ph_screen_input "${PH_ANSWER}" || \
+						return 1
+					((PH_COUNT++))
+				done
+				ph_run_with_rollback -c true -m "${PH_ANSWER}"
+				if [[ "${PH_ANSWER}" == y@(es|) ]]
+				then
+					ph_update_system || \
+						return 1
+				fi
+				printf "%8s%s\n" "" "--> Displaying the user manual"
+				sleep 2
+				if less "${PH_BASE_DIR}/HOWTO" 2>/dev/null
+				then
+					ph_run_with_rollback -c true -m "${PH_SCRIPTS_DIR}/../HOWTO"
+				else
+					printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not display"
+					ph_set_result -r 0
+				fi
+				printf "\n\033[1;37m%s\033[0m\n" "Press Enter to reboot into the PieHelper menu"
+				read -r 2>/dev/null
+				"${PH_SUDO}" init 6
 			fi
-			printf "%8s%s\n" "" "--> Displaying the user manual"
-			sleep 2
-			if less "${PH_BASE_DIR}/HOWTO" 2>/dev/null
-			then
-				ph_run_with_rollback -c true -m "${PH_SCRIPTS_DIR}/../HOWTO"
-			else
-				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not display"
-				ph_set_result -r 0
-			fi
-			printf "\n\033[1;37m%s\033[0m\n" "Press Enter to reboot into the PieHelper menu"
-			read -r 2>/dev/null
-			"${PH_SUDO}" init 6
 		else
 			ph_set_result -m "Could not recursively set ownership of directory '${PH_BASE_DIR}' to '${PH_RUN_USER}:${PH_RUN_GROUP}'"
 		fi
@@ -10585,6 +10614,7 @@ else
 	ph_run_with_rollback -c false -m "Incorrect parent" || \
 		return 1
 fi
+return 0
 }
 
 function ph_get_filename_from_shortname {

@@ -29,7 +29,7 @@ PH_OLDOPTARG="${OPTARG}"
 PH_OLDOPTIND="${OPTIND}"
 PH_APP=""
 PH_APP_STR_TTY=""
-PH_HEADER="Run a specified routine successively on a tty"
+PH_HEADER="Run a specified routine on a tty"
 PH_ROUTINE=""
 PH_OPTION=""
 

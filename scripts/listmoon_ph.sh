@@ -44,9 +44,14 @@ OPTIND="1"
 while getopts :h PH_OPTION
 do
 	case "${PH_OPTION}" in *)
-		>&2 printf "\033[1;36m%s\033[0m\n" "Usage : listmoon_ph.sh | -h"
+		>&2 printf "\n\n"
+		>&2 printf "%2s\033[1;36m%s%s\033[1;4;35m%s\033[0m\n" "" "Moonlight games" " : " "Select one of the games shared by NVIDIA SHIELD as the default for Moonlight streaming"
+		>&2 printf "\n\n"
+		>&2 printf "%4s\033[1;5;33m%s\033[0m\n" "" "General options"
+		>&2 printf "\n\n"
+		>&2 printf "%6s\033[1;36m%s\033[1;37m%s\n" "" "$(basename "${0}" 2>/dev/null) : " "| -h"
 		>&2 printf "\n"
-		>&2 printf "%3s\033[1;37m%s\n" "" "Where -h displays this usage"
+		>&2 printf "%15s\033[0m\033[1;37m%s\n" "" "Where : -h displays this usage"
 		>&2 printf "%9s%s\n" "" "- Running this script without parameters will :"
 		>&2 printf "%12s%s\033[1;33m%s\033[0m\n" "" "- Connect to an NVIDIA SHIELD server, defined by Moonlight option " "'PH_MOON_SRV'"
 		>&2 printf "%12s\033[1;37m%s\n" "" "- Retrieve a list of shared games that can be streamed to Moonlight"

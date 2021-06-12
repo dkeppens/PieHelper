@@ -1,101 +1,111 @@
 #!/bin/bash
-# Build and Snapshot archive management for PieHelper (by Davy Keppens on 04/10/2018)
+# Archive management of Developer Builds and Configuration Snapshots (by Davy Keppens on 04/10/2018)
 # Enable/Disable debug by running 'confpieh_ph.sh -p debug -m confgena_ph.sh'
 
-if [[ -f "$(dirname "$0" 2>/dev/null)/app/main.sh" && -r "$(dirname "$0" 2>/dev/null)/app/main.sh" ]]
+if [[ -f "$(dirname "${0}" 2>/dev/null)/app/main.sh" && -r "$(dirname "${0}" 2>/dev/null)/app/main.sh" ]]
 then
-	source "$(dirname "$0" 2>/dev/null)/app/main.sh"
+	source "$(dirname "${0}" 2>/dev/null)/app/main.sh"
 	set +x
 else
-	printf "\n%2s\033[1;31m%s\033[0;0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '$(dirname "$0" 2>/dev/null)/app/main.sh'"
+	printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '$(dirname "${0}" 2>/dev/null)/app/main.sh'"
 	exit 1
 fi
 
 #set -x
 
-declare PH_APP=""
-declare PH_NEW_VERSION=""
-declare PH_OPTION=""
-declare PH_ARCHIVE_TYPE=""
-declare PH_ARCHIVE_NAME=""
-declare PH_ARCHIVE_DIR=""
-declare PH_ACTION=""
-declare PH_TIMESTAMP="$(date +'%d%m%y-%Hh%M' 2>/dev/null)"
-declare PH_DENY_AUTO_UPDATE=""
-declare PH_GIT_COMMIT_MASTER=""
-declare PH_GIT_COMMIT_MSG=""
-declare PH_OLDOPTARG="$OPTARG"
-declare -u PH_APPU=""
-declare -i PH_OLDOPTIND="$OPTIND"
-declare -i PH_RET_CODE="0"
-declare -i PH_ARRAY_INDEX="0"
+declare PH_APP
+declare PH_NEW_VERSION
+declare PH_ARCHIVE_TYPE
+declare PH_ARCHIVE_NAME
+declare PH_ARCHIVE_DIR
+declare PH_ACTION
+declare PH_TIMESTAMP
+declare PH_DENY_AUTO_UPDATE
+declare PH_GIT_COMMIT_MASTER
+declare PH_GIT_COMMIT_MSG
+declare PH_PIEH_CIFS_MPT
+declare PH_RUNNING_APPS
+declare PH_LAST_RUNNING_APP
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+declare -u PH_APPU
+
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
+PH_APP=""
+PH_NEW_VERSION=""
+PH_ARCHIVE_TYPE=""
+PH_ARCHIVE_NAME=""
+PH_ARCHIVE_DIR=""
+PH_ACTION=""
+PH_TIMESTAMP="$(date +'%d%m%y-%Hh%M' 2>/dev/null)"
+PH_DENY_AUTO_UPDATE=""
+PH_GIT_COMMIT_MASTER=""
+PH_GIT_COMMIT_MSG=""
+PH_PIEH_CIFS_MPT=""
+PH_RUNNING_APPS=""
+PH_LAST_RUNNING_APP=""
+PH_OPTION=""
+PH_APPU=""
 
 OPTIND="1"
 
-while getopts p:v:m:t:gdh PH_OPTION 2>/dev/null
+while getopts :v:p:t:m:gdh PH_OPTION
 do
-	case "$PH_OPTION" in v)
-		[[ -n "$PH_NEW_VERSION" ]] && \
+	case "${PH_OPTION}" in v)
+		[[ -n "${PH_NEW_VERSION}" || "${OPTARG}" != +([[:digit:]])\.+([[:digit:]]) ]] && \
 			(! confgena_ph.sh -h) && \
-			OPTARG="$PH_OLDOPTARG" && \
-			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			OPTIND="${PH_OLDOPTIND}" && \
 			exit 1
-		! ph_screen_input "$OPTARG" && \
-			OPTARG="$PH_OLDOPTARG" && \
-			OPTIND="$PH_OLDOPTIND" && \
-			exit 1
-		[[ "$OPTARG" != +([[:digit:]])\.+([[:digit:]]) ]] && \
+		PH_NEW_VERSION="${OPTARG}" ;;
+			p)
+		[[ -n "${PH_ACTION}" || "${OPTARG}" != @(gen|rem) ]] && \
 			(! confgena_ph.sh -h) && \
-			OPTARG="$PH_OLDOPTARG" && \
-			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			OPTIND="${PH_OLDOPTIND}" && \
 			exit 1
-		PH_NEW_VERSION="$OPTARG" ;;
-			     p)
-		[[ -n "$PH_ACTION" ]] && \
+		PH_ACTION="${OPTARG}" ;;
+			t)
+		[[ -n "${PH_ARCHIVE_TYPE}" || "${OPTARG}" != @(snapshot|build) ]] && \
 			(! confgena_ph.sh -h) && \
-			OPTARG="$PH_OLDOPTARG" && \
-			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			OPTIND="${PH_OLDOPTIND}" && \
 			exit 1
-		! ph_screen_input "$OPTARG" && \
-			OPTARG="$PH_OLDOPTARG" && \
-			OPTIND="$PH_OLDOPTIND" && \
-			exit 1
-		[[ "$OPTARG" != @(gen|rem) ]] && \
+		PH_ARCHIVE_TYPE="${OPTARG}" ;;
+			m)
+		[[ -n "${PH_GIT_COMMIT_MSG}" ]] && \
 			(! confgena_ph.sh -h) && \
-			OPTARG="$PH_OLDOPTARG" && \
-			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			OPTIND="${PH_OLDOPTIND}" && \
 			exit 1
-		PH_ACTION="$OPTARG" ;;
-			     t)
-		[[ -n "$PH_ARCHIVE_TYPE" ]] && \
+		PH_GIT_COMMIT_MSG="${OPTARG}" ;;
+			g)
+		[[ -n "${PH_GIT_COMMIT_MASTER}" ]] && \
 			(! confgena_ph.sh -h) && \
-			OPTARG="$PH_OLDOPTARG" && \
-			OPTIND="$PH_OLDOPTIND" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			OPTIND="${PH_OLDOPTIND}" && \
 			exit 1
-		! ph_screen_input "$OPTARG" && \
-			OPTARG="$PH_OLDOPTARG" && \
-			OPTIND="$PH_OLDOPTIND" && \
-			exit 1
-		[[ "$OPTARG" != @(snapshot|build) ]] && \
-			(! confgena_ph.sh -h) && \
-			OPTARG="$PH_OLDOPTARG" && \
-			OPTIND="$PH_OLDOPTIND" && \
-			exit 1
-		PH_ARCHIVE_TYPE="$OPTARG" ;;
-			     d)
-		PH_DENY_AUTO_UPDATE="yes" ;;
-			     g)
 		PH_GIT_COMMIT_MASTER="yes" ;;
-			     m)
-		PH_GIT_COMMIT_MSG="$OPTARG" ;;
-			     *)
+			d)
+		[[ -n "${PH_DENY_AUTO_UPDATE}" ]] && \
+			(! confgena_ph.sh -h) && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			exit 1
+		PH_DENY_AUTO_UPDATE="yes" ;;
+			*)
+		>&2 printf "\n\n"
+		>&2 printf "%2s\033[1;36m%s%s\033[1;4;35m%s\033[0m\n" "" "Archives" " : " "Create/Remove development builds or configuration snapshots"
+		>&2 printf "\n\n"
+		>&2 printf "%4s\033[1;5;33m%s\033[0m\n" "" "General options"
+		>&2 printf "\n\n"
+		>&2 printf "%6s\033[1;36m%s\033[1;37m%s\n" "" "$(basename "${0}" 2>/dev/null) : " "-p \"gen\" -t [\"snapshot\"|\"build\" -v [version] '-m [commitmsg]' '-g' '-d'] |"
+		>&2 printf "%23s%s\n" "" "-p \"rem\" -t [\"snapshot\"|\"build\"] -v [version]"
+		>&2 printf "%23s%s\n" "" "-h"
 		>&2 printf "\n"
-		>&2 printf "\033[36m%s\033[0m\n" "Usage : confgena_ph.sh -h |"
-		>&2 printf "%23s\033[36m%s\033[0m\n" "" "-p [\"gen\"] -t [\"snapshot\"|\"build\" -v [version] '-m [commitmsg]' '-g' '-d'] |"
-		>&2 printf "%23s\033[36m%s\033[0m\n" "" "-p [\"rem\"] -t [\"snapshot\"|\"build\"] -v [version]"
-		>&2 printf "\n"
-		>&2 printf "%3s%s\n" "" "Where -h displays this usage"
-		>&2 printf "%9s%s\n" "" "-p specifies the action to take"
+		>&2 printf "%15s\033[0m\033[1;37m%s\n" "" "Where : -p specifies the action to take"
 		>&2 printf "%12s%s\n" "" "\"gen\" allows generating a timestamped tar archive of the specified type and for version [curversion] for 'snapshot' archives or"
 		>&2 printf "%12s%s\n" "" "  specified version [version] for 'build' archives"
 		>&2 printf "%15s%s\n" "" "- If PH_PIEH_CIFS_SHARE is set to 'yes' a backup copy of the generated archive"
@@ -147,176 +157,207 @@ do
 		>&2 printf "%12s%s\n" "" "- Specifying -m is optional"
 		>&2 printf "%12s%s\n" "" "- Always quote the value for [commitmsg] using single or double quotes"
 		>&2 printf "%12s%s\n" "" "- Not specifying a [commitmsg] will skip any git operations with a warning"
-		>&2 printf "\n"
-		OPTIND="$PH_OLDOPTIND"
-		OPTARG="$PH_OLDOPTARG"
+		>&2 printf "\033[0m\n"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
 		exit 1 ;;
 	esac
 done
-OPTIND="$PH_OLDOPTIND"
-OPTARG="$PH_OLDOPTARG"
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
 
+[[ -z "${PH_ACTION}" || -z "${PH_ARCHIVE_TYPE}" || \
+	(( "${PH_ACTION}" == "rem" || ( "${PH_ARCHIVE_TYPE}" == "snapshot" && "${PH_ACTION}" == "gen" )) && ( -n "${PH_DENY_AUTO_UPDATE}" || -n "${PH_GIT_COMMIT_MASTER}" || -n "${PH_GIT_COMMIT_MSG}" )) || \
+	( "${PH_ARCHIVE_TYPE}" == "snapshot" && "${PH_ACTION}" == "gen" && -n "${PH_NEW_VERSION}" ) || ( "${PH_ACTION}" == "rem" && -z "${PH_NEW_VERSION}" ) ]] && \
+	(! confgena_ph.sh -h) && \
+	exit 1
+
+printf "\n"
 PH_ROLLBACK_USED="yes"
-[[ -z "$PH_ACTION" || -z "$PH_ARCHIVE_TYPE" ]] && \
-	(! confgena_ph.sh -h) && \
-	exit 1
-[[ ( "$PH_ACTION" == "rem" ) && ( -n "$PH_DENY_AUTO_UPDATE" || -n "$PH_GIT_COMMIT_MASTER" || -n "$PH_GIT_COMMIT_MSG" ) ]] && \
-	(! confgena_ph.sh -h) && \
-	exit 1
-[[ ( "$PH_ARCHIVE_TYPE" == "snapshot" && "$PH_ACTION" == "gen" ) && ( -n "$PH_DENY_AUTO_UPDATE" || -n "$PH_GIT_COMMIT_MASTER" || -n "$PH_GIT_COMMIT_MSG" || -n "$PH_NEW_VERSION" ) ]] && \
-	(! confgena_ph.sh -h) && \
-	exit 1
-[[ "$PH_ACTION" == "rem" && -z "$PH_NEW_VERSION" ]] && \
-	(! confgena_ph.sh -h) && \
-	exit 1
-[[ -z "$PH_GIT_COMMIT_MASTER" ]] && \
+[[ -z "${PH_GIT_COMMIT_MASTER}" ]] && \
 	PH_GIT_COMMIT_MASTER="no"
-[[ -z "$PH_DENY_AUTO_UPDATE" ]] && \
+[[ -z "${PH_DENY_AUTO_UPDATE}" ]] && \
 	PH_DENY_AUTO_UPDATE="no"
-if [[ "$PH_ARCHIVE_TYPE" == "snapshot" ]]
+if [[ "${PH_ARCHIVE_TYPE}" == "snapshot" ]]
 then
-	PH_ARCHIVE_DIR="$PH_SNAPSHOT_DIR"
-	if [[ "$PH_ACTION" == "gen" ]]
+	PH_ARCHIVE_DIR="${PH_SNAPSHOT_DIR}"
+	if [[ "${PH_ACTION}" == "gen" ]]
 	then
 		PH_ARCHIVE_NAME="PieHelper-${PH_TIMESTAMP}-${PH_ARCHIVE_TYPE}-${PH_VERSION}.tar"
 	else
-		PH_ARCHIVE_NAME="PieHelper-*-${PH_ARCHIVE_TYPE}-${PH_NEW_VERSION}.tar"
+		PH_ARCHIVE_NAME="-${PH_ARCHIVE_TYPE}-${PH_NEW_VERSION}.tar"
 	fi
 else
-	PH_ARCHIVE_DIR="$PH_BUILD_DIR"
-	if [[ "$PH_ACTION" == "gen" ]]
+	PH_ARCHIVE_DIR="${PH_BUILD_DIR}"
+	if [[ "${PH_ACTION}" == "gen" ]]
 	then
 		PH_ARCHIVE_NAME="PieHelper-${PH_TIMESTAMP}-${PH_ARCHIVE_TYPE}-${PH_NEW_VERSION}.tar"
 	else
-		PH_ARCHIVE_NAME="PieHelper-*-${PH_ARCHIVE_TYPE}-${PH_NEW_VERSION}.tar"
+		PH_ARCHIVE_NAME="-${PH_ARCHIVE_TYPE}-${PH_NEW_VERSION}.tar"
 	fi
 fi
-printf "\n"
-case "$PH_ACTION" in gen)
-	printf "\033[36m%s\033[0m" "- Creating '${PH_ARCHIVE_TYPE}' archive for 'PieHelper' version "
-	for PH_APP in $(nawk 'BEGIN { \
-			ORS = " " \
-		} \
-		$3 !~ /^-$/ { \
-			print $1 \
-		}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null)
+PH_PIEH_CIFS_MPT="$(ph_get_app_cifs_mpt -a PieHelper -r)"
+PH_RUNNING_APPS="$(ph_get_app_list_by_state -s Running -t exact)"
+if [[ "${PH_ACTION}" == "gen" ]]
+then
+	printf "\033[1;36m%s\033[0m\n\n" "- Creating a 'PieHelper' ${PH_ARCHIVE_TYPE} archive"
+	for PH_APP in ${PH_RUNNING_APPS}
 	do
-		PH_APPU="${PH_APP:0:4}"
-		if ! mount 2>/dev/null | nawk -v path=^"${PH_MNT_DIR}/${PH_APP}"$ '$3 ~ path { \
-				exit 1 \
-			}'
+		if [[ "$(ph_get_app_cifs_mpt -a "${PH_APP}" -r)" == "${PH_MNT_DIR}/${PH_APP}" && \
+			"$(mount 2>/dev/null | nawk -v path="^${PH_MNT_DIR}/${PH_APP}$" '$3 ~ path && $5 ~ /^cifs$/ { \
+					printf "yes" ; \
+					exit 0 \
+				}')" == "yes" ]]
 		then
-			if [[ "$(eval "echo -n \"\$PH_${PH_APPU}_CIFS_MPT\"")" == "${PH_MNT_DIR}/${PH_APP}" ]]
-			then
-				ph_stop_all_running_apps "$PH_APP" || \
-					exit 1
-			fi
+			ph_run_with_rollback -c "ph_do_app_action stop '${PH_APP}' force" || \
+				exit 1
 		fi
 	done
-	if [[ "$PH_ARCHIVE_TYPE" == "build" ]]
+	if [[ "${PH_ARCHIVE_TYPE}" == "build" ]]
 	then
-		printf "\033[36m%s\033[0m\n\n" "'${PH_NEW_VERSION}'"
-		ph_run_with_rollback -c "ph_update_pieh_version \"$PH_NEW_VERSION\"" || \
+		ph_run_with_rollback -c "ph_update_pieh_version '${PH_NEW_VERSION}'" || \
 			exit 1
-		if [[ "$PH_DENY_AUTO_UPDATE" == "yes" ]]
+		if [[ "${PH_DENY_AUTO_UPDATE}" == "yes" ]]
 		then
-			ph_run_with_rollback -c "ph_create_empty_file -t file -d \"${PH_FILES_DIR}/auto_update_denied\"" || \
+			ph_run_with_rollback -c "ph_create_empty_file -t file -d '${PH_FILES_DIR}/auto_update_denied'" || \
 				exit 1
 		fi
-		ph_unconfigure_pieh -u -b || \
+		ph_run_with_rollback -c "ph_unconfigure_pieh -u -b" || \
 			exit 1
-		ph_git_local -v "$PH_NEW_VERSION" -m "$PH_GIT_COMMIT_MSG"
-		if [[ "$PH_GIT_COMMIT_MASTER" == "yes" ]]
-		then
-			ph_git_master -v "$PH_NEW_VERSION" -m "$PH_GIT_COMMIT_MSG"
-		fi
-	else
-		printf "\033[36m%s\033[0m\n\n" "'${PH_VERSION}'"
-	fi
-	printf "%8s%s\n" "" "--> Creating '${PH_ARCHIVE_DIR}/${PH_ARCHIVE_NAME}'"
-	cd "$PH_BASE_DIR" >/dev/null 2>&1
-	if tar -X "${PH_EXCLUDES_DIR}/tar.excludes" --anchored -cvf "${PH_ARCHIVE_DIR}/${PH_ARCHIVE_NAME}" ./* >/dev/null 2>&1
-	then
-		if [[ "$PH_ARCHIVE_TYPE" == "build" ]]
-		then
-			ph_run_with_rollback -c true
-			for PH_ARRAY_INDEX in "${!PH_DEPTH[@]}"
-			do
-				PH_ROLLBACK_PARAMS+=("${PH_DEPTH_PARAMS["$PH_ARRAY_INDEX"]}")
-				unset PH_DEPTH["$PH_ARRAY_INDEX"]
-			done
-			ph_rollback_changes
-			PH_RET_CODE="$?"
-		else
-			ph_run_with_rollback -l -c true
-		fi
-	else
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not create ${PH_ARCHIVE_TYPE}"
-		ph_run_with_rollback -l -c false || \
+		ph_git_local -v "${PH_NEW_VERSION}" -m "${PH_GIT_COMMIT_MSG}" || \
 			exit 1
-	fi
-	cd - >/dev/null 2>&1
-	if [[ "$PH_PIEH_CIFS_SHARE" == "yes" ]]
-	then
-		ph_set_result -t -r "$PH_RET_CODE"
-		printf "\033[36m%s\033[0m\n\n" "- Creating CIFS backup for '${PH_ARCHIVE_TYPE}' archive"
-		if ph_mount_cifs_share PieHelper
+		if [[ "${PH_GIT_COMMIT_MASTER}" == "yes" ]]
 		then
-			printf "%8s%s\n" "" "--> Creating CIFS backup '//${PH_PIEH_CIFS_SRV}:${PH_PIEH_CIFS_DIR}${PH_PIEH_CIFS_SUBDIR}/${PH_ARCHIVE_NAME}'"
-			if cp -p "${PH_ARCHIVE_DIR}/${PH_ARCHIVE_NAME}" "$(eval echo -n "$PH_PIEH_CIFS_MPT")"/ >/dev/null 2>&1
-			then
-				ph_run_with_rollback -c true
-			else
-				printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not create backup"
-				ph_set_result -r 1
-			fi
-			ph_umount_cifs_share PieHelper
-		fi
-		ph_show_result
-		ph_set_result -t -r "$?"
-		ph_show_result -t
-	fi
-	exit "$?" ;;
-		     rem)
-	PH_ARCHIVE_NAME="$(ls -t "${PH_ARCHIVE_DIR}/${PH_ARCHIVE_NAME}" 2>/dev/null | head -n1)"
-	printf "\033[36m%s\033[0m\n\n" "- Removing most recently modified '${PH_ARCHIVE_TYPE}' archive for 'PieHelper' version '${PH_NEW_VERSION}'"
-	if [[ -z "$PH_ARCHIVE_NAME" ]]
-	then
-		ph_set_result -r 0 -w -m "No archives matched"
-	else
-		printf "%8s%s\n" "" "--> Removing '${PH_ARCHIVE_NAME}'"
-		if "$PH_SUDO" rm "$PH_ARCHIVE_NAME" >/dev/null 2>&1
-		then
-			ph_run_with_rollback -l -c true
-		else
-			printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not remove ${PH_ARCHIVE_TYPE}"
-			ph_run_with_rollback -l -c false || \
+			ph_run_with_rollback -c "ph_git_commit_master -v '${PH_NEW_VERSION}' -m '${PH_GIT_COMMIT_MSG}'" || \
 				exit 1
 		fi
 	fi
-	if [[ "$PH_PIEH_CIFS_SHARE" == "yes" ]]
+	printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m" "" "--> Creating ${PH_ARCHIVE_TYPE} archive of " "'PieHelper'" " version " \
+		"'${PH_NEW_VERSION}'" " as " "'${PH_ARCHIVE_DIR}/${PH_ARCHIVE_NAME}'"
+	if [[ "${PH_ARCHIVE_TYPE}" == "build" ]]
 	then
-		ph_set_result -t -r 0
-		printf "\033[36m%s\033[0m\n\n" "- Removing CIFS backup for '${PH_ARCHIVE_TYPE}' archive"
-		ph_mount_cifs_share PieHelper
-		if [[ "$?" -eq "0" ]]
-		then
-			printf "%8s%s\n" "" "--> Removing CIFS backup '${PH_PIEH_CIFS_SRV}:${PH_PIEH_CIFS_DIR}${PH_PIEH_CIFS_SUBDIR}/${PH_ARCHIVE_NAME##*/}'"
-			"$PH_SUDO" rm "$(eval echo -n "${PH_PIEH_CIFS_MPT}")/${PH_ARCHIVE_NAME##*/}" >/dev/null 2>&1
-			if [[ "$?" -ne "0" ]]
+		printf "\033[1;33m%s\033[0m\n" "'${PH_NEW_VERSION}'"
+	else
+		printf "\033[1;33m%s\033[0m\n" "'${PH_VERSION}'"
+	fi
+	while true
+	do
+		while true
+		do
+			if cd "${PH_BASE_DIR}" >/dev/null 2>&1
 			then
-				printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not remove backup"
-				ph_set_result -r 1
+				if tar -X "${PH_EXCLUDES_DIR}/tar.excludes" --anchored -cf "${PH_ARCHIVE_DIR}/${PH_ARCHIVE_NAME}" ./* >/dev/null 2>&1
+				then
+					if cd - >/dev/null 2>&1
+					then
+						ph_run_with_rollback -c true -m "${PH_ARCHIVE_DIR}/${PH_ARCHIVE_NAME}"
+						if [[ "${PH_ARCHIVE_TYPE}" == "build" ]]
+						then
+							ph_run_with_rollback -c "ph_configure_pieh -b" || \
+								break 2
+						fi
+						for PH_APP in ${PH_RUNNING_APPS}
+						do
+							PH_APPU="${PH_APP}"
+							if [[ "$(eval "echo -n \"\$PH_${PH_APPU:0:4}_PERSISTENT\"")" == "yes" ]]
+							then
+								ph_run_with_rollback -c "ph_do_app_action start '${PH_APP}'" || \
+									 break 3
+							else
+								PH_LAST_RUNNING_APP="${PH_APP}"
+							fi
+						done
+						if [[ -n "${PH_LAST_RUNNING_APP}" ]]
+						then
+							ph_run_with_rollback -c "ph_do_app_action start '${PH_LAST_RUNNING_APP}'" || \
+								break 2
+						fi
+						if [[ "${PH_PIEH_CIFS_SHARE}" == "yes" ]]
+						then
+							if [[ "${PH_RUNNING_APPS}" != PieHelper* ]]
+							then
+								ph_run_with_rollback -c "ph_mount_cifs_share PieHelper" || \
+									break 2
+							fi
+							printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Creating ${PH_ARCHIVE_TYPE} archive CIFS backup as " \
+								"'//${PH_PIEH_CIFS_SRV}:$(ph_resolve_dynamic_value ${PH_PIEH_CIFS_DIR})$(ph_resolve_dynamic_value ${PH_PIEH_CIFS_SUBDIR})/${PH_ARCHIVE_NAME}'"
+							if ph_run_with_rollback -c "ph_copy_file -s '${PH_ARCHIVE_DIR}/${PH_ARCHIVE_NAME}' -d '${PH_PIEH_CIFS_MPT}/${PH_ARCHIVE_NAME}' -q"
+							then
+								ph_run_with_rollback -c true -m \
+									"//${PH_PIEH_CIFS_SRV}:$(ph_resolve_dynamic_value ${PH_PIEH_CIFS_DIR})$(ph_resolve_dynamic_value ${PH_PIEH_CIFS_SUBDIR})/${PH_ARCHIVE_NAME}"
+								if [[ "${PH_RUNNING_APPS}" != PieHelper* ]]
+								then
+									ph_run_with_rolback -c "ph_umount_cifs_share PieHelper" || \
+										break 2
+								fi
+							else
+								break
+							fi
+						fi
+						ph_show_result
+						exit "${?}"
+					else
+						ph_set_result -m "An error occurred trying to change directory to '${OLDPWD}'"
+					fi
+				else
+					ph_set_result -m "An error occurred trying to create ${PH_ARCHIVE_TYPE} archive '${PH_ARCHIVE_DIR}/$PH_ARCHIVE_NAME}'"
+				fi
 			else
-				ph_run_with_rollback -c true
+				ph_set_result -m "An error occurred trying to change directory to '${PH_BASE_DIR}'"
 			fi
-			ph_umount_cifs_share PieHelper
+			break
+		done
+		ph_run_with_rollback -c false -m "Could not create"
+		break
+	done
+	"${PH_SUDO}" rm "${PH_ARCHIVE_DIR}/${PH_ARCHIVE_NAME}" 2>/dev/null
+else
+	printf "\033[1;36m%s\033[0m\n\n" "- Removing a 'PieHelper' ${PH_ARCHIVE_TYPE} archive"
+	printf "%8s%s\n" "" "--> Determining the most recently modified ${PH_ARCHIVE_TYPE} archive"
+	PH_ARCHIVE_NAME="$(ls -t "${PH_ARCHIVE_DIR}/PieHelper-"*"${PH_ARCHIVE_NAME}" 2>/dev/null | head -n1)"
+	while true
+	do
+		if [[ -z "${PH_ARCHIVE_NAME}" ]]
+		then
+			printf "%10s\033[33m%s\033[0m\n" "" "Warning : No ${PH_ARCHIVE_TYPE} archives matched"
+			ph_set_result -r 0 -w -m "Could not find any ${PH_ARCHIVE_TYPE} archives in directory '${PH_ARCHIVE_DIR}'"
+		else
+			PH_ARCHIVE_NAME="${PH_ARCHIVE_NAME##*/}"
+			ph_run_with_rollback -c true -m "${PH_ARCHIVE_DIR}/${PH_ARCHIVE_NAME}"
+			printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Removing ${PH_ARCHIVE_TYPE} archive of " "'PieHelper'" " version " "'${PH_NEW_VERSION}'" \
+				" as " "'${PH_ARCHIVE_DIR}/${PH_ARCHIVE_NAME}'"
+			if ph_run_with_rollback -c "ph_store_file -f '${PH_ARCHIVE_DIR}/${PH_ARCHIVE_NAME}'"
+			then
+				ph_run_with_rollback -c true -m "${PH_ARCHIVE_DIR}/${PH_ARCHIVE_NAME}"
+				if [[ "${PH_PIEH_CIFS_SHARE}" == "yes" ]]
+				then
+					if [[ "${PH_RUNNING_APPS}" != PieHelper* ]]
+					then
+						ph_run_with_rollback -c "ph_mount_cifs_share PieHelper" || \
+							break
+					fi
+					printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Removing ${PH_ARCHIVE_TYPE} archive CIFS backup as " \
+						"'//${PH_PIEH_CIFS_SRV}:$(ph_resolve_dynamic_value ${PH_PIEH_CIFS_DIR})$(ph_resolve_dynamic_value ${PH_PIEH_CIFS_SUBDIR})/${PH_ARCHIVE_NAME}'"
+					if ph_run_with_rollback -c "ph_store_file -f '${PH_PIEH_CIFS_MPT}/${PH_ARCHIVE_NAME}'"
+					then
+						ph_run_with_rollback -c true -m "//${PH_PIEH_CIFS_SRV}:$(ph_resolve_dynamic_value ${PH_PIEH_CIFS_DIR})$(ph_resolve_dynamic_value ${PH_PIEH_CIFS_SUBDIR})/${PH_ARCHIVE_NAME}"
+					else
+						ph_run_with_rollback -c false -m "Could not remove" || \
+							break
+					fi
+					if [[ "${PH_RUNNING_APPS}" != PieHelper* ]]
+					then
+						ph_run_with_rollback -c "ph_umount_cifs_share PieHelper" || \
+							break
+					fi
+				fi
+			else
+				ph_run_with_rollback -c false -m "Could not remove" || \
+					break
+			fi
 		fi
 		ph_show_result
-		ph_set_result -t -r "$?"
-		ph_show_result -t
-	fi
-	exit "$?" ;;
-esac
-confgena_ph.sh -h || \
-	exit 1
+		exit "${?}"
+	done
+fi
+exit 1
