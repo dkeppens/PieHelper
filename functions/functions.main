@@ -10399,15 +10399,17 @@ PH_i=""
 PH_ANSWER=""
 PH_RUN_GROUP=""
 PH_CONF_STATE=""
-PH_MODE="${1}"
+PH_MODE="normal"
 PH_COUNT="0"
 
 PH_ROLLBACK_USED="yes"
 
-[[ "${#}" -gt "0" || ( "${#}" -eq "1" && "${PH_MODE}" != "batch" ) ]] && \
+[[ "${#}" -gt "1" || ( "${#}" -eq "1" && "${1}" != "-b" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-if [[ -z "${PH_MODE}" ]]
+[[ -n "${1}" ]] && \
+	PH_MODE="batch"
+if [[ "${PH_MODE}" == "normal" ]]
 then
 	PH_CONF_STATE="$(ph_get_pieh_conf_state -q)"
 	if [[ "${PH_CONF_STATE}" == "configured" ]]
@@ -10567,7 +10569,7 @@ then
 				return 1
 			ph_run_with_rollback -c "ph_remove_empty_file -t file -d '${PH_TMP_DIR}/.configure_in_progress'" || \
 				return 1
-			if [[ -z "${PH_MODE}" ]]
+			if [[ "${PH_MODE}" == "normal" ]]
 			then
 				PH_ANSWER=""
 				PH_COUNT="0"
