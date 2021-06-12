@@ -54,11 +54,17 @@ OPTIND="1"
 while getopts :v:p:t:m:gdh PH_OPTION
 do
 	case "${PH_OPTION}" in v)
-		[[ -n "${PH_NEW_VERSION}" || "${OPTARG}" != +([[:digit:]])\.+([[:digit:]]) ]] && \
+		[[ -n "${PH_NEW_VERSION}" || "${OPTARG}" != @(0\.+([[:digit:]])|@(1|2|3|4|5|6|7|8|9)*([[:digit:]])*(\.+([[:digit:]]))) ]] && \
 			(! confgena_ph.sh -h) && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			OPTIND="${PH_OLDOPTIND}" && \
 			exit 1
+		if [[ "1$(echo -n "${OPTARG}" | cut -d'.' -f1)" -lt "1$(echo -n "${PH_VERSION}" | cut -d'.' -f1)" || \
+			( "1$(echo -n "${OPTARG}" | cut -d'.' -f1)" -eq "1$(echo -n "${PH_VERSION}" | cut -d'.' -f1)" && \
+			"1$(echo -n "${OPTARG}" | cut -d'.' -f2)" -le "1$(echo -n "${PH_VERSION}" | cut -d'.' -f2)" ) ]]
+		then
+			ph_set_result -a -m "The specified version should be higher than the current PieHelper version of '${PH_VERSION}'"
+		fi
 		PH_NEW_VERSION="${OPTARG}" ;;
 			p)
 		[[ -n "${PH_ACTION}" || "${OPTARG}" != @(gen|rem) ]] && \
@@ -121,6 +127,7 @@ do
 		>&2 printf "%29s%s\n" "" "  on CIFS server 'PH_PIEH_CIFS_SRV' in directory 'PH_PIEH_CIFS_DIR/PH_PIEH_CIFS_SUBDIR'"
 		>&2 printf "%29s%s\n" "" "- Running applications with an active and default CIFS mountpoint will be"
 		>&2 printf "%29s%s\n" "" "  halted before and restarted after when generating build archives"
+		>&2 printf "%31s%s\n" "" "- PieHelper will only be restarted if it was originally running on its allocated tty"
 		>&2 printf "%27s%s\n" "" "- \"rem\" allows removing the last modified tar archive matching a specified type and [version]"
 		>&2 printf "%29s%s\n" "" "- If PieHelper option 'PH_PIEH_CIFS_SHARE' is set to 'yes' and a backup copy of the matched archive"
 		>&2 printf "%29s%s\n" "" "  exists on CIFS server 'PH_PIEH_CIFS_SRV' in directory 'PH_PIEH_CIFS_DIR/PH_PIEH_CIFS_SUBDIR', it will be removed as well"
@@ -133,8 +140,9 @@ do
 		>&2 printf "%27s%s\n" "" "- Tagged as [version]"
 		>&2 printf "%23s%s\n" "" "-v allows specifying a version number [version]"
 		>&2 printf "%25s%s\n" "" "- Supported values for [version] are :"
-		>&2 printf "%27s%s\n" "" "- [int] or [int].[int]"
-		>&2 printf "%25s%s\n" "" "  where [int] can be any positive integer"
+		>&2 printf "%27s%s\n" "" "- Values higher than '${PH_VERSION}' with notation [prefix] or [prefix].[suffix], where :"
+		>&2 printf "%29s%s\n" "" "- [prefix] can be zero or any positive integer"
+		>&2 printf "%29s%s\n" "" "- [suffix] can be zero or any positive integer, optionally preceded by one or more zeros"
 		>&2 printf "%23s%s\n" "" "-d allows generating development builds to which the update from previous versions requires reinstalling PieHelper"
 		>&2 printf "%25s%s\n" "" "- Creating builds where auto-update is denied is optional"
 		>&2 printf "%25s%s\n" "" "- Auto-update is allowed by default"
@@ -156,8 +164,10 @@ OPTIND="${PH_OLDOPTIND}"
 OPTARG="${PH_OLDOPTARG}"
 
 [[ -z "${PH_ACTION}" || -z "${PH_ARCHIVE_TYPE}" || \
-	(( "${PH_ACTION}" == "rem" || ( "${PH_ARCHIVE_TYPE}" == "snapshot" && "${PH_ACTION}" == "gen" )) && ( -n "${PH_DENY_AUTO_UPDATE}" || -n "${PH_GIT_COMMIT_MASTER}" || -n "${PH_GIT_COMMIT_MSG}" )) || \
-	( "${PH_ARCHIVE_TYPE}" == "snapshot" && "${PH_ACTION}" == "gen" && -n "${PH_NEW_VERSION}" ) || ( "${PH_ACTION}" == "rem" && -z "${PH_NEW_VERSION}" ) ]] && \
+	(( "${PH_ACTION}" == "rem" || "${PH_ARCHIVE_TYPE}" == "snapshot" ) && \
+	( -n "${PH_DENY_AUTO_UPDATE}" || -n "${PH_GIT_COMMIT_MASTER}" || -n "${PH_GIT_COMMIT_MSG}" )) || \
+	( "${PH_ARCHIVE_TYPE}" == "snapshot" && "${PH_ACTION}" == "gen" && -n "${PH_NEW_VERSION}" ) || \
+	(( "${PH_ACTION}" == "rem" || ( "${PH_ACTION}" == "gen" && "${PH_ARCHIVE_TYPE}" == "build" )) && -z "${PH_NEW_VERSION}" ) ]] && \
 	(! confgena_ph.sh -h) && \
 	exit 1
 
@@ -190,6 +200,10 @@ then
 	printf "\n\033[1;36m%s\033[0m\n\n" "- Creating a 'PieHelper' ${PH_ARCHIVE_TYPE} archive"
 	for PH_APP in ${PH_RUNNING_APPS}
 	do
+		if [[ "${PH_APP}" == "PieHelper" && "$(ph_get_app_environment "${PH_APP}")" == "pts" ]]
+		then
+			PH_RUNNING_APPS="$(sed -e "s/^PieHelper//;s/^ //"<<<"${PH_RUNNING_APPS}")"
+		fi
 		if [[ "$(ph_get_app_cifs_mpt -a "${PH_APP}" -r)" == "${PH_MNT_DIR}/${PH_APP}" && \
 			"$(mount 2>/dev/null | nawk -v path="^${PH_MNT_DIR}/${PH_APP}$" '$3 ~ path && $5 ~ /^cifs$/ { \
 					printf "yes" ; \

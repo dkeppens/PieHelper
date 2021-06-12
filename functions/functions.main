@@ -2431,7 +2431,7 @@ do
 	if [[ -n "$PH_APP_CMD" ]]
 	then
 		[[ "$PH_APP" == "PieHelper" ]] && \
-			PH_APP_CMD="$(eval "echo -n \"${PH_APP_CMD}\"")"
+			PH_APP_CMD="$(ph_resolve_dynamic_value "${PH_APP_CMD}")"
 		if echo "$PH_APP_CMD" | grep -E "#PH_TTY#" >/dev/null
 		then
 			PH_APP_STR_TTY="$(ph_get_app_tty_from_app_name "$PH_APP")"
@@ -3531,6 +3531,54 @@ unset -n PH_APP_PKG
 return 0
 }
 
+function ph_get_app_environment {
+
+declare PH_APP
+declare PH_APP_CMD
+declare PH_APP_STR_TTY
+declare PH_APP_ENV
+
+PH_APP="${1}"
+PH_APP_CMD=""
+PH_APP_STR_TTY=""
+PH_APP_ENV=""
+
+[[ -z "${PH_APP}" || "${#}" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+if PH_APP_CMD="$(ph_get_app_cmd_from_app_name "${PH_APP}")"
+then
+	PH_APP_STR_TTY="$(ph_get_app_tty_from_app_name "${PH_APP}")"
+	if [[ "${PH_APP_STR_TTY}" != @(1|-) ]]
+	then
+		if [[ "${PH_APP}" == "Bash" ]]
+		then
+			PH_APP_CMD="bash"
+			if [[ -n "$(ps --ppid "$(pgrep -t "tty${PH_APP_STR_TTY}" -f "${PH_APP_CMD}" 2>/dev/null)" 2>/dev/null | tail -n +2)" ]]
+			then
+				PH_APP_ENV="tty"
+			fi
+		else
+			PH_APP_CMD="${PH_APP_CMD//#PH_TTY#/${PH_APP_STR_TTY}}"
+			if pgrep -t "tty${PH_APP_STR_TTY}" -f "${PH_APP_CMD}" >/dev/null 2>&1
+			then
+				PH_APP_ENV="tty"
+			else
+				if [[ "${PH_APP}" == "PieHelper" && \
+					"$(pgrep -f "^/bin/bash .*/startpieh.sh[[:space:]]*-p$|.*/startpieh.sh[[:space:]]*-p[[:space:]]*.*$" >/dev/null; echo "$?")" -eq "0" ]]
+				then
+					PH_APP_ENV="pts"
+				fi
+			fi
+		fi
+	fi
+fi
+[[ -z "${PH_APP_ENV}" ]] && \
+	return 1
+echo -n "${PH_APP_ENV}"
+return 0
+}
+
 function ph_check_app_state_validity {
 
 declare PH_i
@@ -3683,26 +3731,9 @@ case "$PH_APP_TYPE" in Default|Out-of-scope)
 				PH_APP_STATE="Integrated"
 			else
 				PH_APP_STATE="Halted"
-				PH_APP_CMD="$(ph_get_app_cmd_from_app_name "$PH_APP")"
-				if [[ "$PH_APP" == "Bash" ]]
+				if [[ "$(ph_get_app_environment "${PH_APP}")" == @(tty|pts) ]]
 				then
-					PH_APP_CMD="bash"
-					if [[ -n "$(ps --ppid "$(pgrep -t "tty${PH_APP_STR_TTY}" -f "$PH_APP_CMD" 2>/dev/null)" 2>/dev/null | tail -n +2)" ]]
-					then
-						PH_APP_STATE="Running"
-					fi
-				else
-					PH_APP_CMD="${PH_APP_CMD//#PH_TTY#/${PH_APP_STR_TTY}}"
-					if pgrep -t "tty${PH_APP_STR_TTY}" -f "$PH_APP_CMD" >/dev/null 2>&1
-					then
-						PH_APP_STATE="Running"
-					else
-						if [[ "$PH_APP" == "PieHelper" && \
-							"$(pgrep -f "^/bin/bash .*/startpieh.sh[[:space:]]*-p$|.*/startpieh.sh[[:space:]]*-p[[:space:]]*.*$" >/dev/null; echo "$?")" -eq "0" ]]
-						then
-							PH_APP_STATE="Running"
-						fi
-					fi
+					PH_APP_STATE="Running"
 				fi
 			fi
 		fi
