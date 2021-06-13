@@ -1945,7 +1945,7 @@ then
 		if pgrep -t "tty${PH_APP_TTY}" -f "$PH_APP_CMD" >/dev/null
 		then
 			printf "%10s\033[33m%s\033[0m\n" "" "Warning : ${PH_APP} is running on it's allocated tty -> Stopping"
-			if ! ph_do_app_action stop "$PH_APP" force
+			if ! ph_do_app_action stop "${PH_APP}" forced
 			then
 				printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED"
 				"$PH_SUDO" rm -r /tmp/PieHelper 2>/dev/null
@@ -11448,7 +11448,8 @@ PH_APPU_CIFS_SHARE="$(eval "echo -n \"\$PH_${PH_APPU}_CIFS_SHARE\"")"
 PH_APPU_PERSISTENT="$(eval "echo -n \"\$PH_${PH_APPU}_PERSISTENT\"")"
 PH_STOP_MODE="${3}"
 
-[[ "${#}" -ne "3" || "${PH_STOP_MODE}" != @(normal|forced) | "${PH_ACTION}" != st@(art|op) ]] && \
+[[ ( "${#}" -ne "2" && "${PH_ACTION}" == "start") || ( "${PH_ACTION}" == "stop" && \
+	( "${#}" -ne 3 || "${PH_STOP_MODE}" != @(normal|forced) )) || "${PH_ACTION}" != st@(art|op) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 case "${PH_ACTION}" in start)

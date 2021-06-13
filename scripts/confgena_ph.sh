@@ -210,7 +210,7 @@ then
 					exit 0 \
 				}')" == "yes" ]]
 		then
-			ph_run_with_rollback -c "ph_do_app_action stop '${PH_APP}' force" || \
+			ph_run_with_rollback -c "ph_do_app_action stop '${PH_APP}' forced" || \
 				exit 1
 		fi
 	done
