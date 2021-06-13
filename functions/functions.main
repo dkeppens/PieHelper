@@ -7653,16 +7653,16 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 					[[ "$PH_COUNT" -eq "0" ]] && \
 						printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found"
 					printf "%8s%s\n\n" "" "--> How do you wish to proceed ?"
-					printf "%12s\033[1;37m%s\033[0;0m\n" "" "1. Install ${PH_APP}"
-					printf "%12s\033[1;37m%s\033[0;0m\n" "" "2. Enter the full pathname of executable '${PH_APP_EXEC##*/}' manually"
-					printf "%12s\033[1;37m%s\033[0;0m\n" "" "3. Run a full system scan for '${PH_APP_EXEC##*/}'"
+					printf "%12s\033[1;37m%s\033[0m\n" "" "1. Install ${PH_APP}"
+					printf "%12s\033[1;37m%s\033[0m\n" "" "2. Enter the full pathname of executable '${PH_APP_EXEC##*/}' manually"
+					printf "%12s\033[1;37m%s\033[0m\n" "" "3. Run a full system scan for '${PH_APP_EXEC##*/}'"
 					if [[ "$PH_FORCE_SUPPORT_FLAG" -eq "0" ]]
 					then
-						printf "%12s\033[1;37m%s\033[0;0m%s\n" "" "4. Skip installation of ${PH_APP} for now (Disabled since ${PH_APP} is a dependency)"
+						printf "%12s\033[1;37m%s\033[0m\n" "" "4. Skip installation of ${PH_APP} for now (Disabled for dependencies)"
 					else
-						printf "%12s\033[1;37m%s\033[0;0m\n" "" "4. Skip installation of ${PH_APP} for now"
+						printf "%12s\033[1;37m%s\033[0m\n" "" "4. Skip installation of ${PH_APP} for now"
 					fi
-					printf "%12s\033[1;37m%s\033[0;0m\n\n" "" "5. Quit and rollback changes"
+					printf "%12s\033[1;37m%s\033[0m\n\n" "" "5. Quit and rollback changes"
 					printf "%12s%s" "" "Your choice : "
 					read -r PH_ANSWER 2>/dev/null
 					ph_screen_input "$PH_ANSWER" || \
@@ -7673,7 +7673,7 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 					case "$PH_ANSWER" in 1)
 						break ;;
 							     2)
-						printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m" "" "--> Please enter the full pathname of " "'${PH_APP_EXEC##*/}'" " (Leave empty to return to the previous menu) :"
+						printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0m" "" "--> Please enter the full pathname of " "'${PH_APP_EXEC##*/}'" " (Leave empty to return to the previous menu) :"
 						read -r PH_APP_EXEC 2>/dev/null
 						ph_screen_input "$PH_APP_EXEC" || \
 							return 1
@@ -7681,7 +7681,7 @@ case "$PH_APP_STATE" in Supported|Integrated|Running|Halted)
 							ph_run_with_rollback -c true && \
 							continue ;;
 							     3)
-						printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m\n" "" "--> Scanning for executable " "'${PH_APP_EXEC##*/}'" " (This may take a while)"
+						printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0m\n" "" "--> Scanning for executable " "'${PH_APP_EXEC##*/}'" " (This may take a while)"
 						PH_APP_EXEC="$("$PH_SUDO" find / -type f -perm -o=x \( ! -fstype nfs -a ! -fstype cifs \) -name "${PH_APP_EXEC##*/}" 2>/dev/null)" ;;
 							     4)
 						if [[ "$PH_FORCE_SUPPORT_FLAG" -eq "0" ]]
@@ -8470,7 +8470,7 @@ else
 				then
 					printf "%10s\033[33m%s\033[0m\n" "" "Warning : User account '${PH_PASS_APP_USER}' does not exist -> Creating"
 				else
-					printf "%10s\033[33m%s\033[0m\n" "" "Warning : " "No user provided"
+					printf "%10s\033[33m%s\033[0m\n" "" "Warning : No user provided"
 					if [[ "$PH_COUNT" -eq "1" && "$PH_APP_INST_STATE" == "PI" ]]
 					then
 						ph_set_result -r 0
