@@ -60,7 +60,7 @@ done
 OPTIND="${PH_OLDOPTIND}"
 OPTARG="${PH_OLDOPTARG}"
 
-"stop${PH_STOPAPPL}.sh" force || \
+"stop${PH_STOPAPPL}.sh" forced || \
 	exit "${?}"
 "start${PH_RUNAPPL}.sh"
 exit "${?}"

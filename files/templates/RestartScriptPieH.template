@@ -114,7 +114,7 @@ OPTARG="${PH_OLDOPTARG}"
 	PH_MODE="tty"
 if [[ "${PH_MODE}" == "tty" ]]
 then
-	"stop${PH_STOPAPPL}.sh" force || \
+	"stop${PH_STOPAPPL}.sh" forced || \
 		exit 1
 	"start${PH_RUNAPPL}.sh" -m "${PH_MENU}"
 else
