@@ -48,7 +48,7 @@ then
 			fi
 			if ( cd "${PH_KODI_HOME}" ; "${PH_SUDO}" tar -X "${PH_EXCLUDES_DIR}/kodi.excludes" -cf "${PH_TMP_DIR}/Kodi-Prefs.tar" ./.kodi >/dev/null 2>&1 )
 			then
-				if "${PH_SUDO}" chown "${PH_PIEH_USER}:$(id -gn 2>/dev/null)" "${PH_TMP_DIR}/Kodi-Prefs.tar" 2>/dev/null
+				if "${PH_SUDO}" chown "${PH_RUN_USER}:$(id -gn 2>/dev/null)" "${PH_TMP_DIR}/Kodi-Prefs.tar" 2>/dev/null
 				then
 					if mv "${PH_TMP_DIR}/Kodi-Prefs.tar" "${PH_KODI_LOC_DIR}/" 2>/dev/null
 					then
@@ -60,7 +60,7 @@ then
 						printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not move '${PH_TMP_DIR}/Kodi-Prefs.tar' to '${PH_KODI_LOC_DIR}/' -> Skipping"
 					fi
 				else
-					printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not set ownership of '${PH_TMP_DIR}/Kodi-Prefs.tar' to '${PH_PIEH_USER}:$(id -gn 2>/dev/null)' -> Skipping"
+					printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not set ownership of '${PH_TMP_DIR}/Kodi-Prefs.tar' to '${PH_RUN_USER}:$(id -gn 2>/dev/null)' -> Skipping"
 				fi
 			else
 				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not backup '${PH_KODI_HOME}/.kodi' as '${PH_TMP_DIR}/Kodi-Prefs.tar' -> Skipping"

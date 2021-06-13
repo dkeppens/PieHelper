@@ -11411,7 +11411,6 @@ declare PH_APP
 declare PH_APP_USER
 declare PH_APP_CMD
 declare PH_ACTION
-declare PH_PIEH_USER
 declare PH_MOON_PATH
 declare PH_APPU_CMD_OPTS
 declare PH_APPU_NUM_CTRL
@@ -11431,7 +11430,6 @@ PH_APP="${2}"
 PH_APP_USER="$(ph_get_app_user_from_app_name "${PH_APP}")"
 PH_APP_CMD="$(ph_get_app_cmd_from_app_name "${PH_APP}")"
 PH_ACTION="${1}"
-PH_PIEH_USER="$(ph_get_app_user_from_app_name PieHelper)"
 PH_MOON_PATH="$(nawk '$1 ~ /^Moonlight$/ { \
 		printf $3 \
 	}' "${PH_CONF_DIR}/supported_apps" 2>/dev/null)"
