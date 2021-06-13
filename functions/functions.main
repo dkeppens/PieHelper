@@ -10824,14 +10824,17 @@ do
 	then
 		case "${PH_PARAM}" in none)
 			PH_PARAM="" ;;
+				auto)
+			unset -n PH_PARAM
+			continue ;;
 				prompt)
 			PH_COUNT="0"
 			case "${PH_i}" in CMD)
-				PH_ITEM="start command" ;;
+				PH_ITEM="valid start command" ;;
 					  PKG)
-				PH_ITEM="package" ;;
+				PH_ITEM="valid package" ;;
 					  USER)
-				PH_ITEM="user account" ;;
+				PH_ITEM="valid user account" ;;
 					  STR_TTY)
 				PH_ITEM="tty" ;;
 					  *)
@@ -10843,9 +10846,9 @@ do
 			do
 				[[ "${PH_COUNT}" -gt "0" ]] && \
 					printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
-				printf "%8s%s\033[1;33m%s\033[0m%s" "" "--> Please enter a ${PH_ITEM} for " "'${PH_APP}'" " : "
+				printf "%8s%s\033[1;33m%s\033[37m%s\033[0m%s" "" "--> Please enter a ${PH_ITEM} for " "'${PH_APP}'" " ('s' to skip) " ": "
 				read -r "PH_PARAM" 2>/dev/null
-				[[ -n "${PH_PARAM}" || "${PH_i}" == "PKG" ]] && \
+				[[ ( "${PH_i}" == "PKG" && -z "${PH_PARAM}" ) || "${PH_PARAM}" == "s" ]] && \
 					break
 				((PH_COUNT++))
 			done
@@ -10853,7 +10856,16 @@ do
 			then
 				ph_run_with_rollback -c true -m "None"
 			else
-				ph_run_with_rollback -c true -m "${PH_PARAM}"
+				if [[ "${PH_PARAM}" == "s" ]]
+				then
+					unset -n PARAM
+					unset PH_ROUTINE_OPTS
+					printf "%10s\033[33m%s\033[0m\n" "" "Warning : Skipping at user request"
+					ph_set_result -r 0
+					return 0
+				else
+					ph_run_with_rollback -c true -m "${PH_PARAM}"
+				fi
 			fi ;;
 				*)
 			: ;;
@@ -10862,7 +10874,7 @@ do
 		then
 			PH_ROUTINE_OPTS+=("-t" "'${PH_PARAM}'")
 		else
-			PH_ROUTINE_OPTS+=("-$(cut -c1<<<"${PH_i}" | tr '[:upper:]' '[:lower:]')" "'${PH_PARAM}'")"
+			PH_ROUTINE_OPTS+=("-$(cut -c1<<<"${PH_i}" | tr '[:upper:]' '[:lower:]')" "'${PH_PARAM}'")
 		fi
 	fi
 	unset -n PH_PARAM
@@ -10871,7 +10883,7 @@ if [[ -n "${PH_LIST}" ]]
 then
 	for PH_i in ${PH_LIST//,/ }
 	do
-		PH_CMD="ph_do_app_routine -r '${PH_ROUTINE}' -l '${PH_i}' -s '${PH_APP_SCOPE}' ${PH_ROUTINE_OPTS[@]}"
+		PH_CMD="ph_do_app_routine -r '${PH_ROUTINE}' -l '${PH_i}' -s '${PH_APP_SCOPE}' ${PH_ROUTINE_OPTS[*]}"
 	done
 fi
 if [[ -n "${PH_APP}" ]]

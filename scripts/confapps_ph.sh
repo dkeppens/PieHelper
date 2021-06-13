@@ -41,6 +41,7 @@ PH_APP_CMD=""
 PH_APP_USER=""
 PH_APP_PKG=""
 PH_APP_SCOPE=""
+PH_CMD=""
 PH_HEADER="Run a specified routine successively on selected applications"
 PH_ROUTINE=""
 PH_LIST=""
@@ -527,7 +528,7 @@ else
 		fi
 		unset -n PH_PARAM
 	done
-	PH_CMD="ph_do_app_routine -r '${PH_ROUTINE}' ${PH_ROUTINE_OPTS[@]}"
+	PH_CMD="ph_do_app_routine -r '${PH_ROUTINE}' ${PH_ROUTINE_OPTS[*]}"
 	unset PH_ROUTINE_OPTS
 	if eval "${PH_CMD}"
 	then
