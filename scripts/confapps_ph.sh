@@ -19,6 +19,7 @@ declare PH_APP_CMD
 declare PH_APP_USER
 declare PH_APP_PKG
 declare PH_APP_SCOPE
+declare PH_CMD
 declare PH_HEADER
 declare PH_ROUTINE
 declare PH_LIST
@@ -99,21 +100,21 @@ do
 			OPTARG="${PH_OLDOPTARG}" && \
 			OPTIND="${PH_OLDOPTIND}" && \
 			exit 1
-		PH_APP_CMD="-c '${OPTARG}'" ;;
+		PH_APP_CMD="${OPTARG}" ;;
 			   u)
 		[[ -n "${PH_APP_USER}" || -z "${OPTARG}" ]] && \
 			(! confapps_ph.sh -h) && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			OPTIND="${PH_OLDOPTIND}" && \
 			exit 1
-		PH_APP_USER="-u '${OPTARG}'" ;;
+		PH_APP_USER="${OPTARG}" ;;
 			   p)
 		[[ -n "${PH_APP_PKG}" || -z "${OPTARG}" ]] && \
 			(! confapps_ph.sh -h) && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			OPTIND="${PH_OLDOPTIND}" && \
 			exit 1
-		PH_APP_PKG="-p '${OPTARG}'" ;;
+		PH_APP_PKG="${OPTARG}" ;;
 			   d)
 		[[ -n "${PH_DISP_HELP}" ]] && \
 			(! confapps_ph.sh -h) && \
@@ -456,20 +457,19 @@ else
 fi
 printf "\n"
 case "${PH_APP_SCOPE}" in oos)
-	PH_APP_SCOPE="-s 'Out-of-scope'" ;;
+	PH_APP_SCOPE="Out-of-scope" ;;
 			  def)
-	PH_APP_SCOPE="-s 'Default'" ;;
+	PH_APP_SCOPE="Default" ;;
 			  pkg)
-	PH_APP_SCOPE="-s 'P*'" ;;
+	PH_APP_SCOPE='P*' ;;
 			  unpkg)
-	PH_APP_SCOPE="-s 'U*'" ;;
+	PH_APP_SCOPE='U*' ;;
 			  inst)
-	PH_APP_SCOPE="-s '*I'" ;;
+	PH_APP_SCOPE='*I' ;;
 			  uninst)
-	PH_APP_SCOPE="-s '*U'" ;;
+	PH_APP_SCOPE='*U' ;;
 			  *)
-	[[ -n "${PH_APP_SCOPE}" ]] && \
-		PH_APP_SCOPE="-s '${PH_APP_SCOPE}'" ;;
+	: ;;
 esac
 if [[ -n "${PH_DISP_HELP}" ]]
 then
@@ -514,18 +514,22 @@ else
 			exit "${?}"
 		fi
 	fi
-	if [[ -n "${PH_APP}" ]]
-	then
-		if [[ -n "${PH_LIST}" ]]
+	declare -a PH_ROUTINE_OPTS
+	for PH_i in APP LIST APP_SCOPE APP_USER APP_PKG APP_CMD
+	do
+		declare -n PH_PARAM
+		PH_PARAM="PH_${PH_i}"
+		if [[ "${PH_i}" == @(APP|LIST) ]]
 		then
-			ph_do_app_routine -r "${PH_ROUTINE}" -a "${PH_APP}" -l "${PH_LIST}" ${PH_APP_SCOPE} ${PH_APP_CMD} ${PH_APP_USER} ${PH_APP_PKG}
+			PH_ROUTINE_OPTS+=("-$(cut -c1<<<"${PH_i}" | tr '[:upper:]' '[:lower:]')" "'${PH_PARAM}'")
 		else
-			ph_do_app_routine -r "${PH_ROUTINE}" -a "${PH_APP}" ${PH_APP_SCOPE} ${PH_APP_SCOPE} ${PH_APP_CMD} ${PH_APP_USER} ${PH_APP_PKG}
+			PH_ROUTINE_OPTS+=("-$(cut -c5<<<"${PH_i}" | tr '[:upper:]' '[:lower:]')" "'${PH_PARAM}'")
 		fi
-	else
-		ph_do_app_routine -r "${PH_ROUTINE}" -l "${PH_LIST}" ${PH_APP_SCOPE}
-	fi
-	if [[ "${?}" -eq "0" ]]
+		unset -n PH_PARAM
+	done
+	PH_CMD="ph_do_app_routine -r '${PH_ROUTINE}' ${PH_ROUTINE_OPTS[@]}"
+	unset PH_ROUTINE_OPTS
+	if eval "${PH_CMD}"
 	then
 		if [[ "${PH_ROUTINE}" == @(rm|mk)_conf_file ]]
 		then

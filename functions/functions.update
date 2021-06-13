@@ -2570,7 +2570,7 @@ do
 			TYPE)
 		PH_LINE='PS3, PS4, XBOX360 or XBOXSX:"${PH_OPTARG_VAL}" == @(PS@(3|4)|XBOX@(360|SX))' ;;
 			CIFS_USER)
-		PH_LINE='a locally existing account or an empty string:"$("$(ph_check_user_validity "${PH_OPTARG_VAL}")" ; echo "${?}")" -eq "0"' ;;
+		PH_LINE='a locally existing account or an empty string:"$("$(ph_check_user_state "${PH_OPTARG_VAL}")" ; echo "${?}")" -eq "0"' ;;
 			STARTAPP)
 		PH_LINE='an integrated application or none:"$("$(ph_check_app_state_validity -a "${PH_OPTARG_VAL}" -q -i)" ; echo "${?}")" -eq "0" || "${PH_OPTARG_VAL}" == "none"' ;;
 	esac

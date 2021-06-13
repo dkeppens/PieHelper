@@ -228,7 +228,7 @@ fi
 return 0
 }
 
-function ph_check_user_validity {
+function ph_check_user_state {
 
 if ! id "$1" >/dev/null 2>&1
 then
@@ -849,7 +849,7 @@ if [[ "$PH_ACTION" == @(sshkey|savedef) ]] && [[ "$PH_SSH_KEY" != "def" && -n "$
 then
 	if [[ "$PH_INTERACTIVE_FLAG" -eq "1" ]]
 	then
-		if ! ph_check_user_validity "$PH_SSH_KEY"
+		if ! ph_check_user_state "$PH_SSH_KEY"
 		then
 			printf "\033[36m%s\033[0m\n" "- Executing function '$PH_ACTION' for user '$PH_SSH_KEY' (Normal mode)"
 			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : User does not exist"
@@ -1446,7 +1446,7 @@ case $PH_ACTION in all)
 		[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s\033[32m%s\033[0m\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
 		[[ "$PH_RESULT" == "SUCCESS" ]] && exit 0 || exit 1 ;;
 		    del_stduser)
-		if ! ph_check_user_validity "$PH_DEF_USER"
+		if ! ph_check_user_state "$PH_DEF_USER"
 		then
 			printf "%2s\033[32m%s\033[0m\n\n" "" "SUCCESS : User does not exist"
 			exit 0

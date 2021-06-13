@@ -2084,23 +2084,34 @@ fi
 return 0
 }
 
+function ph_check_user_state {
+
+declare PH_APP_USER
+
+PH_APP_USER="${1}"
+
+[[ "${#}" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+if ! id "${PH_APP_USER}" >/dev/null 2>&1
+then
+	return 1
+fi
+return 0
+}
+
 function ph_check_user_validity {
 
 declare PH_APP_USER
 
-PH_APP_USER="$1"
+PH_APP_USER="${1}"
 
-[[ "$#" -ne "1" ]] && \
+[[ "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-if ! echo "$PH_APP_USER" | grep -E "^[a-z_][a-z0-9_-]*[$]?$" >/dev/null
+if ! echo "${PH_APP_USER}" | grep -E "^[a-z_][a-z0-9_-]*[$]?$" >/dev/null
 then
-	ph_set_result -a -m "Usernames must be alphanumeric and can optionally contain only dash and underscore characters as well as a trailing dollar sign"
-else
-	if ! "$PH_SUDO" id "$PH_APP_USER" >/dev/null 2>&1
-	then
-		return 1
-	fi
+	return 1
 fi
 return 0
 }
@@ -8448,34 +8459,40 @@ else
 	while true
 	do
 		PH_COUNT="$((PH_COUNT+1))"
-		if ! ph_check_user_validity "$PH_PASS_APP_USER"
+		if [[ -n "${PH_PASS_APP_USER}" && "$(ph_check_user_validity "${PH_PASS_APP_USER}"; echo "${?}")" -ne "0" ]]
 		then
-			if [[ -n "$PH_PASS_APP_USER" ]]
+			printf "%10s\033[33m%s\033[0m\n" "" "Warning : User name '${PH_PASS_APP_USER}' contains invalid characters"
+			PH_PASS_APP_USER=""
+		else
+			if ! ph_check_user_state "$PH_PASS_APP_USER"
 			then
-				printf "%10s\033[33m%s\033[0m\n" "" "Warning : User account '${PH_PASS_APP_USER}' does not exist -> Creating"
-			else
-				printf "%10s\033[33m%s\033[0m\n" "" "Warning : " "No user provided"
-				if [[ "$PH_COUNT" -eq "1" && "$PH_APP_INST_STATE" == "PI" ]]
+				if [[ -n "$PH_PASS_APP_USER" ]]
 				then
-					ph_set_result -r 0
-					printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Attempting to determine the user for " "'${PH_APP}'" " from package " "'${PH_APP_PKG}'"
-					PH_PASS_APP_USER="$(systemctl show "$PH_APP_PKG" 2>/dev/null | nawk -F'=' '$1 ~ /^U(ser|ID)$/ && $2 !~ /\[not set\]/ { \
-							printf $2 ; \
-							exit 0 \
-						}')"
-					if [[ -n "$PH_PASS_APP_USER" ]]
+					printf "%10s\033[33m%s\033[0m\n" "" "Warning : User account '${PH_PASS_APP_USER}' does not exist -> Creating"
+				else
+					printf "%10s\033[33m%s\033[0m\n" "" "Warning : " "No user provided"
+					if [[ "$PH_COUNT" -eq "1" && "$PH_APP_INST_STATE" == "PI" ]]
 					then
-						if [[ "$PH_PASS_APP_USER" == +([[:digit:]]) ]]
+						ph_set_result -r 0
+						printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Attempting to determine the user for " "'${PH_APP}'" " from package " "'${PH_APP_PKG}'"
+						PH_PASS_APP_USER="$(systemctl show "$PH_APP_PKG" 2>/dev/null | nawk -F'=' '$1 ~ /^U(ser|ID)$/ && $2 !~ /\[not set\]/ { \
+								printf $2 ; \
+								exit 0 \
+							}')"
+						if [[ -n "$PH_PASS_APP_USER" ]]
 						then
-							PH_PASS_APP_USER="$(getent passwd "$PH_PASS_APP_USER" 2>/dev/null | head -1 | cut -d':' -f1)"
+							if [[ "$PH_PASS_APP_USER" == +([[:digit:]]) ]]
+							then
+								PH_PASS_APP_USER="$(getent passwd "$PH_PASS_APP_USER" 2>/dev/null | head -1 | cut -d':' -f1)"
+							fi
+							break
+						else
+							printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not determine"
 						fi
-						break
-					else
-						printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not determine"
 					fi
 				fi
+				ph_set_result -r 0
 			fi
-			ph_set_result -r 0
 		fi
 		if [[ -z "$PH_PASS_APP_USER" ]]
 		then
@@ -8487,8 +8504,6 @@ else
 			printf "%10s\033[1;37m%s\033[0m\n\n" "" "- Or enter 'quit' to stop and rollback all changes"
 			printf "%8s%s" "" "User account : "
 			read -r PH_PASS_APP_USER 2>/dev/null
-			ph_screen_input "$PH_PASS_APP_USER" || \
-				return 1
 			case "$PH_PASS_APP_USER" in "")
 				PH_PASS_APP_USER="$PH_RUN_USER" ;;
 					quit)
@@ -8573,7 +8588,7 @@ OPTARG="$PH_OLDOPTARG"
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing user account " "'${PH_APP_USER}'"
-if ! ph_check_user_validity "$PH_APP_USER"
+if ! ph_check_user_state "$PH_APP_USER"
 then
 	ph_run_with_rollback -c true -m "Nothing to do" && \
 		return "$?"
@@ -9508,7 +9523,7 @@ if [[ "$(nawk -v app="^${PH_APP}$" '$1 ~ app { \
 		printf NF ; \
 		exit 0 \
 	}' "$PH_CONF_DIR/integrated_apps" 2>/dev/null)" -ne "2" || \
-	"$(ph_check_user_validity "$PH_APP_USER" ; echo "$?")" -ne "0" || \
+	"$(ph_check_user_state "$PH_APP_USER" ; echo "$?")" -ne "0" || \
 	"$PH_APP_STR_TTY" != @(+([[:digit:]])|-) || \
 	( "$PH_APP_STR_TTY" == +([[:digit:]]) && ( "$PH_APP_STR_TTY" -le "1" || "$PH_APP_STR_TTY" -gt "$PH_PIEH_MAX_TTYS" )) ]]
 then
@@ -10678,6 +10693,7 @@ declare PH_APP_STATE
 declare PH_REQ_APP_STATE
 declare PH_REQ_APP_STATE_PARAM
 declare PH_DISP_APP_STATE
+declare PH_ITEM
 declare PH_ITEMS
 declare PH_LIST
 declare PH_FILE
@@ -10709,6 +10725,7 @@ PH_APP_STATE=""
 PH_REQ_APP_STATE=""
 PH_REQ_APP_STATE_PARAM=""
 PH_DISP_APP_STATE=""
+PH_ITEM=""
 PH_ITEMS=""
 PH_LIST=""
 PH_FILE="integrated_apps"
@@ -10739,13 +10756,13 @@ do
 			OPTIND="${PH_OLDOPTIND}" && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-                PH_APP_CMD="-c '${OPTARG}'" ;;
+                PH_APP_CMD="${OPTARG}" ;;
 			     p)
 		[[ -n "${PH_APP_PKG}" || -z "${OPTARG}" ]] && \
 			OPTIND="${PH_OLDOPTIND}" && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-                PH_APP_PKG="-p '${OPTARG}'" ;;
+                PH_APP_PKG="${OPTARG}" ;;
 			     r)
 		[[ -n "${PH_ROUTINE}" || ( "${OPTARG}" != @(inst|uninst|sup|unsup|int|unint|conf|unconf|start|unstart|update|list|info|tty) && \
 			"${OPTARG}" != @(mk|rm)_@(conf_file|defaults|alloweds|menus|scripts|cifs_mpt|all) ) ]] && \
@@ -10779,13 +10796,13 @@ do
 			OPTIND="${PH_OLDOPTIND}" && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-                PH_APP_USER="-u '${OPTARG}'" ;;
+                PH_APP_USER="${OPTARG}" ;;
 			     t)
 		[[ -n "${PH_APP_STR_TTY}" || -z "${OPTARG}" ]] && \
 			OPTIND="${PH_OLDOPTIND}" && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-                PH_APP_STR_TTY="-t '${OPTARG}'" ;;
+                PH_APP_STR_TTY="${OPTARG}" ;;
 			     *)
 		OPTIND="${PH_OLDOPTIND}"
 		OPTARG="${PH_OLDOPTARG}"
@@ -10798,11 +10815,63 @@ OPTARG="${PH_OLDOPTARG}"
 [[ -z "${PH_ROUTINE}" || ( -z "${PH_APP}" && -z "${PH_LIST}" ) || "${#}" -gt "14" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
+declare -a PH_ROUTINE_OPTS
+for PH_i in CMD PKG USER STR_TTY
+do
+	declare -n PH_PARAM
+	PH_PARAM="PH_APP_${PH_i}"
+	if [[ -n "${PH_PARAM}" ]]
+	then
+		case "${PH_PARAM}" in none)
+			PH_PARAM="" ;;
+				prompt)
+			PH_COUNT="0"
+			case "${PH_i}" in CMD)
+				PH_ITEM="start command" ;;
+					  PKG)
+				PH_ITEM="package" ;;
+					  USER)
+				PH_ITEM="user account" ;;
+					  STR_TTY)
+				PH_ITEM="tty" ;;
+					  *)
+				: ;;
+			esac
+			PH_PARAM=""
+			while [[ -z "${PH_PARAM}" || ( "${PH_i}" == "PKG" && "$(ph_check_pkg_validity "${PH_PARAM}"; echo "${?}")" -ne "0" ) || \
+				( "${PH_i}" == "USER" && "$(ph_check_user_validity "${PH_PARAM}"; echo "${?}")" -ne "0" ) ]]
+			do
+				[[ "${PH_COUNT}" -gt "0" ]] && \
+					printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
+				printf "%8s%s\033[1;33m%s\033[0m%s" "" "--> Please enter a ${PH_ITEM} for " "'${PH_APP}'" " : "
+				read -r "PH_PARAM" 2>/dev/null
+				[[ -n "${PH_PARAM}" || "${PH_i}" == "PKG" ]] && \
+					break
+				((PH_COUNT++))
+			done
+			if [[ -z "${PH_PARAM}" ]]
+			then
+				ph_run_with_rollback -c true -m "None"
+			else
+				ph_run_with_rollback -c true -m "${PH_PARAM}"
+			fi ;;
+				*)
+			: ;;
+		esac
+		if [[ "${PH_i}" == "STR_TTY" ]]
+		then
+			PH_ROUTINE_OPTS+=("-t" "'${PH_PARAM}'")
+		else
+			PH_ROUTINE_OPTS+=("-$(cut -c1<<<"${PH_i}" | tr '[:upper:]' '[:lower:]')" "'${PH_PARAM}'")"
+		fi
+	fi
+	unset -n PH_PARAM
+done
 if [[ -n "${PH_LIST}" ]]
 then
 	for PH_i in ${PH_LIST//,/ }
 	do
-		PH_CMD="ph_do_app_routine -r '${PH_ROUTINE}' -l '${PH_i}' -s '${PH_APP_SCOPE}' ${PH_APP_STR_TTY} ${PH_APP_USER} ${PH_APP_CMD} ${PH_APP_PKG}"
+		PH_CMD="ph_do_app_routine -r '${PH_ROUTINE}' -l '${PH_i}' -s '${PH_APP_SCOPE}' ${PH_ROUTINE_OPTS[@]}"
 	done
 fi
 if [[ -n "${PH_APP}" ]]
