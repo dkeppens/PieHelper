@@ -1047,7 +1047,7 @@ for PH_i in "${PH_SCRIPTS_DIR}" "${PH_BUILD_DIR}" "${PH_SNAPSHOT_DIR}" "${PH_MNT
 	MovefromPieHScript LoginScript MoveScript MovetoPieHScript RestartScriptPieH \
 	RestartScript StartScriptPieH StartScript StopScriptPieH StopScript \
 	confapps confpieh confttys confgena confctrl confoper confopts listblue listmoon \
-	setpasswd.expect confctrls.expect functions.$(sed 's/ / functions./g'<<<"${PH_SUPPORTED_DISTROS[*]}")
+	setpasswd.expect confctrls.expect
 do
 	PH_DIR=""
 	PH_SUFFIX=""
@@ -1063,7 +1063,7 @@ do
 			conf*|list*)
 		PH_DIR="${PH_SCRIPTS_DIR}/"
 		PH_SUFFIX="_ph.sh" ;;
-			`sed 's/ /|/g'<<<"${PH_CHECK_SUPPPORTED[*]}"`)
+			`sed 's/ /|/g'<<<"${PH_CHECK_SUPPORTED[*]}"`)
 		PH_DIR="${PH_CONF_DIR}/distros/"
 		PH_SUFFIX=".conf" ;;
 			*.excludes)
@@ -1074,8 +1074,6 @@ do
 		PH_DIR="${PH_CONF_DIR}/" ;;
 			*.expect)
 		PH_DIR="${PH_SCRIPTS_DIR}/app/expect/" ;;
-			functions.*)
-		PH_DIR="${PH_FUNCS_DIR}/distros/" ;;
 			HOWTO)
 		PH_DIR="${PH_BASE_DIR}/" ;;
 			*)
