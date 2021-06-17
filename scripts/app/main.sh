@@ -19,12 +19,16 @@ shopt -s checkwinsize
 # Local variable declarations
 
 declare PH_i
+declare PH_j
 declare PH_MOVE_SCRIPTS_REGEX
 declare -i PH_FLAG
+declare -u PH_DISTROU
 
 PH_i=""
+PH_j=""
 PH_MOVE_SCRIPTS_REGEX=""
 PH_FLAG="1"
+PH_DISTROU=""
 
 # Global variable declarations not related to rollback
 
@@ -90,11 +94,21 @@ else
 fi
 PH_SUPPORTED_DISTROS=("Archlinux" "Debian")
 PH_SUPPORTED_DEBIAN_RELS=("jessie" "stretch" "buster" "bullseye")
-PH_CHECK_SUPPORTED+=("${PH_SUPPORTED_DEBIAN_RELS[@]}" "${PH_SUPPORTED_DISTROS[@]}")
-for PH_i in "${!PH_CHECK_SUPPORTED[@]}"
+for PH_i in "${PH_SUPPORTED_DISTROS[@]}"
 do
-	[[ "${PH_CHECK_SUPPORTED["${PH_i}"]}" == "Debian" ]] && \
-		unset PH_CHECK_SUPPORTED["${PH_i}"]
+	PH_DISTROU="${PH_i}"
+	declare -n PH_DISTRO_RELS
+	PH_DISTRO_RELS="PH_SUPPORTED_${PH_DISTROU}_RELS"
+	if [[ "$(declare -p "PH_SUPPORTED_${PH_DISTROU}_RELS" 2>/dev/null)" == declare* ]]
+	then
+		PH_CHECK_SUPPORTED+=("${PH_DISTRO_RELS[@]}" "${PH_SUPPORTED_DISTROS[@]}")
+		for PH_j in "${!PH_CHECK_SUPPORTED[@]}"
+		do
+			[[ "${PH_CHECK_SUPPORTED["${PH_j}"]}" == "${PH_i}" ]] && \
+				unset PH_CHECK_SUPPORTED["${PH_j}"]
+		done
+	fi
+	unset -n PH_DISTRO_RELS
 done
 
 # Global variable declarations related to rollback
@@ -133,13 +147,57 @@ PH_ALL_ROLLBACK_PARAMS+=(PH_DEPTH_PARAMS PH_DEPTH PH_CONFIGURED_STATE PH_UNCONFI
 if [[ -f /usr/bin/pacman ]]
 then
 	PH_DISTRO="Archlinux"
-	PH_DISTRO_REL="Archlinux"
 else
-	PH_DISTRO="Debian"
-	[[ -L "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" ]] && \
-		PH_DISTRO_REL="$(find "${PH_CONF_DIR}/distros" -name "${PH_DISTRO}.conf" -mount -exec ls -l {} \; 2>/dev/null | nawk -F"/" '{ \
-				print substr($NF,1,length($NF)-5) \
-			}')"
+	if PH_DISTRO="$(nawk -F'=' 'BEGIN { \
+			var = "" ; \
+			flag = "0" \
+		} \
+		$1 ~ /^ID(|_LIKE)$/ { \
+			if (tolower($2) ~ /^debian$/) { \
+				var = "debian" \
+			} elif (flag == "1" && var != "" && $1 ~ /^ID$/) { \
+				var = $2 \
+			} elif (flag == "1" && var == "") { \
+				var = $2 \
+			} elif (flag == "0") { \
+				var = $2 ; \
+				flag = "1" \
+			} \
+		} { \
+			next \
+		} END { \
+			printf var \
+		}' /etc/*-release 2>/dev/null)"
+	then
+		PH_DISTRO="$(cut -c1<<<"${PH_DISTRO}" | tr '[:lower:]' '[:upper:]')$(cut -c2-<<<"${PH_DISTRO}")"
+	fi
+fi
+if [[ -n "${PH_DISTRO}" ]]
+then
+	PH_DISTROU="${PH_DISTRO}"
+	if [[ "$(declare -p "PH_SUPPORTED_${PH_DISTROU}_RELS" 2>/dev/null)" == declare* ]]
+	then
+		if [[ -L "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" ]]
+		then
+			PH_DISTRO_REL="$(find "${PH_CONF_DIR}/distros" -name "${PH_DISTRO}.conf" -mount -exec ls -l {} \; 2>/dev/null | nawk -F"/" '{ \
+					print substr($NF,1,length($NF)-5) \
+				}')"
+		else
+			PH_DISTRO_REL="$(lsb_release -a 2>/dev/null | nawk '$1 ~ /^Codename:/ { \
+                        		printf $2 \
+                		}')"
+		fi
+	else
+		PH_DISTRO_REL="${PH_DISTRO}"
+	fi
+	if [[ -z "${PH_DISTRO_REL}" ]]
+	then
+		printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Could not determine the release of Linux distro '${PH_DISTRO}'"
+		exit 1
+	fi
+else
+	printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Could not determine the Linux distribution"
+	exit 1
 fi
 
 # Set PATH and LD_LIBRARY_PATH
@@ -168,14 +226,7 @@ fi
 
 # Load all relevant module declarations
 
-for PH_i in functions.main functions.user functions.update $(echo -n "${PH_SUPPORTED_DISTROS[@]}" | nawk '{ \
-		for (i=1;i<=NF;i++) { \
-			printf "distros/functions." $i ; \
-			if (i < NF) { \
-				printf " " \
-			} \
-		} \
-	}')
+for PH_i in functions.main functions.user functions.update distros/functions.$(sed 's/ / distros\/functions./g'<<<"${PH_SUPPORTED_DISTROS[*]}")
 do
 	if [[ -f "${PH_FUNCS_DIR}/${PH_i}" && -r "${PH_FUNCS_DIR}/${PH_i}" ]]
 	then
@@ -190,16 +241,6 @@ do
 	fi
 done
 
-# Load distribution configuration
-
-for PH_i in "${PH_CHECK_SUPPORTED[@]}"
-do
-        if [[ ! -f "${PH_CONF_DIR}/distros/${PH_i}.conf" || ! -r "${PH_CONF_DIR}/distros/${PH_i}.conf" ]]
-        then
-		ph_set_result -a -m "Reinstallation of PieHelper is required (Missing or unreadable critical config file '${PH_CONF_DIR}/distros/${PH_i}.conf')"
-        fi
-done
-
 # Set version
 
 PH_VERSION="$(cat "${PH_CONF_DIR}/VERSION" 2>/dev/null)"
@@ -208,7 +249,7 @@ then
 	ph_set_result -a -m "Reinstallation of PieHelper is required (Missing or corrupted critical config file '${PH_CONF_DIR}/VERSION')"
 fi
 
-# Load distro-specific configuration
+# Load release-specific configuration
 
 source "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" >/dev/null 2>&1
 
@@ -410,4 +451,4 @@ fi
 
 # Unset local variables
 
-unset PH_i PH_ALLOW_USERS PH_MOVE_SCRIPTS_REGEX PH_FLAG 2>/dev/null
+unset PH_i PH_j PH_ALLOW_USERS PH_MOVE_SCRIPTS_REGEX PH_FLAG PH_DISTROU 2>/dev/null

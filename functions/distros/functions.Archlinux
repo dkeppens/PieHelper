@@ -1,5 +1,10 @@
 # Archlinux specific codebase functions
 
+function ph_update_pkg_index {
+
+return 0
+}
+
 function ph_install_pkg {
 
 declare PH_APP_PKG
