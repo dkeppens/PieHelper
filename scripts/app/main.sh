@@ -438,7 +438,7 @@ done
 
 # Check whether the current user is allowed
 
-if [[ "$(whoami 2>/dev/null)" != @("${PH_ALLOW_USERS[*]// /|}") ]]
+if [[ "$(whoami 2>/dev/null)" != @($(sed 's/ /|/g'<<<"${PH_ALLOW_USERS[*]}")) ]]
 then
 	if [[ -z "${PH_RUN_USER}" ]]
 	then
