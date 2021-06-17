@@ -167,7 +167,7 @@ else
 			next \
 		} END { \
 			printf var \
-		}' /etc/*-release)"
+		}' /etc/*-release 2>/dev/null)"
 	then
 		PH_DISTRO="$(cut -c1<<<"${PH_DISTRO}" | tr '[:lower:]' '[:upper:]')$(cut -c2-<<<"${PH_DISTRO}")"
 	fi
