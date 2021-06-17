@@ -152,7 +152,7 @@ function ph_update_system {
 ph_update_pkg_index || \
 	return 1
 printf "%8s%s\033[1;37m%s\033[0m\n" "" "--> Updating your system" " (This may take a while)"
-if "${PH_SUDO}" apt-get -qq upgrade >/dev/null 2>&1
+if "${PH_SUDO}" apt-get -qq dist-upgrade >/dev/null 2>&1
 then
 	ph_run_with_rollback -c true
 	ph_apt_clean

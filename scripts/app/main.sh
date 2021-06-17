@@ -148,11 +148,11 @@ if [[ -f /usr/bin/pacman ]]
 then
 	PH_DISTRO="Archlinux"
 else
-	if PH_DISTRO="$(nawk -F'=' 'BEGIN { \
+	if PH_DISTRO="$(nawk -F '=' 'BEGIN { \
 			var = "" ; \
 			flag = "0" \
 		} \
-		$1 ~ /^ID(|_LIKE)$/ { \
+		$1 ~ /^(ID|ID_LIKE)$/ { \
 			if (tolower($2) ~ /^debian$/) { \
 				var = "debian" \
 			} elif (flag == "1" && var != "" && $1 ~ /^ID$/) { \
@@ -167,7 +167,7 @@ else
 			next \
 		} END { \
 			printf var \
-		}' /etc/*-release 2>/dev/null)"
+		}' /etc/*-release)"
 	then
 		PH_DISTRO="$(cut -c1<<<"${PH_DISTRO}" | tr '[:lower:]' '[:upper:]')$(cut -c2-<<<"${PH_DISTRO}")"
 	fi
@@ -192,11 +192,11 @@ then
 	fi
 	if [[ -z "${PH_DISTRO_REL}" ]]
 	then
-		printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Could not determine the release of Linux distro '${PH_DISTRO}'"
+		printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Could not determine the release of Linux distro '${PH_DISTRO}'"
 		exit 1
 	fi
 else
-	printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Could not determine the Linux distribution"
+	printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Could not determine the Linux distribution"
 	exit 1
 fi
 
@@ -232,11 +232,11 @@ do
 	then
 		if ! source "${PH_FUNCS_DIR}/${PH_i}" >/dev/null 2>&1
 		then
-			printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Could not load critical codebase file '${PH_FUNCS_DIR}/${PH_i}')"
+			printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Could not load critical codebase file '${PH_FUNCS_DIR}/${PH_i}')"
 			exit 1
 		fi
 	else
-		printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '${PH_FUNCS_DIR}/${PH_i}')"
+		printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '${PH_FUNCS_DIR}/${PH_i}')"
 		exit 1
 	fi
 done
