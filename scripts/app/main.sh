@@ -155,11 +155,11 @@ else
 		$1 ~ /^(ID|ID_LIKE)$/ { \
 			if (tolower($2) ~ /^debian$/) { \
 				var = "debian" \
-			} elif (flag == "1" && var != "" && $1 ~ /^ID$/) { \
+			} else if (flag == "1" && var != "" && $1 ~ /^ID$/) { \
 				var = $2 \
-			} elif (flag == "1" && var == "") { \
+			} else if (flag == "1" && var == "") { \
 				var = $2 \
-			} elif (flag == "0") { \
+			} else if (flag == "0") { \
 				var = $2 ; \
 				flag = "1" \
 			} \
