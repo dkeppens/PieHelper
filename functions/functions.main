@@ -1051,6 +1051,7 @@ for PH_i in "${PH_SCRIPTS_DIR}" "${PH_BUILD_DIR}" "${PH_SNAPSHOT_DIR}" "${PH_MNT
 do
 	PH_DIR=""
 	PH_SUFFIX=""
+	echo `sed 's/ /|/g'<<<"${PH_CHECK_SUPPORTED[*]}"`
 	case "${PH_i}" in Support|System*|Main|PS*|XBOX*)
 		PH_DIR="${PH_MENUS_DIR}/"
 		PH_SUFFIX=".lst" ;;
@@ -1063,7 +1064,7 @@ do
 			conf*|list*)
 		PH_DIR="${PH_SCRIPTS_DIR}/"
 		PH_SUFFIX="_ph.sh" ;;
-			`sed 's/ /|/g'<<<"${PH_CHECK_SUPPORTED[*]}"`)
+			$(echo "${PH_CHECK_SUPPORTED[*]}" | sed 's/ /|/g'))
 		PH_DIR="${PH_CONF_DIR}/distros/"
 		PH_SUFFIX=".conf" ;;
 			*.excludes)

@@ -2,94 +2,133 @@
 # Manage application options and controllers settings (by Davy Keppens on 06/11/2018)
 # Enable/Disable debug by running 'confpieh_ph.sh -p debug -m confopts_ph.sh'
 
-if [[ -f "$(dirname "$0" 2>/dev/null)/app/main.sh" && -r "$(dirname "$0" 2>/dev/null)/app/main.sh" ]]
+if [[ -f "$(dirname "${0}" 2>/dev/null)/app/main.sh" && -r "$(dirname "${0}" 2>/dev/null)/app/main.sh" ]]
 then
-	source "$(dirname "$0" 2>/dev/null)/app/main.sh"
+	source "$(dirname "${0}" 2>/dev/null)/app/main.sh"
 	set +x
 else
-	printf "\n%2s\033[1;31m%s\033[0;0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '$(dirname "$0" 2>/dev/null)/app/main.sh'"
+	printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '$(dirname "${0}" 2>/dev/null)/app/main.sh'"
 	exit 1
 fi
 
 #set -x
 
-declare PH_ACTION=""
-declare PH_OPT_TYPE="read-write"
-declare PH_I_ACTION=""
-declare PH_APP=""
-declare PH_VALUE=""
-declare PH_OPT=""
-declare PH_i=""
-declare PH_j=""
-declare PH_OPTION=""
-declare PH_RESOLVE=""
-declare PH_RESULT="SUCCESS"
-declare PH_TYPE=""
-declare PH_DISP_TYPE=""
-declare PH_USE_WORD=""
-declare PH_ALLOW_VAL=""
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
-declare -i PH_ANSWER="0"
-declare -i PH_COUNT="0"
-declare -i PH_COUNT2="0"
-declare -i PH_RET_CODE="0"
-
+declare PH_i
+declare PH_j
+declare PH_APP
+declare PH_VALUE
+declare PH_OPT
+declare PH_OPT_TYPE
+declare PH_ACTION
+declare PH_I_ACTION
+declare PH_RESOLVE
+declare PH_RESULT
+declare PH_TYPE
+declare PH_DISP_TYPE
+declare PH_USE_WORD
+declare PH_ALLOW_VAL
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+declare -i PH_ANSWER
+declare -i PH_COUNT
+declare -i PH_COUNT2
+declare -i PH_RET_CODE
 declare -a PH_OPTAR
 declare -a PH_VALAR
+
+PH_i=""
+PH_j=""
+PH_APP=""
+PH_VALUE=""
+PH_OPT=""
+PH_OPT_TYPE="read-write"
+PH_ACTION=""
+PH_I_ACTION=""
+PH_RESOLVE=""
+PH_RESULT="SUCCESS"
+PH_TYPE=""
+PH_DISP_TYPE=""
+PH_USE_WORD=""
+PH_ALLOW_VAL=""
+PH_OPTION=""
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
+PH_ANSWER="0"
+PH_COUNT="0"
+PH_COUNT2="0"
+PH_RET_CODE="0"
+
 OPTIND="1"
 
 while getopts a:o:p:t:hgsdrmn PH_OPTION 2>/dev/null
 do
-	case "$PH_OPTION" in a)
-		! ph_screen_input "$OPTARG" && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
-		[[ -n "$PH_APP" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
-		PH_APP="$OPTARG"
-		[[ "$PH_APP" == "Ctrls" ]] && PH_USE_WORD="setting" || PH_USE_WORD="option" ;;
+	case "${PH_OPTION}" in a)
+		[[ -n "${PH_APP}" -z "${OPTARG}" ]] && \
+			(! confopts_ph.sh -h) && \
+			unset PH_OPTAR PH_VALAR && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			exit 1
+		PH_APP="${OPTARG}"
+		[[ "${PH_APP}" == "Cont" ]] && \
+			PH_USE_WORD="setting" || \
+			PH_USE_WORD="option" ;;
 			     p)
-		! ph_screen_input "$OPTARG" && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
-		[[ "$OPTARG" != @(set|get|help|prompt|list) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
-		[[ -n "$PH_ACTION" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
-		[[ -n "$PH_I_ACTION" && "$OPTARG" != "prompt" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
-		PH_ACTION="$OPTARG" ;;
+		[[ -n "$PH_ACTION" || ( -n "${PH_I_ACTION}" && "${OPTARG}" != "prompt" ) || \
+			"${OPTARG}" != @(set|get|help|prompt|list) ]] && \
+			(! confopts_ph.sh -h) && \
+			unset PH_OPTAR PH_VALAR && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			exit 1
+		PH_ACTION="${OPTARG}" ;;
 			     o)
-		[[ -n "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
-		[[ -z "${OPTARG%%=*}" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
-		if [[ "${OPTARG%%=*}" == "all" && "$PH_ACTION" == "set" ]]
+		[[ -n "${PH_I_ACTION}" || -z "${OPTARG%%=*}" ]] && \
+			(! confopts_ph.sh -h) && \
+			unset PH_OPTAR PH_VALAR && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			exit 1
+		if [[ "${OPTARG%%=*}" == "all" && "${PH_ACTION}" == "set" ]]
 		then
 			printf "\033[36m%s\033[0m\n" "- Changing option '${OPTARG%%=*}' value"
 			printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED : Unknown option"
 			unset PH_OPTAR PH_VALAR
-			OPTARG="$PH_OLDOPTARG"
-			OPTIND="$PH_OLDOPTIND"
-			exit 1	
+			OPTIND="${PH_OLDOPTIND}"
+			OPTARG="${PH_OLDOPTARG}"
+			exit 1
 		fi
-		if [[ -n "$PH_OPT" ]]
+		if [[ -n "${PH_OPT}" ]]
 		then
-			PH_OPT="$PH_OPT'${OPTARG%%=*}"
-			if (echo -n "$OPTARG" | grep '=' >/dev/null 2>&1)
+			PH_OPT="${PH_OPT}'${OPTARG%%=*}"
+			if (echo -n "${OPTARG}" | grep '=' >/dev/null 2>&1)
 			then
 				if [[ "${OPTARG##*=}" == "N/A" ]]
 				then
 					printf "\033[36m%s\033[0m\n" "- Changing option '${OPTARG%%=*}' value"
 					printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED : Unacceptable value 'N/A' (Reserved string)"
 					unset PH_OPTAR PH_VALAR
-					OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+					OPTIND="${PH_OLDOPTIND}"
+					OPTARG="${PH_OLDOPTARG}"
+					exit 1
 				fi
-				PH_VALUE="$PH_VALUE'${OPTARG##*=}"
+				PH_VALUE="${PH_VALUE}'${OPTARG##*=}"
 			else
-				PH_VALUE="$PH_VALUE'N/A"
+				PH_VALUE="${PH_VALUE}'N/A"
 			fi
 		else
 			PH_OPT="${OPTARG%%=*}"
-			if (echo -n "$OPTARG" | grep '=' >/dev/null 2>&1)
+			if (echo -n "${OPTARG}" | grep '=' >/dev/null 2>&1)
 			then
 				if [[ "${OPTARG##*=}" == "N/A" ]]
 				then
 					printf "\033[36m%s\033[0m\n" "- Changing option '${OPTARG%%=*}' value"
 					printf "%2s\033[31m%s\033[0m\n\n" "" "- FAILED : Unacceptable value 'N/A' (Reserved string)"
 					unset PH_OPTAR PH_VALAR
-					OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+					OPTIND="${PH_OLDOPTIND}"
+					OPTARG="${PH_OLDOPTARG}"
+					exit 1
 				fi
 				PH_VALUE="${OPTARG##*=}"
 			else
@@ -97,35 +136,61 @@ do
 			fi
 		fi ;;
                             g)
-                [[ "$PH_ACTION" != @(prompt|) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
-		[[ -n "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+                [[ -n "${PH_I_ACTION}" || "${PH_ACTION}" != @(prompt|) ]] && \
+			(! confopts_ph.sh -h) && \
+			unset PH_OPTAR PH_VALAR && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			exit 1
                 PH_I_ACTION="get" ;;
                             s)
-                [[ "$PH_ACTION" != @(prompt|) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
-		[[ -n "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+                [[ -n "${PH_I_ACTION}" || "${PH_ACTION}" != @(prompt|) ]] && \
+			(! confopts_ph.sh -h) && \
+			unset PH_OPTAR PH_VALAR && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			exit 1
                 PH_I_ACTION="set" ;;
                             d)
-                [[ "$PH_ACTION" != @(prompt|) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
-		[[ -n "$PH_I_ACTION" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+                [[ -n "${PH_I_ACTION}" || "${PH_ACTION}" != @(prompt|) ]] && \
+			(! confopts_ph.sh -h) && \
+			unset PH_OPTAR PH_VALAR && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			exit 1
                 PH_I_ACTION="help" ;;
                             r)
-                [[ "$PH_ACTION" != @(get|prompt|set|) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
-		[[ -n "$PH_RESOLVE" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+                [[ -n "${PH_RESOLVE}" || "${PH_ACTION}" != @(get|prompt|set|) ]] && \
+			(! confopts_ph.sh -h) && \
+			unset PH_OPTAR PH_VALAR && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			exit 1
                 PH_RESOLVE="yes" ;;
 			    m)
-		[[ "$PH_ACTION" != @(set|prompt|) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
-		[[ "$PH_I_ACTION" != @(set|) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
-		[[ -n "$PH_TYPE" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+		[[ -n "${PH_TYPE}" || "${PH_I_ACTION}" != @(set|) || "${PH_ACTION}" != @(set|prompt|) ]] && \
+			(! confopts_ph.sh -h) && \
+			unset PH_OPTAR PH_VALAR && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			exit 1
                 PH_TYPE="r" ;;
 			    n)
-		[[ "$PH_ACTION" != @(set|prompt|) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
-		[[ "$PH_I_ACTION" != @(set|) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
-		[[ -n "$PH_TYPE" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
+		[[ -n "${PH_TYPE}" || "${PH_I_ACTION}" != @(set|) || "${PH_ACTION}" != @(set|prompt|) ]] && \
+			(! confopts_ph.sh -h) && \
+			unset PH_OPTAR PH_VALAR && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			exit 1
                 PH_TYPE="o" ;;
 			    t)
-		[[ "$OPTARG" != @(rw|ro) ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
-		[[ -n "$PH_DISP_TYPE" ]] && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && OPTARG="$PH_OLDOPTARG" && OPTIND="$PH_OLDOPTIND" && exit 1
-                PH_DISP_TYPE="$OPTARG" ;;
+		[[ -n "${PH_DISP_TYPE}" || "${OPTARG}" != @(rw|ro) ]] && \
+			(! confopts_ph.sh -h) && \
+			unset PH_OPTAR PH_VALAR && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			exit 1
+                PH_DISP_TYPE="${OPTARG}" ;;
 			     *)
 		>&2 printf "\n"
 		>&2 printf "\033[36m%s\033[0m\n" "Usage : confopts_ph.sh -h |"
@@ -229,14 +294,14 @@ do
 		>&2 printf "%18s%s\n" "" "- Specifying -r is optional"
 		>&2 printf "%18s%s\n" "" "- Variables are not expanded by default"
 		>&2 printf "\n"
-		OPTARG="$PH_OLDOPTARG"
-		OPTIND="$PH_OLDOPTIND"
+		OPTARG="${PH_OLDOPTARG}"
+		OPTIND="${PH_OLDOPTIND}"
 		unset PH_OPTAR PH_VALAR
 		exit 1 ;;
 	esac
 done
-OPTARG="$PH_OLDOPTARG"
-OPTIND="$PH_OLDOPTIND"
+OPTARG="${PH_OLDOPTARG}"
+OPTIND="${PH_OLDOPTIND}"
 
 (([[ -n "$PH_DISP_TYPE" && "$PH_OPT" != "all" ]]) && ([[ "$PH_ACTION" == @(get|help) ]])) && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && exit 1
 (([[ -n "$PH_DISP_TYPE" ]]) && ([[ "$PH_ACTION" == "set" || "$PH_I_ACTION" == "set" ]])) && (! confopts_ph.sh -h) && unset PH_OPTAR PH_VALAR && exit 1
