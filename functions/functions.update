@@ -72,9 +72,10 @@ do
 			PH_PARAMS="${PH_PARAMS} -r"
 		PH_REMOVE_AS_ROOT="0" ;;
 			     *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
 		OPTIND="${PH_OLDOPTIND}"
 		OPTARG="${PH_OLDOPTARG}"
-		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+		return 1 ;;
         esac
 done
 OPTIND="${PH_OLDOPTIND}"
@@ -191,9 +192,10 @@ do
 			PH_PARAMS="${PH_PARAMS} -r"
 		PH_CREATE_AS_ROOT="0" ;;
 			    *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
 		OPTIND="${PH_OLDOPTIND}"
 		OPTARG="${PH_OLDOPTARG}"
-		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+		return 1 ;;
         esac
 done
 OPTIND="${PH_OLDOPTIND}"
@@ -302,9 +304,10 @@ do
 			return 1
                 PH_RESULT_TYPE_USED="Total" ;;
 			     *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
 		OPTIND="${PH_OLDOPTIND}"
 		OPTARG="${PH_OLDOPTARG}"
-		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+		return 1 ;;
         esac
 done
 OPTIND="${PH_OLDOPTIND}"
@@ -373,10 +376,10 @@ do
 		PH_RESULT="Warning"
 		PH_RESULT_TYPE_USED="${PH_RESULT}" ;;
 			     *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
 		OPTIND="${PH_OLDOPTIND}"
 		OPTARG="${PH_OLDOPTARG}"
-		>&2 printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" 
-		exit 1 ;;
+		return 1 ;;
 	esac
 done
 OPTIND="${PH_OLDOPTIND}"
@@ -421,9 +424,7 @@ PH_RESULT_TYPE_USED="Normal"
 unset -n PH_RESULT_TYPE
 if [[ "${PH_RESULT}" == "Abort" ]]
 then
-	ph_clean_tmp_dir
-	ph_show_result
-	exit "${?}"
+	ph_quit_with_rollback
 fi
 return 0
 }
@@ -457,10 +458,10 @@ do
                              t)
                 PH_RESULT_TYPE_USED="Total" ;;
                              *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
 		OPTIND="${PH_OLDOPTIND}"
 		OPTARG="${PH_OLDOPTARG}"
-		>&2 printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" 
-		exit 1 ;;
+		return 1 ;;
         esac
 done
 OPTIND="${PH_OLDOPTIND}"
@@ -545,9 +546,10 @@ do
 			return 1
 		PH_VALUE="${OPTARG}" ;;
                              *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
 		OPTIND="${PH_OLDOPTIND}"
 		OPTARG="${PH_OLDOPTARG}"
-		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+		return 1 ;;
 	esac
 done
 OPTIND="${PH_OLDOPTIND}"
@@ -642,9 +644,10 @@ do
 			return 1
 		PH_CMD_MSG="${OPTARG}" ;;
 			     *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
 		OPTIND="${PH_OLDOPTIND}"
 		OPTARG="${PH_OLDOPTARG}"
-		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+		return 1 ;;
 	esac
 done
 OPTIND="${PH_OLDOPTIND}"
@@ -763,9 +766,10 @@ do
 			return 1
 		PH_QUIESCE="0" ;;
 			     *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
 		OPTIND="${PH_OLDOPTIND}"
 		OPTARG="${PH_OLDOPTARG}"
-		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+		return 1 ;;
 	esac
 done
 OPTIND="${PH_OLDOPTIND}"
@@ -875,9 +879,10 @@ do
 			return 1
 		PH_OBJECT="${OPTARG}" ;;
 		     *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
 		OPTIND="${PH_OLDOPTIND}"
 		OPTARG="${PH_OLDOPTARG}"
-		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+		return 1 ;;
 	esac
 done
 OPTIND="${PH_OLDOPTIND}"
@@ -962,9 +967,10 @@ do
 			return 1
 		PH_APP_USER="${OPTARG}" ;;
 		     *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
 		OPTIND="${PH_OLDOPTIND}"
 		OPTARG="${PH_OLDOPTARG}"
-		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+		return 1 ;;
 	esac
 done
 OPTIND="${PH_OLDOPTIND}"
@@ -1043,9 +1049,10 @@ do
 			return 1
 		PH_APP_USER="${OPTARG}" ;;
 			     *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
 		OPTIND="${PH_OLDOPTIND}"
 		OPTARG="${PH_OLDOPTARG}"
-		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+		return 1 ;;
 	esac
 done
 OPTIND="${PH_OLDOPTIND}"
@@ -1134,9 +1141,10 @@ do
 			return 1
 		PH_APP_USER="${OPTARG}" ;;
 			     *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
 		OPTIND="${PH_OLDOPTIND}"
 		OPTARG="${PH_OLDOPTARG}"
-		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+		return 1 ;;
 	esac
 done
 OPTIND="${PH_OLDOPTIND}"
@@ -1335,9 +1343,10 @@ do
 			return 1
                 PH_CIFS_MPT="yes" ;;
 			     *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
 		OPTIND="${PH_OLDOPTIND}"
 		OPTARG="${PH_OLDOPTARG}"
-		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+		return 1 ;;
         esac
 done
 OPTIND="${PH_OLDOPTIND}"
@@ -1424,8 +1433,8 @@ then
 					if ph_run_with_rollback -c "ph_remove_empty_file -r -q -t directory -d '${PH_APP_CIFS_MPT}'"
 					then
 						ph_add_value_to_param -p PH_CREATE_APPS_CIFS_MPT -v "${PH_APP}"
-						ph_run_with_rollback -c true && \
-							return "${?}"
+						ph_run_with_rollback -c true
+						return "${?}"
 					else
 						ph_set_result -m "An error occurred trying to remove the CIFS mountpoint for '${PH_APP}' as '${PH_APP_CIFS_MPT}'"
 					fi
@@ -1439,13 +1448,14 @@ then
 			ph_set_result -m "Refusing to remove the CIFS mountpoint for '${PH_APP}' as '${PH_APP_CIFS_MPT}' since it's not a directory"
 		fi
 	else
-		ph_run_with_rollback -c true -m "Nothing to do" && \
-			return "${?}"
+		ph_run_with_rollback -c true -m "Nothing to do"
+		return "${?}"
 	fi
-	ph_run_with_rollback -c false -m "Could not remove" || \
-		return 1
+	ph_run_with_rollback -c false -m "Could not remove"
+else
+	true
 fi
-return 0
+return "${?}"
 }
 
 function ph_get_app_cifs_mpt {
@@ -1481,9 +1491,10 @@ do
 			return 1
                 PH_RESOLVE="0" ;;
                              *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
 		OPTIND="${PH_OLDOPTIND}"
 		OPTARG="${PH_OLDOPTARG}"
-                ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+		return 1 ;;
         esac
 done
 OPTIND="${PH_OLDOPTIND}"
@@ -1649,9 +1660,10 @@ do
 			return 1
                 PH_CIFS_MPT="yes" ;;
                              *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
 		OPTIND="${PH_OLDOPTIND}"
 		OPTARG="${PH_OLDOPTARG}"
-		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+		return 1 ;;
         esac
 done
 OPTIND="${PH_OLDOPTIND}"
@@ -1723,20 +1735,19 @@ then
 		if source "${PH_TEMPLATES_DIR}/${PH_APP}_conf.template" >/dev/null 2>&1
 		then
 			ph_add_value_to_param -p PH_CREATE_APPS_CONF_FILE -v "${PH_APP}"
-			ph_run_with_rollback -c true && \
-				return "${?}"
+			ph_run_with_rollback -c true
+			return "${?}"
 		else
 			ph_set_result -m "An error occurred trying to source default ${PH_APP} configuration as '${PH_TEMPLATES_DIR}/${PH_APP}_conf.template'"
 		fi
 	else
 		ph_set_result -m "An error occurred trying to remove ${PH_APP} config file '${PH_CONF_DIR}/${PH_APP}.conf'"
 	fi
+	ph_run_with_rollback -c false -m "Could not remove"
 else
-	ph_run_with_rollback -c true -m "Nothing to do" && \
-		return "${?}"
+	ph_run_with_rollback -c true -m "Nothing to do"
 fi
-ph_run_with_rollback -c false -m "Could not remove" || \
-	return 1
+return "${?}"
 }
 
 function ph_remove_app_scripts {
@@ -1786,8 +1797,8 @@ done
 [[ "${PH_COUNT}" -eq "0" ]] && \
 	return 0
 ph_add_value_to_param -p PH_CREATE_APPS_SCRIPTS -v "${PH_APP}"
-ph_run_with_rollback -c true && \
-	return "${?}"
+ph_run_with_rollback -c true
+return "${?}"
 }
 
 function ph_remove_app_alloweds {
@@ -2002,9 +2013,10 @@ do
 		fi
 		PH_QUIESCE="0" ;;
 			     *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
 		OPTIND="${PH_OLDOPTIND}"
 		OPTARG="${PH_OLDOPTARG}"
-		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+		return 1 ;;
         esac
 done
 OPTIND="${PH_OLDOPTIND}"
@@ -2111,9 +2123,10 @@ do
 		fi
 		PH_QUIESCE="0" ;;
 			     *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
 		OPTIND="${PH_OLDOPTIND}"
 		OPTARG="${PH_OLDOPTARG}"
-		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+		return 1 ;;
         esac
 done
 OPTIND="${PH_OLDOPTIND}"
@@ -2215,16 +2228,16 @@ do
 		((PH_COUNT++))
 		if ! ph_run_with_rollback -c "ph_store_file -f '${PH_MENUS_DIR}/${PH_i}.lst'"
 		then
-			ph_run_with_rollback -c false -m "Could not remove" || \
-				return 1
+			ph_run_with_rollback -c false -m "Could not remove"
+			return "${?}"
 		fi
 	fi
 done
 [[ "${PH_COUNT}" -eq "0" ]] && \
 	return 0
 ph_add_value_to_param -p PH_CREATE_APPS_MENUS -v "${PH_APP}"
-ph_run_with_rollback -c true && \
-	return "${?}"
+ph_run_with_rollback -c true
+return "${?}"
 }
 
 function ph_create_app_scripts {
@@ -2315,8 +2328,8 @@ do
 		return 1
 done
 ph_add_value_to_param -p PH_REMOVE_APPS_SCRIPTS -v "${PH_APP}"
-ph_run_with_rollback -c true && \
-	return "${?}"
+ph_run_with_rollback -c true
+return "${?}"
 }
 
 function ph_create_app_conf_file {
@@ -2357,8 +2370,8 @@ then
 		ph_set_result -m "An error occurred trying to modify ${PH_APP} conf file '${PH_CONF_DIR}/${PH_APP}.conf'"
 	fi
 fi
-ph_run_with_rollback -c false -m "Could not create" || \
-	return 1
+ph_run_with_rollback -c false -m "Could not create"
+return "${?}"
 }
 
 function ph_create_app_menus {
@@ -2503,8 +2516,8 @@ do
 		return 0
 	fi
 done
-ph_run_with_rollback -c false -m "Could not create" || \
-	return 1
+ph_run_with_rollback -c false -m "Could not create"
+return "${?}"
 }
 
 function ph_create_app_alloweds {
@@ -2589,8 +2602,8 @@ then
 		return 1
 fi
 ph_add_value_to_param -p PH_REMOVE_APPS_ALLOWEDS -v "${PH_APP}"
-ph_run_with_rollback -c true && \
-	return "${?}"
+ph_run_with_rollback -c true
+return "${?}"
 }
 
 function ph_create_app_defaults {
@@ -2740,6 +2753,6 @@ then
 		return 1
 fi
 ph_add_value_to_param -p PH_REMOVE_APPS_DEFAULTS -v "${PH_APP}"
-ph_run_with_rollback -c true && \
-	return "${?}"
+ph_run_with_rollback -c true
+return "${?}"
 }
