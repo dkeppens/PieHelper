@@ -1,3 +1,4 @@
+* change ph_configure_pieh function to adapt to changes in app/main.sh (sudo check and all has moved)
 * move more stuff to sanity level 'optional' if possible
 * solve problem of dynamic values in case statements
 * add PieHelper option to exclude filesystem types for global searches run by PieHelper
