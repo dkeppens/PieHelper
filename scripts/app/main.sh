@@ -247,7 +247,7 @@ if [[ "$(declare -p PATH 2>/dev/null)" != declare* ]]
 then 
 	PATH="${PH_SCRIPTS_DIR}:/usr/local/bin"
 else
-	if ! echo -n "${PATH}" | grep -E "[:^]/usr/local/bin[:$]" >/dev/null 2>&1
+	if ! echo -n "${PATH}" | grep -E "(:){0,1}/usr/local/bin(:){0,1}" >/dev/null 2>&1
 	then
 		PATH="${PH_SCRIPTS_DIR}:/usr/local/bin:${PATH}"
 	fi
@@ -256,9 +256,9 @@ if [[ "$(declare -p LD_LIBRARY_PATH 2>/dev/null)" != declare* ]]
 then 
 	LD_LIBRARY_PATH="/usr/local/lib:/usr/lib:/lib"
 else
-	for PH_i in "/usr/local/lib" "/usr/lib" "/lib"
+	for PH_i in "/lib" "/usr/lib" "/usr/local/lib"
 	do
-		if ! echo -n "${LD_LIBRARY_PATH}" | grep -E "[:^]${PH_i}[:$]" >/dev/null 2>&1
+		if ! echo -n "${LD_LIBRARY_PATH}" | grep -E "(:){0,1}${PH_i}(:){0,1}" >/dev/null 2>&1
 		then
 			LD_LIBRARY_PATH="${PH_i}:${LD_LIBRARY_PATH}"
 		fi
