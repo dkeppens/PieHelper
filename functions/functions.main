@@ -1053,68 +1053,188 @@ echo -n "${PH_APP_STATE}"
 return "${?}"
 }
 
+function ph_check_array_index {
+
+declare PH_ARRAY_NAME
+declare PH_VALUE
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+declare -i PH_INDEX
+declare -i PH_QUIESCE
+declare -i PH_VALUE_RECEIVED_FLAG
+
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
+PH_ARRAY_NAME=""
+PH_VALUE=""
+PH_OPTION=""
+PH_INDEX="0"
+PH_QUIESCE="1"
+PH_VALUE_RECEIVED_FLAG="1"
+
+OPTIND="1"
+
+while getopts :n:v:q PH_OPTION
+do
+	case "${PH_OPTION}" in n)
+		[[ -n "${PH_ARRAY_NAME}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_ARRAY_NAME="${OPTARG}" ;;
+			     v)
+		[[ "${PH_VALUE_RECEIVED_FLAG}" -eq "0" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_VALUE="${OPTARG}"
+		PH_VALUE_RECEIVED_FLAG="0" ;;
+			     q)
+		[[ "${PH_QUIESCE}" -eq "0" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_QUIESCE="0" ;;
+			     *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
+		return 1 ;;
+	esac
+done
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
+
+[[ -z "${PH_ARRAY_NAME}" || "${PH_VALUE_RECEIVED_FLAG}" -eq "1" || \
+	( "${PH_QUIESCE}" -eq "0" && "${#}" -ne "5" ) || \
+	( "${PH_QUIESCE}" -ne "0" && "${#}" -ne "4" ) ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+declare -n PH_ARRAY="${PH_ARRAY_NAME}"
+for PH_INDEX in "${!PH_ARRAY[@]}"
+do
+	[[ "${PH_ARRAY["${PH_INDEX}"]}" == "${PH_VALUE}" ]] && \
+		break
+done
+if [[ "${PH_INDEX}" -eq "$(cut -d' ' -f "${#PH_ARRAY[@]}"<<<"${PH_ARRAY[*]}")" && \
+	"${PH_ARRAY["${PH_INDEX}"]}" != "${PH_VALUE}" ]]
+then
+	unset -n PH_ARRAY
+	[[ "${PH_QUIESCE}" -ne "0" ]] && \
+		echo "0"
+	return 1
+fi
+unset -n PH_ARRAY
+[[ "${PH_QUIESCE}" -ne "0" ]] && \
+	echo -n "${PH_INDEX}"
+return 0
+}
+
 function ph_check_pieh_shared_config {
 
 declare PH_i
+declare PH_j
 declare PH_DIR
 declare PH_SUFFIX
-declare -a PH_DEFAULT_APPS
+declare PH_MODE
+declare PH_REQ_LEVEL
 
 PH_i=""
+PH_j=""
 PH_DIR=""
 PH_SUFFIX=""
+PH_MODE="${1}"
+PH_REQ_LEVEL=""
 
-[[ "${#}" -ne "0" ]] && \
-	unset PH_DEFAULT_APPS && \
+[[ "${PH_MODE}" != @(basic|extended) || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-PH_DEFAULT_APPS+=($(ph_get_app_list_by_state -s Default -t minimum))
-for PH_i in "${PH_SCRIPTS_DIR}" "${PH_BUILD_DIR}" "${PH_SNAPSHOT_DIR}" "${PH_MNT_DIR}" "${PH_EXCLUDES_DIR}" \
-	"${PH_CONF_DIR}" "${PH_TMP_DIR}" "${PH_FILES_DIR}" "${PH_MENUS_DIR}" "${PH_TEMPLATES_DIR}" \
-	HOWTO VERSION VERSIONS kodi.excludes tar.excludes default_apps_GL default_apps_X \
-	Support System Main PS3 PS4 XBOX360 XBOXSX SystemRetained SystemInteractive SystemRetaineds \
-	Controllers OOSapp "${PH_DEFAULT_APPS[@]}" "${PH_CHECK_SUPPORTED[@]}" \
-	MovefromPieHScript LoginScript MoveScript MovetoPieHScript RestartScriptPieH \
-	RestartScript StartScriptPieH StartScript StopScriptPieH StopScript \
-	confapps confpieh confttys confgena confctrl confoper confopts listblue listmoon \
-	setpasswd.expect confctrls.expect
+declare -ax PH_DEFAULT_APPS
+PH_DEFAULT_APPS=($(ph_get_app_list_by_state -s Default -t minimum))
+for PH_i in critical optional full
 do
-	PH_DIR=""
-	PH_SUFFIX=""
-	echo `sed 's/ /|/g'<<<"${PH_CHECK_SUPPORTED[*]}"`
-	case "${PH_i}" in Support|System*|Main|PS*|XBOX*)
-		PH_DIR="${PH_MENUS_DIR}/"
-		PH_SUFFIX=".lst" ;;
-			Controllers|OOSapp|`sed 's/ /|/g'<<<"${PH_DEFAULT_APPS[*]}"`)
-		PH_DIR="${PH_TEMPLATES_DIR}/"
-		PH_SUFFIX="_conf.template" ;;
-			*Script|*PieH)
-		PH_DIR="${PH_TEMPLATES_DIR}/"
-		PH_SUFFIX=".template" ;;
-			conf*|list*)
-		PH_DIR="${PH_SCRIPTS_DIR}/"
-		PH_SUFFIX="_ph.sh" ;;
-			$(echo "${PH_CHECK_SUPPORTED[*]}" | sed 's/ /|/g'))
-		PH_DIR="${PH_CONF_DIR}/distros/"
-		PH_SUFFIX=".conf" ;;
-			*.excludes)
-		PH_DIR="${PH_EXCLUDES_DIR}/" ;;
-			default_apps_*|VERSIONS)
-		PH_DIR="${PH_FILES_DIR}/" ;;
-			VERSION)
-		PH_DIR="${PH_CONF_DIR}/" ;;
-			*.expect)
-		PH_DIR="${PH_SCRIPTS_DIR}/app/expect/" ;;
-			HOWTO)
-		PH_DIR="${PH_BASE_DIR}/" ;;
-			*)
-		: ;;
-	esac
-	if ! ph_check_object_existence -q -o "${PH_DIR}${PH_i}${PH_SUFFIX}"
+	if [[ ( "${PH_PIEH_SANITY_LEVEL}" == "critical" && "${PH_i}" != "critical" ) || \
+		( "${PH_PIEH_SANITY_LEVEL}" == "optional" && "${PH_i}" == "full" ) ]]
 	then
-		ph_show_result
-		exit "${?}"
-        fi
+		continue
+	fi
+	for PH_j in "${PH_SCRIPTS_DIR}" "${PH_CONF_DIR}" "${PH_CONF_DIR}/distros" "${PH_TMP_DIR}" \
+		"${PH_FILES_DIR}" "${PH_MENUS_DIR}" "${PH_TEMPLATES_DIR}" "${PH_FILES_DIR}/stored" "${PH_EXCLUDES_DIR}" \
+		"${PH_MNT_DIR}" "${PH_BUILD_DIR}" "${PH_SNAPSHOT_DIR}" "${PH_BUILD_DIR}/.gitignore" \
+		"${PH_SNAPSHOT_DIR}/.gitignore" "${PH_MNT_DIR}/.gitignore" "${PH_TMP_DIR}/.gitignore" "${PH_FILES_DIR}/stored/.gitignore" \
+		VERSION VERSIONS default_apps_GL default_apps_X HOWTO \
+		Support System Main PS3 PS4 XBOX360 XBOXSX SystemRetained SystemInteractive SystemRetaineds \
+		Controllers OOSapp "${PH_DEFAULT_APPS[@]}" "${PH_CHECK_SUPPORTED[@]}" \
+		MovefromPieHScript LoginScript MoveScript MovetoPieHScript RestartScriptPieH \
+		RestartScript StartScriptPieH StartScript StopScriptPieH StopScript \
+		confapps confpieh confttys confgena confctrl confoper confopts listblue listmoon \
+		setpasswd.expect confctrls.expect kodi.post_cmd.excludes build.archives.excludes
+	do
+		PH_REQ_LEVEL="critical"
+		PH_DIR=""
+		PH_SUFFIX=""
+		if [[ -d "${PH_j}" ]]
+		then
+			PH_DIR="${PH_j}"
+			[[ "${PH_j}" == @(${PH_MNT_DIR}|${PH_BUILD_DIR}|${PH_SNAPSHOT_DIR}|${PH_FILES_DIR}/stored|${PH_EXCLUDES_DIR}) ]] && \
+				PH_REQ_LEVEL="basic"
+		else
+			if ph_check_array_index -n PH_CHECK_SUPPORTED -v "${PH_j}" -q
+			then
+				PH_DIR="${PH_CONF_DIR}/distros/"
+				PH_SUFFIX=".conf"
+				[[ "${PH_j}" != "${PH_DISTRO_REL}" ]] && \
+					PH_REQ_LEVEL="full"
+			else
+				if ph_check_array_index -n PH_DEFAULT_APPS -v "${PH_j}" -q
+				then
+					PH_DIR="${PH_TEMPLATES_DIR}/"
+					PH_SUFFIX="_conf.template"
+				else
+					case "${PH_j}" in Support|System*|Main|PS*|XBOX*)
+						PH_DIR="${PH_MENUS_DIR}/"
+						PH_SUFFIX=".lst" ;;
+							Controllers|OOSapp)
+						PH_DIR="${PH_TEMPLATES_DIR}/"
+						PH_SUFFIX="_conf.template" ;;
+							*Script|*PieH)
+						PH_DIR="${PH_TEMPLATES_DIR}/"
+						PH_SUFFIX=".template" ;;
+							conf*|list*)
+						PH_DIR="${PH_SCRIPTS_DIR}/"
+						PH_SUFFIX="_ph.sh" ;;
+							*.excludes)
+						PH_REQ_LEVEL="basic"
+						PH_DIR="${PH_EXCLUDES_DIR}/" ;;
+							default_apps_*|VERSIONS)
+						PH_DIR="${PH_FILES_DIR}/" ;;
+							VERSION)
+						PH_DIR="${PH_CONF_DIR}/" ;;
+							*.expect)
+						PH_DIR="${PH_SCRIPTS_DIR}/app/expect/" ;;
+							HOWTO)
+						PH_REQ_LEVEL="basic"
+						PH_DIR="${PH_BASE_DIR}/" ;;
+							*.gitignore)
+						PH_REQ_LEVEL="basic" ;;
+							*)
+						: ;;
+					esac
+				fi
+			fi
+		fi
+		if [[ "${PH_i}" != "${PH_REQ_LEVEL}" ]]
+		then
+			continue
+		else
+			if ! ph_check_object_existence -o "${PH_DIR}${PH_j}${PH_SUFFIX}" -m "${PH_MODE}"
+			then
+				ph_show_result
+				exit "${?}"
+       		 	fi
+		fi
+	done
 done
 unset PH_DEFAULT_APPS
 return 0
@@ -1637,31 +1757,31 @@ return "${PH_APP_STR_TTY}"
 
 function ph_check_object_existence {
 
-declare PH_DIR
-declare PH_FILE
-declare PH_TYPE
 declare PH_OBJECT
 declare PH_OBJECT_TYPE
+declare PH_OBJECT_CAT
+declare PH_OBJECT_DESC
+declare PH_TYPE
+declare PH_MODE
 declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 declare -i PH_QUIESCE
-declare -i PH_CHECK_FLAG
 
 PH_OLDOPTARG="${OPTARG}"
 PH_OLDOPTIND="${OPTIND}"
-PH_DIR=""
-PH_FILE=""
-PH_TYPE="Unique"
 PH_OBJECT=""
-PH_OBJECT_TYPE="configuration file"
+PH_OBJECT_TYPE="file"
+PH_OBJECT_CAT=""
+PH_OBJECT_DESC=""
+PH_TYPE="critical"
+PH_MODE=""
 PH_OPTION=""
 PH_QUIESCE="1"
-PH_CHECK_FLAG="1"
 
 OPTIND="1"
 
-while getopts :o:q PH_OPTION
+while getopts :o:m:q PH_OPTION
 do
 	case "${PH_OPTION}" in o)
 		[[ -n "${PH_OBJECT}" || -z "${OPTARG}" ]] && \
@@ -1669,6 +1789,12 @@ do
 			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
 		PH_OBJECT="${OPTARG}" ;;
+			     m)
+		[[ -n "${PH_MODE}" || "${OPTARG}" != @(basic|extended|immediate) ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_MODE="${OPTARG}" ;;
 			     q)
 		[[ "${PH_QUIESCE}" -eq "0" ]] && \
 			OPTIND="${PH_OLDOPTIND}" && \
@@ -1685,99 +1811,143 @@ done
 OPTIND="${PH_OLDOPTIND}"
 OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "${PH_OBJECT}" || ( "${#}" -ne "2" && "${PH_QUIESCE}" -eq "1" ) || \
-	( "${#}" -ne "3" && "${PH_QUIESCE}" -eq "0" ) ]] && \
+[[ -z "${PH_OBJECT}" || -z "${PH_MODE}" || ( "${#}" -ne "4" && "${PH_QUIESCE}" -eq "1" ) || \
+	( "${#}" -ne "5" && "${PH_QUIESCE}" -eq "0" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-PH_DIR="${PH_OBJECT%/*}"
-PH_FILE="${PH_OBJECT##*/}"
 if [[ -d "${PH_OBJECT}" ]]
 then
 	PH_OBJECT_TYPE="directory"
 else
 	if [[ "${PH_OBJECT}" == @(sup|int|cont|os|@(default|allowed)s) ]]
 	then
-		PH_DIR="${PH_CONF_DIR}"
-		PH_FILE="$(ph_get_filename_from_shortname "${PH_OBJECT}")"
-	else
+		PH_OBJECT="$(ph_get_filename_from_shortname "${PH_OBJECT}")"
+		PH_TYPE="auto-generated"
+		PH_OBJECT_CAT="configuration"
+	fi
+	if [[ "${PH_OBJECT}" != @(sup|int|cont|os|@(default|allowed)s) ]]
+	then
    	    	case "${PH_OBJECT}" in */TTYManagement.lst|*/OptionsManagement.lst|*/StatusManagement.lst)
-			PH_TYPE="Generated"
+			PH_TYPE="auto-generated"
+			PH_OBJECT_CAT="menu"
 			PH_OBJECT_TYPE="link" ;;
 				*/Main.lst|*/PS3.lst|*/PS4.lst|*/Support.lst|*/XBOX360.lst|*/XBOXSX.lst)
-			PH_OBJECT_TYPE="menu item" ;;
+			PH_OBJECT_CAT="menu"
+			PH_OBJECT_TYPE="item" ;;
 				*/System.lst|*/SystemInteractive.lst|*/SystemRetained.lst|*/SystemRetaineds.lst)
-			PH_OBJECT_TYPE="menu item" ;;
+			PH_OBJECT_CAT="menu"
+			PH_OBJECT_TYPE="item" ;;
 				*/*.lst)
-			PH_TYPE="Generated"
-			PH_OBJECT_TYPE="menu item" ;;
+			PH_TYPE="auto-generated"
+			PH_OBJECT_CAT="menu"
+			PH_OBJECT_TYPE="item" ;;
 				*/listblue_ph.sh|*/listmoon_ph.sh)
+			PH_OBJECT_CAT="codebase"
 			PH_OBJECT_TYPE="script" ;;
 				*/confapps_ph.sh|*/confctrl_ph.sh|*/confgena_ph.sh|*/confoper_ph.sh|*/confttys_ph.sh|*/confpieh_ph.sh)
+			PH_OBJECT_CAT="codebase"
 			PH_OBJECT_TYPE="script" ;;
 				*/*.sh)
-			PH_TYPE="Generated"
-			PH_OBJECT_TYPE="management script" ;;
-				*/*.template)
+			PH_TYPE="auto-generated"
+			PH_OBJECT_CAT="management"
+			PH_OBJECT_TYPE="script" ;;
+				*/LoginScript.template)
+			PH_OBJECT_CAT="loginscript"
 			PH_OBJECT_TYPE="template" ;;
-				*/.gitignore|*/.first_run|*/.auto_update_denied|*/HOWTO)
-			PH_OBJECT_TYPE="file" ;;
-				*/.configure_in_progress|*/.unconfigure_in_progress|*/TODO|*/INSTALL|*/README.md|*/CODE_OF_CONDUCT.md|*/LICENSE)
-			PH_OBJECT_TYPE="file"
-			PH_TYPE="Optional" ;;
+				*/MoveScript.template|*/StopScript.template|*/StartScript.template|*/RestartScript.template)
+			PH_OBJECT_CAT="management script"
+			PH_OBJECT_TYPE="template" ;;
+				*/MovefromPieHScript.template|*/MovetoPieHScript.template|*/StopScriptPieH.template|*/StartScriptPieH.template|*/RestartScriptPieH.template)
+			PH_OBJECT_CAT="management script"
+			PH_OBJECT_TYPE="template" ;;
+				*/*.template)
+			PH_OBJECT_CAT="configuration"
+			PH_OBJECT_TYPE="template" ;;
+				*/.gitignore|*/.first_run|*/.auto_update_denied|*/HOWTO|*/.configure_in_progress|*/.unconfigure_in_progress)
+			PH_OBJECT_CAT="configuration"
+			PH_TYPE="optional" ;;
+				*/TODO|*/INSTALL|*/README.md|*/CODE_OF_CONDUCT.md|*/LICENSE)
+			PH_OBJECT_CAT="data"
+			PH_TYPE="optional" ;;
 				*/*.expect)
-			PH_OBJECT_TYPE="expect script" ;;
-				*/functions.user)
-			PH_TYPE="Generated"
-			PH_OBJECT_TYPE="codebase file" ;;
+			PH_OBJECT_CAT="expect"
+			PH_OBJECT_TYPE="script" ;;
 				*/functions.*)
-			PH_OBJECT_TYPE="codebase file" ;;
+			PH_OBJECT_CAT="codebase" ;;
 				*/*.excludes)
-			PH_OBJECT_TYPE="tar excludefile" ;;
+			PH_OBJECT_CAT="tar excludes" ;;
 				*/distros/*.conf)
-			for PH_i in "${PH_CHECK_SUPPORTED[@]}"
-			do
-				if [[ "${PH_FILE%.conf}" == "${PH_i}" ]]
-				then
-					PH_CHECK_FLAG="0"
-					break
-				fi
-			done
-			if [[ "${PH_CHECK_FLAG}" -eq "1" ]]
+			if ph_check_array_index -n PH_CHECK_SUPPORTED -v "${PH_FILE%.conf}" -q
 			then
+				PH_OBJECT_CAT="configuration"
 				PH_OBJECT_TYPE="link"
-				PH_TYPE="Generated"
+				PH_TYPE="auto-generated"
 			fi ;;
 				"${PH_CONF_DIR}/"*.conf)
-			PH_TYPE="Generated" ;;
+			PH_TYPE="auto-generated" ;;
 				*)
 			: ;;
        		esac
 	fi
 fi
-[[ "${PH_QUIESCE}" -eq "1" ]] && \
-	printf "%8s%s\n" "" "--> Checking ${PH_OBJECT_TYPE} '${PH_DIR}/${PH_FILE}'"
-if [[ ! ( -f "${PH_DIR}/${PH_FILE}" && "${PH_OBJECT_TYPE}" != @(directory|link) ) && \
-	! ( -d "${PH_DIR}/${PH_FILE}" && "${PH_OBJECT_TYPE}" == "directory" ) && \
-	! ( -L "${PH_DIR}/${PH_FILE}" && "${PH_OBJECT_TYPE}" == "link" ) ]]
+[[ -n "${PH_OBJECT_CAT}" ]] && \
+	PH_OBJECT_CAT=" ${PH_OBJECT_CAT} "
+PH_OBJECT_DESC="${PH_TYPE}${PH_OBJECT_CAT}${PH_OBJECT_TYPE}"
+if [[ ! -e "${PH_OBJECT}" || ! -r "${PH_OBJECT}" || \
+	( "${PH_OBJECT_TYPE}" == @(file|item|script|template) && ( -L "${PH_OBJECT}" || -d "${PH_OBJECT}" )) || \
+	( "${PH_OBJECT_TYPE}" == "directory" && ! -d "${PH_OBJECT}" ) || \
+	( "${PH_OBJECT_TYPE}" == "link" && ! -L "${PH_OBJECT}" ) ]]
 then
-	if [[ "${PH_QUIESCE}" -eq "1" ]]
+	if [[ "${PH_QUIESCE}" -ne "0" ]]
 	then
-		if [[ "${PH_TYPE}" == "Unique" ]]
-		then
-			printf "%10s\033[1;31m%s\033[0m%s\n" "" "ERROR : " "Not found"
-			ph_set_result -r 1
-		else
-			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found"
-			ph_set_result -r 0
-		fi
+		case "${PH_MODE}" in basic)
+			case "${PH_TYPE}" in critical)
+				if [[ -e "${PH_OBJECT}" && -r "${PH_OBJECT}" ]]
+				then
+					ph_set_result -a -m "Reinstallation of PieHelper is required (Corrupted ${PH_OBJECT_DESC} '${PH_OBJECT}')"
+				else
+					ph_set_result -a -m "Reinstallation of PieHelper is required (Missing or unreadable ${PH_OBJECT_DESC} '${PH_OBJECT}')"
+				fi ;;
+					auto-generated)
+				if [[ -e "${PH_OBJECT}" && -r "${PH_OBJECT}" ]]
+				then
+					ph_set_result -a -m "Repair of PieHelper is required (Corrupted ${PH_OBJECT_DESC} '${PH_OBJECT}')"
+				else
+					ph_set_result -a -m "Repair of PieHelper is required (Missing or unreadable ${PH_OBJECT_DESC} '${PH_OBJECT}')"
+				fi ;;
+					*)
+				return 0 ;;
+			esac ;;
+				extended)
+			if [[ -e "${PH_OBJECT}" && -r "${PH_OBJECT}" ]]
+			then
+				>&2 printf "%2s%s\n" "" \
+					"$(cut -c1<<<"${PH_TYPE}" | tr '[:lower:]' '[:upper:]')$(cut -c2-<<<"${PH_TYPE}") ${PH_OBJECT_CAT}${PH_OBJECT_TYPE} '${PH_OBJECT}' is missing or unreadable"
+			else
+				>&2 printf "%2s%s\n" "" \
+					"$(cut -c1<<<"${PH_TYPE}" | tr '[:lower:]' '[:upper:]')$(cut -c2-<<<"${PH_TYPE}") ${PH_OBJECT_CAT}${PH_OBJECT_TYPE} '${PH_OBJECT}' is corrupted"
+			fi ;;
+				*)
+			printf "%8s%s\n" "" "--> Checking for ${PH_OBJECT_DESC} '${PH_OBJECT}'"
+			if [[ "${PH_TYPE}" != "optional" ]]
+			then
+				>&2 printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Not found"
+				ph_set_result -r 1
+			else
+				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found"
+				ph_set_result -r 0
+			fi ;;
+		esac
 	fi
 	return 1
+else
+	if [[ "${PH_QUIESCE}" -ne "0" && "${PH_MODE}" == "immediate" ]]
+	then
+		printf "%8s%s\n" "" "--> Checking for ${PH_OBJECT_DESC} '${PH_OBJECT}'"
+		ph_run_with_rollback -c true -m "Found"
+	fi
+	return 0
 fi
-if [[ "${PH_QUIESCE}" -eq "1" ]]
-then
-	ph_run_with_rollback -c true -m "Found"
-fi
-return 0
 }
 
 function ph_check_default_base_conf_file_validity {
@@ -5024,451 +5194,454 @@ PH_ROLLBACK_USED="no"
 [[ "${#}" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-for PH_i in "${PH_DEPTH_PARAMS[@]}"
-do
-	if [[ "${PH_i}" == PH_@(INSTALL|REMOVE)_PKGS ]]
-	then
-		ph_update_pkg_index
-		PH_RET_CODE="${?}"
-		break
-	fi
-
-done
-if [[ "${PH_RET_CODE}" -eq "0" ]]
+if [[ "${#PH_DEPTH_PARAMS[@]}" -gt "0" ]]
 then
-	for PH_PARAM_INDEX in $(echo -n "${!PH_DEPTH_PARAMS[*]} " | tac -s " ")
+	printf "\033[36m%s\033[0m\n\n" "- Rolling back changes"
+	for PH_i in "${PH_DEPTH_PARAMS[@]}"
 	do
-		PH_OPT="${PH_DEPTH_PARAMS["${PH_PARAM_INDEX}"]}"
-		declare -n PH_DATA_ARRAY="${PH_OPT}"
-		PH_DATA_INDEX="$(echo "${!PH_DATA_ARRAY[@]}" | nawk '{ \
-				printf $NF \
-			}')"
-		PH_VALUE="${PH_DATA_ARRAY["${PH_DATA_INDEX}"]}"
-		case "${PH_OPT}" in PH_APPS_ACTION)
-			PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_ACTION="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_STOP_MODE="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
-			PH_CMD="ph_do_app_action '${PH_ACTION}' '${PH_APP}' '${PH_STOP_MODE}'" ;;
-				  PH_UNBLACKLIST_MODULES)
-			PH_CMD="ph_unblacklist_kernel_module '${PH_VALUE}'" ;;
-				  PH_BLACKLIST_MODULES)
-			PH_CMD="ph_blacklist_kernel_module '${PH_VALUE}'" ;;
-				  PH_REMOVE_RIGHTS_USERS)
-			PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_CMD="ph_remove_user_sudo_rights -u '${PH_APP_USER}' ${PH_PARAMS}" ;;
-				  PH_CREATE_RIGHTS_USERS)
-			PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_CMD="ph_create_user_sudo_rights -u '${PH_APP_USER}' ${PH_PARAMS}" ;;
-				  PH_REMOVE_ACLS_USERS)
-			PH_ROLLBACK_TIME="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
-			PH_FILE="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
-			PH_PARAMS="${PH_PARAMS} -u '${PH_APP_USER}'"
-			case "${PH_ROLLBACK_TIME}" in immediate)
-				[[ -n "${PH_FILE}" ]] && \
-					PH_PARAMS="${PH_PARAMS} -f '${PH_FILE}'"
-				PH_CMD="ph_user_acls -p remove ${PH_PARAMS}" ;;
-					   delayed)
-				PH_RUN_ACLS+=("remove'${PH_APP_USER}")
-				PH_CMD="continue" ;;
-					   never)
-				PH_CMD="continue" ;;
-			esac ;;
-				  PH_CREATE_ACLS_USERS)
-			PH_ROLLBACK_TIME="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
-			PH_FILE="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
-			PH_PARAMS="${PH_PARAMS} -u '${PH_APP_USER}'"
-			case "${PH_ROLLBACK_TIME}" in immediate)
-				[[ -n "${PH_FILE}" ]] && \
-					PH_PARAMS="${PH_PARAMS} -f '${PH_FILE}'"
-				PH_CMD="ph_user_acls -p create ${PH_PARAMS}" ;;
-					   delayed)
-				PH_RUN_ACLS+=("create'${PH_APP_USER}")
-				PH_CMD="continue" ;;
-					   never)
-				PH_CMD="continue" ;;
-			esac ;;
-				  PH_GIT_COMMIT_LOCAL)
-			PH_RUN_GIT_COMMIT_LOCAL="${PH_VALUE}"
-			PH_CMD="continue" ;;
-				  PH_SET_BOOT_TTYS)
-			PH_CMD="ph_set_tty_for_boot '${PH_VALUE}'" ;;
-				  PH_MODIFY_APPS_SCRIPT)
-			PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_APP_TTY="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_CMD="ph_modify_app_script -a '${PH_APP}' -t '${PH_APP_TTY}'" ;;
-				  PH_GIT_COMMIT_MASTER)
-			PH_RUN_GIT_COMMIT_MASTER="${PH_VALUE}"
-			PH_CMD="continue" ;;
-				  PH_GIT_ADD_LOCAL)
-			PH_RUN_GIT_ADD_LOCAL="${PH_VALUE}"
-			PH_CMD="continue" ;;
-				  PH_GRANT_APPS_ACCESS)
-			PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_CMD="ph_grant_pieh_access -u '${PH_APP_USER}' ${PH_PARAMS}" ;;
-				  PH_REVOKE_APPS_ACCESS)
-			PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_CMD="ph_revoke_pieh_access -u '${PH_APP_USER}' ${PH_PARAMS}" ;;
-				  PH_REMOVE_APPS_FROM_SUP_FILE)
-			PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_APP_INST_STATE="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
-			PH_APP_CMD="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
-			PH_PARAMS="-a '${PH_APP}'"
-			for PH_i in USER INST_STATE CMD
-			do
-				[[ -n "$(eval "echo -n \"\$PH_APP_${PH_i}\"")" ]] && \
-					PH_PARAMS="${PH_PARAMS} -$(cut -c1<<<"${PH_i}" | tr "[:upper:]" "[:lower:]") '\$PH_APP_${PH_i}'"
-			done
-			PH_CMD="ph_remove_app_from_support_file ${PH_PARAMS}" ;;
-				  PH_ADD_APPS_TO_SUP_FILE)
-			PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_APP_INST_STATE="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
-			PH_APP_CMD="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
-			PH_PARAMS="-a '${PH_APP}' -u '${PH_APP_USER}' -c '${PH_APP_CMD}'"
-			[[ -n "$PH_APP_INST_STATE" ]] && \
-				PH_PARAMS="${PH_PARAMS} -i '${PH_APP_INST_STATE}'"
-			PH_CMD="ph_add_app_to_support_file ${PH_PARAMS}" ;;
-				  PH_ADD_APPS_TO_INT_FILE)
-			PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_APP_STR_TTY="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_PARAMS="-a '${PH_APP}'"
-			[[ -n "${PH_APP_STR_TTY}" ]] && \
-				PH_PARAMS="${PH_PARAMS} -t '${PH_APP_STR_TTY}'"
-			PH_CMD="ph_add_app_to_integration_file ${PH_PARAMS}" ;;
-				  PH_REMOVE_APPS_FROM_INT_FILE)
-			PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_APP_STR_TTY="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_PARAMS="-a '${PH_APP}'"
-			[[ -n "${PH_APP_STR_TTY}" ]] && \
-				PH_PARAMS="${PH_PARAMS} -t '${PH_APP_STR_TTY}'"
-			PH_CMD="ph_remove_app_from_integration_file ${PH_PARAMS}" ;;
-				  PH_ADD_LINES)
-			PH_FILE="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_LINE="$(echo -n "${PH_VALUE}" | cut -f3- -d"'")"
-			PH_CMD="ph_add_line_to_file ${PH_PARAMS} -f '${PH_FILE}' -l '${PH_LINE}'" ;;
-				  PH_REMOVE_LINES)
-			PH_FILE="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_LINE="$(echo -n "${PH_VALUE}" | cut -f3- -d"'")"
-			PH_CMD="ph_remove_line_from_file ${PH_PARAMS} -f '${PH_FILE}' -l '${PH_LINE}'" ;;
-				  PH_GIT_TAG_LOCAL)
-			PH_RUN_GIT_TAG_LOCAL="${PH_VALUE}"
-			PH_CMD="continue" ;;
-				  PH_APP_MOUNT_CIFS)
-			PH_CMD="ph_mount_cifs_share '${PH_VALUE}'" ;;
-				  PH_APP_UMOUNT_CIFS)
-			PH_CMD="ph_umount_cifs_share '${PH_VALUE}'" ;;
-				  PH_REMOVE_OOS_APPS_CODE)
-			PH_CMD="ph_remove_oos_app_code '${PH_VALUE}'" ;;
-				  PH_CREATE_OOS_APPS_CODE)
-			PH_CMD="ph_create_oos_app_code '${PH_VALUE}'" ;;
-				  PH_SECURE)
-			PH_ROLLBACK_TIME="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_FILE="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
-			case "${PH_ROLLBACK_TIME}" in immediate)
-				[[ -n "${PH_FILE}" ]] && \
-					PH_PARAMS="${PH_PARAMS} -f '${PH_FILE}'"
-				PH_CMD="ph_secure_pieh ${PH_PARAMS}" ;;
-					   delayed)
-				PH_RUN_SECURE="yes"
-				PH_CMD="continue" ;;
-					   never)
-				PH_CMD="continue" ;;
-			esac ;;
-				  PH_START_SERVICES)
-			PH_CMD="ph_start_services '${PH_VALUE}'" ;;
-				  PH_STOP_SERVICES)
-			PH_CMD="ph_stop_services '${PH_VALUE}'" ;;
-				  PH_INSTALL_APPS)
-			PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_APP_CMD="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
-			PH_APP_PKG="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
-			declare -a PH_ROUTINE_OPTS
-			for PH_i in CMD USER PKG
-			do
-				declare -n PH_PARAM
-				PH_PARAM="PH_APP_${PH_i}"
-				if [[ -n "${PH_PARAM}" ]]
-				then
-					PH_ROUTINE_OPTS+=("-$(cut -c1<<<"${PH_i}" | tr '[:upper:]' '[:lower:]')" "'${PH_PARAM}'") 
-				fi
-				unset -n PH_PARAM	
-			done
-			PH_CMD="ph_install_app -a '${PH_APP}' ${PH_ROUTINE_OPTS[*]}"
-			unset PH_ROUTINE_OPTS ;;
-				  PH_UNINSTALL_APPS)
-			PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_APP_CMD="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
-			PH_APP_PKG="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
-			declare -a PH_ROUTINE_OPTS
-			for PH_i in CMD USER PKG
-			do
-				declare -n PH_PARAM
-				PH_PARAM="PH_APP_${PH_i}"
-				if [[ -n "${PH_PARAM}" ]]
-				then
-					PH_ROUTINE_OPTS+=("-$(cut -c1<<<"${PH_i}" | tr '[:upper:]' '[:lower:]')" "'${PH_PARAM}'") 
-				fi
-				unset -n PH_PARAM	
-			done
-			PH_CMD="ph_uninstall_app -a '${PH_APP}' ${PH_ROUTINE_OPTS[*]}"
-			unset PH_ROUTINE_OPTS ;;
-				  PH_LINK_MENUS)
-			PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_CMD="ph_link_app_to_menu -a '${PH_APP}' ${PH_PARAMS}" ;;
-				  PH_UNDO_LINK_MENUS)
-			PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			if [[ -n "${PH_APP}" ]]
-			then
-				PH_CMD="ph_unlink_app_from_menu '${PH_APP}' ${PH_PARAMS}"
-			else
-				PH_CMD="ph_unlink_app_from_menu ${PH_PARAMS}"
-			fi ;;
-				  PH_UNDO_SETUP_TTYS)
-			PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_APP_TTY="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
-			PH_CMD="ph_undo_setup_tty -a '${PH_APP}' -u '${PH_APP_USER}' -t '${PH_APP_TTY}'" ;;
-				  PH_SETUP_TTYS)
-			PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_APP_TTY="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
-			PH_CMD="ph_setup_tty -a '${PH_APP}' -u '${PH_APP_USER}' -t '${PH_APP_TTY}'" ;;
-				  PH_ENABLE_SERVICES)
-			PH_CMD="ph_enable_services '${PH_VALUE}'" ;;
-				  PH_DISABLE_SERVICES)
-			PH_CMD="ph_disable_services '${PH_VALUE}'" ;;
-				  PH_COPY_FILES)
-			PH_FILE_DEST="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_FILE_SOURCE="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
-			PH_CMD="ph_copy_file $PH_PARAMS -s '${PH_FILE_SOURCE}' -d '${PH_FILE_DEST}'" ;;
-				  PH_GIT_CLONE_MASTER)
-			PH_GIT_REPO_DIR="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_GIT_REPO="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_GIT_REPO_NAME="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
-			PH_GIT_REPO_ARGS="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
-			PH_CMD="ph_git_clone_master -d '${PH_GIT_REPO_DIR}' -n '${PH_GIT_REPO_NAME}' -r '${PH_GIT_REPO}' -a '${PH_GIT_REPO_ARGS}'" ;;
-				  PH_GIT_UNDO_CLONE_MASTER)
-			PH_GIT_REPO_DIR="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_GIT_REPO="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_GIT_REPO_NAME="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
-			PH_GIT_REPO_ARGS="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
-			PH_CMD="ph_git_undo_clone_master -d '${PH_GIT_REPO_DIR}' -n '${PH_GIT_REPO_NAME}' -r '${PH_GIT_REPO}' -a '${PH_GIT_REPO_ARGS}'" ;;
-				  PH_CREATE_APP_USER)
-			PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_CMD="ph_create_app_user -a '${PH_APP}' -u '${PH_APP_USER}'" ;;
-				  PH_REMOVE_APP_USER)
-			PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_CMD="ph_remove_app_user -a '${PH_APP}' -u '${PH_APP_USER}'" ;;
-				  PH_CREATE_APPS_CONF_FILE)
-			PH_CMD="ph_create_app_conf_file '${PH_VALUE}'" ;;
-				  PH_REMOVE_APPS_CONF_FILE)
-			PH_CMD="ph_remove_app_conf_file '${PH_VALUE}'" ;;
-				  PH_CREATE_APPS_SCRIPTS)
-			PH_CMD="ph_create_app_scripts '${PH_VALUE}'" ;;
-				  PH_REMOVE_APPS_SCRIPTS)
-			PH_CMD="ph_remove_app_scripts '${PH_VALUE}'" ;;
-				  PH_CREATE_APPS_MENUS)
-			PH_CMD="ph_create_app_menus '${PH_VALUE}'" ;;
-				  PH_REMOVE_APPS_MENUS)
-			PH_CMD="ph_remove_app_menus '${PH_VALUE}'" ;;
-				  PH_CREATE_APPS_ALLOWEDS)
-			PH_CMD="ph_create_app_alloweds '${PH_VALUE}'" ;;
-				  PH_REMOVE_APPS_ALLOWEDS)
-			PH_CMD="ph_remove_app_alloweds '${PH_VALUE}'" ;;
-				  PH_CREATE_APPS_DEFAULTS)
-			PH_CMD="ph_create_app_defaults '${PH_VALUE}'" ;;
-				  PH_REMOVE_APPS_DEFAULTS)
-			PH_CMD="ph_remove_app_defaults '${PH_VALUE}'" ;;
-				  PH_CREATE_APPS_CIFS_MPT)
-			PH_CMD="ph_create_app_cifs_mpt '${PH_VALUE}'" ;;
-				  PH_REMOVE_APPS_CIFS_MPT)
-			PH_CMD="ph_remove_app_cifs_MPT '${PH_VALUE}'" ;;
-				  PH_CREATE_APPS_ITEMS)
-			PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_CMD="ph_create_app_items -a '${PH_APP}' ${PH_PARAMS}" ;;
-				  PH_REMOVE_APPS_ITEMS)
-			PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_CMD="ph_remove_app_items -a '${PH_APP}' ${PH_PARAMS}" ;;
-				  PH_INSTALL_PKGS)
-			PH_PKG_FLAG="0"
-			PH_CMD="ph_install_pkg '${PH_VALUE}'" ;;
-				  PH_REMOVE_PKGS)
-			PH_PKG_FLAG="0"
-			PH_CMD="ph_remove_pkg '${PH_VALUE}'" ;;
-				  PH_LOAD_MODULES)
-			PH_CMD="ph_load_kernel_module '${PH_VALUE}'" ;;
-				  PH_UNLOAD_MODULES)
-			PH_CMD="ph_unload_kernel_module '${PH_VALUE}'" ;;
-				  PH_BOOTENV)
-			PH_CMD="ph_set_bootenv '${PH_VALUE}'" ;;
-				  PH_GROUPS)
-			PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_APP_USER_GROUPS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_CMD="ph_set_user_group_membership -u '${PH_APP_USER}' -g '${PH_APP_USER_GROUPS}'" ;;
-				PH_PIEH_VERSION)
-			PH_CMD="ph_update_pieh_version '${PH_VALUE}'" ;;
-				PH_STARTAPP)
-			PH_CMD="ph_set_app_for_start '${PH_VALUE}'" ;;
-				PH_CREATE_EMPTY_FILES)
-			PH_FILE_DEST="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_FILE_TYPE="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_FILE_SOURCE="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
-			PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
-			PH_CMD="ph_create_empty_file -t '${PH_FILE_TYPE}' -d '${PH_FILE_DEST}' -s '${PH_FILE_SOURCE}' ${PH_PARAMS}" ;;
-				PH_REMOVE_EMPTY_FILES)
-			PH_FILE_DEST="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_FILE_TYPE="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
-			PH_CMD="ph_remove_empty_file -t '${PH_FILE_TYPE}' -d '${PH_FILE_DEST}' ${PH_PARAMS}" ;;
-				PH_UNSUP_APPS)
-			PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_APP_CMD="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
-			PH_APP_PKG="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
-			PH_APP_INST_STATE="$(echo -n "${PH_VALUE}" | cut -f5 -d"'")"
-			PH_PARAMS="-a '${PH_APP}'"
-			for PH_i in USER CMD PKG INST_STATE
-			do
-				declare -n PH_VAR="PH_APP_${PH_i}"
-				if [[ -n "${PH_VAR}" ]]
-				then
-					PH_PARAMS="${PH_PARAMS} -$(cut -c1<<<"${PH_i}" | tr "[:upper:]" "[:lower:]") '${PH_VAR}'"
-				fi
-				unset -n PH_VAR
-			done
-			PH_CMD="ph_unsupport_app ${PH_PARAMS}" ;;
-				PH_UNINT_APPS)
-			PH_CMD="ph_unintegrate_app -a '${PH_VALUE}'" ;;
-				PH_INT_APPS)
-			PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_APP_TTY="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
-			PH_CMD="ph_integrate_app -a '${PH_APP}' -u '${PH_APP_USER}' -t '${PH_APP_TTY}'" ;;
-				PH_SUP_APPS)
-			PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_APP_CMD="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
-			PH_APP_PKG="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
-			PH_APP_INST_STATE="$(echo -n "${PH_VALUE}" | cut -f5 -d"'")"
-			PH_PARAMS="-a '${PH_APP}'"
-			[[ -n "$(echo -n "${PH_VALUE}" | cut -f6 -d"'")" ]] && \
-				PH_PARAMS="${PH_PARAMS} -f"
-			for PH_i in USER CMD PKG INST_STATE
-			do
-				declare -n PH_VAR="PH_APP_${PH_i}"
-				if [[ -n "${PH_VAR}" ]]
-				then
-					PH_PARAMS="${PH_PARAMS} -$(cut -c1<<<"${PH_i}" | tr "[:upper:]" "[:lower:]") '${PH_VAR}'"
-				fi
-				unset -n PH_VAR
-			done
-			PH_CMD="ph_support_app ${PH_PARAMS}" ;;
-				PH_RESTORE_FILES)
-			PH_FILE_SOURCE="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_CMD="ph_restore_file -f '${PH_FILE_SOURCE}' ${PH_PARAMS}" ;;
-				PH_STORE_FILES)
-			PH_FILE_SOURCE="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_CMD="ph_store_file -f '${PH_FILE_SOURCE}' ${PH_PARAMS}" ;;
-				PH_STORE_OPTION)
-			PH_CMD="ph_store_option '${PH_VALUE}'" ;;
-				PH_RETRIEVE_STORED_OPTION)
-			PH_CMD="ph_retrieve_stored_option '${PH_VALUE}'" ;;
-				PH_VARIABLES)
-			PH_VAR_NAME="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_VAR_VALUE="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_CMD="ph_set_variable -n '${PH_VAR_NAME}' -v '${PH_VAR_VALUE}'" ;;
-				PH_OPTIONS)
-			PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-			PH_OPTION="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
-			PH_OPTION_VALUE="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
-			PH_CMD="ph_set_option_to_value '${PH_APP}' -r \"${PH_OPTION}'${PH_OPTION_VALUE}\"" ;;
-				PH_CONFIGURED_STATE)
-			PH_CMD="ph_pieh_configured_${PH_VALUE}_conf" ;;
-				PH_UNCONFIGURED_STATE)
-			PH_CMD="ph_pieh_unconfigured_${PH_VALUE}_conf" ;;
-		esac
-		unset PH_DATA_ARRAY["${PH_DATA_INDEX}"]
-		unset PH_DEPTH_PARAMS["${PH_ARRAY_INDEX}"]
-		unset -n PH_DATA_ARRAY
-		if eval "${PH_CMD}"
+		if [[ "${PH_i}" == PH_@(INSTALL|REMOVE)_PKGS ]]
 		then
-			continue
+			ph_update_pkg_index
+			PH_RET_CODE="${?}"
+			break
 		fi
-		PH_RET_CODE="1"
-		break
 	done
-	while true
-	do
+	if [[ "${PH_RET_CODE}" -eq "0" ]]
+	then
+		for PH_PARAM_INDEX in $(echo -n "${!PH_DEPTH_PARAMS[*]} " | tac -s " ")
+		do
+			PH_OPT="${PH_DEPTH_PARAMS["${PH_PARAM_INDEX}"]}"
+			declare -n PH_DATA_ARRAY="${PH_OPT}"
+			PH_DATA_INDEX="$(echo "${!PH_DATA_ARRAY[@]}" | nawk '{ \
+					printf $NF \
+				}')"
+			PH_VALUE="${PH_DATA_ARRAY["${PH_DATA_INDEX}"]}"
+			case "${PH_OPT}" in PH_APPS_ACTION)
+				PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_ACTION="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_STOP_MODE="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
+				PH_CMD="ph_do_app_action '${PH_ACTION}' '${PH_APP}' '${PH_STOP_MODE}'" ;;
+					  PH_UNBLACKLIST_MODULES)
+				PH_CMD="ph_unblacklist_kernel_module '${PH_VALUE}'" ;;
+					  PH_BLACKLIST_MODULES)
+				PH_CMD="ph_blacklist_kernel_module '${PH_VALUE}'" ;;
+					  PH_REMOVE_RIGHTS_USERS)
+				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_CMD="ph_remove_user_sudo_rights -u '${PH_APP_USER}' ${PH_PARAMS}" ;;
+					  PH_CREATE_RIGHTS_USERS)
+				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_CMD="ph_create_user_sudo_rights -u '${PH_APP_USER}' ${PH_PARAMS}" ;;
+					  PH_REMOVE_ACLS_USERS)
+				PH_ROLLBACK_TIME="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
+				PH_FILE="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
+				PH_PARAMS="${PH_PARAMS} -u '${PH_APP_USER}'"
+				case "${PH_ROLLBACK_TIME}" in immediate)
+					[[ -n "${PH_FILE}" ]] && \
+						PH_PARAMS="${PH_PARAMS} -f '${PH_FILE}'"
+					PH_CMD="ph_user_acls -p remove ${PH_PARAMS}" ;;
+						   delayed)
+					PH_RUN_ACLS+=("remove'${PH_APP_USER}")
+					PH_CMD="continue" ;;
+						   never)
+					PH_CMD="continue" ;;
+				esac ;;
+					  PH_CREATE_ACLS_USERS)
+				PH_ROLLBACK_TIME="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
+				PH_FILE="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
+				PH_PARAMS="${PH_PARAMS} -u '${PH_APP_USER}'"
+				case "${PH_ROLLBACK_TIME}" in immediate)
+					[[ -n "${PH_FILE}" ]] && \
+						PH_PARAMS="${PH_PARAMS} -f '${PH_FILE}'"
+					PH_CMD="ph_user_acls -p create ${PH_PARAMS}" ;;
+						   delayed)
+					PH_RUN_ACLS+=("create'${PH_APP_USER}")
+					PH_CMD="continue" ;;
+						   never)
+					PH_CMD="continue" ;;
+				esac ;;
+					  PH_GIT_COMMIT_LOCAL)
+				PH_RUN_GIT_COMMIT_LOCAL="${PH_VALUE}"
+				PH_CMD="continue" ;;
+					  PH_SET_BOOT_TTYS)
+				PH_CMD="ph_set_tty_for_boot '${PH_VALUE}'" ;;
+					  PH_MODIFY_APPS_SCRIPT)
+				PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_APP_TTY="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_CMD="ph_modify_app_script -a '${PH_APP}' -t '${PH_APP_TTY}'" ;;
+					  PH_GIT_COMMIT_MASTER)
+				PH_RUN_GIT_COMMIT_MASTER="${PH_VALUE}"
+				PH_CMD="continue" ;;
+					  PH_GIT_ADD_LOCAL)
+				PH_RUN_GIT_ADD_LOCAL="${PH_VALUE}"
+				PH_CMD="continue" ;;
+					  PH_GRANT_APPS_ACCESS)
+				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_CMD="ph_grant_pieh_access -u '${PH_APP_USER}' ${PH_PARAMS}" ;;
+					  PH_REVOKE_APPS_ACCESS)
+				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_CMD="ph_revoke_pieh_access -u '${PH_APP_USER}' ${PH_PARAMS}" ;;
+					  PH_REMOVE_APPS_FROM_SUP_FILE)
+				PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_APP_INST_STATE="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
+				PH_APP_CMD="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
+				PH_PARAMS="-a '${PH_APP}'"
+				for PH_i in USER INST_STATE CMD
+				do
+					[[ -n "$(eval "echo -n \"\$PH_APP_${PH_i}\"")" ]] && \
+						PH_PARAMS="${PH_PARAMS} -$(cut -c1<<<"${PH_i}" | tr "[:upper:]" "[:lower:]") '\$PH_APP_${PH_i}'"
+				done
+				PH_CMD="ph_remove_app_from_support_file ${PH_PARAMS}" ;;
+					  PH_ADD_APPS_TO_SUP_FILE)
+				PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_APP_INST_STATE="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
+				PH_APP_CMD="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
+				PH_PARAMS="-a '${PH_APP}' -u '${PH_APP_USER}' -c '${PH_APP_CMD}'"
+				[[ -n "$PH_APP_INST_STATE" ]] && \
+					PH_PARAMS="${PH_PARAMS} -i '${PH_APP_INST_STATE}'"
+				PH_CMD="ph_add_app_to_support_file ${PH_PARAMS}" ;;
+					  PH_ADD_APPS_TO_INT_FILE)
+				PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_APP_STR_TTY="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_PARAMS="-a '${PH_APP}'"
+				[[ -n "${PH_APP_STR_TTY}" ]] && \
+					PH_PARAMS="${PH_PARAMS} -t '${PH_APP_STR_TTY}'"
+				PH_CMD="ph_add_app_to_integration_file ${PH_PARAMS}" ;;
+					  PH_REMOVE_APPS_FROM_INT_FILE)
+				PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_APP_STR_TTY="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_PARAMS="-a '${PH_APP}'"
+				[[ -n "${PH_APP_STR_TTY}" ]] && \
+					PH_PARAMS="${PH_PARAMS} -t '${PH_APP_STR_TTY}'"
+				PH_CMD="ph_remove_app_from_integration_file ${PH_PARAMS}" ;;
+					  PH_ADD_LINES)
+				PH_FILE="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_LINE="$(echo -n "${PH_VALUE}" | cut -f3- -d"'")"
+				PH_CMD="ph_add_line_to_file ${PH_PARAMS} -f '${PH_FILE}' -l '${PH_LINE}'" ;;
+					  PH_REMOVE_LINES)
+				PH_FILE="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_LINE="$(echo -n "${PH_VALUE}" | cut -f3- -d"'")"
+				PH_CMD="ph_remove_line_from_file ${PH_PARAMS} -f '${PH_FILE}' -l '${PH_LINE}'" ;;
+					  PH_GIT_TAG_LOCAL)
+				PH_RUN_GIT_TAG_LOCAL="${PH_VALUE}"
+				PH_CMD="continue" ;;
+					  PH_APP_MOUNT_CIFS)
+				PH_CMD="ph_mount_cifs_share '${PH_VALUE}'" ;;
+					  PH_APP_UMOUNT_CIFS)
+				PH_CMD="ph_umount_cifs_share '${PH_VALUE}'" ;;
+					  PH_REMOVE_OOS_APPS_CODE)
+				PH_CMD="ph_remove_oos_app_code '${PH_VALUE}'" ;;
+					  PH_CREATE_OOS_APPS_CODE)
+				PH_CMD="ph_create_oos_app_code '${PH_VALUE}'" ;;
+					  PH_SECURE)
+				PH_ROLLBACK_TIME="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_FILE="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
+				case "${PH_ROLLBACK_TIME}" in immediate)
+					[[ -n "${PH_FILE}" ]] && \
+						PH_PARAMS="${PH_PARAMS} -f '${PH_FILE}'"
+					PH_CMD="ph_secure_pieh ${PH_PARAMS}" ;;
+						   delayed)
+					PH_RUN_SECURE="yes"
+					PH_CMD="continue" ;;
+						   never)
+					PH_CMD="continue" ;;
+				esac ;;
+					  PH_START_SERVICES)
+				PH_CMD="ph_start_services '${PH_VALUE}'" ;;
+					  PH_STOP_SERVICES)
+				PH_CMD="ph_stop_services '${PH_VALUE}'" ;;
+					  PH_INSTALL_APPS)
+				PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_APP_CMD="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
+				PH_APP_PKG="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
+				declare -a PH_ROUTINE_OPTS
+				for PH_i in CMD USER PKG
+				do
+					declare -n PH_PARAM
+					PH_PARAM="PH_APP_${PH_i}"
+					if [[ -n "${PH_PARAM}" ]]
+					then
+						PH_ROUTINE_OPTS+=("-$(cut -c1<<<"${PH_i}" | tr '[:upper:]' '[:lower:]')" "'${PH_PARAM}'") 
+					fi
+					unset -n PH_PARAM	
+				done
+				PH_CMD="ph_install_app -a '${PH_APP}' ${PH_ROUTINE_OPTS[*]}"
+				unset PH_ROUTINE_OPTS ;;
+					  PH_UNINSTALL_APPS)
+				PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_APP_CMD="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
+				PH_APP_PKG="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
+				declare -a PH_ROUTINE_OPTS
+				for PH_i in CMD USER PKG
+				do
+					declare -n PH_PARAM
+					PH_PARAM="PH_APP_${PH_i}"
+					if [[ -n "${PH_PARAM}" ]]
+					then
+						PH_ROUTINE_OPTS+=("-$(cut -c1<<<"${PH_i}" | tr '[:upper:]' '[:lower:]')" "'${PH_PARAM}'") 
+					fi
+					unset -n PH_PARAM	
+				done
+				PH_CMD="ph_uninstall_app -a '${PH_APP}' ${PH_ROUTINE_OPTS[*]}"
+				unset PH_ROUTINE_OPTS ;;
+					  PH_LINK_MENUS)
+				PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_CMD="ph_link_app_to_menu -a '${PH_APP}' ${PH_PARAMS}" ;;
+					  PH_UNDO_LINK_MENUS)
+				PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				if [[ -n "${PH_APP}" ]]
+				then
+					PH_CMD="ph_unlink_app_from_menu '${PH_APP}' ${PH_PARAMS}"
+				else
+					PH_CMD="ph_unlink_app_from_menu ${PH_PARAMS}"
+				fi ;;
+					  PH_UNDO_SETUP_TTYS)
+				PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_APP_TTY="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
+				PH_CMD="ph_undo_setup_tty -a '${PH_APP}' -u '${PH_APP_USER}' -t '${PH_APP_TTY}'" ;;
+					PH_SETUP_TTYS)
+				PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_APP_TTY="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
+				PH_CMD="ph_setup_tty -a '${PH_APP}' -u '${PH_APP_USER}' -t '${PH_APP_TTY}'" ;;
+					  PH_ENABLE_SERVICES)
+				PH_CMD="ph_enable_services '${PH_VALUE}'" ;;
+					  PH_DISABLE_SERVICES)
+				PH_CMD="ph_disable_services '${PH_VALUE}'" ;;
+					  PH_COPY_FILES)
+				PH_FILE_DEST="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_FILE_SOURCE="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
+				PH_CMD="ph_copy_file $PH_PARAMS -s '${PH_FILE_SOURCE}' -d '${PH_FILE_DEST}'" ;;
+					  PH_GIT_CLONE_MASTER)
+				PH_GIT_REPO_DIR="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_GIT_REPO="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_GIT_REPO_NAME="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
+				PH_GIT_REPO_ARGS="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
+				PH_CMD="ph_git_clone_master -d '${PH_GIT_REPO_DIR}' -n '${PH_GIT_REPO_NAME}' -r '${PH_GIT_REPO}' -a '${PH_GIT_REPO_ARGS}'" ;;
+					  PH_GIT_UNDO_CLONE_MASTER)
+				PH_GIT_REPO_DIR="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_GIT_REPO="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_GIT_REPO_NAME="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
+				PH_GIT_REPO_ARGS="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
+				PH_CMD="ph_git_undo_clone_master -d '${PH_GIT_REPO_DIR}' -n '${PH_GIT_REPO_NAME}' -r '${PH_GIT_REPO}' -a '${PH_GIT_REPO_ARGS}'" ;;
+					  PH_CREATE_APP_USER)
+				PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_CMD="ph_create_app_user -a '${PH_APP}' -u '${PH_APP_USER}'" ;;
+					  PH_REMOVE_APP_USER)
+				PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_CMD="ph_remove_app_user -a '${PH_APP}' -u '${PH_APP_USER}'" ;;
+					  PH_CREATE_APPS_CONF_FILE)
+				PH_CMD="ph_create_app_conf_file '${PH_VALUE}'" ;;
+					  PH_REMOVE_APPS_CONF_FILE)
+				PH_CMD="ph_remove_app_conf_file '${PH_VALUE}'" ;;
+					  PH_CREATE_APPS_SCRIPTS)
+				PH_CMD="ph_create_app_scripts '${PH_VALUE}'" ;;
+					  PH_REMOVE_APPS_SCRIPTS)
+				PH_CMD="ph_remove_app_scripts '${PH_VALUE}'" ;;
+					  PH_CREATE_APPS_MENUS)
+				PH_CMD="ph_create_app_menus '${PH_VALUE}'" ;;
+					  PH_REMOVE_APPS_MENUS)
+				PH_CMD="ph_remove_app_menus '${PH_VALUE}'" ;;
+					  PH_CREATE_APPS_ALLOWEDS)
+				PH_CMD="ph_create_app_alloweds '${PH_VALUE}'" ;;
+					  PH_REMOVE_APPS_ALLOWEDS)
+				PH_CMD="ph_remove_app_alloweds '${PH_VALUE}'" ;;
+					  PH_CREATE_APPS_DEFAULTS)
+				PH_CMD="ph_create_app_defaults '${PH_VALUE}'" ;;
+					  PH_REMOVE_APPS_DEFAULTS)
+				PH_CMD="ph_remove_app_defaults '${PH_VALUE}'" ;;
+					  PH_CREATE_APPS_CIFS_MPT)
+				PH_CMD="ph_create_app_cifs_mpt '${PH_VALUE}'" ;;
+					  PH_REMOVE_APPS_CIFS_MPT)
+				PH_CMD="ph_remove_app_cifs_MPT '${PH_VALUE}'" ;;
+					  PH_CREATE_APPS_ITEMS)
+				PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_CMD="ph_create_app_items -a '${PH_APP}' ${PH_PARAMS}" ;;
+					  PH_REMOVE_APPS_ITEMS)
+				PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_CMD="ph_remove_app_items -a '${PH_APP}' ${PH_PARAMS}" ;;
+					  PH_INSTALL_PKGS)
+				PH_PKG_FLAG="0"
+				PH_CMD="ph_install_pkg '${PH_VALUE}'" ;;
+					  PH_REMOVE_PKGS)
+				PH_PKG_FLAG="0"
+				PH_CMD="ph_remove_pkg '${PH_VALUE}'" ;;
+					  PH_LOAD_MODULES)
+				PH_CMD="ph_load_kernel_module '${PH_VALUE}'" ;;
+					  PH_UNLOAD_MODULES)
+				PH_CMD="ph_unload_kernel_module '${PH_VALUE}'" ;;
+					  PH_BOOTENV)
+				PH_CMD="ph_set_bootenv '${PH_VALUE}'" ;;
+					  PH_GROUPS)
+				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_APP_USER_GROUPS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_CMD="ph_set_user_group_membership -u '${PH_APP_USER}' -g '${PH_APP_USER_GROUPS}'" ;;
+					PH_PIEH_VERSION)
+				PH_CMD="ph_update_pieh_version '${PH_VALUE}'" ;;
+					PH_STARTAPP)
+				PH_CMD="ph_set_app_for_start '${PH_VALUE}'" ;;
+					PH_CREATE_EMPTY_FILES)
+				PH_FILE_DEST="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_FILE_TYPE="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_FILE_SOURCE="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
+				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
+				PH_CMD="ph_create_empty_file -t '${PH_FILE_TYPE}' -d '${PH_FILE_DEST}' -s '${PH_FILE_SOURCE}' ${PH_PARAMS}" ;;
+					PH_REMOVE_EMPTY_FILES)
+				PH_FILE_DEST="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_FILE_TYPE="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
+				PH_CMD="ph_remove_empty_file -t '${PH_FILE_TYPE}' -d '${PH_FILE_DEST}' ${PH_PARAMS}" ;;
+					PH_UNSUP_APPS)
+				PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_APP_CMD="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
+				PH_APP_PKG="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
+				PH_APP_INST_STATE="$(echo -n "${PH_VALUE}" | cut -f5 -d"'")"
+				PH_PARAMS="-a '${PH_APP}'"
+				for PH_i in USER CMD PKG INST_STATE
+				do
+					declare -n PH_VAR="PH_APP_${PH_i}"
+					if [[ -n "${PH_VAR}" ]]
+					then
+						PH_PARAMS="${PH_PARAMS} -$(cut -c1<<<"${PH_i}" | tr "[:upper:]" "[:lower:]") '${PH_VAR}'"
+					fi
+					unset -n PH_VAR
+				done
+				PH_CMD="ph_unsupport_app ${PH_PARAMS}" ;;
+					PH_UNINT_APPS)
+				PH_CMD="ph_unintegrate_app -a '${PH_VALUE}'" ;;
+					PH_INT_APPS)
+				PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_APP_TTY="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
+				PH_CMD="ph_integrate_app -a '${PH_APP}' -u '${PH_APP_USER}' -t '${PH_APP_TTY}'" ;;
+					PH_SUP_APPS)
+				PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_APP_CMD="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
+				PH_APP_PKG="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
+				PH_APP_INST_STATE="$(echo -n "${PH_VALUE}" | cut -f5 -d"'")"
+				PH_PARAMS="-a '${PH_APP}'"
+				[[ -n "$(echo -n "${PH_VALUE}" | cut -f6 -d"'")" ]] && \
+					PH_PARAMS="${PH_PARAMS} -f"
+				for PH_i in USER CMD PKG INST_STATE
+				do
+					declare -n PH_VAR="PH_APP_${PH_i}"
+					if [[ -n "${PH_VAR}" ]]
+					then
+						PH_PARAMS="${PH_PARAMS} -$(cut -c1<<<"${PH_i}" | tr "[:upper:]" "[:lower:]") '${PH_VAR}'"
+					fi
+					unset -n PH_VAR
+				done
+				PH_CMD="ph_support_app ${PH_PARAMS}" ;;
+					PH_RESTORE_FILES)
+				PH_FILE_SOURCE="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_CMD="ph_restore_file -f '${PH_FILE_SOURCE}' ${PH_PARAMS}" ;;
+					PH_STORE_FILES)
+				PH_FILE_SOURCE="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_CMD="ph_store_file -f '${PH_FILE_SOURCE}' ${PH_PARAMS}" ;;
+					PH_STORE_OPTION)
+				PH_CMD="ph_store_option '${PH_VALUE}'" ;;
+					PH_RETRIEVE_STORED_OPTION)
+				PH_CMD="ph_retrieve_stored_option '${PH_VALUE}'" ;;
+					PH_VARIABLES)
+				PH_VAR_NAME="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_VAR_VALUE="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_CMD="ph_set_variable -n '${PH_VAR_NAME}' -v '${PH_VAR_VALUE}'" ;;
+					PH_OPTIONS)
+				PH_APP="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_OPTION="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_OPTION_VALUE="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
+					PH_CMD="ph_set_option_to_value '${PH_APP}' -r \"${PH_OPTION}'${PH_OPTION_VALUE}\"" ;;
+					PH_CONFIGURED_STATE)
+				PH_CMD="ph_pieh_configured_${PH_VALUE}_conf" ;;
+					PH_UNCONFIGURED_STATE)
+				PH_CMD="ph_pieh_unconfigured_${PH_VALUE}_conf" ;;
+			esac
+			unset PH_DATA_ARRAY["${PH_DATA_INDEX}"]
+			unset PH_DEPTH_PARAMS["${PH_ARRAY_INDEX}"]
+			unset -n PH_DATA_ARRAY
+			if eval "${PH_CMD}"
+			then
+				continue
+			fi
+			PH_RET_CODE="1"
+			break
+		done
 		while true
 		do
-			if [[ "${PH_PKG_FLAG}" -eq "0" && "${PH_DISTRO}" == "Debian" ]]
-			then
-				! ph_apt_clean && \
-					break
-			fi
-			if [[ "${#PH_RUN_ACLS[@]}" -gt "0" || -n "${PH_RUN_SECURE}" || -n "${PH_RUN_GIT_ADD_LOCAL}" || -n "${PH_RUN_GIT_TAG_LOCAL}" || \
-				-n "${PH_RUN_GIT_COMMIT_LOCAL}" || -n "${PH_RUN_GIT_COMMIT_MASTER}" ]]
-			then
-				if [[ -n "${PH_RUN_SECURE}" ]]
+			while true
+			do
+				if [[ "${PH_PKG_FLAG}" -eq "0" && "${PH_DISTRO}" == "Debian" ]]
 				then
-					! ph_secure_pieh && \
+					! ph_apt_clean && \
 						break
-				else
-					if [[ "${#PH_RUN_ACLS[@]}" -gt "0" ]]
-					then
-						for PH_i in "${PH_RUN_ACLS[@]}"
-						do
-							! ph_user_acls -q -p "$(cut -d"'" -f1<<<"${PH_i}")" -u "$(cut -d"'" -f2<<<"${PH_i}")" && \
-								break
-						done
-					fi
 				fi
-				for PH_i in ADD_LOCAL TAG_LOCAL COMMIT_LOCAL COMMIT_MASTER
-				do
-					if [[ "$(eval "echo -n \"\$PH_RUN_GIT_${PH_i}\"")" == "yes" ]]
+				if [[ "${#PH_RUN_ACLS[@]}" -gt "0" || -n "${PH_RUN_SECURE}" || -n "${PH_RUN_GIT_ADD_LOCAL}" || -n "${PH_RUN_GIT_TAG_LOCAL}" || \
+					-n "${PH_RUN_GIT_COMMIT_LOCAL}" || -n "${PH_RUN_GIT_COMMIT_MASTER}" ]]
+				then
+					if [[ -n "${PH_RUN_SECURE}" ]]
 					then
-						if [[ "${PH_i}" != "COMMIT_MASTER" ]]
+						! ph_secure_pieh && \
+							break
+					else
+						if [[ "${#PH_RUN_ACLS[@]}" -gt "0" ]]
 						then
-							if ! eval "ph_undo_git_$(echo -n "${PH_i}" | tr '[:upper:]' '[:lower:]')"
-							then
-								break
-							fi
-						else
-							! ph_git_commit_master -m "${PH_OLD_GIT_COMMIT_MSG}" -v "${PH_OLD_VERSION}" && \
-								break
+							for PH_i in "${PH_RUN_ACLS[@]}"
+							do
+								! ph_user_acls -q -p "$(cut -d"'" -f1<<<"${PH_i}")" -u "$(cut -d"'" -f2<<<"${PH_i}")" && \
+									break
+							done
 						fi
 					fi
-				done
-			fi
-			break 2
+					for PH_i in ADD_LOCAL TAG_LOCAL COMMIT_LOCAL COMMIT_MASTER
+					do
+						if [[ "$(eval "echo -n \"\$PH_RUN_GIT_${PH_i}\"")" == "yes" ]]
+						then
+							if [[ "${PH_i}" != "COMMIT_MASTER" ]]
+							then
+								if ! eval "ph_undo_git_$(echo -n "${PH_i}" | tr '[:upper:]' '[:lower:]')"
+								then
+									break
+								fi
+							else
+								! ph_git_commit_master -m "${PH_OLD_GIT_COMMIT_MSG}" -v "${PH_OLD_VERSION}" && \
+									break
+							fi
+						fi
+					done
+				fi
+				break 2
+			done
+			break
 		done
-		break
-	done
+	fi
+	ph_show_result
 fi
-ph_show_result
 return 1
 }
 
@@ -8855,12 +9028,17 @@ return 0
 
 function ph_quit_with_rollback {
 
+declare -i PH_RET_CODE
+
+PH_RET_CODE="0"
+
 [[ "${#}" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 ph_show_result
+PH_RET_CODE="${?}"
 ph_rollback_changes
-exit "${?}"
+exit "${PH_RET_CODE}"
 }
 
 function ph_remove_app_user {
@@ -9917,17 +10095,17 @@ function ph_show_report {
 [[ "${#}" -gt "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "\n\033[36m%s\033[0m\n" "- Verifying the configuration of PieHelper"
-printf "\n%2s\033[31m%s\033[0m%s\n\n" "" "FAILED : " "Critical configuration issues detected"
+printf "\n\033[1;36m%s\033[0m\n" "- PieHelper verification"
+printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "FAILED : Critical configuration issues detected"
 nawk '$1 ~ /^OR$/ {
 		printf "\n%s\033[36m%s\033[0m\n\n", "", $0 ;
 		next
 	} {
 		printf "%s%s\n", "", $0
 	}' "${PH_TMP_DIR}/.reported_issues" 2>/dev/null
-printf "\n%2s\033[31m%s\033[0m\n" "" "They need to be resolved for normal operation to continue"
-printf "%2s\033[31m%s\033[0m\n\n" "" "Fix issues manually or run '${PH_SUDO} ${PH_SCRIPTS_DIR}/confpieh_ph.sh -v' to attempt automatic repair"
-exit 1
+printf "\n%2s\033[1;31m%s\033[0m\n" "" "They need to be resolved for normal operation to continue"
+printf "%2s\033[1;31m%s\033[33m%s\033[0m\n\n" "" "Fix issues manually or repair automatically by running " "'${PH_SUDO} ${PH_SCRIPTS_DIR}/confpieh_ph.sh -v'"
+return 0
 }
 
 function ph_repair_pieh {
@@ -10054,7 +10232,7 @@ PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
 "${PH_SUDO}" rm -r "${PH_FUNCS_DIR}/distros/"!(functions\.@($(sed 's/ /\|/g'<<<"${PH_SUPPORTED_DISTROS[@]}"))) 2>/dev/null
 "${PH_SUDO}" rm "${PH_FILES_DIR}/"!(@(menus|excludes|templates|stored|VERSIONS|default_apps_@(X|GL))) 2>/dev/null
 "${PH_SUDO}" rm "${PH_FILES_DIR}/stored/"!(@(autologin|logind)_conf|10-retropie_sh) 2>/dev/null
-"${PH_SUDO}" rm -r "${PH_EXCLUDES_DIR}/"!(@(tar|kodi)\.excludes) 2>/dev/null
+"${PH_SUDO}" rm -r "${PH_EXCLUDES_DIR}/"!(@(build\.archives|kodi\.post_cmd)\.excludes) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_TEMPLATES_DIR}/"!(@(@(Login|@(S|Res)tart|Stop|Move@(to|from)PieH|Move)Script|@(@(Res|S)tart|Stop)ScriptPieH|@(Kodi|Moonlight|PieHelper|Emulationstation|Bash|X11|Controllers|OOSapp)_conf)\.template) 2>/dev/null
 "${PH_SUDO}" rm "${PH_CONF_DIR}/"!(@(distros|@(supported|integrated)_apps|OS\.defaults|VERSION|controller_cli_ids)) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_CONF_DIR}/distros/"!(@($(sed 's/ /\|/g'<<<${PH_CHECK_SUPPORTED[@]}))\.conf) 2>/dev/null
@@ -10264,7 +10442,7 @@ ph_run_with_rollback -c "ph_retrieve_stored_options"
 ph_setup_tty -a "PieHelper" -u "${PH_RUN_USER}" -t "2"
 printf "%8s%s\n" "" "--> Generating 'Derivate' miscellaneous files"
 "${PH_SUDO}" rm "${PH_EXCLUDES_DIR}/"* 2>/dev/null
-cat >"${PH_EXCLUDES_DIR}/tar.excludes" <<EOF
+cat >"${PH_EXCLUDES_DIR}/build.archives.excludes" <<EOF
 ./.git
 ./.github
 ./builds/PieHelper*
@@ -10275,11 +10453,11 @@ cat >"${PH_EXCLUDES_DIR}/tar.excludes" <<EOF
 ./tmp/*
 ./mnt/*/*
 EOF
-cat >"${PH_EXCLUDES_DIR}/kodi.excludes" <<EOF
+cat >"${PH_EXCLUDES_DIR}/kodi.post_cmd.excludes" <<EOF
 ./.kodi/temp/*
 ./.kodi/addons/temp/*
 EOF
-rm -r "${PH_EXCLUDES_DIR}/"!(@(tar|kodi).excludes) 2>/dev/null
+rm -r "${PH_EXCLUDES_DIR}/"!(@(build\.archives|kodi\.post_cmd).excludes) 2>/dev/null
 "${PH_SUDO}" rm "${PH_FILES_DIR}/"!(@(exclude|template)s) 2>/dev/null
 mkdir "${PH_TEMPLATES_DIR}/temp" 2>/dev/null
 mv "${PH_TEMPLATES_DIR}/"+(LoginScript|StartScript|StopScript|RestartScript|StartScriptPieH|StopScriptPieH|RestartScriptPieH|MovetoPieHScript|MovefromPieHScript|MoveScript|Kodi_conf|Moonlight_conf|PieHelper_conf|Emulationstation_conf|Bash_conf|X11_conf|Controllers_conf|OOSapp_conf).template "${PH_TEMPLATES_DIR}/temp" 2>/dev/null

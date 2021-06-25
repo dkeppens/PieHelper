@@ -2,9 +2,14 @@
 # Archive management of Development Builds and Configuration Snapshots (by Davy Keppens on 04/10/2018)
 # Enable/Disable debug by running 'confpieh_ph.sh -p debug -m confgena_ph.sh'
 
-if [[ -f "$(dirname "${0}" 2>/dev/null)/app/main.sh" && -r "$(dirname "${0}" 2>/dev/null)/app/main.sh" ]]
+if [[ -e "$(dirname "${0}" 2>/dev/null)/app/main.sh" && -r "$(dirname "${0}" 2>/dev/null)/app/main.sh" ]]
 then
-	source "$(dirname "${0}" 2>/dev/null)/app/main.sh"
+	if ! source "$(dirname "${0}" 2>/dev/null)/app/main.sh"
+	then
+		set +x
+		printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Corrupted critical codebase file '$(dirname "${0}" 2>/dev/null)/app/main.sh'"
+		exit 1
+	fi
 	set +x
 else
 	printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '$(dirname "${0}" 2>/dev/null)/app/main.sh'"
@@ -247,7 +252,7 @@ then
 		do
 			if cd "${PH_BASE_DIR}" >/dev/null 2>&1
 			then
-				if tar -X "${PH_EXCLUDES_DIR}/tar.excludes" --anchored -cf "${PH_ARCHIVE_DIR}/${PH_ARCHIVE_NAME}" ./* >/dev/null 2>&1
+				if tar -X "${PH_EXCLUDES_DIR}/${PH_ARCHIVE_TYPE}.archives.excludes" --anchored -cf "${PH_ARCHIVE_DIR}/${PH_ARCHIVE_NAME}" ./* >/dev/null 2>&1
 				then
 					if cd - >/dev/null 2>&1
 					then

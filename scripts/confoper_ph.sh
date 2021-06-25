@@ -471,8 +471,8 @@ fi
 return 0
 }
 
-. "$PH_MAIN_DIR"/distros/functions."$PH_DISTRO" 2>/dev/null
-. "$PH_CONF_DIR"/distros/"$PH_DISTRO".conf 2>/dev/null
+source "${PH_FUNCS_DIR}/distros/functions.${PH_DISTRO}" 2>/dev/null
+source "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" 2>/dev/null
 
 if [[ "$PH_DISTRO" == "Archlinux" ]]
 then
@@ -1634,7 +1634,7 @@ case $PH_ACTION in all)
 					if localectl set-locale LANG="$PH_LOCALE" >/dev/null 2>&1
 					then
 						printf "%10s\033[32m%s\033[0m\n" "" "OK"
-						. /etc/default/locale
+						source /etc/default/locale
 					else
 						printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not configure locale"
 						PH_RESULT="PARTIALLY FAILED"

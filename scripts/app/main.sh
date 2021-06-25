@@ -3,7 +3,7 @@
 
 set -x
 
-# Trap interrupts
+# Trap some common interrupts
 
 trap ":" INT TERM
 
@@ -11,7 +11,7 @@ trap ":" INT TERM
 
 set -o pipefail
 
-# Enable extended globbing and terminal resizing
+# Enable extended shell globbing and terminal resizing
 
 shopt -s extglob
 shopt -s checkwinsize
@@ -21,12 +21,14 @@ shopt -s checkwinsize
 declare PH_i
 declare PH_j
 declare PH_MOVE_SCRIPTS_REGEX
+declare PH_OLD_DISTRO_REL
 declare -i PH_FLAG
 declare -u PH_DISTROU
 
 PH_i=""
 PH_j=""
 PH_MOVE_SCRIPTS_REGEX=""
+PH_OLD_DISTRO_REL=""
 PH_FLAG="1"
 PH_DISTROU=""
 
@@ -79,18 +81,42 @@ PH_RUN_USER=""
 PH_SUDO=""
 PH_PI_MODEL=""
 
-# Set variable PH_SUDO
+# Determine the current user
 
-if "$(command -v sudo 2>/dev/null)" bash -c exit 2>/dev/null
+if ! whoami 2>/dev/null
 then
-	PH_SUDO="$(command -v sudo 2>/dev/null)"
-else
-	Run PieHelper as root or manually configure full sudo rights for user '${PH_RUN_USER}' as '/etc/sudoers.d/020_pieh-${PH_RUN_USER}' prior to installation
+	printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the current user account"
+	exit 1
 fi
 
-# Determine the PI model
+# Determine sudo location and escalation rights  
 
-PH_PI_MODEL="$(nawk '$0 ~ /Raspberry Pi/ { \
+if command -v sudo 2>/dev/null
+then
+	if "$(command -v sudo 2>/dev/null)" bash -c exit 2>/dev/null
+	then
+		PH_SUDO="$(command -v sudo 2>/dev/null)"
+	else
+		printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to escalate privileges for user '$(whoami 2>/dev/null)'"
+		printf "%12s\033[1;37m%s\033[0m\n\n" "" "Configure full sudo rights for the current user as follows : "
+		printf "%14s\033[1;37m%s\033[33m%s\033[37m%s\033[0m\n" "" "- Run " "'su'" " and provide the administrator password when asked"
+		printf "%14s\033[1;37m%s\033[33m%s\033[37m%s\033[33m%s\033[37m%s\033[0m\n\n" "" "- Run " "'${PH_SCRIPTS_DIR}/confoper_ph.sh -p sudo -a $(whoami 2>/dev/null)'" " and " "'exit'" " afterwards"
+		exit 1
+	fi
+else
+	printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the location of the 'sudo' command"
+	printf "%12s\033[1;37m%s\033[33m%s\033[37m%s\033[0mm\n\n" "" "- If " "'sudo'" " is not installed, install it as follows : "
+	printf "%14s\033[1;37m%s\033[33m%s\033[37m%s\033[0m\n" "" "- Run " "'su'" " and provide the administrator password when asked"
+	printf "%14s\033[1;37m%s\033[33m%s\033[37m%s\033[33m%s\033[37m%s\033[0m\n\n" "" "- Run " "'apt-get install sudo'" " and " "'exit'" " afterwards"
+	printf "%12s\033[1;31m%s\033[33m%s\033[37m%s\033[0mm\n\n" "" "- If " "'sudo'" " is already installed, change your environment as follows : "
+	printf "%14s\033[1;37m%s\033[33m%s\033[37m%s\033[0m\n" "" "- Determine the full pathname of the main " "'sudo'" " executable"
+	printf "%14s\033[1;37m%s\033[33m%s\033[37m%s\033[0m\n\n" "" "- Run " "'export PATH=\"[location]:${PATH}\"'" " where [location] should be the previously determined pathname"
+	exit 1
+fi
+
+# Determine the Raspberry PI model
+
+if PH_PI_MODEL="$(nawk '$0 ~ /Raspberry Pi/ { \
 		for (i=1;i<=NF;i++) { \
 			if ($i ~ /^Raspberry$/ && $(i+1) ~ /^Pi$/) { \
 				printf "pi" $(i+2) ; \
@@ -98,14 +124,22 @@ PH_PI_MODEL="$(nawk '$0 ~ /Raspberry Pi/ { \
 			} \
 		} \
 	}' /proc/cpuinfo 2>/dev/null)"
-if [[ "$(dtoverlay -l 2>/dev/null | grep -E "vc4-(f)*kms-v3d" >/dev/null ; echo "${?}")" -eq "0" || \
-	( "${PH_PI_MODEL}" == "pi4" && "$(dtoverlay -l 2>/dev/null | grep -E "vc4-kms-v3d-pi4" >/dev/null ; echo "${?}")" -eq "0" ) || \
-	"$("${PH_SUDO}" find /sys/firmware/devicetree/base/chosen -mount -type d -name "framebuffer@*" 2>/dev/null | wc -l)" -gt "0" ]]
 then
-	PH_FILE_SUFFIX="_GL"
+	if [[ "$(dtoverlay -l 2>/dev/null | grep -E "vc4-(f)*kms-v3d" >/dev/null ; echo "${?}")" -eq "0" || \
+		( "${PH_PI_MODEL}" == "pi4" && "$(dtoverlay -l 2>/dev/null | grep -E "vc4-kms-v3d-pi4" >/dev/null ; echo "${?}")" -eq "0" ) || \
+		"$("${PH_SUDO}" find /sys/firmware/devicetree/base/chosen -mount -type d -name "framebuffer@*" 2>/dev/null | wc -l)" -gt "0" ]]
+	then
+		PH_FILE_SUFFIX="_GL"
+	else
+		PH_FILE_SUFFIX="_X"
+	fi
 else
-	PH_FILE_SUFFIX="_X"
+	printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the Raspberry PI model"
+	exit 1
 fi
+
+# Set supported Linux distros and releases
+
 PH_SUPPORTED_DISTROS=("Archlinux" "Debian")
 PH_SUPPORTED_DEBIAN_RELS=("jessie" "stretch" "buster" "bullseye")
 for PH_i in "${PH_SUPPORTED_DISTROS[@]}"
@@ -156,7 +190,7 @@ PH_ALL_ROLLBACK_PARAMS+=(PH_DEPTH_PARAMS PH_DEPTH PH_CONFIGURED_STATE PH_UNCONFI
 	PH_REMOVE_APPS_SCRIPTS PH_CREATE_OOS_APPS_CODE PH_REMOVE_OOS_APPS_CODE PH_VARIABLES PH_STORE_OPTION PH_RETRIEVE_STORED_OPTION PH_INSTALL_APPS PH_UNINSTALL_APPS \
 	PH_CREATE_APP_USER PH_REMOVE_APP_USER PH_APP_MOUNT_CIFS PH_APP_UMOUNT_CIFS PH_STOP_SERVICES PH_START_SERVICES)
 
-# Set Linux distro and release
+# Determine the current Linux distro and release
 
 if [[ -f /usr/bin/pacman ]]
 then
@@ -191,61 +225,63 @@ then
 	PH_DISTROU="${PH_DISTRO}"
 	if [[ "$(declare -p "PH_SUPPORTED_${PH_DISTROU}_RELS" 2>/dev/null)" == declare* ]]
 	then
-		if [[ -L "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" ]]
-		then
-			PH_DISTRO_REL="$("${PH_SUDO}" find "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" -exec ls -l {} \; 2>/dev/null | nawk -F"/" '{ \
-					print substr($NF,1,length($NF)-5) \
-				}')"
-		else
-			PH_DISTRO_REL="$(lsb_release -a 2>/dev/null | nawk '$1 ~ /^Codename:/ { \
-                        		printf $2 \
-                		}')"
-		fi
+		PH_DISTRO_REL="$(lsb_release -a 2>/dev/null | nawk '$1 ~ /^Codename:/ { \
+                       		printf $2 \
+                	}')"
 	else
 		PH_DISTRO_REL="${PH_DISTRO}"
 	fi
 	if [[ -z "${PH_DISTRO_REL}" ]]
 	then
-		printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Could not determine the release of Linux distro '${PH_DISTRO}'"
+		printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the release of detected Linux distro '${PH_DISTRO}'"
 		exit 1
 	fi
 else
-	printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Could not determine the Linux distribution"
+	printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the Linux distro"
 	exit 1
 fi
 
-# Set PATH and LD_LIBRARY_PATH
+# Ensure some additional PATH and LD_LIBRARY_PATH entries
 
 if [[ "$(declare -p PATH 2>/dev/null)" != declare* ]]
 then 
 	PATH="${PH_SCRIPTS_DIR}:/usr/local/bin"
 else
-	PATH="${PH_SCRIPTS_DIR}:/usr/local/bin:${PATH}"
+	if ! echo -n "${PATH}" | grep -E "[:^]/usr/local/bin[:$]" >/dev/null 2>&1
+	then
+		PATH="${PH_SCRIPTS_DIR}:/usr/local/bin:${PATH}"
+	fi
 fi
 if [[ "$(declare -p LD_LIBRARY_PATH 2>/dev/null)" != declare* ]]
 then 
 	LD_LIBRARY_PATH="/usr/local/lib:/usr/lib:/lib"
 else
-	LD_LIBRARY_PATH="/usr/local/lib:/usr/lib:/lib:${LD_LIBRARY_PATH}"
+	for PH_i in "/usr/local/lib" "/usr/lib" "/lib"
+	do
+		if ! echo -n "${LD_LIBRARY_PATH}" | grep -E "[:^]${PH_i}[:$]" >/dev/null 2>&1
+		then
+			LD_LIBRARY_PATH="${PH_i}:${LD_LIBRARY_PATH}"
+		fi
+	done
 fi
 export PATH LD_LIBRARY_PATH
 
-# Force color terminal
+# Force a color terminal
 
 if [[ "${TERM}" != "xterm" ]]
 then
 	export TERM="xterm"
 fi
 
-# Load all relevant module declarations
+# Load relevant codebase files
 
 for PH_i in functions.main functions.user functions.update distros/functions.$(sed 's/ / distros\/functions./g'<<<"${PH_SUPPORTED_DISTROS[*]}")
 do
-	if [[ -f "${PH_FUNCS_DIR}/${PH_i}" && -r "${PH_FUNCS_DIR}/${PH_i}" ]]
+	if [[ -e "${PH_FUNCS_DIR}/${PH_i}" && -r "${PH_FUNCS_DIR}/${PH_i}" ]]
 	then
 		if ! source "${PH_FUNCS_DIR}/${PH_i}" >/dev/null 2>&1
 		then
-			printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Could not load critical codebase file '${PH_FUNCS_DIR}/${PH_i}')"
+			printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Corrupted critical codebase file '${PH_FUNCS_DIR}/${PH_i}')"
 			exit 1
 		fi
 	else
@@ -254,19 +290,23 @@ do
 	fi
 done
 
-# Set version
+# Run mandatory sanity checks
+
+ph_check_pieh_shared_config basic
+
+# Set the current version
 
 PH_VERSION="$(cat "${PH_CONF_DIR}/VERSION" 2>/dev/null)"
-if [[ "${PH_VERSION}" != +([[:digit:]])\.+([[:digit:]]) ]]
+if [[ "${PH_VERSION}" != @(0\.+([[:digit:]])|@(1|2|3|4|5|6|7|8|9)*([[:digit:]])*(\.+([[:digit:]]))) ]]
 then
-	ph_set_result -a -m "Reinstallation of PieHelper is required (Missing or corrupted critical config file '${PH_CONF_DIR}/VERSION')"
+	ph_set_result -a -m "Reinstallation of PieHelper is required (Corrupted critical configuration file '${PH_CONF_DIR}/VERSION')"
 fi
 
 # Load release-specific configuration
 
 source "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" >/dev/null 2>&1
 
-# Load controller settings and configuration of all supported and default applications
+# Load configuration of applications and controllers
 
 declare -a PH_PARSE_FILES
 
@@ -320,9 +360,11 @@ then
 		then
 			if ! functions -t "${PH_i}" >/dev/null 2>&1
 			then
-				[[ "${PH_FLAG}" -eq "1" ]] && \
-					PH_FLAG="0" && \
+				if [[ "${PH_FLAG}" -eq "1" ]]
+				then
+					PH_FLAG="0"
 					printf "\n"
+				fi
 				printf "\n%2s\033[33m%s\033[0m" "" "Warning : Failed to enable debug for module '${PH_i}'"
 			fi
 		fi
@@ -330,7 +372,7 @@ then
 	if [[ "${PH_FLAG}" -eq "0" ]]
 	then
 		printf "\n\n"
-		sleep 3
+		sleep 4
 	fi
 fi
 
@@ -347,50 +389,44 @@ ph_initialize_rollback
 
 ph_clean_tmp_dir
 
-# Checking configuration
+# Run optional sanity checks if enabled
 
 if [[ "$(ps -p "${$}" -o args 2>/dev/null | tail -1)" == "/bin/bash ${PH_SCRIPTS_DIR}/confpieh_ph.sh -v" ]]
 then
 	if [[ "$(whoami 2>/dev/null)" != "root" ]]
 	then
-		if [[ -n "${PH_SUDO}" ]]
-		then
-			printf "\n\033[31m%s\033[0m\n" "Run '${PH_SUDO} ${PH_SCRIPTS_DIR}/confpieh_ph.sh -v'"
-		else
-			printf "\n\033[31m%s\33[0m\n" "Run 'su' and provide the administrator password to become user 'root' and try again"
-		fi
-		ph_set_result -a -m "Privilege elevation is required to repair PieHelper : Use the method listed above to obtain elevation"
+		ph_set_result -a -m "Repair needs administrative rights (Run '${PH_SUDO} ${PH_SCRIPTS_DIR}/confpieh_ph.sh -v')"
 	fi
 	ph_repair_pieh
 	exit "${?}"
 fi
-if [[ "${PH_PIEH_SANITY}" == "yes" ]]
+if [[ "${PH_PIEH_EXT_SANITY}" == "yes" ]]
 then
 	PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
 	if [[ "$("${PH_SUDO}" cat "/proc/${PPID}/comm" 2>/dev/null)" != +(@(conf|list)*_ph|@(re|)start*|${PH_MOVE_SCRIPTS_REGEX}).sh ]]
 	then
 		if [[ -f "${PH_TMP_DIR}/.reported_issues" ]]
 		then
-			ph_show_report || \
-				exit 1
+			ph_show_report
+			exit 1
 		else
 			if [[ -f "${PH_TMP_DIR}/.first_run" ]]
 			then
-				ph_check_pieh_shared_config
+				ph_check_pieh_shared_config extended
 				ph_check_pieh_unconfigured_config
 				if [[ -f "${PH_TMP_DIR}/.reported_issues" ]]
 				then
 					printf "%2s%s\n" "" "OR" >>"${PH_TMP_DIR}/.reported_issues"
-					ph_check_pieh_shared_config
+					ph_check_pieh_shared_config extended
 					ph_check_pieh_configured_config
 				fi
 			else
-				ph_check_pieh_shared_config
+				ph_check_pieh_shared_config extended
 				ph_check_pieh_configured_config
 				if [[ -f "${PH_TMP_DIR}/.reported_issues" ]]
 				then
 					printf "%2s%s\n" "" "OR" >>"${PH_TMP_DIR}/.reported_issues"
-					ph_check_pieh_shared_config
+					ph_check_pieh_shared_config extended
 					ph_check_pieh_unconfigured_config
 				fi
 			fi
@@ -398,8 +434,8 @@ then
 	fi
 	if [[ -f "${PH_TMP_DIR}/.reported_issues" ]]
 	then
-		ph_show_report || \
-			exit 1
+		ph_show_report
+		exit 1
 	fi
 fi
 
@@ -407,7 +443,7 @@ fi
 
 ph_clean_tmp_dir
 
-# Re-initialize rollback
+# Reinitialize rollback
 
 for PH_i in "${PH_ALL_ROLLBACK_PARAMS[@]}"
 do
@@ -426,14 +462,25 @@ then
 	exit "${?}"
 fi
 
-# Set the user and group account configured to run PieHelper
+# Set the user and group accounts for PieHelper
 
-PH_RUN_USER="$(nawk -v mstring="^PieHelper$" '$1 ~ mstring { \
-		printf $2 \
-	}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null)"
+PH_RUN_USER="$(ph_get_app_user_from_app_name PieHelper)"
 PH_RUN_GROUP="$(id -ng "${PH_RUN_USER}")"
+for PH_i in USER GROUP
+do
+	if [[ -z "$(eval "echo -n \"\$PH_RUN_${PH_i}\"")" ]]
+	then
+		if [[ "${PH_i}" == "USER" && "${PH_PIEH_EXT_SANITY}" == "no" ]]
+		then
+			ph_set_option_to_value "PieHelper" -o "PH_PIEH_EXT_SANITY'yes" >/dev/null 2>&1
+			ph_set_result -a -m "An error occurred trying to set the $(echo -n "${PH_i}" | tr '[:upper:]' '[:lower:]') account for PieHelper (Auto-enabling extended sanity checks)"
+		else
+			ph_set_result -a -m "An error occurred trying to set the $(echo -n "${PH_i}" | tr '[:upper:]' '[:lower:]') account for PieHelper (Check user '${PH_RUN_USER}')"
+		fi
+	fi
+done
 
-# Set all user accounts allowed to run PieHelper
+# Check if the current user is allowed
 
 declare -a PH_ALLOW_USERS
 [[ "${PH_RUN_USER}" == "root" ]] && \
@@ -442,22 +489,38 @@ for PH_i in $("${PH_SUDO}" find "/etc/sudoers.d" -maxdepth 1 -name "020_pieh-*" 
 do
 	PH_ALLOW_USERS+=("${PH_i##/etc/sudoers.d/020_pieh-}")
 done
-[[ "${#PH_ALLOW_USERS[@]}" -eq "0" ]] && \
-	ph_set_result -a -m "Failed to determine users with access : Make sure the sudo config for user '${PH_RUN_USER}' exists as '/etc/sudoers.d/020_pieh-${PH_RUN_USER}'"
-
-# Check whether the current user is allowed
-
-if [[ "$(whoami 2>/dev/null)" != @($(sed 's/ /|/g'<<<"${PH_ALLOW_USERS[*]}")) ]]
+if [[ "${#PH_ALLOW_USERS[@]}" -eq "0" ]]
 then
-	if [[ -z "${PH_RUN_USER}" ]]
+	if [[ "${PH_PIEH_EXT_SANITY}" == "no" ]]
 	then
-		touch "${PH_TMP_DIR}/.first_run" 2>/dev/null
-		ph_set_result -a -m "Unknown user account for PieHelper : Try configuring first by running '${PH_SCRIPTS_DIR}/confpieh_ph.sh -c'"
+		ph_set_option_to_value "PieHelper" -o "PH_PIEH_EXT_SANITY'yes" >/dev/null 2>&1
+		ph_set_result -a -m "An error occurred trying to determine the users with PieHelper access (Auto-enabling extended sanity checks)"
 	else
-		ph_set_result -a -m "Only the following accounts are allowed to run PieHelper : '${PH_ALLOW_USERS[*]// /|}'"
+		ph_set_result -a -m "An error occurred trying to determine the users with PieHelper access (Check 'sudo' configurations)"
+	fi
+else
+	if [[ "$(whoami 2>/dev/null)" != @($(sed 's/ /|/g'<<<"${PH_ALLOW_USERS[*]}")) ]]
+	then
+		ph_set_result -a -m "Current user '$(whoami 2>/dev/null)' does not match any of the accounts with PieHelper access :: '${PH_ALLOW_USERS[*]// /|}'"
+	fi
+fi
+unset PH_ALLOW_USERS
+
+# Check for distro release changes
+
+PH_OLD_DISTRO_REL="$("${PH_SUDO}" find "${PH_CONF_DIR}/distros" -maxdepth 1 -type L -name "*.conf" 2>/dev/null)"
+if [[ -n "${PH_OLD_DISTRO_REL}" && "${PH_OLD_DISTRO_REL}" != "${PH_DISTRO_REL}" ]]
+then
+	PH_DISTROU="${PH_DISTRO}"
+	if ph_check_array_index -n "PH_SUPPORTED_${PH_DISTROU}_RELS" -v "${PH_DISTRO_REL}" -q
+	then
+		ph_remove_empty_file -q -t link -d "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf"
+		ph_create_empty_file -q -t link -s "${PH_CONF_DIR}/distros/${PH_DISTRO_REL}.conf" -d "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf"
+	else
+		ph_set_result -a -m "Detected a change in Linux release from '${PH_OLD_DISTRO_REL}' to '${PH_DISTRO_REL}' which is currently not supported"
 	fi
 fi
 
 # Unset local variables
 
-unset PH_i PH_j PH_ALLOW_USERS PH_MOVE_SCRIPTS_REGEX PH_FLAG PH_DISTROU 2>/dev/null
+unset PH_i PH_j PH_MOVE_SCRIPTS_REGEX PH_OLD_DISTRO_REL PH_FLAG PH_DISTROU 2>/dev/null

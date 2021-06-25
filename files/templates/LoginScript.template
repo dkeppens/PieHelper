@@ -1,13 +1,14 @@
-# template profile.d PieHelper autologin scripts
+# PieHelper Autologin configuration template
+# Templates install in /etc/profile.d
 #
 # By Davy Keppens on 08/10/18
 #
 
-PH_APP_USER=''							# The application to launch
-PH_APP_CMD=''							# The full path of the start script used to launch the application
-PH_APP_TTY=''							# The TTY the application will start on
+PH_APP_USER=''							# The user account used to run the application
+PH_APP_CMD=''							# The complete start command of the application
+PH_APP_TTY=''							# The tty the application will start on
 
-if [[ "$USER" == "$PH_APP_USER" && "$(tty 2>/dev/null)" == "/dev/${PH_APP_TTY}" ]]
+if [[ "${USER}" == "${PH_APP_USER}" && "$(tty 2>/dev/null)" == "/dev/${PH_APP_TTY}" ]]
 then
 	eval "${PH_APP_CMD}"
 fi

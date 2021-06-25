@@ -689,7 +689,6 @@ then
 			done
 			if [[ "${#PH_DEPTH_PARAMS[@]}" -gt "0" ]]
 			then
-				printf "\033[36m%s\033[0m\n\n" "- Rolling back changes"
 				ph_rollback_changes
 			fi
 		fi
@@ -793,7 +792,7 @@ do
 	PH_CMD="xargs -I '{}' ${PH_CMD} {}"
 	[[ "${PH_QUIESCE}" -eq "1" ]] && \
 		printf "%8s%s\n" "" "--> Applying default file ${PH_i}"
-	if ! eval "'${PH_SUDO}' find '${PH_FILE}' -mount ! -name ".gitignore" 2>/dev/null | ${PH_CMD}" 2>/dev/null
+	if ! eval "'${PH_SUDO}' find '${PH_FILE}' -mount ! -name '.gitignore' 2>/dev/null | ${PH_CMD}" 2>/dev/null
 	then
 		PH_RET_CODE="1"
 		break
@@ -2582,7 +2581,7 @@ case "${PH_APP}" in Moonlight)
 		      Emulationstation)
                 PH_OPTS="${PH_OPTS} DIR SETUP_DIR" ;;
 		      PieHelper)
-                PH_OPTS="${PH_OPTS} STARTAPP SANITY" ;;
+                PH_OPTS="${PH_OPTS} STARTAPP SANITY_LEVEL EXT_SANITY" ;;
 esac
 unset -n PH_OPTS
 ph_run_with_rollback -c "ph_remove_app_alloweds '${PH_APP}'" || \
@@ -2599,7 +2598,9 @@ do
 		PH_LINE='an empty string or a string without single quotes:"$("$(ph_check_password_validity "${PH_OPTARG_VAL}")" ; echo "${?}")" -eq "0"' ;;
 			*SRV)
 		PH_LINE='a valid ipv4 address or an empty string:"$("$(ph_check_ip_validity "${PH_OPTARG_VAL}")" ; echo "${?}")" -eq "0"' ;;
-			PERSISTENT|MAP|CIFS_SHARE|USE_CTRL|SANITY)
+			SANITY_LEVEL)
+		PH_LINE='critical, optional or full:"${PH_OPTARG_VAL}" == @(critical|optional|full)' ;;
+			PERSISTENT|MAP|CIFS_SHARE|USE_CTRL|EXT_SANITY)
 		PH_LINE='yes or no:"${PH_OPTARG_VAL}" == @(yes|no)' ;;
 			NUM_CTRL)
 		PH_LINE='1, 2, 3 or 4:"${PH_OPTARG_VAL}" == @(1|2|3|4)' ;;
@@ -2670,7 +2671,7 @@ case "${PH_APP}" in Moonlight)
            Emulationstation)
                 PH_OPTS="${PH_OPTS} DIR SETUP_DIR" ;;
                   PieHelper)
-                PH_OPTS="${PH_OPTS} SANITY" ;;
+                PH_OPTS="${PH_OPTS} SANITY_LEVEL EXT_SANITY" ;;
 esac
 unset -n PH_OPTS
 ph_run_with_rollback -c "ph_remove_app_defaults '${PH_APP}'" || \
@@ -2771,8 +2772,10 @@ do
                 	PH_LINE='${PH_SCRIPTS_DIR}/app/post_cmds/PieHelper-POST.sh' ;;
 				PKG_NAME)
                 	PH_LINE='' ;;
-				SANITY)
+				EXT_SANITY)
                 	PH_LINE='yes' ;;
+				SANITY_LEVEL)
+                	PH_LINE='full' ;;
 		esac ;;
         esac
 	unset -n PH_OPTS
