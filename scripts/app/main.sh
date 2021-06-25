@@ -57,7 +57,6 @@ declare -x PH_FILE_SUFFIX
 declare -ax PH_SUPPORTED_DISTROS
 declare -ax PH_SUPPORTED_DEBIAN_RELS
 declare -ax PH_CHECK_SUPPORTED
-declare -ax PH_NFS_OPTS
 
 PH_SCRIPTS_DIR="$(cd "$(dirname "${0}")" && pwd)"
 PH_INST_DIR="${PH_SCRIPTS_DIR%/PieHelper/scripts}"
@@ -76,7 +75,6 @@ PH_EXCLUDES_DIR="${PH_FILES_DIR}/excludes"
 PH_VERSION=""
 PH_DISTRO=""
 PH_DISTRO_REL=""
-PH_NFS_OPTS+=("-o" '\(' "-fstype" "cifs" "-fstype" "nfs" "-fstype" "nfs4" "-fstype" "smbfs" "-fstype" "ncpfs" '\)' "-prune" "-mount")
 PH_RUN_USER=""
 PH_SUDO=""
 PH_PI_MODEL=""
@@ -87,7 +85,7 @@ if "$(command -v sudo 2>/dev/null)" bash -c exit 2>/dev/null
 then
 	PH_SUDO="$(command -v sudo 2>/dev/null)"
 else
-	Run PieHelper as root or manually configure full sudo rights for user '${PH_RUN_USER}' as '/etc/sudoers.d/020_pieh-${PH_RUN_USER}' prior to installationj
+	Run PieHelper as root or manually configure full sudo rights for user '${PH_RUN_USER}' as '/etc/sudoers.d/020_pieh-${PH_RUN_USER}' prior to installation
 fi
 
 # Determine the PI model

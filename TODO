@@ -1,3 +1,4 @@
+* add PieHelper option to exclude filesystem types for global searches run by PieHelper
 * add check to cifs_mpt functions if when mounted is equal to correct dir as configured by app options
 * Make PieHelper temp update dir PH_UPDATE_DIR a new PieHelper option -> PH_PIEH_UPDATE_DIR
  change all find commands to not include cifs/nfs where not wanted

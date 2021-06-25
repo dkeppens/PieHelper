@@ -1205,7 +1205,7 @@ do
 		fi
 	done
 done
-read -r -a PH_MPT_APPS -d';' < <("${PH_SUDO}" find "${PH_MNT_DIR}/*" -maxdepth 1 -type d -exec basename {} \; 2>/dev/null; echo -n ';')
+read -r -a PH_MPT_APPS -d';' < <("${PH_SUDO}" find "${PH_MNT_DIR}" -maxdepth 1 -type d ! -wholename "${PH_MNT_DIR}" -exec basename {} \; 2>/dev/null; echo -n ';')
 for PH_APP in "${PH_MPT_APPS[@]}"
 do
 	if ! cut -f1 "${PH_CONF_DIR}/integrated_apps" 2>&1 | grep -E "^${PH_APP}$" >/dev/null
@@ -1507,14 +1507,14 @@ do
        	printf "%4s%s\n" "" "- Menu item '${PH_i##*/}' is present" >>"${PH_TMP_DIR}/.reported_issues"
 	PH_RET_CODE="1"
 done
-read -r -a PH_MPT_APPS -d';' < <("${PH_SUDO}" find "${PH_MNT_DIR}/*" -maxdepth 1 -type d -exec basename {} \; 2>/dev/null; echo -n ';')
+read -r -a PH_MPT_APPS -d';' < <("${PH_SUDO}" find "${PH_MNT_DIR}" -maxdepth 1 -type d ! -wholename "${PH_MNT_DIR}" -exec basename {} \; 2>/dev/null; echo -n ';')
 for PH_APP in "${PH_MPT_APPS[@]}"
 do
        	printf "%4s%s\n" "" "- Default CIFS mountpoint '${PH_MNT_DIR}/${PH_APP}' is present" >>"${PH_TMP_DIR}/.reported_issues"
 	PH_RET_CODE="1"
 done
 unset PH_MPT_APPS
-for PH_i in $("${PH_SUDO}" find "${PH_SCRIPTS_DIR}" -maxdepth 1 -type f -regextype egrep ! -regex ".*/(start|stop|restart|.*_ph).*\.sh" -print 2>/dev/null | nawk 'BEGIN { \
+for PH_i in $("${PH_SUDO}" find "${PH_SCRIPTS_DIR}" -maxdepth 1 -type f -regextype egrep ! -regex "^${PH_SCRIPTS_DIR}/(start|stop|restart|.*_ph).*\.sh" 2>/dev/null | nawk 'BEGIN { \
 		ORS =  " " \
 	} { \
 		print $1 \
@@ -3242,7 +3242,7 @@ then
 	printf "%10s%s\n" "" "ERROR : (None found)"
 	return 1 
 fi
-for PH_i in $("${PH_SUDO}" find /dev/input -maxdepth 1 -regextype egrep -regex "^/dev/input/event+([[:digit:]])$" -exec basename {} \; 2>/dev/null | sort -n)
+for PH_i in $("${PH_SUDO}" find /dev/input -mount -maxdepth 1 -regextype egrep -regex "^/dev/input/event+([[:digit:]])$" -exec basename {} \; 2>/dev/null | sort -n)
 do
 	printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Running type verification of input device " "'/dev/input/${PH_i}'"
 	PH_PARENT_DEV_PATH="$(udevadm info "/dev/input/${PH_i}" 2>/dev/null | nawk -F'=' '$0 ~ /.: DEVPATH=/ { \
