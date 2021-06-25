@@ -6227,7 +6227,7 @@ then
 	then
 		printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" \
 			"--> Mounting CIFS share " "'${PH_TMP_CIFS_DIR}${PH_TMP_CIFS_SUBDIR}'" " from " "'${PH_TMP_CIFS_SRV}'" " on " "'${PH_TMP_CIFS_MPT}'"
-		if "${PH_SUDO}" mount -t cifs -o username="${PH_TMP_CIFS_USER}" -o password="${PH_TMP_CIFS_PASS}" -o rw,uid="${PH_TMP_CIFS_USER}",gid="$(id -ng "${PH_RUN_USER}" 2>/dev/null)",file_mode="0770",dir_mode="0770" \
+		if "${PH_SUDO}" mount -t cifs -o username="${PH_TMP_CIFS_USER}" -o password="${PH_TMP_CIFS_PASS}" -o rw,uid="${PH_TMP_CIFS_USER}",gid="$(id -ng "${PH_TMP_CIFS_USER}" 2>/dev/null)",file_mode="0770",dir_mode="0770" \
 			"//${PH_TMP_CIFS_SRV}${PH_TMP_CIFS_DIR}${PH_TMP_CIFS_SUBDIR}" "${PH_TMP_CIFS_MPT}" 2>/dev/null
 		then
 			ph_set_result -m "An error occurred trying to mount '${PH_TMP_CIFS_DIR}${PH_TMP_CIFS_SUBDIR}' from '${PH_TMP_CIFS_SRV}' on '${PH_TMP_CIFS_MPT}'"
@@ -8182,7 +8182,7 @@ case "${PH_APP}" in Kodi)
 			print
 		}' "${PH_APP_SCRIPT}" >"${PH_TMP_DIR}/kodi_tmp" 2>/dev/null
 	then
-		"${PH_SUDO}" chown "${PH_APP_USER}:$(id -gn "${PH_RUN_USER}" 2>/dev/null)" "${PH_TMP_DIR}/kodi_tmp" 2>/dev/null || \
+		"${PH_SUDO}" chown "${PH_APP_USER}:$(id -gn "${PH_APP_USER}" 2>/dev/null)" "${PH_TMP_DIR}/kodi_tmp" 2>/dev/null || \
 			PH_RET_CODE="1"
 		"${PH_SUDO}" chmod 774 "${PH_TMP_DIR}/kodi_tmp" 2>/dev/null || \
 			PH_RET_CODE="1"
@@ -10800,8 +10800,9 @@ then
 	fi
 	[[ -z "${PH_RUN_USER}" ]] && \
 		PH_RUN_USER="$(whoami 2>/dev/null)"
+	PH_RUN_GROUP="$(id -ng "${PH_RUN_USER}" 2>/dev/null)"
 	printf "%2s\033[1;37m%s\n\n" "" "This will :"
-	printf "%4s%s\033[1;33m%s\033[1;37m%s\033[1;33m%s\033[1;37m%s\n" "" "- Configure " "'${PH_RUN_USER}'" " as the user account for the " "'PieHelper'" " application"
+	printf "%4s%s\033[1;33m%s\033[1;37m%s\033[1;33m%s\033[1;37m%s\n" "" "- Configure " "'${PH_RUN_USER}:${PH_RUN_GROUP}'" " as the user and group account for the " "'PieHelper'" " application"
 	printf "%4s%s\n" "" "- Install all required packages"
 	printf "%4s%s\033[1;33m%s\033[1;37m%s\n" "" "- Detect and backup existing StartApp configurations made by " "'Emulationstation'" " (RetroPie)"
 	printf "%4s%s\n" "" "- Create all base configuration files"
@@ -10818,7 +10819,7 @@ then
 	do
 		[[ "${PH_COUNT}" -gt "0" ]] && \
 			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
-		printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[1;37m%s\033[0m%s" "" "--> Continue configuring " "'PieHelper'" " under account " "'${PH_RUN_USER}'" " (y/n)" " ? "
+		printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[1;37m%s\033[0m%s" "" "--> Continue configuring " "'PieHelper'" " under accounts " "'${PH_RUN_USER}:${PH_RUN_GROUP}'" " (y/n)" " ? "
 		read -r PH_ANSWER 2>/dev/null
 		ph_screen_input "${PH_ANSWER}" || \
 			return 1

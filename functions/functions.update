@@ -786,7 +786,7 @@ OPTARG="${PH_OLDOPTARG}"
 for PH_i in ownership permissions
 do
 	case "${PH_i}" in ownership)
-				PH_CMD="${PH_SUDO} chown ${PH_RUN_USER}:$(id -gn "${PH_RUN_USER}" 2>/dev/null)" ;;
+				PH_CMD="${PH_SUDO} chown '${PH_RUN_USER}:${PH_RUN_GROUP}' 2>/dev/null)" ;;
 			permissions)
 				PH_CMD="${PH_SUDO} chmod 770" ;;
 	esac

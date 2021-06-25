@@ -426,7 +426,7 @@ then
 	exit "${?}"
 fi
 
-# Set the user and group account configured to run PieHelper
+# Set the user account configured to run PieHelper
 
 PH_RUN_USER="$(nawk -v mstring="^PieHelper$" '$1 ~ mstring { \
 		printf $2 \
