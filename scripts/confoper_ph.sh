@@ -8,25 +8,45 @@
 
 #set -x
 
-declare PH_i=""
-declare PH_DEF_USER=""
-declare PH_OPTION=""
-declare PH_DISTRO=""
-declare PH_STRING=""
-declare PH_ANSWER=""
-declare PH_HOME=""
-declare PH_ACTION=""
-declare PH_FUNCTIONS=""
-declare PH_MESSAGE="Invalid response"
-declare PH_LOCALE_ENCODING=""
-declare PH_LOCALE_NAME=""
-declare PH_OLD_RESULT=""
-declare PH_OLDOPTARG="$OPTARG"
-declare -i PH_OLDOPTIND="$OPTIND"
-declare -i PH_RET_CODE="0"
-declare -i PH_COUNT2="0"
-declare -i PH_INTERACTIVE_FLAG="1"
+declare PH_i
+declare PH_DEF_USER
+declare PH_DISTRO
+declare PH_STRING
+declare PH_ANSWER
+declare PH_HOME
+declare PH_ACTION
+declare PH_FUNCTIONS
+declare PH_MESSAGE
+declare PH_LOCALE_ENCODING
+declare PH_LOCALE_NAME
+declare PH_OLD_RESULT
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+declare -i PH_COUNT2
+declare -i PH_INTERACTIVE_FLAG
+declare -i PH_RET_CODE
 
+PH_i=""
+PH_DEF_USER=""
+PH_DISTRO=""
+PH_STRING=""
+PH_ANSWER=""
+PH_HOME=""
+PH_ACTION=""
+PH_FUNCTIONS=""
+PH_MESSAGE="Invalid response"
+PH_LOCALE_ENCODING=""
+PH_LOCALE_NAME=""
+PH_OLD_RESULT=""
+PH_OPTION=""
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
+PH_COUNT2="0"
+PH_INTERACTIVE_FLAG="1"
+PH_RET_CODE="0"
+
+OPTIND="1"
 PH_USER=""
 PH_DEL_PIUSER=""
 PH_HOST=""
@@ -44,25 +64,26 @@ PH_BOTTOMSCAN=""
 PH_UPPERSCAN=""
 PH_SSH_KEY=""
 PH_CHOICE=""
-PH_SUDO="$(which sudo)"
+PH_SUDO="$(command -v sudo)"
 PH_DISTRO=""
-PH_SCRIPTS_DIR="$( cd "$( dirname "$0" )" && pwd )"
+PH_SCRIPTS_DIR="$(cd "$(dirname "${0}")" && pwd)"
 PH_INST_DIR="${PH_SCRIPTS_DIR%/PieHelper/scripts}"
-PH_BASE_DIR="$PH_INST_DIR"/PieHelper
-PH_BUILD_DIR="$PH_BASE_DIR"/builds
-PH_SNAPSHOT_DIR="$PH_BASE_DIR"/snapshots
-PH_MNT_DIR="$PH_BASE_DIR"/mnt
-PH_CONF_DIR="$PH_SCRIPTS_DIR"/../conf
-PH_MAIN_DIR="$PH_SCRIPTS_DIR"/../main
-PH_TMP_DIR="$PH_SCRIPTS_DIR"/../tmp
-PH_FILES_DIR="$PH_SCRIPTS_DIR"/../files
-PH_MENUS_DIR="$PH_FILES_DIR"/menus
-PATH="$PH_SCRIPTS_DIR":"$PATH"
+PH_BASE_DIR="${PH_INST_DIR}/PieHelper"
+PH_BUILD_DIR="${PH_BASE_DIR}/builds"
+PH_SNAPSHOT_DIR="${PH_BASE_DIR}/snapshots"
+PH_MNT_DIR="${PH_BASE_DIR}/mnt"
+PH_CONF_DIR="${PH_BASE_DIR}/conf"
+PH_MAIN_DIR="${PH_SCRIPTS_DIR}/app"
+PH_FUNCS_DIR="${PH_BASE_DIR}/functions"
+PH_TMP_DIR="${PH_BASE_DIR}/tmp"
+PH_FILES_DIR="${PH_BASE_DIR}/files"
+PH_MENUS_DIR="${PH_FILES_DIR}/menus"
+PH_TEMPLATES_DIR="${PH_FILES_DIR}/templates"
+PH_EXCLUDES_DIR="${PH_FILES_DIR}/excludes"
+PATH="${PH_SCRIPTS_DIR}:${PATH}"
 PH_RESULT="SUCCESS"
 PH_TOTAL_RESULT="SUCCESS"
 PH_RESULT_TYPE_USED="Normal"
-
-OPTIND="1"
 
 declare -ix PH_COUNT="0"
 declare -ix PH_SCRIPT_COUNT="0"
@@ -70,7 +91,8 @@ declare -ix PH_RESULT_COUNT="0"
 declare -ix PH_TOTAL_RESULT_COUNT="0"
 
 export PH_USER PH_DEL_PIUSER PH_HOST PH_AUDIO PH_ENV PH_LOCALE PH_TZONE PH_NETWAIT PH_KEYB PH_SSH_STATE PH_VID_MEM PH_RIGHTSCAN PH_LEFTSCAN PH_BOTTOMSCAN PH_UPPERSCAN PH_SSH_KEY PH_RESULT PH_CHOICE PH_SUDO PH_DISTRO
-export PH_SCRIPTS_DIR PH_INST_DIR PH_BASE_DIR PH_BUILD_DIR PH_SNAPSHOT_DIR PH_MNT_DIR PH_CONF_DIR PH_MAIN_DIR PH_TMP_DIR PH_FILES_DIR PH_MENUS_DIR PATH PH_RESULT PH_TOTAL_RESULT PH_RESULT_TYPE_USED
+export PH_SCRIPTS_DIR PH_INST_DIR PH_BASE_DIR PH_BUILD_DIR PH_SNAPSHOT_DIR PH_MNT_DIR PH_CONF_DIR PH_MAIN_DIR PH_FUNCS_DIR PH_TMP_DIR PH_FILES_DIR PH_MENUS_DIR PH_TEMPLATES_DIR PH_EXCLUDES_DIR
+export PATH PH_RESULT PH_TOTAL_RESULT PH_RESULT_TYPE_USED
 
 if [[ -f /usr/bin/pacman ]]
 then
@@ -81,54 +103,89 @@ fi
 
 function ph_present_list {
 
-declare -i PH_i="0"
-declare -i PH_ANSWER="0"
-declare -i PH_COUNT="0"
-declare -n PH_DEFAULT="$1"
+declare -i PH_i
+declare -i PH_ANSWER
+declare -i PH_COUNT
+declare -n PH_DEFAULT
 
-PH_PARAM="$1"
+PH_i="0"
+PH_ANSWER="0"
+PH_COUNT="0"
+PH_DEFAULT="${1}"
+
+PH_PARAM="${1}"
 
 PH_CHOICE=""
-case "$PH_PARAM" in PH_AUDIO)
+case "${PH_PARAM}" in PH_AUDIO)
 	PH_LIST=(hdmi jack auto) ;;
 		    PH_TZONE)
-	PH_LIST=($(timedatectl list-timezones 2>/dev/null | nawk 'BEGIN { ORS = " " } { print }')) ;;
+	PH_LIST=($(timedatectl list-timezones 2>/dev/null | nawk 'BEGIN { \
+			ORS = " " \
+		} { \
+			print \
+		}')) ;;
 		    PH_SSH_STATE)
 	PH_LIST=(allowed disallowed) ;;
 		    PH_SSH_KEY)
-	PH_LIST=($(nawk -F':' 'BEGIN { ORS = " " } $7 !~ /\usr\/sbin\/nologin/ && $7 !~ /\/bin\/false/ && $7 !~ /\/bin\/sync/ && $1 !~ /^root$/ { print $1 }' /etc/passwd 2>/dev/null)) ;;
+	PH_LIST=($(nawk -F':' 'BEGIN { \
+			ORS = " " \
+		} \
+		$7 !~ /\usr\/sbin\/nologin/ && $7 !~ /\/bin\/false/ && $7 !~ /\/bin\/sync/ && $1 !~ /^root$/ { \
+			print $1 \
+		}' /etc/passwd 2>/dev/null)) ;;
 		    PH_DEL_PIUSER)
 	PH_LIST=(yes no) ;;
 		    PH_ENV)
 	PH_LIST=(cli gui) ;;
 		    PH_LOCALE)
-	PH_LIST=($(nawk 'BEGIN { ORS = " " } { print $1 }' /usr/share/i18n/SUPPORTED 2>/dev/null)) ;;
+	PH_LIST=($(nawk 'BEGIN { \
+			ORS = " " \
+		} { \
+			print $1 \
+		}' /usr/share/i18n/SUPPORTED 2>/dev/null)) ;;
 		    PH_NETWAIT)
 	PH_LIST=(enabled disabled) ;;
 		    PH_VID_MEM)
 	PH_LIST=(16 32 64 128 256 512) ;;
 		    PH_KEYB)
-	PH_LIST=($(localectl list-x11-keymap-layouts 2>/dev/null | nawk 'BEGIN { ORS = " " } { print }')) ;;
+	PH_LIST=($(localectl list-x11-keymap-layouts 2>/dev/null | nawk 'BEGIN { \
+			ORS = " " \
+		} { \
+			print \
+		}')) ;;
 		    *)
 	unset -n PH_DEFAULT
 	unset PH_LIST PH_PARAM
 	return 1 ;;
 esac
 printf "\n"
-ph_getdef "$PH_PARAM" >/dev/null && PH_LIST+=( "Retain current value ('$PH_DEFAULT')" )
-while [[ "$PH_ANSWER" -lt "1" || "$PH_ANSWER" -gt "${#PH_LIST[@]}" ]]
+if ph_getdef "${PH_PARAM}" >/dev/null
+then
+	PH_LIST+=( "Retain current value ('${PH_DEFAULT}')" )
+fi
+while [[ "${PH_ANSWER}" -lt "1" || "${PH_ANSWER}" -gt "${#PH_LIST[@]}" ]]
 do
-	[[ "$PH_COUNT" -gt "0" ]] && printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : Invalid response" || printf "\n"
-	(for PH_i in `echo -n "${!PH_LIST[@]}"`
+	if [[ "${PH_COUNT}" -gt "0" ]]
+	then
+		printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
+	else
+		printf "\n"
+	fi
+	(for PH_i in "${!PH_LIST[@]}"
 	do
-		printf "%14s%s\n" "" "$((PH_i+1)). ${PH_LIST[$PH_i]}"
+		printf "%14s%s\n" "" "$((PH_i+1)). ${PH_LIST[${PH_i}]}"
 	done) | column
 	PH_COUNT="$((PH_COUNT+1))"
 	printf "\n%8s%s" "" "Your choice ? "
 	read -r PH_ANSWER 2>/dev/null
 done
-[[ "$PH_ANSWER" -eq "${#PH_LIST[@]}" ]] && PH_CHOICE="$PH_DEFAULT" || PH_CHOICE="${PH_LIST[$((PH_ANSWER-1))]}"
-printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_CHOICE')"
+if [[ "${PH_ANSWER}" -eq "${#PH_LIST[@]}" ]]
+then
+	PH_CHOICE="${PH_DEFAULT}"
+else
+	PH_CHOICE="${PH_LIST["$((PH_ANSWER-1))"]}"
+fi
+printf "%10s\033[32m%s\033[0m\n" "" "OK ('${PH_CHOICE}')"
 unset -n PH_DEFAULT
 unset PH_LIST PH_PARAM
 return 0
@@ -136,50 +193,56 @@ return 0
 
 function ph_getdef {
 
-declare PH_PARAM="$1"
-declare PH_CUR_VALUE=""
+declare PH_PARAM
+declare PH_CUR_VALUE
 
-printf "%8s%s\n" "" "--> Retrieving parameter '$PH_PARAM' default value"
-if grep ^"$PH_PARAM=" "$PH_CONF_DIR"/OS.defaults >/dev/null 2>&1
+PH_PARAM="${1}"
+PH_CUR_VALUE=""
+
+printf "%8s%s\n" "" "--> Retrieving parameter '${PH_PARAM}' default value"
+if grep -E "^${PH_PARAM}=" "${PH_CONF_DIR}/OS.defaults" >/dev/null 2>&1
 then
-	PH_CUR_VALUE="$(nawk -F\' -v param=^"$PH_PARAM="$ '$1 ~ param { print $2 ; exit 0 } { next }' "$PH_CONF_DIR"/OS.defaults 2>/dev/null)"
-	printf "%10s\033[32m%s\033[0m\n" "" "OK ('$PH_CUR_VALUE')"
+	PH_CUR_VALUE="$(nawk -F"'" -v param="^${PH_PARAM}=$" '$1 ~ param { \
+			print $2 ; \
+			exit 0 \
+		} { \
+			next \
+		}' "${PH_CONF_DIR}/OS.defaults" 2>/dev/null)"
+	printf "%10s\033[32m%s\033[0m\n" "" "OK ('${PH_CUR_VALUE}')"
 else
 	printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not retrieve default"
 	return 1
 fi
-eval export "$PH_PARAM"="$PH_CUR_VALUE"
+eval export "${PH_PARAM}=\"${PH_CUR_VALUE}\""
 return 0
 }
 
 function ph_savedef {
 
-declare PH_PARAM="$1"
-declare PH_VALUE="$2"
-declare PH_CUR_VALUE=""
+declare PH_PARAM
+declare PH_VALUE
+declare PH_CUR_VALUE
+
+PH_PARAM="${1}"
+PH_VALUE="${2}"
+PH_CUR_VALUE=""
 
 PH_COUNT="$((PH_COUNT+1))"
-printf "%8s%s\n" "" "--> Checking parameter '$PH_PARAM' existing default"
-if grep ^"$PH_PARAM=" "$PH_CONF_DIR"/OS.defaults >/dev/null 2>&1
+printf "%8s%s\n" "" "--> Checking parameter '${PH_PARAM}' existing default"
+if grep -E "^${PH_PARAM}=" "${PH_CONF_DIR}/OS.defaults" >/dev/null 2>&1
 then
-	PH_CUR_VALUE="$(nawk -F\' -v opt=^"$PH_PARAM="$ '$1 ~ opt { print $2 }' "$PH_CONF_DIR"/OS.defaults 2>/dev/null)"
-	if [[ "$PH_CUR_VALUE" == "$PH_VALUE" ]]
+	PH_CUR_VALUE="$(nawk -F"'" -v opt="^${PH_PARAM}=$" '$1 ~ opt { \
+			print $2 \
+		}' "${PH_CONF_DIR}/OS.defaults" 2>/dev/null)"
+	if [[ "${PH_CUR_VALUE}" == "${PH_VALUE}" ]]
 	then
 		printf "%10s\033[32m%s\033[0m\n" "" "OK (Nothing to do)"
 		return 0
 	fi
 	printf "%10s\033[32m%s\033[0m\n" "" "OK (Found) -> Removing"
-	printf "%8s%s\n" "" "--> Removing parameter '$PH_PARAM' existing default value '$PH_CUR_VALUE'"
-	sed "/^$PH_PARAM=/d" "$PH_CONF_DIR"/OS.defaults >"$PH_TMP_DIR"/OS_defaults_tmp 2>/dev/null
-	if [[ "$?" -eq "0" ]]
+	printf "%8s%s\n" "" "--> Removing parameter '${PH_PARAM}' existing default value '${PH_CUR_VALUE}'"
+	if sed -i -e "/^${PH_PARAM}=/d" "${PH_CONF_DIR}/OS.defaults" 2>/dev/null
 	then
-		mv "$PH_TMP_DIR"/OS_defaults_tmp "$PH_CONF_DIR"/OS.defaults 2>/dev/null
-		if [[ "$?" -ne "0" ]]
-		then
-			rm "$PH_TMP_DIR"/OS_defaults_tmp 2>/dev/null
-			printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not remove default"
-			return 1
-		fi
 		printf "%10s\033[32m%s\033[0m\n" "" "OK"
 		return 0
 	else
@@ -189,9 +252,8 @@ then
 else
 	printf "%10s\033[32m%s\033[0m\n" "" "OK (Not Found)"
 fi
-printf "%8s%s\n" "" "--> Storing parameter '$PH_PARAM' default value '$PH_VALUE'"
-echo "$PH_PARAM='$PH_VALUE'" >>"$PH_CONF_DIR"/OS.defaults 2>/dev/null
-if [[ "$?" -eq "0" ]]
+printf "%8s%s\n" "" "--> Storing parameter '${PH_PARAM}' default value '${PH_VALUE}'"
+if echo "${PH_PARAM}='${PH_VALUE}'" | tee -a "${PH_CONF_DIR}/OS.defaults" >/dev/null 2>&1
 then
 	printf "%10s\033[32m%s\033[0m\n" "" "OK"
 else
@@ -203,7 +265,7 @@ return 0
 
 function ph_check_keyb_layout_validity {
 
-if ! localectl list-x11-keymap-layouts 2>/dev/null | grep ^"$1"$ >/dev/null
+if ! localectl list-x11-keymap-layouts 2>/dev/null | grep -E "^${1}$" >/dev/null
 then
 	return 1
 fi
@@ -212,7 +274,7 @@ return 0
 
 function ph_check_locale_validity {
 
-if ! cat /usr/share/i18n/SUPPORTED 2>/dev/null | grep ^"$1 " >/dev/null
+if ! cat /usr/share/i18n/SUPPORTED 2>/dev/null | grep -E "^${1} " >/dev/null
 then
 	return 1
 fi
@@ -221,7 +283,7 @@ return 0
 
 function ph_check_tzone_validity {
 
-if ! timedatectl list-timezones 2>/dev/null | grep ^"$1"$ >/dev/null
+if ! timedatectl list-timezones 2>/dev/null | grep -E "^${1}$" >/dev/null
 then
 	return 1
 fi
@@ -230,7 +292,7 @@ return 0
 
 function ph_check_user_state {
 
-if ! id "$1" >/dev/null 2>&1
+if ! id "${1}" >/dev/null 2>&1
 then
 	return 1
 fi
@@ -1497,7 +1559,7 @@ case $PH_ACTION in all)
 				ph_getdef PH_SSH_KEY || (printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; exit 1) || exit "$?"
 			fi
 		fi
-		PH_HOME="$(nawk -F':' -v usr=^"$PH_SSH_KEY"$ '$1 ~ usr { print $6 }' /etc/passwd)"
+		PH_HOME="$(getent passwd "${PH_SSH_KEY}" 2>/dev/null | head -1 | cut -d':' -f6)"
 		printf "%8s%s\n" "" "--> Checking for existing keys for user '$PH_SSH_KEY'"
 		if [[ ! -f "$PH_HOME/.ssh/id_rsa.pub" ]]
 		then

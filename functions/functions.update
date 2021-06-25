@@ -793,9 +793,11 @@ do
 	PH_CMD="xargs -I '{}' ${PH_CMD} {}"
 	[[ "${PH_QUIESCE}" -eq "1" ]] && \
 		printf "%8s%s\n" "" "--> Applying default file ${PH_i}"
-	! eval "'${PH_SUDO}' find '${PH_FILE}' -mount ! -wholename \"${PH_MNT_DIR}/*\" -print 2>/dev/null | ${PH_CMD}" 2>/dev/null && \
-		PH_RET_CODE="1" && \
+	if ! eval "'${PH_SUDO}' find '${PH_FILE}' -mount ! -name ".gitignore" -print 2>/dev/null | ${PH_CMD}" 2>/dev/null
+	then
+		PH_RET_CODE="1"
 		break
+	fi
 	[[ "${PH_QUIESCE}" -eq "1" ]] && \
 		ph_run_with_rollback -c true
 done
@@ -1171,7 +1173,7 @@ then
 else
 	PH_PARAMS="-q"
 fi
-if "${PH_SUDO}" find "${PH_FILE}" -mount ! -wholename "${PH_MNT_DIR}/*" -print 2>/dev/null | eval "${PH_CMD}" 2>/dev/null
+if "${PH_SUDO}" find "${PH_FILE}" -mount ! -name ".gitignore" -print 2>/dev/null | eval "${PH_CMD}" 2>/dev/null
 then
 	[[ "${PH_ACTION}" == "create" ]] && \
 		PH_ACTION="remove" || \
@@ -1205,10 +1207,10 @@ do
 	case "${PH_i}" in 1)
 		printf "\n\033[1;37m%s\033[1;33m%s\033[1;37m%s\n\n" "Running any tool with option " "'-h'" " will display help"
 		printf "%2s\033[1;37m%s\n\n" "" "- The following tools support additional options"
-		read -rd '' -a PH_SCRIPTS < <(find "${PH_SCRIPTS_DIR}/" -maxdepth 1 -type f -regextype egrep -regex "^.*/((start|restart|.*to)pieh|conf.*_ph).sh$" -exec basename {} \; 2>/dev/null) ;;
+		read -rd '' -a PH_SCRIPTS < <(find "${PH_SCRIPTS_DIR}/" -maxdepth 1 -type f -perm -o=x -regextype egrep -regex "^.*/((start|restart|.*to)pieh|conf.*_ph).sh$" -exec basename {} \; 2>/dev/null) ;;
 			  2)
 		printf "%2s\033[1;37m%s\n\n" "" "- The following tools support no additional options"
-		read -rd '' -a PH_SCRIPTS < <(find "${PH_SCRIPTS_DIR}/" -maxdepth 1 -type f -regextype egrep ! -regex "^.*/((start|restart|.*to)pieh|conf.*_ph).sh$" -exec basename {} \; 2>/dev/null) ;;
+		read -rd '' -a PH_SCRIPTS < <(find "${PH_SCRIPTS_DIR}/" -maxdepth 1 -type f -perm -o=x -regextype egrep ! -regex "^.*/((start|restart|.*to)pieh|conf.*_ph).sh$" -exec basename {} \; 2>/dev/null) ;;
 	esac
 	if [[ "${#PH_SCRIPTS[@]}" -eq "0" ]]
 	then
@@ -1422,13 +1424,9 @@ then
 	then
 		if [[ -d "${PH_APP_CIFS_MPT}" ]]
 		then
-			if [[ "$("${PH_SUDO}" find "${PH_APP_CIFS_MPT}" -maxdepth 1 ! -wholename "${PH_APP_CIFS_MPT}" 2>/dev/null | wc -l)" -eq "0" ]]
+			if ph_check_dir_contents "${PH_APP_CIFS_MPT}"
 			then
-				if [[ "$(mount 2>/dev/null | nawk -v mstring="^${PH_APP_CIFS_MPT}$" '$3 ~ mstring { \
-						print \
-					} { \
-						next \
-					}' | wc -l)" -eq "0" ]]
+				if ph_check_mpt_status "${PH_APP_CIFS_MPT}"
 				then
 					if ph_run_with_rollback -c "ph_remove_empty_file -r -q -t directory -d '${PH_APP_CIFS_MPT}'"
 					then
@@ -1517,6 +1515,46 @@ unset -n PH_APP_CIFS_MPT
 return 0
 }
 
+function ph_check_dir_contents {
+
+declare PH_DIR
+
+PH_DIR="${1}"
+
+[[ -z "${PH_DIR}" || "${#}" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+if [[ -d "${PH_DIR}" ]]
+then
+	test "$("${PH_SUDO}" find "${PH_DIR}" -maxdepth 1 ! -wholename "${PH_DIR}" 2>/dev/null | wc -l)" -eq "0"
+else
+	true
+fi
+return "${?}"
+}
+
+function ph_check_mpt_status {
+
+declare PH_MPT
+
+PH_MPT="${1}"
+
+[[ -z "${PH_MPT}" || "${#}" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+if [[ -d "${PH_MPT}" ]]
+then
+	test "$(mount 2>/dev/null | nawk -v mstring="^${PH_MPT}$" '$3 ~ mstring { \
+			print \
+		} { \
+			next \
+		}' | wc -l)" -eq "0"
+else
+	true
+fi
+return "${?}"
+}
+
 function ph_create_app_cifs_mpt {
 
 declare PH_APP
@@ -1538,20 +1576,16 @@ then
 	printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Creating the CIFS mountpoint for " "'${PH_APP}'" " as " "'${PH_APP_CIFS_MPT}'"
 	if [[ -d "${PH_APP_CIFS_MPT}" ]]
 	then
-		if [[ "$("${PH_SUDO}" find "${PH_APP_CIFS_MPT}" -maxdepth 1 ! -wholename "${PH_APP_CIFS_MPT}" 2>/dev/null | wc -l)" -ne "0" ]]
+		if ! ph_check_dir_contents "${PH_APP_CIFS_MPT}"
 		then
 			ph_set_result -m "Refusing to accept '${PH_APP_CIFS_MPT}' as CIFS mountpoint for '${PH_APP}' since it's not an empty directory"
 		else
-			if [[ "$(mount 2>/dev/null | nawk -v mstring="^${PH_APP_CIFS_MPT}$" '$3 ~ mstring { \
-					print \
-				} { \
-					next \
-				}' | wc -l)" -gt "0" ]]
+			if ! ph_check_mpt_status "${PH_APP_CIFS_MPT}"
 			then
 				ph_set_result -m "Refusing to accept '${PH_APP_CIFS_MPT}' as CIFS mountpoint for '${PH_APP}' since it's an active mountpoint"
 			else
-				ph_run_with_rollback -c true -m "Nothing to do" && \
-					return "${?}"
+				ph_run_with_rollback -c true -m "Nothing to do"
+				return "${?}"
 			fi
 		fi
 	else
@@ -1564,15 +1598,16 @@ then
 				ph_set_result -m "An error occurred trying to create the CIFS mountpoint for '${PH_APP}' as '${PH_APP_CIFS_MPT}'"
 			else
 				ph_add_value_to_param -p PH_REMOVE_APPS_CIFS_MPT -v "${PH_APP}"
-				ph_run_with_rollback -c true && \
-					return "${?}"
+				ph_run_with_rollback -c true
+				return "${?}"
 			fi
 		fi
 	fi
-	ph_run_with_rollback -c false -m "Could not create" || \
-		return 1
+	ph_run_with_rollback -c false -m "Could not create"
+else
+	true
 fi
-return 0
+return "${?}"
 }
 
 function ph_remove_app_items {

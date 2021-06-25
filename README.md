@@ -44,7 +44,10 @@
 	- presence of a /proc and /sys filesystem
 	- either apt or pacman as a package management utility
 
-* Note that PieHelper is NOT compatible with any kind of of login manager since graphical environments are only supported through the use of xinit
+* Note that PieHelper :
+
+	- Is incompatible with login managers since graphical environments are only supported through xinit or GL
+	- Must be contained to a single filesystem
 
 * Compatibility should be out-of-the-box for Pi-based Raspbian, Noobs, and Ubuntu linux distributions
   Currently however, only the official Raspbian distro has been tested

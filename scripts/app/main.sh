@@ -50,12 +50,14 @@ declare -x PH_VERSION
 declare -x PH_DISTRO
 declare -x PH_DISTRO_REL
 declare -x PH_RUN_USER
+declare -x PH_RUN_GROUP
 declare -x PH_SUDO
 declare -x PH_PI_MODEL
 declare -x PH_FILE_SUFFIX
 declare -ax PH_SUPPORTED_DISTROS
 declare -ax PH_SUPPORTED_DEBIAN_RELS
 declare -ax PH_CHECK_SUPPORTED
+declare -ax PH_NFS_OPTS
 
 PH_SCRIPTS_DIR="$(cd "$(dirname "${0}")" && pwd)"
 PH_INST_DIR="${PH_SCRIPTS_DIR%/PieHelper/scripts}"
@@ -74,8 +76,22 @@ PH_EXCLUDES_DIR="${PH_FILES_DIR}/excludes"
 PH_VERSION=""
 PH_DISTRO=""
 PH_DISTRO_REL=""
+PH_NFS_OPTS+=("-o" '\(' "-fstype" "cifs" "-fstype" "nfs" "-fstype" "nfs4" "-fstype" "smbfs" "-fstype" "ncpfs" '\)' "-prune" "-mount")
 PH_RUN_USER=""
 PH_SUDO=""
+PH_PI_MODEL=""
+
+# Set variable PH_SUDO
+
+if "$(command -v sudo 2>/dev/null)" bash -c exit 2>/dev/null
+then
+	PH_SUDO="$(command -v sudo 2>/dev/null)"
+else
+	Run PieHelper as root or manually configure full sudo rights for user '${PH_RUN_USER}' as '/etc/sudoers.d/020_pieh-${PH_RUN_USER}' prior to installationj
+fi
+
+# Determine the PI model
+
 PH_PI_MODEL="$(nawk '$0 ~ /Raspberry Pi/ { \
 		for (i=1;i<=NF;i++) { \
 			if ($i ~ /^Raspberry$/ && $(i+1) ~ /^Pi$/) { \
@@ -86,7 +102,7 @@ PH_PI_MODEL="$(nawk '$0 ~ /Raspberry Pi/ { \
 	}' /proc/cpuinfo 2>/dev/null)"
 if [[ "$(dtoverlay -l 2>/dev/null | grep -E "vc4-(f)*kms-v3d" >/dev/null ; echo "${?}")" -eq "0" || \
 	( "${PH_PI_MODEL}" == "pi4" && "$(dtoverlay -l 2>/dev/null | grep -E "vc4-kms-v3d-pi4" >/dev/null ; echo "${?}")" -eq "0" ) || \
-	"$(find /sys/firmware/devicetree/base/chosen -type d -name "framebuffer@*" 2>/dev/null | wc -l)" -gt "0" ]]
+	"$("${PH_SUDO}" find /sys/firmware/devicetree/base/chosen -mount -type d -name "framebuffer@*" 2>/dev/null | wc -l)" -gt "0" ]]
 then
 	PH_FILE_SUFFIX="_GL"
 else
@@ -179,7 +195,7 @@ then
 	then
 		if [[ -L "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" ]]
 		then
-			PH_DISTRO_REL="$(find "${PH_CONF_DIR}/distros" -name "${PH_DISTRO}.conf" -mount -exec ls -l {} \; 2>/dev/null | nawk -F"/" '{ \
+			PH_DISTRO_REL="$("${PH_SUDO}" find "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" -exec ls -l {} \; 2>/dev/null | nawk -F"/" '{ \
 					print substr($NF,1,length($NF)-5) \
 				}')"
 		else
@@ -202,20 +218,19 @@ fi
 
 # Set PATH and LD_LIBRARY_PATH
 
-if [[ "$(declare -p LD_LIBRARY_PATH 2>/dev/null)" != declare* ]]
-then 
-	LD_LIBRARY_PATH="/usr/local/lib:/usr/lib:/lib"
-	export LD_LIBRARY_PATH
-else
-	LD_LIBRARY_PATH="/usr/local/lib:/usr/lib:/lib:${LD_LIBRARY_PATH}"
-fi
-if [[ "$(declare -p LD_LIBRARY_PATH 2>/dev/null)" != declare* ]]
+if [[ "$(declare -p PATH 2>/dev/null)" != declare* ]]
 then 
 	PATH="${PH_SCRIPTS_DIR}:/usr/local/bin"
-	export PATH
 else
 	PATH="${PH_SCRIPTS_DIR}:/usr/local/bin:${PATH}"
 fi
+if [[ "$(declare -p LD_LIBRARY_PATH 2>/dev/null)" != declare* ]]
+then 
+	LD_LIBRARY_PATH="/usr/local/lib:/usr/lib:/lib"
+else
+	LD_LIBRARY_PATH="/usr/local/lib:/usr/lib:/lib:${LD_LIBRARY_PATH}"
+fi
+export PATH LD_LIBRARY_PATH
 
 # Force color terminal
 
@@ -330,11 +345,6 @@ do
 done
 ph_initialize_rollback
 
-# Set sudo variable PH_SUDO
-
-"$(command -v sudo 2>/dev/null)" bash -c exit 2>/dev/null && \
-	PH_SUDO="$(command -v sudo 2>/dev/null)"
-
 # Clean temp directory
 
 ph_clean_tmp_dir
@@ -423,13 +433,14 @@ fi
 PH_RUN_USER="$(nawk -v mstring="^PieHelper$" '$1 ~ mstring { \
 		printf $2 \
 	}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null)"
+PH_RUN_GROUP="$(id -ng "${PH_RUN_USER}")"
 
 # Set all user accounts allowed to run PieHelper
 
 declare -a PH_ALLOW_USERS
 [[ "${PH_RUN_USER}" == "root" ]] && \
 	PH_ALLOW_USERS+=("${PH_RUN_USER}")
-for PH_i in $("${PH_SUDO}" find "/etc/sudoers.d" -name "020_pieh-*" -mount 2>/dev/null | paste -d " " -s)
+for PH_i in $("${PH_SUDO}" find "/etc/sudoers.d" -maxdepth 1 -name "020_pieh-*" 2>/dev/null | paste -d " " -s)
 do
 	PH_ALLOW_USERS+=("${PH_i##/etc/sudoers.d/020_pieh-}")
 done

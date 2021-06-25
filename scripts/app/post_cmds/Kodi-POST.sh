@@ -14,7 +14,7 @@ declare PH_KODI_HOME
 declare PH_KODI_LOC_DIR
 declare PH_KODI_REM_DIR
 
-PH_KODI_HOME="$(getent passwd "${PH_APP_USER}" 2>/dev/null | head -1 | cut -d':' -f6)"
+PH_KODI_HOME="$(ph_get_user_home "${PH_APP_USER}")"
 PH_KODI_LOC_DIR="$(ph_get_app_cifs_mpt -a Kodi -r)"
 PH_KODI_REM_DIR="$(ph_resolve_dynamic_value "${PH_KODI_CIFS_DIR}${PH_KODI_CIFS_SUBDIR}")"
 

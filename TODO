@@ -1,3 +1,5 @@
+* add check to cifs_mpt functions if when mounted is equal to correct dir as configured by app options
+* Make PieHelper temp update dir PH_UPDATE_DIR a new PieHelper option -> PH_PIEH_UPDATE_DIR
  change all find commands to not include cifs/nfs where not wanted
 * add checks for out-of-scope apps to ph_install_app and ph_uninstall_app
 * change return option of menu to 0. : easier
