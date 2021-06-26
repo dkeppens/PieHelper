@@ -194,9 +194,9 @@ if [[ -f /usr/bin/pacman ]]
 then
 	PH_DISTRO="Archlinux"
 else
-	if PH_DISTRO="$(nawk -F '=' 'BEGIN { \
+	PH_DISTRO="$(nawk -F '=' 'BEGIN { \
 			id = "" ; \
-			id_like = "" ; \
+			id_like = "" \
 		} \
 		$1 ~ /^ID$/ { \
 			id = $2 \
@@ -204,19 +204,17 @@ else
 			id_like = $2 \
 		} END { \
 			if (id_like ~ /^$/) { \
-				printf toupper(substr(id,1,1) ; \
-				printf tolower(substr(id,2) \
+				printf toupper(substr(id,1,1)) ; \
+				printf tolower(substr(id,2)) \
 			} else { \
-				printf toupper(substr(id_like,1,1) ; \
-				printf tolower(substr(id_like,2) \
+				printf toupper(substr(id_like,1,1)) ; \
+				printf tolower(substr(id_like,2)) \
 			} \
 		}' /etc/os-release 2>/dev/null)"
-	then
-		PH_DISTRO="$(cut -c1<<<"${PH_DISTRO}" | tr '[:lower:]' '[:upper:]')$(cut -c2-<<<"${PH_DISTRO}")"
-	fi
 fi
 if [[ -n "${PH_DISTRO}" ]]
 then
+	PH_DISTRO="${PH_DISTRO// /}"
 	PH_DISTROU="${PH_DISTRO}"
 	if [[ "$(declare -p "PH_SUPPORTED_${PH_DISTROU}_RELS" 2>/dev/null)" == declare* ]]
 	then
