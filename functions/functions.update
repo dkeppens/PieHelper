@@ -336,7 +336,7 @@ declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 declare -i PH_RET_CODE
 declare -i PH_RET_CODE_RECVD_FLAG
-declare -i PH_RECVD_FLAG
+declare -i PH_RESULT_TYPE_RECVD_FLAG
 
 PH_OLDOPTARG="${OPTARG}"
 PH_OLDOPTIND="${OPTIND}"
@@ -344,7 +344,7 @@ PH_FIRST=""
 PH_OPTION=""
 PH_RET_CODE="0"
 PH_RET_CODE_RECVD_FLAG="1"
-PH_RECVD_FLAG="1"
+PH_RESULT_TYPE_RECVD_FLAG="1"
 
 OPTIND="1"
 PH_RESULT_TYPE_USED="Normal"
@@ -363,16 +363,16 @@ do
 			OPTIND="${PH_OLDOPTIND}" && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_RECVD_FLAG="0"
+		PH_RESULT_TYPE_RECVD_FLAG="0"
 		PH_RESULT_MSG="${OPTARG}" ;;
 			     t)
 		PH_RESULT_TYPE_USED="Total" ;;
 			     a)
-		PH_RECVD_FLAG="0"
+		PH_RESULT_TYPE_RECVD_FLAG="0"
 		PH_RESULT="Abort"
 		PH_RESULT_TYPE_USED="${PH_RESULT}" ;;
 			     w)
-		PH_RECVD_FLAG="0"
+		PH_RESULT_TYPE_RECVD_FLAG="0"
 		PH_RESULT="Warning"
 		PH_RESULT_TYPE_USED="${PH_RESULT}" ;;
 			     *)
@@ -385,7 +385,7 @@ done
 OPTIND="${PH_OLDOPTIND}"
 OPTARG="${PH_OLDOPTARG}"
 
-[[ ( "${PH_RET_CODE_RECVD_FLAG}" -eq "1" && "${PH_RECVD_FLAG}" -eq "1" )  || "${#}" -gt "6" ]] && \
+[[ ( "${PH_RET_CODE_RECVD_FLAG}" -eq "1" && "${PH_RESULT_TYPE_RECVD_FLAG}" -eq "1" )  || "${#}" -gt "6" ]] && \
         >&2 printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Incorrect arguments provided to function '${FUNCNAME[0]}'" && \
 	exit 1
 
@@ -471,15 +471,17 @@ OPTARG="${PH_OLDOPTARG}"
         >&2 printf "\n%2s\033[31m%s\033[0m\n\n" "" "ABORT : Incorrect arguments provided to function '${FUNCNAME[0]}'" && \
 	exit 1
 
-if [[ "${PH_RESULT_TYPE_USED}" == @(Warning|Abort|Normal) ]]
-then
-	declare -n PH_RESULT_TYPE="PH_RESULT"
-else
-	PH_RESULT_PREFIX="##### Total Result > "
-	declare -n PH_RESULT_TYPE="PH_TOTAL_RESULT"
-fi
 [[ "${PH_RESULT_INDENT}" -eq "0" ]] && \
 	PH_RESULT_INDENT="2"
+case "${PH_RESULT_TYPE_USED}" in Warning|Normal)
+	declare -n PH_RESULT_TYPE="PH_RESULT" ;;
+		Abort)
+	PH_RESULT_PREFIX=""
+	declare -n PH_RESULT_TYPE="PH_RESULT" ;;
+		*)
+	PH_RESULT_PREFIX="##### Total Result > "
+	declare -n PH_RESULT_TYPE="PH_TOTAL_RESULT" ;;
+esac
 if [[ -n "${PH_RESULT_MSG}" ]]
 then
 	PH_RESULT_SUFFIX=" : ${PH_RESULT_MSG}"

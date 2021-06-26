@@ -16,21 +16,23 @@ set -o pipefail
 shopt -s extglob
 shopt -s checkwinsize
 
-# Local variable declarations
+# Declare local variables
 
 declare PH_i
+declare PH_CUR_USER
 declare PH_MOVE_SCRIPTS_REGEX
 declare PH_OLD_DISTRO_REL
-declare -i PH_FLAG
+declare -i PH_FORMAT_FLAG
 declare -u PH_DISTROU
 
 PH_i=""
+PH_CUR_USER=""
 PH_MOVE_SCRIPTS_REGEX=""
 PH_OLD_DISTRO_REL=""
-PH_FLAG="1"
+PH_FORMAT_FLAG="1"
 PH_DISTROU=""
 
-# Global variable declarations not related to rollback
+# Declare global variables not related to rollback
 
 declare -x PH_SCRIPTS_DIR
 declare -x PH_INST_DIR
@@ -76,18 +78,19 @@ PH_VERSION=""
 PH_DISTRO=""
 PH_DISTRO_REL=""
 PH_RUN_USER=""
+PH_RUN_GROUP=""
 PH_SUDO=""
 PH_PI_MODEL=""
 
 # Determine the current user
 
-if ! whoami >/dev/null 2>&1
+if ! PH_CUR_USER="$(whoami 2>&1)"
 then
 	printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the current user account"
 	exit 1
 fi
 
-# Determine sudo location and escalation rights  
+# Determine sudo state and privilege escalation rights of current user
 
 if command -v sudo >/dev/null 2>&1
 then
@@ -95,10 +98,10 @@ then
 	then
 		PH_SUDO="$(command -v sudo 2>/dev/null)"
 	else
-		printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to escalate privileges for user '$(whoami 2>/dev/null)'"
+		printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to escalate privileges for user '${PH_CUR_USER}'"
 		printf "%12s\033[1;37m%s\033[0m\n\n" "" "Configure full sudo rights for the current user as follows : "
 		printf "%14s\033[1;37m%s\033[33m%s\033[37m%s\033[0m\n" "" "- Run " "'su'" " and provide the administrator password when asked"
-		printf "%14s\033[1;37m%s\033[33m%s\033[37m%s\033[33m%s\033[37m%s\033[0m\n\n" "" "- Run " "'${PH_SCRIPTS_DIR}/confoper_ph.sh -p sudo -a $(whoami 2>/dev/null)'" " and " "'exit'" " afterwards"
+		printf "%14s\033[1;37m%s\033[33m%s\033[37m%s\033[33m%s\033[37m%s\033[0m\n\n" "" "- Run " "'${PH_SCRIPTS_DIR}/confoper_ph.sh -p sudo -a ${PH_CUR_USER}'" " and " "'exit'" " afterwards"
 		exit 1
 	fi
 else
@@ -136,7 +139,7 @@ else
 	exit 1
 fi
 
-# Set supported Linux distros and releases
+# Configure Linux distros/releases support and set the list of distro configs
 
 PH_SUPPORTED_DISTROS=("Archlinux" "Debian")
 PH_SUPPORTED_DEBIAN_RELS=("jessie" "stretch" "buster" "bullseye")
@@ -154,7 +157,7 @@ do
 	fi
 done
 
-# Global variable declarations related to rollback
+# Declare global variables related to rollback
 
 declare -x PH_ROLLBACK_USED
 declare -x PH_RESULT_MSG
@@ -192,25 +195,22 @@ then
 	PH_DISTRO="Archlinux"
 else
 	if PH_DISTRO="$(nawk -F '=' 'BEGIN { \
-			var = "" ; \
-			flag = "0" \
+			id = "" ; \
+			id_like = "" ; \
 		} \
-		$1 ~ /^(ID|ID_LIKE)$/ { \
-			if (tolower($2) ~ /^debian$/) { \
-				var = "debian" \
-			} else if (flag == "1" && var != "" && $1 ~ /^ID$/) { \
-				var = $2 \
-			} else if (flag == "1" && var == "") { \
-				var = $2 \
-			} else if (flag == "0") { \
-				var = $2 ; \
-				flag = "1" \
-			} \
-		} { \
-			next \
+		$1 ~ /^ID$/ { \
+			id = $2 \
+		} else if ($1 ~ /^ID_LIKE$/) { \
+			id_like = $2 \
 		} END { \
-			printf var \
-		}' /etc/*-release 2>/dev/null)"
+			if (id_like ~ /^$/) { \
+				printf toupper(substr(id,1,1) ; \
+				printf tolower(substr(id,2) \
+			} else { \
+				printf toupper(substr(id_like,1,1) ; \
+				printf tolower(substr(id_like,2) \
+			} \
+		}' /etc/os-release 2>/dev/null)"
 	then
 		PH_DISTRO="$(cut -c1<<<"${PH_DISTRO}" | tr '[:lower:]' '[:upper:]')$(cut -c2-<<<"${PH_DISTRO}")"
 	fi
@@ -238,22 +238,29 @@ fi
 
 # Ensure some additional PATH and LD_LIBRARY_PATH entries
 
-if [[ "$(declare -p PATH 2>/dev/null)" != declare* ]]
-then 
-	PATH="${PH_SCRIPTS_DIR}:/usr/local/bin"
+if [[ -z "${PATH}" ]]
+then
+	declare -x PATH 2>/dev/null
+
+	PATH="/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin:${PH_SCRIPTS_DIR}"
 else
-	if ! echo -n "${PATH}" | grep -E "(:){0,1}/usr/local/bin(:){0,1}" >/dev/null 2>&1
-	then
-		PATH="${PH_SCRIPTS_DIR}:/usr/local/bin:${PATH}"
-	fi
-fi
-if [[ "$(declare -p LD_LIBRARY_PATH 2>/dev/null)" != declare* ]]
-then 
-	LD_LIBRARY_PATH="/usr/local/lib:/usr/lib:/lib"
-else
-	for PH_i in "/lib" "/usr/lib" "/usr/local/lib"
+	for PH_i in "${PH_SCRIPTS_DIR}" "/sbin" "/bin" "/usr/sbin" "/usr/bin" "/usr/local/sbin" "/usr/local/bin"
 	do
-		if ! echo -n "${LD_LIBRARY_PATH}" | grep -E "(:){0,1}${PH_i}(:){0,1}" >/dev/null 2>&1
+		if ! echo -n "${PATH}" | grep -E "(^|(:)+)${PH_i}((:)+|$)" >/dev/null
+		then
+			PATH="${PH_i}:${PATH}"
+		fi
+	done
+fi
+if [[ -z "${LD_LIBRARY_PATH}" ]]
+then
+	declare -x LD_LIBRARY_PATH 2>/dev/null
+
+	LD_LIBRARY_PATH="/lib:/usr/lib:/usr/local/lib:/lib64:/usr/lib64:/usr/local/lib64"
+else
+	for PH_i in "/usr/local/lib64" "/usr/lib64" "/lib64" "/usr/local/lib" "/usr/lib" "/lib"
+	do
+		if ! echo -n "${LD_LIBRARY_PATH}" | grep -E "(^|(:)+)${PH_i}((:)+|$)" >/dev/null
 		then
 			LD_LIBRARY_PATH="${PH_i}:${LD_LIBRARY_PATH}"
 		fi
@@ -265,12 +272,12 @@ export PATH LD_LIBRARY_PATH
 
 if [[ "${TERM}" != "xterm" ]]
 then
-	export TERM="xterm"
+	export TERM="xterm-256color"
 fi
 
-# Load relevant codebase files
+# Load shared and distro-dependent codebase
 
-for PH_i in functions.main functions.user functions.update distros/functions.$(sed 's/ / distros\/functions./g'<<<"${PH_SUPPORTED_DISTROS[*]}")
+for PH_i in functions.main functions.user functions.update "distros/functions.${PH_DISTRO}"
 do
 	if [[ -e "${PH_FUNCS_DIR}/${PH_i}" && -r "${PH_FUNCS_DIR}/${PH_i}" ]]
 	then
@@ -285,11 +292,11 @@ do
 	fi
 done
 
-# Run mandatory sanity checks
+# Run basic sanity checks
 
 ph_check_pieh_shared_config basic
 
-# Set the current version
+# Determine the current framework version
 
 PH_VERSION="$(cat "${PH_CONF_DIR}/VERSION" 2>/dev/null)"
 if [[ "${PH_VERSION}" != @(0\.+([[:digit:]])|@(1|2|3|4|5|6|7|8|9)*([[:digit:]])*(\.+([[:digit:]]))) ]]
@@ -297,11 +304,11 @@ then
 	ph_set_result -a -m "Reinstallation of PieHelper is required (Corrupted critical configuration file '${PH_CONF_DIR}/VERSION')"
 fi
 
-# Load release-specific configuration
+# Load release-dependent configuration
 
 source "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" >/dev/null 2>&1
 
-# Load configuration of applications and controllers
+# Load applications/controller configurations
 
 declare -a PH_PARSE_FILES
 
@@ -345,7 +352,7 @@ do
 done
 unset PH_PARSE_FILES
 
-# Handle modules xtrace
+# Enable xtrace for modules in debug
 
 if [[ -n "${PH_PIEH_DEBUG}" ]]
 then
@@ -355,16 +362,16 @@ then
 		then
 			if ! functions -t "${PH_i}" >/dev/null 2>&1
 			then
-				if [[ "${PH_FLAG}" -eq "1" ]]
+				if [[ "${PH_FORMAT_FLAG}" -eq "1" ]]
 				then
-					PH_FLAG="0"
+					PH_FORMAT_FLAG="0"
 					printf "\n"
 				fi
 				printf "\n%2s\033[33m%s\033[0m" "" "Warning : Failed to enable debug for module '${PH_i}'"
 			fi
 		fi
 	done
-	if [[ "${PH_FLAG}" -eq "0" ]]
+	if [[ "${PH_FORMAT_FLAG}" -eq "0" ]]
 	then
 		printf "\n\n"
 		sleep 4
@@ -380,32 +387,31 @@ do
 done
 ph_initialize_rollback
 
-# Clean temp directory
+# Clean the temp directory
 
 ph_clean_tmp_dir
 
-# Run optional sanity checks if enabled
+# Ensure priority of repair attempts over extended sanity checks
 
 if [[ "$(ps -p "${$}" -o args 2>/dev/null | tail -1)" == "/bin/bash ${PH_SCRIPTS_DIR}/confpieh_ph.sh -v" ]]
 then
-	if [[ "$(whoami 2>/dev/null)" != "root" ]]
-	then
-		ph_set_result -a -m "Repair needs administrative rights (Run '${PH_SUDO} ${PH_SCRIPTS_DIR}/confpieh_ph.sh -v')"
-	fi
 	ph_repair_pieh
 	exit "${?}"
 fi
+
+# Run extended sanity checks when enabled
+
 if [[ "${PH_PIEH_SANITY_EXTENDED}" == "yes" ]]
 then
 	PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
 	if [[ "$("${PH_SUDO}" cat "/proc/${PPID}/comm" 2>/dev/null)" != +(@(conf|list)*_ph|@(re|)start*|${PH_MOVE_SCRIPTS_REGEX}).sh ]]
 	then
-		if [[ -f "${PH_TMP_DIR}/.reported_issues" ]]
+		if [[ -e "${PH_TMP_DIR}/.reported_issues" ]]
 		then
 			ph_show_report
 			exit 1
 		else
-			if [[ -f "${PH_TMP_DIR}/.first_run" ]]
+			if [[ -e "${PH_TMP_DIR}/.first_run" ]]
 			then
 				ph_check_pieh_shared_config extended
 				ph_check_pieh_unconfigured_config
@@ -427,14 +433,14 @@ then
 			fi
 		fi
 	fi
-	if [[ -f "${PH_TMP_DIR}/.reported_issues" ]]
+	if [[ -e "${PH_TMP_DIR}/.reported_issues" ]]
 	then
 		ph_show_report
 		exit 1
 	fi
 fi
 
-# Clean temp directory again
+# Clean the temp directory again
 
 ph_clean_tmp_dir
 
@@ -452,12 +458,12 @@ ph_initialize_rollback
 if [[ -f "${PH_TMP_DIR}/.first_run" ]]
 then
 	clear
-	printf "\n\033[36m%s\033[0m\n\n" "- Configuring PieHelper '${PH_VERSION}'"
+	printf "\n\033[1;36m%s\033[0m\n\n" "- Configuring PieHelper '${PH_VERSION}'"
 	ph_configure_pieh
 	exit "${?}"
 fi
 
-# Set the user and group accounts for PieHelper
+# Set user and group accounts for the framework
 
 PH_RUN_USER="$(ph_get_app_user_from_app_name PieHelper)"
 PH_RUN_GROUP="$(id -ng "${PH_RUN_USER}")"
@@ -475,7 +481,7 @@ do
 	fi
 done
 
-# Check if the current user is allowed
+# Check if the current user has framework access
 
 declare -a PH_ALLOW_USERS
 [[ "${PH_RUN_USER}" == "root" ]] && \
@@ -486,36 +492,44 @@ do
 done
 if [[ "${#PH_ALLOW_USERS[@]}" -eq "0" ]]
 then
+	PH_ROLLBACK_USED="no"
 	if [[ "${PH_PIEH_SANITY_EXTENDED}" == "no" ]]
 	then
 		ph_set_option_to_value "PieHelper" -o "PH_PIEH_SANITY_EXTENDED'yes" >/dev/null 2>&1
 		ph_set_result -a -m "An error occurred trying to determine the users with PieHelper access (Auto-enabling extended sanity checks)"
 	else
-		ph_set_result -a -m "An error occurred trying to determine the users with PieHelper access (Check 'sudo' configurations)"
+		ph_set_result -a -m "An error occurred trying to determine the users with PieHelper access (Check/correct 'sudo' configurations)"
 	fi
 else
-	if [[ "$(whoami 2>/dev/null)" != @($(sed 's/ /|/g'<<<"${PH_ALLOW_USERS[*]}")) ]]
+	if [[ "${PH_CUR_USER}" != @($(sed 's/ /|/g'<<<"${PH_ALLOW_USERS[*]}")) ]]
 	then
-		ph_set_result -a -m "Current user '$(whoami 2>/dev/null)' does not match any of the accounts with PieHelper access :: '${PH_ALLOW_USERS[*]// /|}'"
+		ph_set_result -a -m "Current user '${PH_CUR_USER}' does not match any account with PieHelper access ('${PH_ALLOW_USERS[*]// /|}')"
 	fi
 fi
 unset PH_ALLOW_USERS
 
-# Check for distro release changes
+# Detect/handle changes in release for the current distro
 
-PH_OLD_DISTRO_REL="$("${PH_SUDO}" find "${PH_CONF_DIR}/distros" -maxdepth 1 -type L -name "*.conf" 2>/dev/null)"
-if [[ -n "${PH_OLD_DISTRO_REL}" && "${PH_OLD_DISTRO_REL}" != "${PH_DISTRO_REL}" ]]
+if [[ -L "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" ]]
 then
-	PH_DISTROU="${PH_DISTRO}"
-	if ph_check_array_index -n "PH_SUPPORTED_${PH_DISTROU}_RELS" -v "${PH_DISTRO_REL}" -q
+	if PH_OLD_DISTRO_REL="$(ph_get_link_target "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf")"
 	then
-		ph_remove_empty_file -q -t link -d "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf"
-		ph_create_empty_file -q -t link -s "${PH_CONF_DIR}/distros/${PH_DISTRO_REL}.conf" -d "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf"
+		if [[ "${PH_OLD_DISTRO_REL}" != "${PH_DISTRO_REL}" ]]
+		then
+			PH_DISTROU="${PH_DISTRO}"
+			if ph_check_array_index -n "PH_SUPPORTED_${PH_DISTROU}_RELS" -v "${PH_DISTRO_REL}" -q
+			then
+				ph_remove_empty_file -q -t link -d "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf"
+				ph_create_empty_file -q -t link -s "${PH_CONF_DIR}/distros/${PH_DISTRO_REL}.conf" -d "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf"
+			else
+				ph_set_result -a -m "This ${PH_DISTRO} instance changed release from '${PH_OLD_DISTRO_REL}' to the currently unsupported '${PH_DISTRO_REL}'"
+			fi
+		fi
 	else
-		ph_set_result -a -m "Detected a change in Linux release from '${PH_OLD_DISTRO_REL}' to '${PH_DISTRO_REL}' which is currently not supported"
+		ph_set_result -a
 	fi
 fi
 
-# Unset local variables
+# Unset all local variables
 
-unset PH_i PH_MOVE_SCRIPTS_REGEX PH_OLD_DISTRO_REL PH_FLAG PH_DISTROU 2>/dev/null
+unset PH_i PH_CUR_USER PH_MOVE_SCRIPTS_REGEX PH_OLD_DISTRO_REL PH_FORMAT_FLAG PH_DISTROU
