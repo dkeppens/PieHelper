@@ -1138,16 +1138,16 @@ declare PH_j
 declare PH_DIR
 declare PH_SUFFIX
 declare PH_MODE
-declare PH_REQ_LEVEL
+declare PH_REQ_SANITY_LEVEL
 
 PH_i=""
 PH_j=""
 PH_DIR=""
 PH_SUFFIX=""
-PH_MODE="${1}"
-PH_REQ_LEVEL=""
+PH_SANITY_MODE="${1}"
+PH_REQ_SANITY_LEVEL=""
 
-[[ "${PH_MODE}" != @(basic|extended) || "${#}" -ne "1" ]] && \
+[[ "${PH_SANITY_MODE}" != @(basic|extended) || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 declare -ax PH_DEFAULT_APPS
@@ -1170,22 +1170,22 @@ do
 		MovefromPieHScript LoginScript MoveScript MovetoPieHScript RestartScriptPieH \
 		RestartScript StartScriptPieH StartScript StopScriptPieH StopScript \
 		confapps confpieh confttys confgena confctrl confoper confopts listblue listmoon \
-		setpasswd.expect confctrls.expect kodi.post_cmd.excludes build.archives.excludes
+		setpasswd confctrls kodi.post_cmd build.archives
 	do
-		PH_REQ_LEVEL="critical"
+		PH_REQ_SANITY_LEVEL="critical"
 		PH_DIR=""
 		PH_SUFFIX=""
 		if [[ -d "${PH_j}" ]]
 		then
 			[[ "${PH_j}" == @(${PH_MNT_DIR}|${PH_BUILD_DIR}|${PH_SNAPSHOT_DIR}|${PH_FILES_DIR}/stored|${PH_EXCLUDES_DIR}) ]] && \
-				PH_REQ_LEVEL="basic"
+				PH_REQ_SANITY_LEVEL="basic"
 		else
 			if ph_check_array_index -n PH_DISTRO_CONFIGS -v "${PH_j}" -q
 			then
 				PH_DIR="${PH_CONF_DIR}/distros/"
 				PH_SUFFIX=".conf"
 				[[ "${PH_j}" != "${PH_DISTRO_REL}" ]] && \
-					PH_REQ_LEVEL="full"
+					PH_REQ_SANITY_LEVEL="full"
 			else
 				if ph_check_array_index -n PH_DEFAULT_APPS -v "${PH_j}" -q
 				then
@@ -1205,41 +1205,42 @@ do
 						PH_DIR="${PH_SCRIPTS_DIR}/"
 						PH_SUFFIX="_ph.sh" ;;
 							*PRE)
-						PH_REQ_LEVEL="basic"
-						PH_DIR="${PH_SCRIPTS_DIR}/app/pre_cmds"
+						PH_REQ_SANITY_LEVEL="basic"
+						PH_DIR="${PH_SCRIPTS_DIR}/app/pre_cmds/"
 						PH_SUFFIX=".sh" ;;
 							*POST)
-						PH_REQ_LEVEL="basic"
-						PH_DIR="${PH_SCRIPTS_DIR}/app/post_cmds"
+						PH_REQ_SANITY_LEVEL="basic"
+						PH_DIR="${PH_SCRIPTS_DIR}/app/post_cmds/"
 						PH_SUFFIX=".sh" ;;
-							*.excludes)
-						PH_REQ_LEVEL="basic"
+							kodi.post_cmd|build.archives)
+						PH_REQ_SANITY_LEVEL="basic"
+						PH_SUFFIX=".excludes"
 						PH_DIR="${PH_EXCLUDES_DIR}/" ;;
 							default_apps_*|VERSIONS)
 						PH_DIR="${PH_FILES_DIR}/" ;;
 							VERSION)
 						PH_DIR="${PH_CONF_DIR}/" ;;
-							*.expect)
+							setpasswd|confctrls)
+						PH_SUFFIX=".expect"
 						PH_DIR="${PH_SCRIPTS_DIR}/app/expect/" ;;
 							HOWTO)
-						PH_REQ_LEVEL="basic"
+						PH_REQ_SANITY_LEVEL="basic"
 						PH_DIR="${PH_BASE_DIR}/" ;;
 							*.gitignore)
-						PH_REQ_LEVEL="basic" ;;
+						PH_REQ_SANITY_LEVEL="basic" ;;
 							*)
 						: ;;
 					esac
 				fi
 			fi
 		fi
-		if [[ "${PH_i}" != "${PH_REQ_LEVEL}" ]]
+		if [[ "${PH_i}" != "${PH_REQ_SANITY_LEVEL}" ]]
 		then
 			continue
 		else
-			if ! ph_check_object_existence -o "${PH_DIR}${PH_j}${PH_SUFFIX}" -m "${PH_MODE}"
+			if ! ph_check_object_existence -o "${PH_DIR}${PH_j}${PH_SUFFIX}" -m "${PH_SANITY_MODE}"
 			then
-				ph_show_result
-				exit "${?}"
+				return 1
        		 	fi
 		fi
 	done
@@ -1898,8 +1899,12 @@ else
        		esac
 	fi
 fi
-[[ -n "${PH_OBJECT_CAT}" ]] && \
+if [[ -n "${PH_OBJECT_CAT}" ]]
+then
 	PH_OBJECT_CAT=" ${PH_OBJECT_CAT} "
+else
+	PH_OBJECT_CAT=" "
+fi
 PH_OBJECT_DESC="${PH_TYPE}${PH_OBJECT_CAT}${PH_OBJECT_TYPE}"
 if [[ ! -e "${PH_OBJECT}" || ! -r "${PH_OBJECT}" || \
 	( "${PH_OBJECT_TYPE}" == @(file|item|script|template) && ( -L "${PH_OBJECT}" || -d "${PH_OBJECT}" )) || \

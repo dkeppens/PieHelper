@@ -1,10 +1,11 @@
+* finish processing main.sh to perfection : error checks on option settings (or add -q option to them), handler correct order when manipulating PATH/LD_LIBRARY_PATH, redo conf/distros structure (-> releases ?), ...
+* add PH_REQ_SANITY_MODE stuff to function ph_check_pieh_shared_config and use to REALLY limit basic sanity checks to reinstall required (repair impossible) stuff only + reflect that in config file descriptions
 * change ph_configure_pieh function to adapt to changes in app/main.sh (sudo check and all has moved)
 * move more stuff to sanity level 'optional' if possible
 * solve problem of dynamic values in case statements
 * add PieHelper option to exclude filesystem types for global searches run by PieHelper
 * add check to cifs_mpt functions if when mounted is equal to correct dir as configured by app options
 * Make PieHelper temp update dir PH_UPDATE_DIR a new PieHelper option -> PH_PIEH_UPDATE_DIR
- change all find commands to not include cifs/nfs where not wanted
 * add checks for out-of-scope apps to ph_install_app and ph_uninstall_app
 * change return option of menu to 0. : easier
 * add checks for missing menu items etc to ph_check_pieh_configured

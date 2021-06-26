@@ -270,7 +270,7 @@ export PATH LD_LIBRARY_PATH
 
 # Force a color terminal
 
-if [[ "${TERM}" != "xterm" ]]
+if [[ "${TERM}" != "xterm-256color" ]]
 then
 	export TERM="xterm-256color"
 fi
