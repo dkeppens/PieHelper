@@ -29,7 +29,7 @@ declare PH_HEADER
 declare PH_ROUTINE
 declare PH_LIST
 declare PH_DISP_HELP
-declare PH_OLD_PIEH_EXT_SANITY
+declare PH_OLD_PIEH_SANITY_EXTENDED
 declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
@@ -51,7 +51,7 @@ PH_HEADER="Run a specified routine successively on selected applications"
 PH_ROUTINE=""
 PH_LIST=""
 PH_DISP_HELP=""
-PH_OLD_PIEH_EXT_SANITY="${PH_PIEH_EXT_SANITY}"
+PH_OLD_PIEH_SANITY_EXTENDED="${PH_PIEH_SANITY_EXTENDED}"
 PH_OPTION=""
 
 OPTIND="1"
@@ -186,13 +186,13 @@ do
 		>&2 printf "%23s%s\n" "" "-r allows specifying an application routine to run for each selected application, in the order they were selected"
 		>&2 printf "%25s%s\n" "" "- For applications selected more than once, the routine will run only once, for the first instance selected"
 		>&2 printf "%25s%s\n" "" "- Routines that remove application items will :"
-		>&2 printf "%27s%s\n" "" "- Disable extended sanity checks by setting PieHelper option 'PH_PIEH_EXT_SANITY' to no"
+		>&2 printf "%27s%s\n" "" "- Disable extended sanity checks by setting PieHelper option 'PH_PIEH_SANITY_EXTENDED' to no"
 		>&2 printf "%27s%s\n" "" "- Remove all existing items for that routine and for each selection"
-		>&2 printf "%27s%s\n" "" "- Re-enable extended sanity checks, if at first disabled, by setting PieHelper option 'PH_PIEH_EXT_SANITY' back to yes"
+		>&2 printf "%27s%s\n" "" "- Re-enable extended sanity checks, if at first disabled, by setting PieHelper option 'PH_PIEH_SANITY_EXTENDED' back to yes"
 		>&2 printf "%25s%s\n" "" "- Routines that create application items will :"
-		>&2 printf "%27s%s\n" "" "- Disable extended sanity checks by setting PieHelper option 'PH_PIEH_EXT_SANITY' to no"
+		>&2 printf "%27s%s\n" "" "- Disable extended sanity checks by setting PieHelper option 'PH_PIEH_SANITY_EXTENDED' to no"
 		>&2 printf "%27s%s\n" "" "- Remove and re-create all existing items for that routine and for each selection"
-		>&2 printf "%27s%s\n" "" "- Re-enable extended sanity checks, if at first disabled, by setting PieHelper option 'PH_PIEH_EXT_SANITY' back to yes"
+		>&2 printf "%27s%s\n" "" "- Re-enable extended sanity checks, if at first disabled, by setting PieHelper option 'PH_PIEH_SANITY_EXTENDED' back to yes"
 		>&2 printf "%25s%s\n" "" "- Application PieHelper will always be skipped by the following routines :"
 		>&2 printf "%27s%s\n" "" "- 'conf' and 'unconf'"
 		>&2 printf "%27s%s\n" "" "- 'sup' and 'unsup'"
@@ -512,9 +512,9 @@ else
 			exit "${?}"
 		fi
 	fi
-	if [[ "${PH_ROUTINE}" == rm_* && "${PH_PIEH_EXT_SANITY}" == "yes" ]]
+	if [[ "${PH_ROUTINE}" == rm_* && "${PH_PIEH_SANITY_EXTENDED}" == "yes" ]]
 	then
-		if ! ph_run_with_rollback -c "ph_set_option_to_value PieHelper -r \"PH_PIEH_EXT_SANITY'no\""
+		if ! ph_run_with_rollback -c "ph_set_option_to_value PieHelper -r \"PH_PIEH_SANITY_EXTENDED'no\""
 		then
 			ph_show_result
 			exit "${?}"
@@ -545,9 +545,9 @@ else
 				exit "${?}"
 			fi
 		fi
-		if [[ "${PH_ROUTINE}" == rm_* && "${PH_ROUTINE}" != "rm_conf" && "${PH_OLD_PIEH_EXT_SANITY}" != "${PH_PIEH_EXT_SANITY}" ]]
+		if [[ "${PH_ROUTINE}" == rm_* && "${PH_ROUTINE}" != "rm_conf" && "${PH_OLD_PIEH_SANITY_EXTENDED}" != "${PH_PIEH_SANITY_EXTENDED}" ]]
 		then
-			if ! ph_run_with_rollback -c "ph_set_option_to_value PieHelper -r \"PH_PIEH_EXT_SANITY'yes\""
+			if ! ph_run_with_rollback -c "ph_set_option_to_value PieHelper -r \"PH_PIEH_SANITY_EXTENDED'yes\""
 			then
 				ph_show_result
 				exit "${?}"

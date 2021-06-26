@@ -47,9 +47,9 @@ PH_PIEH_SANITY_LEVEL='full'								# - This indicates the level of the basic san
 											#   * critical : Checks will be made on the most important files only
 											#   * optional : Checks will include files related to optional features such as CIFS management and PRE/POST commands
 											#   * full     : Checks will include both optional files and unused ones such as those related to different Linux releases
-PH_PIEH_EXT_SANITY='yes'								# - This indicates whether PieHelper should additionally run extended sanity checks on each run
-											# - Extended sanity checks will detect all configuration issues and generate and display a full report if any are found
-											# - Disabling this will boost performance but configuration errors will no longer be automatically detected
+PH_PIEH_SANITY_EXTENDED='yes'								# - This indicates whether PieHelper should additionally run extended sanity checks on each run
+											# - Extended sanity checks will detect all configuration issues and display a complete report if any are found
+											# - Disabling this will boost performance but any errors outside the scope of basic sanity checks will no longer be detected
 											# - Default is 'yes'
 											# - Allowed values are 'yes' and 'no'
 PH_PIEH_STARTAPP='none'									# - This is the application configured as StartApp that will automatically be started at boot time
@@ -146,4 +146,6 @@ export PH_PIEH_MAX_TTYS PH_PIEH_NUM_CTRL PH_PIEH_USE_CTRL
 
 # Read-write exports
 
-export PH_PIEH_PERSISTENT PH_PIEH_DEBUG PH_PIEH_SANITY_LEVEL PH_PIEH_EXT_SANITY PH_PIEH_STARTAPP PH_PIEH_CMD_OPTS PH_PIEH_PKG_NAME PH_PIEH_CIFS_SHARE PH_PIEH_CIFS_USER PH_PIEH_CIFS_PASS PH_PIEH_CIFS_SRV PH_PIEH_CIFS_DIR PH_PIEH_CIFS_SUBDIR PH_PIEH_CIFS_MPT PH_PIEH_PRE_CMD PH_PIEH_POST_CMD
+export PH_PIEH_PERSISTENT PH_PIEH_DEBUG PH_PIEH_SANITY_LEVEL PH_PIEH_SANITY_EXTENDED PH_PIEH_STARTAPP \
+	PH_PIEH_CMD_OPTS PH_PIEH_PKG_NAME PH_PIEH_CIFS_SHARE PH_PIEH_CIFS_USER PH_PIEH_CIFS_PASS PH_PIEH_CIFS_SRV \
+	PH_PIEH_CIFS_DIR PH_PIEH_CIFS_SUBDIR PH_PIEH_CIFS_MPT PH_PIEH_PRE_CMD PH_PIEH_POST_CMD

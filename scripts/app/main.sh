@@ -395,7 +395,7 @@ then
 	ph_repair_pieh
 	exit "${?}"
 fi
-if [[ "${PH_PIEH_EXT_SANITY}" == "yes" ]]
+if [[ "${PH_PIEH_SANITY_EXTENDED}" == "yes" ]]
 then
 	PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
 	if [[ "$("${PH_SUDO}" cat "/proc/${PPID}/comm" 2>/dev/null)" != +(@(conf|list)*_ph|@(re|)start*|${PH_MOVE_SCRIPTS_REGEX}).sh ]]
@@ -465,9 +465,9 @@ for PH_i in USER GROUP
 do
 	if [[ -z "$(eval "echo -n \"\$PH_RUN_${PH_i}\"")" ]]
 	then
-		if [[ "${PH_i}" == "USER" && "${PH_PIEH_EXT_SANITY}" == "no" ]]
+		if [[ "${PH_i}" == "USER" && "${PH_PIEH_SANITY_EXTENDED}" == "no" ]]
 		then
-			ph_set_option_to_value "PieHelper" -o "PH_PIEH_EXT_SANITY'yes" >/dev/null 2>&1
+			ph_set_option_to_value "PieHelper" -o "PH_PIEH_SANITY_EXTENDED'yes" >/dev/null 2>&1
 			ph_set_result -a -m "An error occurred trying to set the $(echo -n "${PH_i}" | tr '[:upper:]' '[:lower:]') account for PieHelper (Auto-enabling extended sanity checks)"
 		else
 			ph_set_result -a -m "An error occurred trying to set the $(echo -n "${PH_i}" | tr '[:upper:]' '[:lower:]') account for PieHelper (Check user '${PH_RUN_USER}')"
@@ -486,9 +486,9 @@ do
 done
 if [[ "${#PH_ALLOW_USERS[@]}" -eq "0" ]]
 then
-	if [[ "${PH_PIEH_EXT_SANITY}" == "no" ]]
+	if [[ "${PH_PIEH_SANITY_EXTENDED}" == "no" ]]
 	then
-		ph_set_option_to_value "PieHelper" -o "PH_PIEH_EXT_SANITY'yes" >/dev/null 2>&1
+		ph_set_option_to_value "PieHelper" -o "PH_PIEH_SANITY_EXTENDED'yes" >/dev/null 2>&1
 		ph_set_result -a -m "An error occurred trying to determine the users with PieHelper access (Auto-enabling extended sanity checks)"
 	else
 		ph_set_result -a -m "An error occurred trying to determine the users with PieHelper access (Check 'sudo' configurations)"
