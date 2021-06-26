@@ -1071,7 +1071,7 @@ PH_VALUE=""
 PH_OPTION=""
 PH_INDEX="0"
 PH_QUIESCE="1"
-PH_VALUE_RECEIVED_FLAG="1"
+PH_VALUE_RECVD_FLAG="1"
 
 OPTIND="1"
 
@@ -1084,12 +1084,12 @@ do
 			return 1
 		PH_ARRAY_NAME="${OPTARG}" ;;
 			     v)
-		[[ "${PH_VALUE_RECEIVED_FLAG}" -eq "0" ]] && \
+		[[ "${PH_VALUE_RECVD_FLAG}" -eq "0" ]] && \
 			OPTIND="${PH_OLDOPTIND}" && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
 		PH_VALUE="${OPTARG}"
-		PH_VALUE_RECEIVED_FLAG="0" ;;
+		PH_VALUE_RECVD_FLAG="0" ;;
 			     q)
 		[[ "${PH_QUIESCE}" -eq "0" ]] && \
 			OPTIND="${PH_OLDOPTIND}" && \
@@ -1106,30 +1106,33 @@ done
 OPTIND="${PH_OLDOPTIND}"
 OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "${PH_ARRAY_NAME}" || "${PH_VALUE_RECEIVED_FLAG}" -eq "1" || \
+[[ -z "${PH_ARRAY_NAME}" || "${PH_VALUE_RECVD_FLAG}" -eq "1" || \
 	( "${PH_QUIESCE}" -eq "0" && "${#}" -ne "5" ) || \
 	( "${PH_QUIESCE}" -ne "0" && "${#}" -ne "4" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-set -x
 declare -n PH_ARRAY="${PH_ARRAY_NAME}"
-for PH_INDEX in "${!PH_ARRAY[@]}"
-do
-	[[ "${PH_ARRAY["${PH_INDEX}"]}" == "${PH_VALUE}" ]] && \
-		break
-done
-if [[ "${PH_INDEX}" -eq "$(cut -d' ' -f "${#PH_ARRAY[@]}"<<<"${!PH_ARRAY[*]}")" && \
-	"${PH_ARRAY["${PH_INDEX}"]}" != "${PH_VALUE}" ]]
+if [[ "${#PH_ARRAY[@]}" -gt "0" ]]
 then
-	unset -n PH_ARRAY
-	[[ "${PH_QUIESCE}" -ne "0" ]] && \
-		echo -n "0"
-	return 1
+	for PH_INDEX in "${!PH_ARRAY[@]}"
+	do
+		[[ "${PH_ARRAY["${PH_INDEX}"]}" == "${PH_VALUE}" ]] && \
+			break
+	done
+	if [[ "${PH_ARRAY["${PH_INDEX}"]}" != "${PH_VALUE}" ]]
+	then
+		PH_INDEX="0"
+	fi
 fi
 unset -n PH_ARRAY
-[[ "${PH_QUIESCE}" -ne "0" ]] && \
+[[ "${PH_QUIESCE}" -eq "1" ]] && \
 	echo -n "${PH_INDEX}"
-return 0
+if [[ "${PH_INDEX}" -eq "0" ]]
+then
+	return 1
+else
+	return 0
+fi
 }
 
 function ph_check_pieh_shared_config {
