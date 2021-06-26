@@ -420,12 +420,12 @@ then
 		fi ;;
 	esac
 fi
-PH_RESULT_TYPE_USED="Normal"
 unset -n PH_RESULT_TYPE
 if [[ "${PH_RESULT}" == "Abort" ]]
 then
 	ph_quit_with_rollback
 fi
+PH_RESULT_TYPE_USED="Normal"
 return 0
 }
 
