@@ -1111,6 +1111,7 @@ OPTARG="${PH_OLDOPTARG}"
 	( "${PH_QUIESCE}" -ne "0" && "${#}" -ne "4" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
+set -x
 declare -n PH_ARRAY="${PH_ARRAY_NAME}"
 for PH_INDEX in "${!PH_ARRAY[@]}"
 do
@@ -1122,7 +1123,7 @@ if [[ "${PH_INDEX}" -eq "$(cut -d' ' -f "${#PH_ARRAY[@]}"<<<"${!PH_ARRAY[*]}")" 
 then
 	unset -n PH_ARRAY
 	[[ "${PH_QUIESCE}" -ne "0" ]] && \
-		echo "0"
+		echo -n "0"
 	return 1
 fi
 unset -n PH_ARRAY
