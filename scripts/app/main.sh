@@ -19,14 +19,12 @@ shopt -s checkwinsize
 # Local variable declarations
 
 declare PH_i
-declare PH_j
 declare PH_MOVE_SCRIPTS_REGEX
 declare PH_OLD_DISTRO_REL
 declare -i PH_FLAG
 declare -u PH_DISTROU
 
 PH_i=""
-PH_j=""
 PH_MOVE_SCRIPTS_REGEX=""
 PH_OLD_DISTRO_REL=""
 PH_FLAG="1"
@@ -58,7 +56,7 @@ declare -x PH_PI_MODEL
 declare -x PH_FILE_SUFFIX
 declare -ax PH_SUPPORTED_DISTROS
 declare -ax PH_SUPPORTED_DEBIAN_RELS
-declare -ax PH_CHECK_SUPPORTED
+declare -ax PH_DISTRO_CONFIGS
 
 PH_SCRIPTS_DIR="$(cd "$(dirname "${0}")" && pwd)"
 PH_INST_DIR="${PH_SCRIPTS_DIR%/PieHelper/scripts}"
@@ -83,7 +81,7 @@ PH_PI_MODEL=""
 
 # Determine the current user
 
-if ! whoami 2>/dev/null
+if ! whoami >/dev/null 2>&1
 then
 	printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the current user account"
 	exit 1
@@ -91,7 +89,7 @@ fi
 
 # Determine sudo location and escalation rights  
 
-if command -v sudo 2>/dev/null
+if command -v sudo >/dev/null 2>&1
 then
 	if "$(command -v sudo 2>/dev/null)" bash -c exit 2>/dev/null
 	then
@@ -145,18 +143,15 @@ PH_SUPPORTED_DEBIAN_RELS=("jessie" "stretch" "buster" "bullseye")
 for PH_i in "${PH_SUPPORTED_DISTROS[@]}"
 do
 	PH_DISTROU="${PH_i}"
-	declare -n PH_DISTRO_RELS
-	PH_DISTRO_RELS="PH_SUPPORTED_${PH_DISTROU}_RELS"
 	if [[ "$(declare -p "PH_SUPPORTED_${PH_DISTROU}_RELS" 2>/dev/null)" == declare* ]]
 	then
-		PH_CHECK_SUPPORTED+=("${PH_DISTRO_RELS[@]}" "${PH_SUPPORTED_DISTROS[@]}")
-		for PH_j in "${!PH_CHECK_SUPPORTED[@]}"
-		do
-			[[ "${PH_CHECK_SUPPORTED["${PH_j}"]}" == "${PH_i}" ]] && \
-				unset PH_CHECK_SUPPORTED["${PH_j}"]
-		done
+		declare -n PH_DISTRO_RELS
+		PH_DISTRO_RELS="PH_SUPPORTED_${PH_DISTROU}_RELS"
+		PH_DISTRO_CONFIGS+=("${PH_DISTRO_RELS[@]}}")
+		unset -n PH_DISTRO_RELS
+	else
+		PH_DISTRO_CONFIGS+=("${PH_i}")
 	fi
-	unset -n PH_DISTRO_RELS
 done
 
 # Global variable declarations related to rollback
@@ -523,4 +518,4 @@ fi
 
 # Unset local variables
 
-unset PH_i PH_j PH_MOVE_SCRIPTS_REGEX PH_OLD_DISTRO_REL PH_FLAG PH_DISTROU 2>/dev/null
+unset PH_i PH_MOVE_SCRIPTS_REGEX PH_OLD_DISTRO_REL PH_FLAG PH_DISTROU 2>/dev/null

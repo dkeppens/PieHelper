@@ -1165,7 +1165,7 @@ do
 		"${PH_SNAPSHOT_DIR}/.gitignore" "${PH_MNT_DIR}/.gitignore" "${PH_TMP_DIR}/.gitignore" "${PH_FILES_DIR}/stored/.gitignore" \
 		VERSION VERSIONS default_apps_GL default_apps_X HOWTO \
 		Support System Main PS3 PS4 XBOX360 XBOXSX SystemRetained SystemInteractive SystemRetaineds \
-		Controllers OOSapp "${PH_DEFAULT_APPS[@]}" "${PH_CHECK_SUPPORTED[@]}" \
+		Controllers OOSapp "${PH_DEFAULT_APPS[@]}" "${PH_DISTRO_CONFIGS[@]}" \
 		Kodi-PRE Kodi-POST PieHelper-PRE PieHelper-POST \
 		MovefromPieHScript LoginScript MoveScript MovetoPieHScript RestartScriptPieH \
 		RestartScript StartScriptPieH StartScript StopScriptPieH StopScript \
@@ -1180,7 +1180,7 @@ do
 			[[ "${PH_j}" == @(${PH_MNT_DIR}|${PH_BUILD_DIR}|${PH_SNAPSHOT_DIR}|${PH_FILES_DIR}/stored|${PH_EXCLUDES_DIR}) ]] && \
 				PH_REQ_LEVEL="basic"
 		else
-			if ph_check_array_index -n PH_CHECK_SUPPORTED -v "${PH_j}" -q
+			if ph_check_array_index -n PH_DISTRO_CONFIGS -v "${PH_j}" -q
 			then
 				PH_DIR="${PH_CONF_DIR}/distros/"
 				PH_SUFFIX=".conf"
@@ -1885,7 +1885,7 @@ else
 				*/*.excludes)
 			PH_OBJECT_CAT="tar excludes" ;;
 				*/distros/*.conf)
-			if ph_check_array_index -n PH_CHECK_SUPPORTED -v "${PH_FILE%.conf}" -q
+			if ! ph_check_array_index -n PH_DISTRO_CONFIGS -v "${PH_FILE%.conf}" -q
 			then
 				PH_OBJECT_CAT="configuration"
 				PH_OBJECT_TYPE="link"
@@ -10208,7 +10208,7 @@ do
 	ph_check_object_existence -o "${PH_SCRIPTS_DIR}/${PH_i}.sh" || \
 		return 1
 done
-for PH_i in "${PH_CHECK_SUPPORTED[@]}"
+for PH_i in "${PH_DISTRO_CONFIGS[@]}"
 do
 	ph_check_object_existence -o "${PH_CONF_DIR}/distros/${PH_i}.conf" || \
 		return 1
@@ -10243,7 +10243,7 @@ PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
 "${PH_SUDO}" rm -r "${PH_EXCLUDES_DIR}/"!(@(build\.archives|kodi\.post_cmd)\.excludes) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_TEMPLATES_DIR}/"!(@(@(Login|@(S|Res)tart|Stop|Move@(to|from)PieH|Move)Script|@(@(Res|S)tart|Stop)ScriptPieH|@(Kodi|Moonlight|PieHelper|Emulationstation|Bash|X11|Controllers|OOSapp)_conf)\.template) 2>/dev/null
 "${PH_SUDO}" rm "${PH_CONF_DIR}/"!(@(distros|@(supported|integrated)_apps|OS\.defaults|VERSION|controller_cli_ids)) 2>/dev/null
-"${PH_SUDO}" rm -r "${PH_CONF_DIR}/distros/"!(@($(sed 's/ /\|/g'<<<${PH_CHECK_SUPPORTED[@]}))\.conf) 2>/dev/null
+"${PH_SUDO}" rm -r "${PH_CONF_DIR}/distros/"!(@($(sed 's/ /\|/g'<<<${PH_DISTRO_CONFIGS[@]}))\.conf) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_MENUS_DIR}/"!(*\.lst) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_TMP_DIR}/"!(\.@(first_run|gitignore|stored_options)) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_BUILD_DIR}/"!(@(PieHelper*\.tar|\.gitignore)) 2>/dev/null
