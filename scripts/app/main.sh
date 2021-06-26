@@ -1,7 +1,7 @@
 # Main PieHelper (By Davy Keppens on 06/10/18)
 # Enable/Disable debug by running 'confpieh_ph.sh -p debug -m main.sh'
 
-set -x
+#set -x
 
 # Trap some common interrupts
 

@@ -1166,6 +1166,7 @@ do
 		VERSION VERSIONS default_apps_GL default_apps_X HOWTO \
 		Support System Main PS3 PS4 XBOX360 XBOXSX SystemRetained SystemInteractive SystemRetaineds \
 		Controllers OOSapp "${PH_DEFAULT_APPS[@]}" "${PH_CHECK_SUPPORTED[@]}" \
+		Kodi-PRE Kodi-POST PieHelper-PRE PieHelper-POST \
 		MovefromPieHScript LoginScript MoveScript MovetoPieHScript RestartScriptPieH \
 		RestartScript StartScriptPieH StartScript StopScriptPieH StopScript \
 		confapps confpieh confttys confgena confctrl confoper confopts listblue listmoon \
@@ -1176,7 +1177,6 @@ do
 		PH_SUFFIX=""
 		if [[ -d "${PH_j}" ]]
 		then
-			PH_DIR="${PH_j}"
 			[[ "${PH_j}" == @(${PH_MNT_DIR}|${PH_BUILD_DIR}|${PH_SNAPSHOT_DIR}|${PH_FILES_DIR}/stored|${PH_EXCLUDES_DIR}) ]] && \
 				PH_REQ_LEVEL="basic"
 		else
@@ -1204,6 +1204,14 @@ do
 							conf*|list*)
 						PH_DIR="${PH_SCRIPTS_DIR}/"
 						PH_SUFFIX="_ph.sh" ;;
+							*PRE)
+						PH_REQ_LEVEL="basic"
+						PH_DIR="${PH_SCRIPTS_DIR}/app/pre_cmds"
+						PH_SUFFIX=".sh" ;;
+							*POST)
+						PH_REQ_LEVEL="basic"
+						PH_DIR="${PH_SCRIPTS_DIR}/app/post_cmds"
+						PH_SUFFIX=".sh" ;;
 							*.excludes)
 						PH_REQ_LEVEL="basic"
 						PH_DIR="${PH_EXCLUDES_DIR}/" ;;
