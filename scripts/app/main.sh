@@ -200,8 +200,10 @@ else
 		} \
 		$1 ~ /^ID$/ { \
 			id = $2 \
-		} else if ($1 ~ /^ID_LIKE$/) { \
-			id_like = $2 \
+		} else { \
+			if ($1 ~ /^ID_LIKE$/) { \
+				id_like = $2 \
+			} \
 		} END { \
 			if (id_like ~ /^$/) { \
 				printf toupper(substr(id,1,1)) ; \
