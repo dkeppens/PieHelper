@@ -1117,7 +1117,7 @@ do
 	[[ "${PH_ARRAY["${PH_INDEX}"]}" == "${PH_VALUE}" ]] && \
 		break
 done
-if [[ "${PH_INDEX}" -eq "$(cut -d' ' -f "${#PH_ARRAY[@]}"<<<"${PH_ARRAY[*]}")" && \
+if [[ "${PH_INDEX}" -eq "$(cut -d' ' -f "${#PH_ARRAY[@]}"<<<"${!PH_ARRAY[*]}")" && \
 	"${PH_ARRAY["${PH_INDEX}"]}" != "${PH_VALUE}" ]]
 then
 	unset -n PH_ARRAY
