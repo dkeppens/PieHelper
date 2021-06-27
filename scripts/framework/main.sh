@@ -279,7 +279,7 @@ fi
 
 # Load shared and distro-dependent codebase
 
-for PH_i in functions.main functions.user functions.update "distros/functions.${PH_DISTRO}"
+for PH_i in functions.other functions.update functions.user "distros/functions.${PH_DISTRO}"
 do
 	if [[ -r "${PH_FUNCS_DIR}/${PH_i}" ]]
 	then

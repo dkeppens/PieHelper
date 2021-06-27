@@ -10229,7 +10229,7 @@ do
 	ph_check_object_existence -o "${PH_FUNCS_DIR}/distros/functions.${PH_i}" -m immediate || \
 		return 1
 done
-for PH_i in functions.main functions.update functions.user
+for PH_i in functions.other functions.update functions.user
 do
 	ph_check_object_existence -o "${PH_FUNCS_DIR}/${PH_i}" -m immediate || \
 		return 1

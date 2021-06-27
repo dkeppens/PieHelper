@@ -514,7 +514,7 @@ case "${PH_ACTION}" in repair)
 			done
 			for PH_i in $(nawk '$1 ~ /^function$/ { \
 					print $2 \
-				}' "${PH_FUNCS_DIR}/functions.main" "${PH_FUNCS_DIR}/functions.update" "${PH_FUNCS_DIR}/functions.user" "${PH_FUNCS_DIR}/distros/functions.${PH_DISTRO}" 2>/dev/null | \
+				}' "${PH_FUNCS_DIR}/functions.other" "${PH_FUNCS_DIR}/functions.update" "${PH_FUNCS_DIR}/functions.user" "${PH_FUNCS_DIR}/distros/functions.${PH_DISTRO}" 2>/dev/null | \
 				sed 's/ /\n/g' | sort | paste -d" " -s)
 			do
 				PH_DEBUGSTATE="$(echo -n "${PH_PIEH_DEBUG}" | nawk -v func="^${PH_i}$" 'BEGIN { \
