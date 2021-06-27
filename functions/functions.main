@@ -1174,7 +1174,7 @@ do
 		MovefromPieHScript LoginScript MoveScript MovetoPieHScript RestartScriptPieH \
 		RestartScript StartScriptPieH StartScript StopScriptPieH StopScript \
 		confapps confpieh confttys confgena confctrl confoper confopts listblue listmoon \
-		setpasswd confctrls kodi.post_cmd build.archives
+		setpasswd cfgctrls kodi.post_cmd build.archives
 	do
 		PH_REQ_SANITY_LEVEL="critical"
 		PH_DIR=""
@@ -1224,7 +1224,7 @@ do
 						PH_DIR="${PH_FILES_DIR}/" ;;
 							VERSION)
 						PH_DIR="${PH_CONF_DIR}/" ;;
-							setpasswd|confctrls)
+							setpasswd|cfgctrls)
 						PH_SUFFIX=".expect"
 						PH_DIR="${PH_SCRIPTS_DIR}/app/expect/" ;;
 							HOWTO)

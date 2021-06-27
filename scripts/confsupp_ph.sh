@@ -83,7 +83,7 @@ do
                 >&2 printf "%15s%s\n" "" "- A maximum of 5 out-of-scope applications can be added"
                 >&2 printf "%15s%s\n" "" "-a allows specifying an application name for [instapp]"
                 >&2 printf "%18s%s\n" "" "- The first four letters should be a case-insensitive unique identifier of the application"
-                >&2 printf "%18s%s\n" "" "- An empty configuration routine for [instapp] will automatically be created in '$PH_MAIN_DIR/functions.user'"
+                >&2 printf "%18s%s\n" "" "- An empty configuration routine for [instapp] will automatically be created in '$PH_FUNCS_DIR/functions.user'"
                 >&2 printf "%18s%s\n" "" "  These can be developed by the user"
                 >&2 printf "%15s%s\n" "" "-b allows specifying a packagename [instpkg]"
                 >&2 printf "%18s%s\n" "" "- A package is a requirement for out-of-scope applications"
@@ -275,7 +275,7 @@ case "$PH_ACTION" in inst)
 		"$PH_SUDO" chmod 750 "${PH_SCRIPTS_DIR}/"*.sh 2>/dev/null
 		printf "%10s\033[32m%s\033[0m\n" "" "OK"
 		printf "%8s%s\n" "" "--> Adding ${PH_APP} user function"
-		cat >>"${PH_MAIN_DIR}/functions.user" <<EOF
+		cat >>"${PH_FUNCS_DIR}/functions.user" <<EOF
 
 function ph_configure_${PH_APPL} {
 
@@ -283,7 +283,7 @@ function ph_configure_${PH_APPL} {
 return 0
 }
 EOF
-		printf "%10s\033[32m%s\033[0m\n" "" "OK (You can optionally add '$PH_APP' configuration code in $PH_MAIN_DIR/functions.user)"
+		printf "%10s\033[32m%s\033[0m\n" "" "OK (You can optionally add '$PH_APP' configuration code in $PH_FUNCS_DIR/functions.user)"
 		printf "%2s\033[32m%s\033[0m\n\n" "" "SUCCESS"
 		ph_grant_pieh_access "$PH_APP_USER" "$PH_APP" >/dev/null 2>&1
 		exit 0 ;;
@@ -355,8 +355,8 @@ EOF
 		printf "%10s\033[32m%s\033[0m\n" "" "OK"
 		printf "%8s%s\n" "" "--> Removing '$PH_APP' user function"
 		nawk -v app="_$PH_APPL"$ 'BEGIN { FLAG=0 } $1 ~ /^function$/ && $2 ~ app { FLAG=1 ; while ($1!~/^}$/) { getline } ; getline ; FLAG=0 ; next } \
-										{ if (FLAG==0) { print $0 }}' "$PH_MAIN_DIR"/functions.user >/tmp/functions.user_tmp 2>/dev/null
-		[[ $? -eq 0 ]] && mv /tmp/functions.user_tmp "$PH_MAIN_DIR"/functions.user 2>/dev/null
+										{ if (FLAG==0) { print $0 }}' "$PH_FUNCS_DIR"/functions.user >/tmp/functions.user_tmp 2>/dev/null
+		[[ $? -eq 0 ]] && mv /tmp/functions.user_tmp "$PH_FUNCS_DIR"/functions.user 2>/dev/null
 		printf "%10s\033[32m%s\033[0m\n" "" "OK"
 		ph_revoke_pieh_access "$PH_APP_USER" "$PH_APP" || (printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 1) || exit "$?"
 		printf "%2s\033[32m%s\033[0m\n\n" "" "SUCCESS"
