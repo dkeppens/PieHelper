@@ -2583,7 +2583,7 @@ case "${PH_APP}" in Moonlight)
 		      Emulationstation)
                 PH_OPTS="${PH_OPTS} DIR SETUP_DIR" ;;
 		      PieHelper)
-                PH_OPTS="${PH_OPTS} STARTAPP SANITY_LEVEL SANITY_EXTENDED" ;;
+                PH_OPTS="${PH_OPTS} STARTAPP SANITY_LEVEL SANITY_BASIC SANITY_EXTENDED" ;;
 esac
 unset -n PH_OPTS
 ph_run_with_rollback -c "ph_remove_app_alloweds '${PH_APP}'" || \
@@ -2602,7 +2602,7 @@ do
 		PH_LINE='a valid ipv4 address or an empty string:"$("$(ph_check_ip_validity "${PH_OPTARG_VAL}")" ; echo "${?}")" -eq "0"' ;;
 			SANITY_LEVEL)
 		PH_LINE='critical, optional or full:"${PH_OPTARG_VAL}" == @(critical|optional|full)' ;;
-			PERSISTENT|MAP|CIFS_SHARE|USE_CTRL|SANITY_EXTENDED)
+			PERSISTENT|MAP|CIFS_SHARE|USE_CTRL|SANITY_BASIC|SANITY_EXTENDED)
 		PH_LINE='yes or no:"${PH_OPTARG_VAL}" == @(yes|no)' ;;
 			NUM_CTRL)
 		PH_LINE='1, 2, 3 or 4:"${PH_OPTARG_VAL}" == @(1|2|3|4)' ;;
@@ -2673,7 +2673,7 @@ case "${PH_APP}" in Moonlight)
            Emulationstation)
                 PH_OPTS="${PH_OPTS} DIR SETUP_DIR" ;;
                   PieHelper)
-                PH_OPTS="${PH_OPTS} SANITY_LEVEL SANITY_EXTENDED" ;;
+                PH_OPTS="${PH_OPTS} SANITY_LEVEL SANITY_BASIC SANITY_EXTENDED" ;;
 esac
 unset -n PH_OPTS
 ph_run_with_rollback -c "ph_remove_app_defaults '${PH_APP}'" || \
@@ -2774,10 +2774,10 @@ do
                 	PH_LINE='${PH_SCRIPTS_DIR}/app/post_cmds/PieHelper-POST.sh' ;;
 				PKG_NAME)
                 	PH_LINE='' ;;
-				SANITY_EXTENDED)
+				SANITY_BASIC|SANITY_EXTENDED)
                 	PH_LINE='yes' ;;
 				SANITY_LEVEL)
-                	PH_LINE='full' ;;
+                	PH_LINE='optional' ;;
 		esac ;;
         esac
 	unset -n PH_OPTS

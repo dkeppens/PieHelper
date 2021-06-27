@@ -37,21 +37,24 @@ PH_PIEH_DEBUG=''									# - This is a comma-separated list of PieHelper modules
 											# - Default is ''
 											# - Allowed values are any relevant PieHelper modules
 											# - Relevant module names are defined as all PieHelper script names and any PieHelper functions relevant to the Operating system being used
-PH_PIEH_SANITY_LEVEL='full'								# - This indicates the level of the basic sanity check PieHelper performs on each run
-											# - Basic sanity checks cannot be disabled and check for missing files in the current PieHelper instance
-											# - If a file is found to be missing, an error is returned and automatic rollback of previous changes will be initiated if required
-											# - The level determines the set of files that will be checked
-											# - Lower levels will slightly boost performance but missing files of unchecked levels will no longer be automatically detected
-											# - Default is 'full'
-											# - Allowed values are
-											#   * critical : Checks will be made on the most important files only
-											#   * optional : Checks will include files related to optional features such as CIFS management and PRE/POST commands
-											#   * full     : Checks will include both optional files and unused ones such as those related to different Linux releases
-PH_PIEH_SANITY_EXTENDED='yes'								# - This indicates whether PieHelper should additionally run extended sanity checks on each run
-											# - Extended sanity checks will detect all configuration issues and display a complete report if any are found
-											# - Disabling this will boost performance but any errors outside the scope of basic sanity checks will no longer be detected
+PH_PIEH_SANITY_BASIC='yes'								# - This indicates whether PieHelper should run basic sanity checks on each run
+											# - Basic sanity checks will detect missing files in the current PieHelper instance and exit on the first error
+											# - Disabling this will slightly boost performance but errors due to missing files will not pre-emptively be caught
 											# - Default is 'yes'
 											# - Allowed values are 'yes' and 'no'
+PH_PIEH_SANITY_EXTENDED='yes'								# - This indicates whether PieHelper should additionally run extended sanity checks on each run
+											# - Extended sanity checks will detect all configuration issues and display a complete report if any are found
+											# - Disabling this will slightly boost performance but any configuration errors will not pre-emptively be caught
+											# - Default is 'yes'
+											# - Allowed values are 'yes' and 'no'
+PH_PIEH_SANITY_LEVEL='optional'								# - This indicates the level of any sanity checks PieHelper performs on each run
+											# - The level determines the data set to be checked
+											# - Lower levels will slightly boost performance but errors from unchecked levels will not pre-emptively be caught
+											# - Default is 'optional'
+											# - Allowed values are
+											#   * critical : Checks will only be made on items required for basic application management
+											#   * optional : Checks will additionally include items related to optional features such as CIFS management, PRE/POST commands and
+											#   * full     : Checks will additionally include both optional and unused items such as those related to different Linux releases
 PH_PIEH_STARTAPP='none'									# - This is the application configured as StartApp that will automatically be started at boot time
 											# - Allowed values are 'none' and names of integrated applications
 PH_PIEH_CMD_OPTS='Main'									# - These are the command line options you want to launch PieHelper with and the specific menu you wish PieHelper to start in
@@ -146,6 +149,6 @@ export PH_PIEH_MAX_TTYS PH_PIEH_NUM_CTRL PH_PIEH_USE_CTRL
 
 # Read-write exports
 
-export PH_PIEH_PERSISTENT PH_PIEH_DEBUG PH_PIEH_SANITY_LEVEL PH_PIEH_SANITY_EXTENDED PH_PIEH_STARTAPP \
+export PH_PIEH_PERSISTENT PH_PIEH_DEBUG PH_PIEH_SANITY_BASIC PH_PIEH_SANITY_EXTENDED PH_PIEH_SANITY_LEVEL PH_PIEH_STARTAPP \
 	PH_PIEH_CMD_OPTS PH_PIEH_PKG_NAME PH_PIEH_CIFS_SHARE PH_PIEH_CIFS_USER PH_PIEH_CIFS_PASS PH_PIEH_CIFS_SRV \
 	PH_PIEH_CIFS_DIR PH_PIEH_CIFS_SUBDIR PH_PIEH_CIFS_MPT PH_PIEH_PRE_CMD PH_PIEH_POST_CMD

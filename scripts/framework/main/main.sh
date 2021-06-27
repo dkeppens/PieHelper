@@ -342,9 +342,12 @@ do
 	fi
 done
 
-# Run basic sanity checks
+# Run basic sanity checks when enabled
 
-ph_check_pieh_shared_config basic
+if [[ "${PH_PIEH_SANITY_BASIC}" == "yes" ]]
+then
+	ph_check_pieh_shared_config basic
+fi
 
 # Set current framework version
 
@@ -521,10 +524,10 @@ for PH_i in USER GROUP
 do
 	if [[ -z "$(eval "echo -n \"\$PH_RUN_${PH_i}\"")" ]]
 	then
-		if [[ "${PH_i}" == "USER" && "${PH_PIEH_SANITY_EXTENDED}" == "no" ]]
+		if [[ "${PH_i}" == "USER" && ( "${PH_PIEH_SANITY_BASIC}" == "no" || "${PH_PIEH_SANITY_EXTENDED}" == "no" ) ]]
 		then
-			ph_set_option_to_value "PieHelper" -o "PH_PIEH_SANITY_EXTENDED'yes" >/dev/null 2>&1
-			ph_set_result -a -m "An error occurred trying to set the $(echo -n "${PH_i}" | tr '[:upper:]' '[:lower:]') account for PieHelper (Auto-enabling extended sanity checks)"
+			ph_set_option_to_value "PieHelper" -o "PH_PIEH_SANITY_BASIC'yes" -o "PH_PIEH_SANITY_EXTENDED'yes" >/dev/null 2>&1
+			ph_set_result -a -m "An error occurred trying to set the $(echo -n "${PH_i}" | tr '[:upper:]' '[:lower:]') account for PieHelper (Auto-enabling all sanity checks)"
 		else
 			ph_set_result -a -m "An error occurred trying to set the $(echo -n "${PH_i}" | tr '[:upper:]' '[:lower:]') account for PieHelper (Check user '${PH_RUN_USER}')"
 		fi
@@ -542,11 +545,10 @@ do
 done
 if [[ "${#PH_ALLOW_USERS[@]}" -eq "0" ]]
 then
-	PH_ROLLBACK_USED="no"
-	if [[ "${PH_PIEH_SANITY_EXTENDED}" == "no" ]]
+	if [[ "${PH_PIEH_SANITY_BASIC}" == "no" || "${PH_PIEH_SANITY_EXTENDED}" == "no" ]]
 	then
-		ph_set_option_to_value "PieHelper" -o "PH_PIEH_SANITY_EXTENDED'yes" >/dev/null 2>&1
-		ph_set_result -a -m "An error occurred trying to determine the users with PieHelper access (Auto-enabling extended sanity checks)"
+		ph_set_option_to_value "PieHelper" -o "PH_PIEH_SANITY_BASIC'yes" -o "PH_PIEH_SANITY_EXTENDED'yes" >/dev/null 2>&1
+		ph_set_result -a -m "An error occurred trying to determine the users with PieHelper access (Auto-enabling all sanity checks)"
 	else
 		ph_set_result -a -m "An error occurred trying to determine the users with PieHelper access (Check/correct 'sudo' configurations)"
 	fi
