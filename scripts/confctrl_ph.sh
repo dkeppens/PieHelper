@@ -103,13 +103,13 @@ OPTARG="$PH_OLDOPTARG"
 (([[ -z "$PH_CONN" || -z "$PH_TYPE" ]]) || ([[ -z "$PH_ACTION" ]])) && (! confctrl_ph.sh -h) && exit 1
 [[ -n "$PH_NUM_CTRL" && "$PH_ACTION" != "conf" ]] && (! confctrl_ph.sh -h) && exit 1
 [[ -z "$PH_NUM_CTRL" && "$PH_ACTION" != "prompt" ]] && PH_NUM_CTRL="1"
-[[ "$PH_NUM_CTRL" != @([1-9]|+([1-9])+([0-9])) && "$PH_ACTION" != "prompt" ]] && (printf "%s\n" "- Configuring a '$PH_CONN' '$PH_TYPE' controller" ; printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Not a numeric value" ; return 0) && exit 1
+[[ "$PH_NUM_CTRL" != @([1-9]|+([1-9])+([0-9])) && "$PH_ACTION" != "prompt" ]] && (printf "%s\n" "- Configuring a '$PH_CONN' '$PH_TYPE' controller" ; >&2 printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Not a numeric value" ; return 0) && exit 1
 [[ "$PH_TYPE" == "XBOX360" && "$PH_CONN" != @(usb|xboxurecv) ]] && (printf "%s\n" "- Displaying help for configuring '$PH_CONN' '$PH_TYPE' controllers" ; \
-			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Unsupported connection method") && exit 1 
+			>&2 printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Unsupported connection method") && exit 1 
 [[ "$PH_TYPE" == "PS3" && "$PH_CONN" == @(xboxurecv|sonywadapt) ]] && (printf "%s\n" "- Displaying help for configuring '$PH_CONN' '$PH_TYPE' controllers" ; \
-			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Unsupported connection method") && exit 1 
+			>&2 printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Unsupported connection method") && exit 1 
 [[ "$PH_TYPE" == "PS4" && "$PH_CONN" == "xboxurecv" ]] && (printf "%s\n" "- Displaying help for configuring '$PH_CONN' '$PH_TYPE' controllers" ; \
-			printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Unsupported connection method") && exit 1 
+			>&2 printf "%2s\033[31m%s\033[0m%s\n\n" "" "FAILED" " : Unsupported connection method") && exit 1 
 case "$PH_ACTION" in help)
 	printf "\033[36m%s\033[0m\n" "- Displaying configuration steps for '$PH_CONN' '$PH_TYPE' controllers"
 	[[ "$PH_RESULT" == "SUCCESS" ]] && printf "%2s%s\n\n" "" "$PH_RESULT" || printf "%2s\033[31m%s\033[0m\n\n" "" "$PH_RESULT"
@@ -187,7 +187,7 @@ case "$PH_ACTION" in help)
 	printf "%s\n" "- Using interactive mode"
 	while [[ $PH_NUM_CTRL == "" ]]
 	do
-		[[ $PH_COUNT -gt 0 ]] && printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : Invalid response"
+		[[ $PH_COUNT -gt 0 ]] && >&2 printf "\n%10s\033[31m%s\033[0m%s\n\n" "" "ERROR" " : Invalid response"
 		printf "%8s%s" "" "--> Please enter the number of $PH_TYPE controllers you want to configure (empty defaults to '1') : "
 		read PH_NUM_CTRL >/dev/null 2>&1
 		[[ -z "$PH_NUM_CTRL" ]] && PH_NUM_CTRL="1"
@@ -223,25 +223,25 @@ case "$PH_ACTION" in help)
 	then
 		printf "%8s%s\n" "" "--> Enabling bluetooth service"
 		$PH_SUDO systemctl enable bluetooth >/dev/null 2>&1 && printf "%10s%s\n" "" "OK" || \
-			(printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not enable bluetooth service" ; printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 1) || \
+			(>&2 printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not enable bluetooth service" ; >&2 printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 1) || \
 			 return $?
 	fi
 	if ! systemctl is-active bluetooth >/dev/null 2>&1
 	then
 		printf "%8s%s\n" "" "--> Starting bluetooth service"
 		$PH_SUDO systemctl start bluetooth >/dev/null 2>&1 && printf "%10s%s\n" "" "OK" || \
-			(printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not start bluetooth service" ; printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 1) || \
+			(>&2 printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not start bluetooth service" ; >&2 printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 1) || \
 			 return $?
 	fi
         printf "%8s%s\n" "" "--> Detecting $PH_CONN adapter(s)"
         if [[ "$PH_CONT_BLUE_ADAPT" == "none" ]]
         then
                 PH_ADAPTER=`$PH_SCRIPTS_DIR/listblue_ph.sh | tail -n +5 | nawk '$0 !~ /SUCCESS/ { print $1 ; exit 0 }'`
-                [[ -z "$PH_ADAPTER" ]] && (printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Not found" ; \
-                                                        printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 0) && exit 1
+                [[ -z "$PH_ADAPTER" ]] && (>&2 printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Not found" ; \
+                                                        >&2 printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 0) && exit 1
                 printf "%10s%s\n" "" "OK (Using first available : $PH_ADAPTER) -> Setting as default"
                 ph_set_option_to_value Ctrls -r "PH_CONT_BLUE_ADAPT'$PH_ADAPTER" || \
-                                (printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 1) || exit $?
+                                (>&2 printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 1) || exit $?
         else
                 printf "%10s%s\n" "" "OK (Using default : $PH_CONT_BLUE_ADAPT)"
         fi
@@ -249,8 +249,8 @@ case "$PH_ACTION" in help)
         do
                 printf "%8s%s\n" "" "--> Enabling bluetooth adapter \"$PH_i\" mode"
                 $PH_SUDO bt-adapter -a "$PH_CONT_BLUE_ADAPT" -s "$PH_i" 1 >/dev/null 2>&1 && printf "%10s%s\n" "" "OK" || \
-						(printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not enable $PH_i mode" ; \
-						 printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 1) || \
+						(>&2 printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not enable $PH_i mode" ; \
+						 >&2 printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 1) || \
 						 exit $?
         done
 	if ! pgrep bt-adapter >/dev/null 2>&1
@@ -260,8 +260,8 @@ case "$PH_ACTION" in help)
 		sleep 3
 		if ! pgrep bt-adapter >/dev/null 2>&1
 		then
-			printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not start bluetooth discovery mode"
-			printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED"
+			>&2 printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not start bluetooth discovery mode"
+			>&2 printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED"
 			exit 1
 		fi
 		printf "%10s%s\n" "" "OK"
@@ -294,7 +294,7 @@ case "$PH_ACTION" in help)
         PH_ALL_CTRL=`$PH_SUDO bt-device -a "$PH_CONT_BLUE_ADAPT" -l 2>/dev/null | nawk -F'\(' 'BEGIN { ORS = " " } $0 ~ /No devices found/ { print "none" ; exit 0 } \
                                                         $0 ~ /PLAYSTATION\(R\)3 Controller/ { print "PS3:" substr($NF,1,length($NF)-1) }
                                                         $0 ~ /Wireless Controller/ { print "PS4:" substr($NF,1,length($NF)-1) } { next }'`
-	[[ "$PH_ALL_CTRL" == "none" ]] && (printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Not found" ; printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 0) && exit 1 
+	[[ "$PH_ALL_CTRL" == "none" ]] && (>&2 printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Not found" ; >&2 printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 0) && exit 1 
         for PH_i in `echo -n "$PH_ALL_CTRL"`
         do
 		$PH_SUDO bt-device -a "$PH_CONT_BLUE_ADAPT" -i "${PH_i#*:}" 2>/dev/null | nawk '$0 ~ /Paired:/ { exit $2 } { next }'
@@ -327,8 +327,8 @@ case "$PH_ACTION" in help)
 	done
 	printf "%10s%s\n" "" "OK"
 	printf "%8s%s\n" "" "--> Verifying $PH_TYPE controller count"
-	[[ $PH_COUNT -lt $PH_NUM_CTRL ]] && (printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Insufficient number of unconfigured $PH_TYPE controllers found" ; \
-				printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 0) && exit 1
+	[[ $PH_COUNT -lt $PH_NUM_CTRL ]] && (>&2 printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Insufficient number of unconfigured $PH_TYPE controllers found" ; \
+				>&2 printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 0) && exit 1
 	printf "%10s%s\n" "" "OK"
 	PH_CONF_CTRL=$((PH_COUNT-`echo $PH_NUM_CTRL`))
 	while [[ $PH_COUNT -gt $PH_CONF_CTRL ]]
@@ -356,7 +356,7 @@ case "$PH_ACTION" in help)
 				[[ "$PH_RESULT" != "SUCCESS" ]] && PH_RESULT="PARTIALLY FAILED"
 				PH_NEW_CTRL=`sed 's/ '$PH_i' //;s/ '$PH_i'//;s/'$PH_i' //;s/'$PH_i'//g' <<<$PH_NEW_CTRL`
 			else
-				printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not connect to controller $PH_i"
+				>&2 printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not connect to controller $PH_i"
 				[[ $PH_NUM_CTRL -eq 1 && PH_RESULT="SUCCESS" ]] && PH_RESULT="FAILED" || PH_RESULT="PARTIALLY FAILED"
 			fi
 			unset -n PH_CTRL_PIN

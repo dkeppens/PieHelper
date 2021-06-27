@@ -3141,8 +3141,8 @@ do
 				printf "\r"
 				case "${PH_ANSWER}" in s|S)
 						PH_RET_CODE="1"
-						printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Skipped by user"
-						printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED"
+						>&2 printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Skipped by user"
+						>&2 printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED"
 						sleep 2 ;;
 						     r|R)
 						printf "%10s%s\n" "" "OK (Retrying)"
@@ -3151,8 +3151,8 @@ do
 						false ;;
 						       *)
 						ph_set_result -r 1
-						printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Quit by user"
-						printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED"
+						>&2 printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Quit by user"
+						>&2 printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED"
 						unset PH_OPTAR
 						sleep 2
 						return 1 ;;
@@ -3174,7 +3174,7 @@ do
 		continue
         if [[ "${PH_OPTAR["${PH_OPT}"]}" == "PH_MOON_SRV" && -z "${PH_MOON_SRV}" ]]
         then
-		printf "%2s\033[31m%s\033[0m%s\n\n" "" "ABORT" " : Empty value for PH_MOON_SRV"
+		>&2 printf "%2s\033[31m%s\033[0m%s\n\n" "" "ABORT" " : Empty value for PH_MOON_SRV"
 		sleep 2
 		unset PH_OPTAR
 		return 1
@@ -3428,7 +3428,7 @@ PH_EVDEVS="$(ls -l /dev/input/event+([[:digit:]]) 2>/dev/null | wc -l)"
 if [[ "${PH_EVDEVS}" -eq "0" ]]
 then
 	printf "%8s%s\n" "" "--> Running type verification of input devices"
-	printf "%10s%s\n" "" "ERROR : (None found)"
+	>&2 printf "%10s%s\n" "" "ERROR : (None found)"
 	return 1 
 fi
 for PH_i in $("${PH_SUDO}" find /dev/input -mount -maxdepth 1 -regextype egrep -regex "^/dev/input/event+([[:digit:]])$" -exec basename {} \; 2>/dev/null | sort -n)
@@ -3501,7 +3501,7 @@ then
 else
         if [[ "$(cat "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null | wc -l)" -lt "${PH_NUM_CTRL}" ]]
 	then
-                printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Insufficient number of '${PH_CONT_TYPE}' controllers connected ($(cat "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null | wc -l)<->${PH_NUM_CTRL} requested)"
+		>&2 printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Insufficient number of '${PH_CONT_TYPE}' controllers connected ($(cat "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null | wc -l)<->${PH_NUM_CTRL} requested)"
 		return 1
 	fi
         declare -n PH_CONN="PH_CTRL_CONN$(sed -n '1p' "${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null)"
@@ -3550,7 +3550,7 @@ then
 				--axismap -y1=y1,-y2=y2 \
 				--pid-file "/tmp/xboxdrv${PH_CTRL_CLI_ID}.pid" --silent --detach-kernel-driver --mimic-xpad &) >/dev/null 2>&1
 			cat "/tmp/xboxdrv${PH_CTRL_CLI_ID}.pid" >/dev/null 2>&1 && \
-				printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not start instance" && \
+				>&2 printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not start instance" && \
 				true >"${PH_CONF_DIR}/controller_cli_ids" && \
 				return 1
 			echo "$((PH_EVDEVS+"$((PH_CTRL_CLI_ID-1))"))" >>"${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null ;;
@@ -3569,7 +3569,7 @@ then
 				--axismap -y1=y1,-y2=y2 \
 				--pid-file "/tmp/xboxdrv${PH_CTRL_CLI_ID}.pid" --silent --detach-kernel-driver --mimic-xpad &) >/dev/null 2>&1
 			cat "/tmp/xboxdrv${PH_CTRL_CLI_ID}.pid" >/dev/null 2>&1 && \
-				printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not start instance" && \
+				>&2 printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not start instance" && \
 				true >"${PH_CONF_DIR}/controller_cli_ids" && \
 				return 1
 			echo "$((PH_EVDEVS+"$((PH_CTRL_CLI_ID-1))"))" >>"${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null ;;
@@ -3587,7 +3587,7 @@ then
 				--axismap -y1=y1,-y2=y2 \
 				--pid-file "/tmp/xboxdrv${PH_CTRL_CLI_ID}.pid" --silent --detach-kernel-driver --mimic-xpad &) >/dev/null 2>&1
 			cat "/tmp/xboxdrv${PH_CTRL_CLI_ID}.pid" >/dev/null 2>&1 && \
-				printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not start instance" && \
+				>&2 printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not start instance" && \
 				true >"${PH_CONF_DIR}/controller_cli_ids" && \
 				return 1
 			echo "$((PH_EVDEVS+"$((PH_CTRL_CLI_ID-1))"))" >>"${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null ;;
@@ -3605,7 +3605,7 @@ then
 				--axismap -y1=y1,-y2=y2 \
 				--pid-file "/tmp/xboxdrv${PH_CTRL_CLI_ID}.pid" --silent --detach-kernel-driver --mimic-xpad &) >/dev/null 2>&1
 			cat "/tmp/xboxdrv${PH_CTRL_CLI_ID}.pid" >/dev/null 2>&1 && \
-				printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not start instance" && \
+				>&2 printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not start instance" && \
 				true >"${PH_CONF_DIR}/controller_cli_ids" && \
 				return 1
 			echo "$((PH_EVDEVS+"$((PH_CTRL_CLI_ID-1))"))" >>"${PH_CONF_DIR}/controller_cli_ids" 2>/dev/null ;; 
@@ -6581,7 +6581,7 @@ do
 			continue
 		fi
 	fi
-	printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Could not backup configuration"
+	>&2 printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Could not backup configuration"
 	ph_run_with_rollback -c false || \
 		return 1
 done
@@ -7368,7 +7368,7 @@ unset PH_PARAMS
 printf "%8s%s\n" "" "--> Checking application name parameter"
 if [[ -z "${PH_APP}" ]]
 then
-	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid name"
+	>&2 printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid name"
 	ph_set_result -r 1 -m "A valid name is mandatory for unintegrating an application"
 	return 1
 else
@@ -7390,7 +7390,7 @@ then
 		printf "%10s\033[32m%s\033[0m\n" "" "OK : 'Unconfigure' action in progress"
 		ph_set_result -r 0
 	else
-		printf "%10s\033[31m%s\033[0m\n" "" "ERROR : 'Unconfigure' action not in progress"
+		>&2 printf "%10s\033[31m%s\033[0m\n" "" "ERROR : 'Unconfigure' action not in progress"
 		ph_set_result -r 1 -m "Integration for 'PieHelper' is mandatory while configuration state remains 'Configured'"
 		return 1
 	fi
@@ -8391,7 +8391,7 @@ case "${PH_APP}" in Kodi)
 esac
 if [[ "${PH_RET_CODE}" -ne "0" ]]
 then
-	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not modify script"
+	>&2 printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Could not modify script"
 	[[ "${PH_APP}" == "Kodi" ]] && \
 		"${PH_SUDO}" rm "${PH_TMP_DIR}/kodi_tmp" 2>/dev/null
 	ph_set_result -r 1 -m "An error occurred modifying '${PH_APP}' script '${PH_APP_SCRIPT}'"
@@ -9510,7 +9510,7 @@ PH_APP_USER="$(ph_get_app_user_from_app_name "${PH_APP}")"
 printf "%8s%s\n" "" "--> Checking application name parameter"
 if [[ -z "${PH_APP}" ]]
 then
-	printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid application name"
+	>&2 printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid application name"
 	ph_set_result -r 1 -m "A valid name is mandatory for integrating an application"
 	return 1
 else
@@ -10115,7 +10115,7 @@ function ph_show_report {
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 printf "\n\033[1;36m%s\033[0m\n" "- PieHelper verification"
-printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "FAILED : Critical configuration issues detected"
+>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "FAILED : Critical configuration issues detected"
 nawk '$1 ~ /^OR$/ {
 		printf "\n%s\033[36m%s\033[0m\n\n", "", $0 ;
 		next
