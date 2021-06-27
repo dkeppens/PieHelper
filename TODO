@@ -1,3 +1,4 @@
+* check why both PH_PIEH_VERSION and PH_OLD_VERSION are used in relation to rollback of version changes
 * rename functions.main to functions.shared
 * finish processing main.sh to perfection : error checks on option settings (or add -q option to them), handler correct order when manipulating PATH/LD_LIBRARY_PATH, redo conf/distros structure (-> releases ?), detection of current distro and release, ...
 * add PH_REQ_SANITY_MODE stuff to function ph_check_pieh_shared_config and use to REALLY limit basic sanity checks to reinstall required (repair impossible) stuff only + reflect that in config file descriptions

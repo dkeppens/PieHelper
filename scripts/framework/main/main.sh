@@ -300,10 +300,10 @@ ph_check_pieh_shared_config basic
 
 # Set current framework version
 
-PH_VERSION="$(cat "${PH_CONF_DIR}/framework/VERSION" 2>/dev/null)"
+PH_VERSION="$(cat "${PH_CONF_DIR}/VERSION" 2>/dev/null)"
 if [[ "${PH_VERSION}" != @(0\.+([[:digit:]])|@(1|2|3|4|5|6|7|8|9)*([[:digit:]])*(\.+([[:digit:]]))) ]]
 then
-	ph_set_result -a -m "Reinstallation of PieHelper is required (Corrupted critical configuration file '${PH_CONF_DIR}/framework/VERSION')"
+	ph_set_result -a -m "Reinstallation of PieHelper is required (Corrupted critical configuration file '${PH_CONF_DIR}/VERSION')"
 fi
 
 # Load release-dependent configuration
