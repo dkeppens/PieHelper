@@ -67,7 +67,7 @@ PH_BUILD_DIR="${PH_BASE_DIR}/builds"
 PH_SNAPSHOT_DIR="${PH_BASE_DIR}/snapshots"
 PH_MNT_DIR="${PH_BASE_DIR}/mnt"
 PH_CONF_DIR="${PH_BASE_DIR}/conf"
-PH_MAIN_DIR="${PH_SCRIPTS_DIR}/app"
+PH_MAIN_DIR="${PH_SCRIPTS_DIR}/framework"
 PH_FUNCS_DIR="${PH_BASE_DIR}/functions"
 PH_TMP_DIR="${PH_BASE_DIR}/tmp"
 PH_FILES_DIR="${PH_BASE_DIR}/files"
@@ -86,7 +86,7 @@ PH_PI_MODEL=""
 
 if ! PH_CUR_USER="$(whoami 2>&1)"
 then
-	printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the current user account"
+	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the current user account"
 	exit 1
 fi
 
@@ -98,20 +98,20 @@ then
 	then
 		PH_SUDO="$(command -v sudo 2>/dev/null)"
 	else
-		printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to escalate privileges for user '${PH_CUR_USER}'"
-		printf "%12s\033[1;37m%s\033[0m\n\n" "" "Configure full sudo rights for the current user as follows : "
-		printf "%14s\033[1;37m%s\033[33m%s\033[37m%s\033[0m\n" "" "- Run " "'su'" " and provide the administrator password when asked"
-		printf "%14s\033[1;37m%s\033[33m%s\033[37m%s\033[33m%s\033[37m%s\033[0m\n\n" "" "- Run " "'${PH_SCRIPTS_DIR}/confoper_ph.sh -p sudo -a ${PH_CUR_USER}'" " and " "'exit'" " afterwards"
+		>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to escalate privileges for user '${PH_CUR_USER}'"
+		>&2 printf "%12s\033[1;37m%s\033[0m\n\n" "" "Configure full sudo rights for the current user as follows : "
+		>&2 printf "%14s\033[1;37m%s\033[33m%s\033[37m%s\033[0m\n" "" "- Run " "'su'" " and provide the administrator password when asked"
+		>&2 printf "%14s\033[1;37m%s\033[33m%s\033[37m%s\033[33m%s\033[37m%s\033[0m\n\n" "" "- Run " "'${PH_SCRIPTS_DIR}/confoper_ph.sh -p sudo -a ${PH_CUR_USER}'" " and " "'exit'" " afterwards"
 		exit 1
 	fi
 else
-	printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the location of the 'sudo' command"
-	printf "%12s\033[1;37m%s\033[33m%s\033[37m%s\033[0mm\n\n" "" "- If " "'sudo'" " is not installed, install it as follows : "
-	printf "%14s\033[1;37m%s\033[33m%s\033[37m%s\033[0m\n" "" "- Run " "'su'" " and provide the administrator password when asked"
-	printf "%14s\033[1;37m%s\033[33m%s\033[37m%s\033[33m%s\033[37m%s\033[0m\n\n" "" "- Run " "'apt-get install sudo'" " and " "'exit'" " afterwards"
-	printf "%12s\033[1;31m%s\033[33m%s\033[37m%s\033[0mm\n\n" "" "- If " "'sudo'" " is already installed, change your environment as follows : "
-	printf "%14s\033[1;37m%s\033[33m%s\033[37m%s\033[0m\n" "" "- Determine the full pathname of the main " "'sudo'" " executable"
-	printf "%14s\033[1;37m%s\033[33m%s\033[37m%s\033[0m\n\n" "" "- Run " "'export PATH=\"[location]:${PATH}\"'" " where [location] should be the previously determined pathname"
+	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the location of the 'sudo' command"
+	>&2 printf "%12s\033[1;37m%s\033[33m%s\033[37m%s\033[0mm\n\n" "" "- If " "'sudo'" " is not installed, install it as follows : "
+	>&2 printf "%14s\033[1;37m%s\033[33m%s\033[37m%s\033[0m\n" "" "- Run " "'su'" " and provide the administrator password when asked"
+	>&2 printf "%14s\033[1;37m%s\033[33m%s\033[37m%s\033[33m%s\033[37m%s\033[0m\n\n" "" "- Run " "'apt-get install sudo'" " and " "'exit'" " afterwards"
+	>&2 printf "%12s\033[1;31m%s\033[33m%s\033[37m%s\033[0mm\n\n" "" "- If " "'sudo'" " is already installed, change your environment as follows : "
+	>&2 printf "%14s\033[1;37m%s\033[33m%s\033[37m%s\033[0m\n" "" "- Determine the full pathname of the main " "'sudo'" " executable"
+	>&2 printf "%14s\033[1;37m%s\033[33m%s\033[37m%s\033[0m\n\n" "" "- Run " "'export PATH=\"[location]:${PATH}\"'" " where [location] should be the previously determined pathname"
 	exit 1
 fi
 
@@ -135,7 +135,7 @@ then
 		PH_FILE_SUFFIX="_X"
 	fi
 else
-	printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the Raspberry PI model"
+	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the Raspberry PI model"
 	exit 1
 fi
 
@@ -230,11 +230,11 @@ then
 	fi
 	if [[ -z "${PH_DISTRO_REL}" ]]
 	then
-		printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the release of detected Linux distro '${PH_DISTRO}'"
+		>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the release of the current '${PH_DISTRO}' distro"
 		exit 1
 	fi
 else
-	printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the Linux distro"
+	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the Linux distro"
 	exit 1
 fi
 
@@ -281,15 +281,15 @@ fi
 
 for PH_i in functions.main functions.user functions.update "distros/functions.${PH_DISTRO}"
 do
-	if [[ -e "${PH_FUNCS_DIR}/${PH_i}" && -r "${PH_FUNCS_DIR}/${PH_i}" ]]
+	if [[ -r "${PH_FUNCS_DIR}/${PH_i}" ]]
 	then
 		if ! source "${PH_FUNCS_DIR}/${PH_i}" >/dev/null 2>&1
 		then
-			printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Corrupted critical codebase file '${PH_FUNCS_DIR}/${PH_i}')"
+			>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Corrupted critical codebase file '${PH_FUNCS_DIR}/${PH_i}')"
 			exit 1
 		fi
 	else
-		printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '${PH_FUNCS_DIR}/${PH_i}')"
+		>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '${PH_FUNCS_DIR}/${PH_i}')"
 		exit 1
 	fi
 done
@@ -298,7 +298,7 @@ done
 
 ph_check_pieh_shared_config basic
 
-# Determine the current framework version
+# Set current framework version
 
 PH_VERSION="$(cat "${PH_CONF_DIR}/VERSION" 2>/dev/null)"
 if [[ "${PH_VERSION}" != @(0\.+([[:digit:]])|@(1|2|3|4|5|6|7|8|9)*([[:digit:]])*(\.+([[:digit:]]))) ]]

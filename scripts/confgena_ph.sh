@@ -2,17 +2,17 @@
 # Archive management of Development Builds and Configuration Snapshots (by Davy Keppens on 04/10/2018)
 # Enable/Disable debug by running 'confpieh_ph.sh -p debug -m confgena_ph.sh'
 
-if [[ -e "$(dirname "${0}" 2>/dev/null)/app/main.sh" && -r "$(dirname "${0}" 2>/dev/null)/app/main.sh" ]]
+if [[ -r "$(dirname "${0}" 2>/dev/null)/framework/main.sh" ]]
 then
-	if ! source "$(dirname "${0}" 2>/dev/null)/app/main.sh"
+	if ! source "$(dirname "${0}" 2>/dev/null)/framework/main.sh"
 	then
 		set +x
-		printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Corrupted critical codebase file '$(dirname "${0}" 2>/dev/null)/app/main.sh'"
+		>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Corrupted critical codebase file '$(dirname "${0}" 2>/dev/null)/framework/main.sh'"
 		exit 1
 	fi
 	set +x
 else
-	printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '$(dirname "${0}" 2>/dev/null)/app/main.sh'"
+	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '$(dirname "${0}" 2>/dev/null)/framework/main.sh'"
 	exit 1
 fi
 
