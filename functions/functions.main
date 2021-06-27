@@ -1228,7 +1228,7 @@ do
 						PH_DIR="${PH_CONF_DIR}/" ;;
 							setpasswd|cfgctrls)
 						PH_SUFFIX=".expect"
-						PH_DIR="${PH_SCRIPTS_DIR}/app/expect/" ;;
+						PH_DIR="${PH_MAIN_DIR}/expect/" ;;
 							HOWTO)
 						PH_REQ_SANITY_LEVEL="basic"
 						PH_DIR="${PH_BASE_DIR}/" ;;

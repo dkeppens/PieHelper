@@ -266,10 +266,10 @@ case "$PH_ACTION" in help)
 		fi
 		printf "%10s%s\n" "" "OK"
 	fi
-	echo "#!$(command -v expect) -f" >/tmp/confctrls.expect
-	tail -n +2 "${PH_SCRIPTS_DIR}/../app/expect/confctrls.expect" >>/tmp/confctrls.expect
-	mv /tmp/confctrls.expect "${PH_SCRIPTS_DIR}/../app/expect/confctrls.expect"
-	"$PH_SUDO" chmod 750 "${PH_SCRIPTS_DIR}/../app/expect/confctrls.expect"
+	echo "#!$(command -v expect) -f" >/tmp/cfgctrls.expect
+	tail -n +2 "${PH_SCRIPTS_DIR}/../app/expect/cfgctrls.expect" >>/tmp/cfgctrls.expect
+	mv /tmp/cfgctrls.expect "${PH_SCRIPTS_DIR}/../app/expect/cfgctrls.expect"
+	"$PH_SUDO" chmod 750 "${PH_SCRIPTS_DIR}/../app/expect/cfgctrls.expect"
 	printf "%8s%s\n" "" "--> Displaying additionally required manual action"
 	printf "%10s%s\n" "" "OK"
 	printf "\n"
@@ -348,7 +348,7 @@ case "$PH_ACTION" in help)
 			echo "$PH_PAIRED_CTRL" | grep "$PH_i" >/dev/null 2>&1 && PH_PAIRED="yes" || PH_PAIRED="no"
 			printf "%8s%s\n" "" "--> Connecting to $PH_TYPE controller ($PH_i)"
 			declare -n PH_CTRL_PIN=PH_CONT_"$PH_TYPE"_PIN
-			"$PH_SUDO" "${PH_SCRIPTS_DIR}/../app/expect/confctrls.expect" "$PH_CONT_BLUE_ADAPT" "$PH_i" "$PH_PAIRED" "$PH_TRUSTED" ${PH_CTRL_PIN} >/dev/null 2>&1
+			"$PH_SUDO" "${PH_SCRIPTS_DIR}/../app/expect/cfgctrls.expect" "$PH_CONT_BLUE_ADAPT" "$PH_i" "$PH_PAIRED" "$PH_TRUSTED" ${PH_CTRL_PIN} >/dev/null 2>&1
 			if [[ "$?" -eq "0" ]]
 			then
 				printf "%10s%s\n" "" "OK"
