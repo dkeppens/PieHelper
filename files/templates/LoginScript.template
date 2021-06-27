@@ -1,5 +1,5 @@
-# PieHelper Autologin configuration template
-# Templates install in /etc/profile.d
+# PieHelper loginscript template
+# Template installs in /etc/profile.d
 #
 # By Davy Keppens on 08/10/18
 #

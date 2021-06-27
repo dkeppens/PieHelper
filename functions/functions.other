@@ -1212,11 +1212,11 @@ do
 						PH_SUFFIX="_ph.sh" ;;
 							*PRE)
 						PH_REQ_SANITY_LEVEL="basic"
-						PH_DIR="${PH_SCRIPTS_DIR}/app/pre_cmds/"
+						PH_DIR="${PH_SCRIPTS_DIR}/framework/pre_cmds/"
 						PH_SUFFIX=".sh" ;;
 							*POST)
 						PH_REQ_SANITY_LEVEL="basic"
-						PH_DIR="${PH_SCRIPTS_DIR}/app/post_cmds/"
+						PH_DIR="${PH_SCRIPTS_DIR}/framework/post_cmds/"
 						PH_SUFFIX=".sh" ;;
 							kodi.post_cmd|build.archives)
 						PH_REQ_SANITY_LEVEL="basic"
@@ -1228,7 +1228,7 @@ do
 						PH_DIR="${PH_CONF_DIR}/" ;;
 							setpasswd|cfgctrls)
 						PH_SUFFIX=".expect"
-						PH_DIR="${PH_MAIN_DIR}/expect/" ;;
+						PH_DIR="${PH_SCRIPTS_DIR}/framework/expect/" ;;
 							HOWTO)
 						PH_REQ_SANITY_LEVEL="basic"
 						PH_DIR="${PH_BASE_DIR}/" ;;
@@ -2214,8 +2214,8 @@ then
 	done
 	ph_run_with_rollback -c true
 	printf "%8s%s\n" "" "--> Updating codebase files"
-	for PH_i in /PieHelper${PH_MAIN_DIR##*PieHelper}/pre_cmds/ /PieHelper${PH_MAIN_DIR##*PieHelper}/post_cmds/ \
-		/PieHelper${PH_MAIN_DIR##*PieHelper}/ /PieHelper${PH_FUNCS_DIR##*PieHelper}/ /PieHelper${PH_FUNCS_DIR##*PieHelper}/distros/ /PieHelper${PH_MAIN_DIR##*PieHelper}/expect/
+	for PH_i in /PieHelper${PH_SCRIPTS_DIR##*PieHelper}/framework/pre_cmds/ /PieHelper${PH_SCRIPTS_DIR##*PieHelper}/framework/post_cmds/ \
+		/PieHelper${PH_MAIN_DIR##*PieHelper}/ /PieHelper${PH_FUNCS_DIR##*PieHelper}/ /PieHelper${PH_FUNCS_DIR##*PieHelper}/distros/ /PieHelper${PH_SCRIPTS_DIR##*PieHelper}/framework/expect/
 	do
 		for PH_j in $(ls "${PH_UPDATE_DIR}${PH_i}" 2>/dev/null)
 		do
@@ -10189,8 +10189,8 @@ then
 	return "${?}"
 fi
 "${PH_SUDO}" rm "${PH_TMP_DIR}/.first_run" 2>/dev/null
-for PH_i in "${PH_SCRIPTS_DIR}" "${PH_MAIN_DIR}" "${PH_MAIN_DIR}/expect" "${PH_FILES_DIR}" "${PH_MENUS_DIR}" "${PH_CONF_DIR}" "${PH_CONF_DIR}/distros" \
-	"${PH_FUNCS_DIR}" "${PH_FUNCS_DIR}/distros" "${PH_MAIN_DIR}/post_cmds" "${PH_MAIN_DIR}/pre_cmds" "${PH_MNT_DIR}" \
+for PH_i in "${PH_SCRIPTS_DIR}" "${PH_MAIN_DIR}" "${PH_SCRIPTS_DIR}/framework/expect" "${PH_FILES_DIR}" "${PH_MENUS_DIR}" "${PH_CONF_DIR}" "${PH_CONF_DIR}/distros" \
+	"${PH_FUNCS_DIR}" "${PH_FUNCS_DIR}/distros" "${PH_SCRIPTS_DIR}/framework/post_cmds" "${PH_SCRIPTS_DIR}/framework/pre_cmds" "${PH_MNT_DIR}" \
 	"${PH_TMP_DIR}" "${PH_BUILD_DIR}" "${PH_SNAPSHOT_DIR}" "${PH_TEMPLATES_DIR}" "${PH_EXCLUDES_DIR}" "${PH_FILES_DIR}/stored"
 do
 	ph_check_object_existence -o "${PH_i}" -m immediate || \
@@ -10242,11 +10242,12 @@ do
 done
 PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
 "${PH_SUDO}" rm "${PH_BASE_DIR}/"!(@(README.md|TODO|CODE_OF_CONDUCT.md|INSTALL|HOWTO|LICENSE|@(build|snapshot|function|script|file)s|tmp|mnt|main|conf|.git|.github)) 2>/dev/null
-"${PH_SUDO}" rm "${PH_SCRIPTS_DIR}/"!(@(app|@(@(conf|list)*_ph|@(re|)start*|stop*|${PH_MOVE_SCRIPTS_REGEX})\.sh)) 2>/dev/null
-"${PH_SUDO}" rm "${PH_MAIN_DIR}/"!(@(@(pre|post)_cmds|main.sh|expect)) 2>/dev/null
-"${PH_SUDO}" rm -r "${PH_MAIN_DIR}/expect/"!(@(setpasswd|confctrls)\.expect) 2>/dev/null
-"${PH_SUDO}" rm -r "${PH_MAIN_DIR}/pre_cmds/"!(@(Kodi|PieHelper)-PRE\.sh) 2>/dev/null
-"${PH_SUDO}" rm -r "${PH_MAIN_DIR}/post_cmds/"!(@(Kodi|PieHelper)-POST\.sh) 2>/dev/null
+"${PH_SUDO}" rm "${PH_SCRIPTS_DIR}/"!(@(framework|@(@(conf|list)*_ph|@(re|)start*|stop*|${PH_MOVE_SCRIPTS_REGEX})\.sh)) 2>/dev/null
+"${PH_SUDO}" rm "${PH_SCRIPTS_DIR}/framework"!(@(@(pre|post)_cmds|main|expect)) 2>/dev/null
+"${PH_SUDO}" rm "${PH_MAIN_DIR}/"!(@(main).sh)) 2>/dev/null
+"${PH_SUDO}" rm -r "${PH_SCRIPTS_DIR}/framework/expect/"!(@(setpasswd|confctrls)\.expect) 2>/dev/null
+"${PH_SUDO}" rm -r "${PH_SCRIPTS_DIR}/framework/pre_cmds/"!(@(Kodi|PieHelper)-PRE\.sh) 2>/dev/null
+"${PH_SUDO}" rm -r "${PH_SCRIPTS_DIR}/framework/post_cmds/"!(@(Kodi|PieHelper)-POST\.sh) 2>/dev/null
 "${PH_SUDO}" rm "${PH_FUNCS_DIR}/"!(@(distros|functions@(main|\.@(user|update)))) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_FUNCS_DIR}/distros/"!(functions\.@($(sed 's/ /\|/g'<<<"${PH_SUPPORTED_DISTROS[@]}"))) 2>/dev/null
 "${PH_SUDO}" rm "${PH_FILES_DIR}/"!(@(menus|excludes|templates|stored|VERSIONS|default_apps_@(X|GL))) 2>/dev/null
