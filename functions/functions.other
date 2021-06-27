@@ -1206,7 +1206,7 @@ do
 						then
 							if ph_check_array_index -n "PH_SUPPORTED_${PH_DISTROU}_RELS" -v "${PH_j}" -q
 							then
-								PH_DIR="${PH_CONF_DIR}/distros/${PH_k}"
+								PH_DIR="${PH_CONF_DIR}/distros/${PH_k}/"
 								PH_SUFFIX=".conf"
 								[[ "${PH_j}" != "${PH_DISTRO_REL}" ]] && \
 									PH_REQ_SANITY_LEVEL="full"
