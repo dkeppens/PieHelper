@@ -10244,7 +10244,7 @@ PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
 "${PH_SUDO}" rm "${PH_BASE_DIR}/"!(@(README.md|TODO|CODE_OF_CONDUCT.md|INSTALL|HOWTO|LICENSE|@(build|snapshot|function|script|file)s|tmp|mnt|main|conf|.git|.github)) 2>/dev/null
 "${PH_SUDO}" rm "${PH_SCRIPTS_DIR}/"!(@(framework|@(@(conf|list)*_ph|@(re|)start*|stop*|${PH_MOVE_SCRIPTS_REGEX})\.sh)) 2>/dev/null
 "${PH_SUDO}" rm "${PH_SCRIPTS_DIR}/framework"!(@(@(pre|post)_cmds|main|expect)) 2>/dev/null
-"${PH_SUDO}" rm "${PH_MAIN_DIR}/"!(@(main).sh)) 2>/dev/null
+"${PH_SUDO}" rm "${PH_MAIN_DIR}/"!(@(main).sh) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_SCRIPTS_DIR}/framework/expect/"!(@(setpasswd|confctrls)\.expect) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_SCRIPTS_DIR}/framework/pre_cmds/"!(@(Kodi|PieHelper)-PRE\.sh) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_SCRIPTS_DIR}/framework/post_cmds/"!(@(Kodi|PieHelper)-POST\.sh) 2>/dev/null
