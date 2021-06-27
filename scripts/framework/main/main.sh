@@ -57,7 +57,6 @@ declare -x PH_SUDO
 declare -x PH_PI_MODEL
 declare -x PH_FILE_SUFFIX
 declare -ax PH_SUPPORTED_DISTROS
-declare -ax PH_SUPPORTED_DEBIAN_RELS
 declare -ax PH_DISTRO_CONFIGS
 
 PH_SCRIPTS_DIR="$(cd "$(dirname "${0}")" && pwd)"
@@ -129,7 +128,7 @@ else
 	exit 1
 fi
 
-# Determine the Raspberry PI model
+# Determine model and graphical driver of the Raspberry PI
 
 if PH_PI_MODEL="$(nawk '$0 ~ /Raspberry Pi/ { \
 		for (i=1;i<=NF;i++) { \
@@ -153,7 +152,33 @@ else
 	exit 1
 fi
 
-# Set list of distro configurations
+# Set list of supported Linux distros
+
+if ! read -r -a PH_SUPPORTED_DISTROS -d';' < <("${PH_SUDO}" find "${PH_CONF_DIR}/distros" -maxdepth 1 -mount \
+	-type d ! -wholename "${PH_CONF_DIR}/distros" -exec basename {} \; 2>/dev/null; echo -n ";")
+then
+	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the list of supported distros"
+	exit 1
+fi
+
+# Set list of supported releases for each relevant distro
+
+for PH_i in "${PH_SUPPORTED_DISTROS[@]}"
+do
+	if [[ "$("${PH_SUDO}" find "${PH_CONF_DIR}/distros/${PH_i}" -exec ls {} \; 2>/dev/null | wc -l)" -ne "0" ]]
+	then
+		PH_DISTROU="${PH_i}"
+		declare -ax "PH_SUPPORTED_${PH_DISTROU}_RELS"
+		if ! read -r -a "PH_SUPPORTED_${PH_DISTROU}_RELS" -d';' < <("${PH_SUDO}" find "${PH_CONF_DIR}/distros/${PH_i}" -maxdepth 1 -mount \
+			-type f -name "*.conf" -exec bash -c 'basename ${1%.conf}' -- {} \; 2>/dev/null; echo -n ";")
+		then
+			>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the supported releases of distro '${PH_i}'"
+			exit 1
+		fi
+	fi
+done
+
+# Set list of distro/release configurations
 
 for PH_i in "${PH_SUPPORTED_DISTROS[@]}"
 do
@@ -200,53 +225,64 @@ PH_ALL_ROLLBACK_PARAMS+=(PH_DEPTH_PARAMS PH_DEPTH PH_CONFIGURED_STATE PH_UNCONFI
 	PH_REMOVE_APPS_SCRIPTS PH_CREATE_OOS_APPS_CODE PH_REMOVE_OOS_APPS_CODE PH_VARIABLES PH_STORE_OPTION PH_RETRIEVE_STORED_OPTION PH_INSTALL_APPS PH_UNINSTALL_APPS \
 	PH_CREATE_APP_USER PH_REMOVE_APP_USER PH_APP_MOUNT_CIFS PH_APP_UMOUNT_CIFS PH_STOP_SERVICES PH_START_SERVICES)
 
-# Determine the current Linux distro and release
+# Determine the current distro and release
 
-if [[ -f /usr/bin/pacman ]]
-then
-	PH_DISTRO="Archlinux"
-else
-	PH_DISTRO="$(nawk -F '=' 'BEGIN { \
-			id = "" ; \
-			id_like = "" \
+PH_DISTRO="$(nawk -F '=' 'BEGIN { \
+		id = "" ; \
+		id_like = "" \
+	} \
+	$1 ~ /^(ID|ID_LIKE)$/ { \
+		if ($1 ~ /^ID$/) { \
+			id = $2 \
+		} else { \
+			id_like = $2 \
 		} \
-		$1 ~ /^(ID|ID_LIKE)$/ { \
-			if ($1 ~ /^ID$/) { \
-				id = $2 \
-			} else { \
-				id_like = $2 \
-			} \
-		} { \
-			next \
-		} END { \
-			if (id_like ~ /^$/) { \
-				printf toupper(substr(id,1,1)) ; \
-				printf tolower(substr(id,2)) \
-			} else { \
-				printf toupper(substr(id_like,1,1)) ; \
-				printf tolower(substr(id_like,2)) \
-			} \
-		}' /etc/os-release 2>/dev/null)"
-fi
+	} { \
+		next \
+	} END { \
+		if (id_like ~ /^$/) { \
+			printf toupper(substr(id,1,1)) ; \
+			printf tolower(substr(id,2)) \
+		} else { \
+			printf toupper(substr(id_like,1,1)) ; \
+			printf tolower(substr(id_like,2)) \
+		} \
+	}' /etc/os-release 2>/dev/null)"
 if [[ -n "${PH_DISTRO}" ]]
 then
 	PH_DISTRO="${PH_DISTRO// /}"
 	PH_DISTROU="${PH_DISTRO}"
 	if [[ "$(declare -p "PH_SUPPORTED_${PH_DISTROU}_RELS" 2>/dev/null)" == declare* ]]
 	then
-		PH_DISTRO_REL="$(lsb_release -a 2>/dev/null | nawk '$1 ~ /^Codename:/ { \
-                       		printf $2 \
-                	}')"
+		PH_DISTRO_REL="$(nawk -F '=' 'BEGIN { \
+				vers_id = "" ; \
+				vers_codename = "" \
+			} \
+			$1 ~ /^(VERSION_ID|VERSION_CODENAME)$/ { \
+				if ($1 ~ /^VERSION_ID$/) { \
+					vers_id = $2 \
+				} else { \
+					vers_codename = $2 \
+				} \
+			} { \
+				next \
+			} END { \
+				if (vers_codename ~ /^$/) { \
+					printf vers_id \
+				} else { \
+					printf tolower(vers_codename) \
+				} \
+			}' /etc/os-release 2>/dev/null)"
 	else
 		PH_DISTRO_REL="${PH_DISTRO}"
 	fi
 	if [[ -z "${PH_DISTRO_REL}" ]]
 	then
-		>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the release of the current '${PH_DISTRO}' distro"
+		>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the current '${PH_DISTRO}' release"
 		exit 1
 	fi
 else
-	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the Linux distro"
+	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the current distro"
 	exit 1
 fi
 

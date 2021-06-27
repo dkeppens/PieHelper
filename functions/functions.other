@@ -1141,17 +1141,21 @@ function ph_check_pieh_shared_config {
 
 declare PH_i
 declare PH_j
+declare PH_k
 declare PH_DIR
 declare PH_SUFFIX
 declare PH_SANITY_MODE
 declare PH_REQ_SANITY_LEVEL
+declare -u PH_DISTROU
 
 PH_i=""
 PH_j=""
+PH_k=""
 PH_DIR=""
 PH_SUFFIX=""
 PH_SANITY_MODE="${1}"
 PH_REQ_SANITY_LEVEL=""
+PH_DISTROU=""
 
 [[ "${PH_SANITY_MODE}" != @(basic|extended) || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
@@ -1186,58 +1190,77 @@ do
 			[[ "${PH_j}" == @(${PH_MNT_DIR}|${PH_BUILD_DIR}|${PH_SNAPSHOT_DIR}|${PH_FILES_DIR}/stored|${PH_EXCLUDES_DIR}) ]] && \
 				PH_REQ_SANITY_LEVEL="basic"
 		else
-			if ph_check_array_index -n PH_DISTRO_CONFIGS -v "${PH_j}" -q
+			if ph_check_array_index -n PH_SUPPORTED_DISTROS -v "${PH_j}" -q
 			then
 				PH_DIR="${PH_CONF_DIR}/distros/"
 				PH_SUFFIX=".conf"
-				[[ "${PH_j}" != "${PH_DISTRO_REL}" ]] && \
+				[[ "${PH_j}" != "${PH_DISTRO}" ]] && \
 					PH_REQ_SANITY_LEVEL="full"
 			else
-				if ph_check_array_index -n PH_DEFAULT_APPS -v "${PH_j}" -q
-				then
-					PH_DIR="${PH_TEMPLATES_DIR}/"
-					PH_SUFFIX="_conf.template"
-				else
-					case "${PH_j}" in Support|System*|Main|PS*|XBOX*)
-						PH_DIR="${PH_MENUS_DIR}/"
-						PH_SUFFIX=".lst" ;;
-							Controllers|OOSapp)
+				while true
+				do
+					for PH_k in "${PH_SUPPORTED_DISTROS[@]}"
+					do
+						PH_DISTROU="${PH_k}"
+						if [[ "$(declare -p "PH_SUPPORTED_${PH_DISTROU}_RELS" 2>/dev/null)" == declare* ]]
+						then
+							if ph_check_array_index -n "PH_SUPPORTED_${PH_DISTROU}_RELS" -v "${PH_j}" -q
+							then
+								PH_DIR="${PH_CONF_DIR}/distros/${PH_k}"
+								PH_SUFFIX=".conf"
+								[[ "${PH_j}" != "${PH_DISTRO_REL}" ]] && \
+									PH_REQ_SANITY_LEVEL="full"
+								break 2
+							fi
+						fi
+					done
+					if ph_check_array_index -n PH_DEFAULT_APPS -v "${PH_j}" -q
+					then
 						PH_DIR="${PH_TEMPLATES_DIR}/"
-						PH_SUFFIX="_conf.template" ;;
-							*Script|*PieH)
-						PH_DIR="${PH_TEMPLATES_DIR}/"
-						PH_SUFFIX=".template" ;;
-							conf*|list*)
-						PH_DIR="${PH_SCRIPTS_DIR}/"
-						PH_SUFFIX="_ph.sh" ;;
-							*PRE)
-						PH_REQ_SANITY_LEVEL="basic"
-						PH_DIR="${PH_SCRIPTS_DIR}/framework/pre_cmds/"
-						PH_SUFFIX=".sh" ;;
-							*POST)
-						PH_REQ_SANITY_LEVEL="basic"
-						PH_DIR="${PH_SCRIPTS_DIR}/framework/post_cmds/"
-						PH_SUFFIX=".sh" ;;
-							kodi.post_cmd|build.archives)
-						PH_REQ_SANITY_LEVEL="basic"
-						PH_SUFFIX=".excludes"
-						PH_DIR="${PH_EXCLUDES_DIR}/" ;;
-							default_apps_*|VERSIONS)
-						PH_DIR="${PH_FILES_DIR}/" ;;
-							VERSION)
-						PH_DIR="${PH_CONF_DIR}/" ;;
-							setpasswd|cfgctrls)
-						PH_SUFFIX=".expect"
-						PH_DIR="${PH_SCRIPTS_DIR}/framework/expect/" ;;
-							HOWTO)
-						PH_REQ_SANITY_LEVEL="basic"
-						PH_DIR="${PH_BASE_DIR}/" ;;
-							*.gitignore)
-						PH_REQ_SANITY_LEVEL="basic" ;;
-							*)
-						: ;;
-					esac
-				fi
+						PH_SUFFIX="_conf.template"
+					else
+						case "${PH_j}" in Support|System*|Main|PS*|XBOX*)
+							PH_DIR="${PH_MENUS_DIR}/"
+							PH_SUFFIX=".lst" ;;
+								Controllers|OOSapp)
+							PH_DIR="${PH_TEMPLATES_DIR}/"
+							PH_SUFFIX="_conf.template" ;;
+								*Script|*PieH)
+							PH_DIR="${PH_TEMPLATES_DIR}/"
+							PH_SUFFIX=".template" ;;
+								conf*|list*)
+							PH_DIR="${PH_SCRIPTS_DIR}/"
+							PH_SUFFIX="_ph.sh" ;;
+								*PRE)
+							PH_REQ_SANITY_LEVEL="basic"
+							PH_DIR="${PH_SCRIPTS_DIR}/framework/pre_cmds/"
+							PH_SUFFIX=".sh" ;;
+								*POST)
+							PH_REQ_SANITY_LEVEL="basic"
+							PH_DIR="${PH_SCRIPTS_DIR}/framework/post_cmds/"
+							PH_SUFFIX=".sh" ;;
+								kodi.post_cmd|build.archives)
+							PH_REQ_SANITY_LEVEL="basic"
+							PH_SUFFIX=".excludes"
+							PH_DIR="${PH_EXCLUDES_DIR}/" ;;
+								default_apps_*|VERSIONS)
+							PH_DIR="${PH_FILES_DIR}/" ;;
+								VERSION)
+							PH_DIR="${PH_CONF_DIR}/" ;;
+								setpasswd|cfgctrls)
+							PH_SUFFIX=".expect"
+							PH_DIR="${PH_SCRIPTS_DIR}/framework/expect/" ;;
+								HOWTO)
+							PH_REQ_SANITY_LEVEL="basic"
+							PH_DIR="${PH_BASE_DIR}/" ;;
+								*.gitignore)
+							PH_REQ_SANITY_LEVEL="basic" ;;
+								*)
+							: ;;
+						esac
+					fi
+					break
+				done
 			fi
 		fi
 		if [[ "${PH_i}" != "${PH_REQ_SANITY_LEVEL}" ]]
