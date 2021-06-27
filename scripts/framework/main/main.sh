@@ -82,6 +82,20 @@ PH_RUN_GROUP=""
 PH_SUDO=""
 PH_PI_MODEL=""
 
+# Load main configuration
+
+if [[ -r "${PH_CONF_DIR}/main.conf" ]]
+then
+	if ! source "${PH_CONF_DIR}/main.conf" >/dev/null 2>&1
+	then
+		>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Corrupted critical configuration file '${PH_CONF_DIR}/main.conf')"
+		exit 1
+	fi
+else
+	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '${PH_CONF_DIR}/main.conf')"
+	exit 1
+fi
+
 # Determine the current user
 
 if ! PH_CUR_USER="$(whoami 2>&1)"
@@ -139,10 +153,8 @@ else
 	exit 1
 fi
 
-# Configure Linux distros/releases support and set the list of distro configs
+# Set list of distro configurations
 
-PH_SUPPORTED_DISTROS=("Archlinux" "Debian")
-PH_SUPPORTED_DEBIAN_RELS=("jessie" "stretch" "buster" "bullseye")
 for PH_i in "${PH_SUPPORTED_DISTROS[@]}"
 do
 	PH_DISTROU="${PH_i}"

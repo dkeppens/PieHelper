@@ -1898,7 +1898,10 @@ else
 				PH_OBJECT_TYPE="link"
 				PH_TYPE="auto-generated"
 			fi ;;
+				"${PH_CONF_DIR}/main.conf")
+			PH_OBJECT_CAT="configuration" ;;
 				"${PH_CONF_DIR}/"*.conf)
+			PH_OBJECT_CAT="configuration"
 			PH_TYPE="auto-generated" ;;
 				*)
 			: ;;
@@ -10258,7 +10261,7 @@ PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
 "${PH_SUDO}" rm "${PH_FILES_DIR}/stored/"!(@(autologin|logind)_conf|10-retropie_sh) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_EXCLUDES_DIR}/"!(@(build\.archives|kodi\.post_cmd)\.excludes) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_TEMPLATES_DIR}/"!(@(@(Login|@(S|Res)tart|Stop|Move@(to|from)PieH|Move)Script|@(@(Res|S)tart|Stop)ScriptPieH|@(Kodi|Moonlight|PieHelper|Emulationstation|Bash|X11|Controllers|OOSapp)_conf)\.template) 2>/dev/null
-"${PH_SUDO}" rm "${PH_CONF_DIR}/"!(@(distros|@(supported|integrated)_apps|OS\.defaults|VERSION|controller_cli_ids)) 2>/dev/null
+"${PH_SUDO}" rm "${PH_CONF_DIR}/"!(@(@(main|$(sed 's/ /|/g'<<<"$(ph_get_app_list_by_state -s Supported -t minimum)")).conf|distros|@(supported|integrated)_apps|OS\.defaults|VERSION|controller_cli_ids)) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_CONF_DIR}/distros/"!(@($(sed 's/ /\|/g'<<<${PH_DISTRO_CONFIGS[@]}))\.conf) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_MENUS_DIR}/"!(*\.lst) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_TMP_DIR}/"!(\.@(first_run|gitignore|stored_options)) 2>/dev/null
