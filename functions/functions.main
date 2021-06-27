@@ -1921,14 +1921,14 @@ then
 	then
 		case "${PH_MODE}" in basic)
 			case "${PH_TYPE}" in critical)
-				if [[ -e "${PH_OBJECT}" && -r "${PH_OBJECT}" ]]
+				if [[ -r "${PH_OBJECT}" ]]
 				then
 					ph_set_result -a -m "Reinstallation of PieHelper is required (Corrupted ${PH_OBJECT_DESC} '${PH_OBJECT}')"
 				else
 					ph_set_result -a -m "Reinstallation of PieHelper is required (Missing or unreadable ${PH_OBJECT_DESC} '${PH_OBJECT}')"
 				fi ;;
 					auto-generated)
-				if [[ -e "${PH_OBJECT}" && -r "${PH_OBJECT}" ]]
+				if [[ -r "${PH_OBJECT}" ]]
 				then
 					ph_set_result -a -m "Repair of PieHelper is required (Corrupted ${PH_OBJECT_DESC} '${PH_OBJECT}')"
 				else
@@ -1938,16 +1938,16 @@ then
 				return 0 ;;
 			esac ;;
 				extended)
-			if [[ -e "${PH_OBJECT}" && -r "${PH_OBJECT}" ]]
+			if [[ -r "${PH_OBJECT}" ]]
 			then
-				>&2 printf "%2s%s\n" "" \
-					"$(cut -c1<<<"${PH_TYPE}" | tr '[:lower:]' '[:upper:]')$(cut -c2-<<<"${PH_TYPE}") ${PH_OBJECT_CAT}${PH_OBJECT_TYPE} '${PH_OBJECT}' is missing or unreadable"
+				>&2 printf "%4s%s\033[1;33m%s\033[0m%s\n" "" \
+					"$(cut -c1<<<"${PH_TYPE}" | tr '[:lower:]' '[:upper:]')$(cut -c2-<<<"${PH_TYPE}") ${PH_OBJECT_CAT}${PH_OBJECT_TYPE} " "'${PH_OBJECT}'" " is missing or unreadable"
 			else
-				>&2 printf "%2s%s\n" "" \
-					"$(cut -c1<<<"${PH_TYPE}" | tr '[:lower:]' '[:upper:]')$(cut -c2-<<<"${PH_TYPE}") ${PH_OBJECT_CAT}${PH_OBJECT_TYPE} '${PH_OBJECT}' is corrupted"
+				>&2 printf "%4s%s\033[1;33m%s\033[0m%s\n" "" \
+					"$(cut -c1<<<"${PH_TYPE}" | tr '[:lower:]' '[:upper:]')$(cut -c2-<<<"${PH_TYPE}") ${PH_OBJECT_CAT}${PH_OBJECT_TYPE} " "'${PH_OBJECT}'" " is corrupted"
 			fi ;;
 				*)
-			printf "%8s%s\n" "" "--> Checking for ${PH_OBJECT_DESC} '${PH_OBJECT}'"
+			printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking for ${PH_OBJECT_DESC} " "'${PH_OBJECT}'"
 			if [[ "${PH_TYPE}" != "optional" ]]
 			then
 				>&2 printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Not found"
@@ -1962,7 +1962,7 @@ then
 else
 	if [[ "${PH_QUIESCE}" -ne "0" && "${PH_MODE}" == "immediate" ]]
 	then
-		printf "%8s%s\n" "" "--> Checking for ${PH_OBJECT_DESC} '${PH_OBJECT}'"
+		printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking for ${PH_OBJECT_DESC} " "'${PH_OBJECT}'"
 		ph_run_with_rollback -c true -m "Found"
 	fi
 	return 0

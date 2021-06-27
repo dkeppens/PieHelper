@@ -417,18 +417,18 @@ then
 			then
 				ph_check_pieh_shared_config extended
 				ph_check_pieh_unconfigured_config
-				if [[ -f "${PH_TMP_DIR}/.reported_issues" ]]
+				if [[ -e "${PH_TMP_DIR}/.reported_issues" ]]
 				then
-					printf "%2s%s\n" "" "OR" >>"${PH_TMP_DIR}/.reported_issues"
+					ph_add_line_to_file -f "${PH_TMP_DIR}/.reported_issues" -l "  OR"
 					ph_check_pieh_shared_config extended
 					ph_check_pieh_configured_config
 				fi
 			else
 				ph_check_pieh_shared_config extended
 				ph_check_pieh_configured_config
-				if [[ -f "${PH_TMP_DIR}/.reported_issues" ]]
+				if [[ -e "${PH_TMP_DIR}/.reported_issues" ]]
 				then
-					printf "%2s%s\n" "" "OR" >>"${PH_TMP_DIR}/.reported_issues"
+					ph_add_line_to_file -f "${PH_TMP_DIR}/.reported_issues" -l "  OR"
 					ph_check_pieh_shared_config extended
 					ph_check_pieh_unconfigured_config
 				fi
