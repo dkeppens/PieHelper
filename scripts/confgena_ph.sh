@@ -120,7 +120,7 @@ do
 		>&2 printf "%25s%s\n" "" "- Supported actions are :"
 		>&2 printf "%27s%s\n" "" "- \"gen\" which will generate a timestamped tar archive of a specified type"
 		>&2 printf "%29s%s\n" "" "- The archive will be generated as :"
-		>&2 printf "%31s%s\n" "" "- '${PH_SNAPSHOT_DIR}/PieHelper-[timestamp]-snapshot-${PH_PIEH_VERSION}.tar' for configuration snapshots"
+		>&2 printf "%31s%s\n" "" "- '${PH_SNAPSHOT_DIR}/PieHelper-[timestamp]-snapshot-${PH_VERSION}.tar' for configuration snapshots"
 		>&2 printf "%31s%s\n" "" "- '${PH_BUILD_DIR}/PieHelper-[timestamp]-build-[version].tar' for development builds"
 		>&2 printf "%29s%s\n" "" "- The value for [timestamp] is formatted as 'DDMMYY-HHhMM' where"
 		>&2 printf "%31s%s\n" "" "- 'DD' is a two digit identifier representing the current day of month"

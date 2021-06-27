@@ -2083,7 +2083,7 @@ then
 	ph_run_with_rollback -c true
 	ph_run_with_rollback -c "ph_git_clone_master -d '${PH_UPDATE_DIR}' -n '${PH_APP}' -r 'https://github.com/dkeppens/PieHelper.git'" || \
 		return 1
-	printf "%8s%s\n" "" "--> Checking for available ${PH_APP} updates"
+	printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking for available updates of " "'${PH_APP}'"
 	PH_NEW_VERSION="$(cat "${PH_UPDATE_DIR}/${PH_APP}${PH_CONF_DIR##*PieHelper}/VERSION" 2>/dev/null)"
 	if [[ "${PH_VERSION}" == "${PH_NEW_VERSION}" ]]
 	then
@@ -10234,14 +10234,18 @@ do
 	ph_check_object_existence -o "${PH_FUNCS_DIR}/${PH_i}" -m immediate || \
 		return 1
 done
-ph_check_object_existence -o "${PH_SCRIPTS_DIR}/../app/expect/cfgctrls.expect" -m immediate || \
-	return 1
+for PH_i in setpasswd cfgctrls
+do
+	ph_check_object_existence -o "${PH_SCRIPTS_DIR}/framework/expect/${PH_i}.expect" -m immediate || \
+		return 1
+done
 for PH_i in README.md TODO CODE_OF_CONDUCT.md INSTALL LICENSE
 do
 	ph_check_object_existence -o "${PH_BASE_DIR}/${PH_i}" -m immediate
 done
 PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
 "${PH_SUDO}" rm "${PH_BASE_DIR}/"!(@(README.md|TODO|CODE_OF_CONDUCT.md|INSTALL|HOWTO|LICENSE|@(build|snapshot|function|script|file)s|tmp|mnt|main|conf|.git|.github)) 2>/dev/null
+"${PH_SUDO}" rm "${PH_BASE_DIR}/conf"!(@(framework)) 2>/dev/null
 "${PH_SUDO}" rm "${PH_SCRIPTS_DIR}/"!(@(framework|@(@(conf|list)*_ph|@(re|)start*|stop*|${PH_MOVE_SCRIPTS_REGEX})\.sh)) 2>/dev/null
 "${PH_SUDO}" rm "${PH_SCRIPTS_DIR}/framework"!(@(@(pre|post)_cmds|main|expect)) 2>/dev/null
 "${PH_SUDO}" rm "${PH_MAIN_DIR}/"!(@(main).sh) 2>/dev/null

@@ -66,7 +66,7 @@ PH_BASE_DIR="${PH_INST_DIR}/PieHelper"
 PH_BUILD_DIR="${PH_BASE_DIR}/builds"
 PH_SNAPSHOT_DIR="${PH_BASE_DIR}/snapshots"
 PH_MNT_DIR="${PH_BASE_DIR}/mnt"
-PH_CONF_DIR="${PH_BASE_DIR}/conf"
+PH_CONF_DIR="${PH_BASE_DIR}/conf/framework"
 PH_MAIN_DIR="${PH_SCRIPTS_DIR}/framework/main"
 PH_FUNCS_DIR="${PH_BASE_DIR}/functions"
 PH_TMP_DIR="${PH_BASE_DIR}/tmp"
@@ -300,10 +300,10 @@ ph_check_pieh_shared_config basic
 
 # Set current framework version
 
-PH_VERSION="$(cat "${PH_CONF_DIR}/VERSION" 2>/dev/null)"
+PH_VERSION="$(cat "${PH_CONF_DIR}/framework/VERSION" 2>/dev/null)"
 if [[ "${PH_VERSION}" != @(0\.+([[:digit:]])|@(1|2|3|4|5|6|7|8|9)*([[:digit:]])*(\.+([[:digit:]]))) ]]
 then
-	ph_set_result -a -m "Reinstallation of PieHelper is required (Corrupted critical configuration file '${PH_CONF_DIR}/VERSION')"
+	ph_set_result -a -m "Reinstallation of PieHelper is required (Corrupted critical configuration file '${PH_CONF_DIR}/framework/VERSION')"
 fi
 
 # Load release-dependent configuration
