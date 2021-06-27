@@ -1057,10 +1057,10 @@ function ph_check_array_index {
 
 declare PH_ARRAY_NAME
 declare PH_VALUE
+declare PH_INDEX
 declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
-declare -i PH_INDEX
 declare -i PH_QUIESCE
 declare -i PH_VALUE_RECEIVED_FLAG
 
@@ -1068,8 +1068,8 @@ PH_OLDOPTARG="${OPTARG}"
 PH_OLDOPTIND="${OPTIND}"
 PH_ARRAY_NAME=""
 PH_VALUE=""
+PH_INDEX=""
 PH_OPTION=""
-PH_INDEX="0"
 PH_QUIESCE="1"
 PH_VALUE_RECVD_FLAG="1"
 
@@ -1114,23 +1114,25 @@ OPTARG="${PH_OLDOPTARG}"
 declare -n PH_ARRAY="${PH_ARRAY_NAME}"
 if [[ "${#PH_ARRAY[@]}" -gt "0" ]]
 then
-	for PH_INDEX in "${!PH_ARRAY[@]}"
+	while true
 	do
-		[[ "${PH_ARRAY["${PH_INDEX}"]}" == "${PH_VALUE}" ]] && \
-			break
+		for PH_INDEX in "${!PH_ARRAY[@]}"
+		do
+			[[ "${PH_ARRAY["${PH_INDEX}"]}" == "${PH_VALUE}" ]] && \
+				break 2
+		done
+		[[ "${PH_ARRAY["${PH_INDEX}"]}" != "${PH_VALUE}" ]] && \
+			PH_INDEX=""
+		break
 	done
-	if [[ "${PH_ARRAY["${PH_INDEX}"]}" != "${PH_VALUE}" ]]
-	then
-		PH_INDEX="0"
-	fi
 fi
 unset -n PH_ARRAY
-[[ "${PH_QUIESCE}" -eq "1" ]] && \
-	echo -n "${PH_INDEX}"
-if [[ "${PH_INDEX}" -eq "0" ]]
+if [[ -z "${PH_INDEX}" ]]
 then
 	return 1
 else
+	[[ "${PH_QUIESCE}" -eq "1" ]] && \
+		echo -n "${PH_INDEX}"
 	return 0
 fi
 }
