@@ -1143,7 +1143,7 @@ declare PH_i
 declare PH_j
 declare PH_DIR
 declare PH_SUFFIX
-declare PH_MODE
+declare PH_SANITY_MODE
 declare PH_REQ_SANITY_LEVEL
 
 PH_i=""
@@ -1313,7 +1313,7 @@ fi
 for PH_APP in Controllers $(ph_get_app_list_by_state -s Supported -t minimum)
 do
 	PH_APPU="${PH_APP:0:4}"
-	if ! ph_check_object_existence -q -o "${PH_CONF_DIR}/${PH_APP}.conf"
+	if ! ph_check_object_existence -o "${PH_CONF_DIR}/${PH_APP}.conf" -m immediate -q
 	then
        		printf "%4s%s\n" "" "- Supported application ${PH_APP} configuration file '${PH_APP}.conf' is missing" >>"${PH_TMP_DIR}/.reported_issues"
 		PH_RET_CODE="1"
@@ -1322,7 +1322,7 @@ do
 	do
 		[[ "${PH_i}" == "TTYManagement_${PH_APP}" && "${PH_APP}" == "Controllers" ]] && \
 			continue
-		if ! ph_check_object_existence -q -o "${PH_MENUS_DIR}/${PH_i}.lst"
+		if ! ph_check_object_existence -o "${PH_MENUS_DIR}/${PH_i}.lst" -m immediate -q
 		then
        		 	printf "%4s%s\n" "" "- Integrated application ${PH_APP} menu item '${PH_i}.lst' is missing" >>"${PH_TMP_DIR}/.reported_issues"
 			PH_RET_CODE="1"
@@ -1330,7 +1330,7 @@ do
 	done
 	for PH_i in alloweds defaults
 	do
-		if ph_check_object_existence -q -o "${PH_CONF_DIR}/options.${PH_i}"
+		if ph_check_object_existence -o "${PH_CONF_DIR}/options.${PH_i}" -m immediate -q
 		then
 			if ! grep -E "^PH_${PH_APPU}_" "${PH_CONF_DIR}/options.${PH_i}" >/dev/null 2>&1
 			then
@@ -1512,7 +1512,7 @@ PH_FILE_SHORTNAME="${1}"
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 PH_FILE="$(ph_get_filename_from_shortname "${PH_FILE_SHORTNAME}")"
-if ! ph_check_object_existence -q -o "${PH_CONF_DIR}/${PH_FILE}"
+if ! ph_check_object_existence -o "${PH_CONF_DIR}/${PH_FILE}" -m immediate -q
 then
 	printf "%4s%s\n" "" "- Unique configuration file '${PH_FILE}' is missing" >>"${PH_TMP_DIR}/.reported_issues"
 	return 1
@@ -1618,7 +1618,7 @@ then
 fi
 if [[ "${PH_DISTRO}" == "Debian" ]]
 then
-	if ph_check_object_existence -q -o "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf"
+	if ph_check_object_existence -o "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" -m immediate -q
 	then
 		printf "%4s%s\n" "" "- ${PH_DISTRO} release symbolic link is present" >>"${PH_TMP_DIR}/.reported_issues"
 		PH_RET_CODE="1"
@@ -1626,7 +1626,7 @@ then
 fi
 for PH_i in Controllers $(ph_get_app_list_by_state -s Default -t minimum)
 do
-	if ph_check_object_existence -q -o "${PH_CONF_DIR}/${PH_i}.conf"
+	if ph_check_object_existence -o "${PH_CONF_DIR}/${PH_i}.conf" -m immediate -q
 	then
 		printf "%4s%s\n" "" "- Configuration file '${PH_CONF_DIR}/${PH_i}.conf' is present" >>"${PH_TMP_DIR}/.reported_issues"
 		PH_RET_CODE="1"
@@ -1981,7 +1981,7 @@ PH_FILE_SHORTNAME="${1}"
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 PH_FILE="$(ph_get_filename_from_shortname "${PH_FILE_SHORTNAME}")"
-if ph_check_object_existence -q -o "${PH_CONF_DIR}/${PH_FILE}"
+if ph_check_object_existence -o "${PH_CONF_DIR}/${PH_FILE}" -m immediate -q
 then
 	printf "%4s%s\n" "" "- Unique configuration file '${PH_FILE}' is present" >>"${PH_TMP_DIR}/.reported_issues"
 	return 1
@@ -2095,7 +2095,7 @@ then
 		ph_run_with_rollback -c true -m "Found available update '${PH_NEW_VERSION}'"
 	fi
 	printf "%8s%s\n" "" "--> Checking if auto-update is allowed"
-	if ph_check_object_existence -q -o "${PH_UPDATE_DIR}/PieHelper${PH_FILES_DIR##*PieHelper}/.auto_update_denied"
+	if ph_check_object_existence -o "${PH_UPDATE_DIR}/PieHelper${PH_FILES_DIR##*PieHelper}/.auto_update_denied" -o immediate -q
 	then
 		printf "%10s\033[33m%s\033[0m\n" "" "Warning : No"
 		ph_set_result -r 0
@@ -6708,7 +6708,7 @@ then
 		return 1
 	[[ "${PH_DISTRO}" == "Debian" ]] && \
 		ph_apt_clean
-	if [[ "$(ph_check_object_existence -q -o sup ; echo "${?}")" -eq "0" && "$(ph_check_app_state_validity -a "${PH_APP}" -q -s ; echo "${?}")" -eq "0" ]]
+	if [[ "$(ph_check_object_existence -o sup -m immediate -q; echo "${?}")" -eq "0" && "$(ph_check_app_state_validity -a "${PH_APP}" -q -s ; echo "${?}")" -eq "0" ]]
 	then
 		ph_update_base_conf_file -a "${PH_APP}" -f sup -c 3 -v PI || \
 			return 1
@@ -6775,7 +6775,7 @@ case "${PH_APP}" in Moonlight)
 						if "${PH_SUDO}" make install >/dev/null 2>&1
 						then
 							ph_run_with_rollback -c true
-							if [[ "$(ph_check_object_existence -q -o sup ; echo "${?}")" -eq "0" && "$(ph_check_app_state_validity -a "${PH_APP}" -q -s ; echo "${?}")" -eq "0" ]]
+							if [[ "$(ph_check_object_existence -o sup -m immediate -q; echo "${?}")" -eq "0" && "$(ph_check_app_state_validity -a "${PH_APP}" -q -s ; echo "${?}")" -eq "0" ]]
 							then
 								ph_update_base_conf_file -a "${PH_APP}" -f sup -c 3 -v UI || \
 									return 1
@@ -6857,7 +6857,7 @@ case "${PH_APP}" in Moonlight)
 							ph_run_with_rollback -c "ph_pieh_configured_emul_conf" || \
 								return 1
 						fi
-						if [[ "$(ph_check_object_existence -q -o sup ; echo "${?}")" -eq "0" && "$(ph_check_app_state_validity -a "${PH_APP}" -q -s ; echo "${?}")" -eq "0" ]]
+						if [[ "$(ph_check_object_existence -o sup -m immediate -q; echo "${?}")" -eq "0" && "$(ph_check_app_state_validity -a "${PH_APP}" -q -s ; echo "${?}")" -eq "0" ]]
 						then
 							ph_update_base_conf_file -a "${PH_APP}" -f sup -c 3 -v UI || \
 								return 1
@@ -10193,52 +10193,52 @@ for PH_i in "${PH_SCRIPTS_DIR}" "${PH_MAIN_DIR}" "${PH_MAIN_DIR}/expect" "${PH_F
 	"${PH_FUNCS_DIR}" "${PH_FUNCS_DIR}/distros" "${PH_MAIN_DIR}/post_cmds" "${PH_MAIN_DIR}/pre_cmds" "${PH_MNT_DIR}" \
 	"${PH_TMP_DIR}" "${PH_BUILD_DIR}" "${PH_SNAPSHOT_DIR}" "${PH_TEMPLATES_DIR}" "${PH_EXCLUDES_DIR}" "${PH_FILES_DIR}/stored"
 do
-	ph_check_object_existence -o "${PH_i}" || \
+	ph_check_object_existence -o "${PH_i}" -m immediate || \
 		return 1
 done
 for PH_i in LoginScript StartScript StopScript RestartScript StartScriptPieH StopScriptPieH RestartScriptPieH MovetoPieHScript \
 	MovefromPieHScript MoveScript Kodi_conf Moonlight_conf PieHelper_conf Emulationstation_conf Bash_conf X11_conf Controllers_conf \
 	OOSapp_conf
 do
-	ph_check_object_existence -o "${PH_TEMPLATES_DIR}/${PH_i}.template" || \
+	ph_check_object_existence -o "${PH_TEMPLATES_DIR}/${PH_i}.template" -m immediate || \
 		return 1
 done
 for PH_i in default_apps_X default_apps_GL
 do
-	ph_check_object_existence -o "${PH_FILES_DIR}/${PH_i}" || \
+	ph_check_object_existence -o "${PH_FILES_DIR}/${PH_i}" -m immediate || \
 		return 1
 done
 for PH_i in Support System Applications Main SystemRetaineds SystemRetained SystemInteractive PS3 PS4 XBOX360 XBOXSX
 do
-	ph_check_object_existence -o "${PH_MENUS_DIR}/${PH_i}.lst" || \
+	ph_check_object_existence -o "${PH_MENUS_DIR}/${PH_i}.lst" -m immediate || \
 		return 1
 done
 for PH_i in confopts_ph confoper_ph confapps_ph confctrl_ph listblue_ph listmoon_ph confgena_ph confpieh_ph app/post_cmds/Kodi-POST \
 	app/post_cmds/PieHelper-POST app/pre_cmds/PieHelper-PRE app/pre_cmds/Kodi-PRE
 do
-	ph_check_object_existence -o "${PH_SCRIPTS_DIR}/${PH_i}.sh" || \
+	ph_check_object_existence -o "${PH_SCRIPTS_DIR}/${PH_i}.sh" -m immediate || \
 		return 1
 done
 for PH_i in "${PH_DISTRO_CONFIGS[@]}"
 do
-	ph_check_object_existence -o "${PH_CONF_DIR}/distros/${PH_i}.conf" || \
+	ph_check_object_existence -o "${PH_CONF_DIR}/distros/${PH_i}.conf" -m immediate || \
 		return 1
 done
 for PH_i in "${PH_SUPPORTED_DISTROS[@]}"
 do
-	ph_check_object_existence -o "${PH_FUNCS_DIR}/distros/functions.${PH_i}" || \
+	ph_check_object_existence -o "${PH_FUNCS_DIR}/distros/functions.${PH_i}" -m immediate || \
 		return 1
 done
 for PH_i in functions.main functions.update functions.user
 do
-	ph_check_object_existence -o "${PH_FUNCS_DIR}/${PH_i}" || \
+	ph_check_object_existence -o "${PH_FUNCS_DIR}/${PH_i}" -m immediate || \
 		return 1
 done
-ph_check_object_existence -o "${PH_SCRIPTS_DIR}/../app/expect/confctrls.expect" || \
+ph_check_object_existence -o "${PH_SCRIPTS_DIR}/../app/expect/cfgctrls.expect" -m immediate || \
 	return 1
 for PH_i in README.md TODO CODE_OF_CONDUCT.md INSTALL LICENSE
 do
-	ph_check_object_existence -o "${PH_BASE_DIR}/${PH_i}"
+	ph_check_object_existence -o "${PH_BASE_DIR}/${PH_i}" -m immediate
 done
 PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
 "${PH_SUDO}" rm "${PH_BASE_DIR}/"!(@(README.md|TODO|CODE_OF_CONDUCT.md|INSTALL|HOWTO|LICENSE|@(build|snapshot|function|script|file)s|tmp|mnt|main|conf|.git|.github)) 2>/dev/null
@@ -10260,7 +10260,7 @@ PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
 "${PH_SUDO}" rm -r "${PH_BUILD_DIR}/"!(@(PieHelper*\.tar|\.gitignore)) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_SNAPSHOT_DIR}/"!(@(PieHelper*\.tar|\.gitignore)) 2>/dev/null
 "${PH_SUDO}" rm "${PH_MNT_DIR}/"!(\.gitignore) 2>/dev/null
-if ! ph_check_object_existence -o sup
+if ! ph_check_object_existence -o sup -m immediate
 then
 	ph_create_base_conf_file sup
 	ph_support_app -a PieHelper
@@ -10287,7 +10287,7 @@ else
 	fi
 fi
 source "${PH_CONF_DIR}/PieHelper.conf" >/dev/null 2>&1
-if ! ph_check_object_existence -o int
+if ! ph_check_object_existence -o int -m immediate
 then
 	ph_create_base_conf_file int
 	ph_integrate_app -a PieHelper
