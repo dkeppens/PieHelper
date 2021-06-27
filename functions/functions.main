@@ -1892,7 +1892,7 @@ else
 				*/*.excludes)
 			PH_OBJECT_CAT="tar excludes" ;;
 				*/distros/*.conf)
-			if ! ph_check_array_index -n PH_DISTRO_CONFIGS -v "${PH_FILE%.conf}" -q
+			if ! ph_check_array_index -n PH_DISTRO_CONFIGS -v "$(sed 's/.conf$//'<<<"${PH_OBJECT##*/}")" -q
 			then
 				PH_OBJECT_CAT="configuration"
 				PH_OBJECT_TYPE="link"
