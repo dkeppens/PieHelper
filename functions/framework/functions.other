@@ -1205,7 +1205,7 @@ do
 				else
 					if [[ "${PH_SANITY_LEVEL}" == "critical" ]]
 					then
-						ph_check_object_existence -o "${PH_CONF_DIR}/distros/${PH_j}" -m "${PH_SANITY_MODE}" -q
+						ph_check_object_existence -o "${PH_CONF_DIR}/distros/${PH_j}" -m "${PH_SANITY_MODE}"
 					fi
 				fi
 				PH_DIR="${PH_CONF_DIR}/distros/"
@@ -1358,7 +1358,7 @@ then
         printf "%4s%s\n" "" "- ${PH_DISTRO} release symbolic link is missing" >>"${PH_TMP_DIR}/.reported_issues"
 	PH_RET_CODE="1"
 fi
-if [[ -f "${PH_TMP_DIR}/.auto_update_denied" ]]
+if ph_check_object_existence -o "${PH_TMP_DIR}/.auto_update_denied" -m immediate -q
 then
         printf "%4s%s\n" "" "- File '${PH_TMP_DIR}/.auto_update_denied' is present" >>"${PH_TMP_DIR}/.reported_issues"
 	PH_RET_CODE="1"
@@ -1565,7 +1565,7 @@ PH_FILE_SHORTNAME="${1}"
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 PH_FILE="$(ph_get_filename_from_shortname "${PH_FILE_SHORTNAME}")"
-if ! ph_check_object_existence -o "${PH_CONF_DIR}/${PH_FILE}" -m immediate -q
+if ! ph_check_object_existence -o "${PH_FILE}" -m immediate -q
 then
 	printf "%4s%s\n" "" "- Unique configuration file '${PH_FILE}' is missing" >>"${PH_TMP_DIR}/.reported_issues"
 	return 1
@@ -1576,7 +1576,7 @@ then
 			ORS = " " \
 		} { \
 			print $1 \
-		}' "${PH_CONF_DIR}/${PH_FILE}" 2>/dev/null)
+		}' "${PH_FILE}" 2>/dev/null)
 	do
 		if [[ "$(nawk -v app="^${PH_APP}$"$ 'BEGIN { \
 				count = "0" \
@@ -1585,7 +1585,7 @@ then
 				count++ \
 			} END { \
 				printf count \
-			}' "${PH_CONF_DIR}/${PH_FILE}" 2>/dev/null)" -gt "1" ]]
+			}' "${PH_FILE}" 2>/dev/null)" -gt "1" ]]
 		then
 			printf "%4s%s\n" "" "- Unique configuration file '${PH_FILE}' is corrupted -> Multiple instances of '${PH_APP}'" >>"${PH_TMP_DIR}/.reported_issues"
 			return 1
@@ -1610,7 +1610,7 @@ case "${PH_i}" in cont)
 			ORS = " " \
 		} { \
 			print $1 \
-		}' "${PH_CONF_DIR}/${PH_FILE}" 2>/dev/null)
+		}' "${PH_FILE}" 2>/dev/null)
 	do
 		if ! ph_check_app_support_data_validity "${PH_APP}"
 		then
@@ -1628,7 +1628,7 @@ case "${PH_i}" in cont)
 			ORS = " " \
 		} { \
 			print $1 \
-		}' "${PH_CONF_DIR}/${PH_FILE}" 2>/dev/null)
+		}' "${PH_FILE}" 2>/dev/null)
 	do
 		if ! ph_check_app_integration_data_validity "${PH_APP}"
 		then
@@ -1661,7 +1661,7 @@ PH_RET_CODE="0"
 printf "%2s%s\n\n" "" "While PieHelper is unconfigured :" >>"${PH_TMP_DIR}/.reported_issues"
 for PH_i in sup int cont os defaults alloweds
 do
-	ph_check_default_base_conf_file_validity "${PH_i}" || \
+	ph_check_object_existence -o "$(ph_get_filename_from_shortname "${PH_i}")" -m immediate -q && \
 		PH_RET_CODE="1"
 done
 if [[ -f /etc/profile.d/PieHelper-path.sh ]]
@@ -1839,8 +1839,6 @@ declare -i PH_OLDOPTIND
 declare -i PH_QUIESCE
 declare -i PH_RET_CODE
 
-PH_OLDOPTARG="${OPTARG}"
-PH_OLDOPTIND="${OPTIND}"
 PH_OBJECT=""
 PH_OBJECT_TYPE="file"
 PH_OBJECT_CAT=""
@@ -1850,6 +1848,8 @@ PH_ERROR_TYPE="Corrupted"
 PH_MODE=""
 PH_CMD=""
 PH_OPTION=""
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_QUIESCE="1"
 PH_RET_CODE="0"
 
@@ -1889,9 +1889,8 @@ OPTARG="${PH_OLDOPTARG}"
 	( "${#}" -ne "5" && "${PH_QUIESCE}" -eq "0" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-case "${PH_OBJECT}" in sup|int|cont|os|defaults|alloweds)
+case "${PH_OBJECT}" in */sup*|*/int*|*/cont*|*/*.defaults|*/*.alloweds)
 	PH_TYPE="auto-generated"
-	PH_OBJECT="$(ph_get_filename_from_shortname "${PH_OBJECT}")"
 	PH_OBJECT_CAT="configuration" ;;
        		*/TTYManagement.lst|*/OptionsManagement.lst|*/StatusManagement.lst)
 	PH_TYPE="auto-generated"
@@ -1980,7 +1979,7 @@ case "${PH_OBJECT}" in sup|int|cont|os|defaults|alloweds)
 		"${PH_CONF_DIR}/"*.conf)
 	PH_TYPE="auto-generated"
 	PH_OBJECT_CAT="configuration" ;;
-		VERSION*|default_apps*)
+		*/VERSION*|*/default_apps*)
 	PH_OBJECT_CAT="configuration" ;;
 		"${PH_MNT_DIR}"|"${PH_SCRIPTS_DIR}/"*_cmds|"${PH_USER_SCRIPTS_DIR}"|"${PH_USER_FILES_DIR}"|"${PH_USER_CONF_DIR}"|"${PH_USER_FUNCS_DIR}")
 	PH_TYPE="optional"
@@ -2026,9 +2025,9 @@ then
 				PH_CMD="ph_set_result -a -m \"Repair of 'PieHelper' is required (${PH_ERROR_TYPE} ${PH_OBJECT_DESC} '${PH_OBJECT}')\"" ;;
 			esac ;;
 				conf)
-			PH_ERROR_TYPE="$(cut -c1<<<"${PH_ERROR_TYPE}" | tr '[:upper:]' '[:lower:]')$(cut -c2<<<"${PH_ERROR_TYPE}")"
+			PH_ERROR_TYPE="$(cut -c1<<<"${PH_ERROR_TYPE}" | tr '[:upper:]' '[:lower:]')$(cut -c2-<<<"${PH_ERROR_TYPE}")"
 			PH_CMD='printf "%4s%s\033[1;33m%s\033[0m%s\n" ""'
-			PH_CMD="${PH_CMD} \"$(cut -c1<<<${PH_TYPE} | tr '[:lower:]' '[:upper:]')$(cut -c2-<<<${PH_TYPE}) ${PH_OBJECT_CAT}${PH_OBJECT_TYPE} \" \"'${PH_OBJECT}'\" \" is ${PH_ERROR_TYPE}\"" ;;
+			PH_CMD="${PH_CMD} \"$(cut -c1<<<${PH_TYPE} | tr '[:lower:]' '[:upper:]')$(cut -c2-<<<${PH_TYPE})${PH_OBJECT_CAT}${PH_OBJECT_TYPE} \" \"'${PH_OBJECT}'\" \" is ${PH_ERROR_TYPE}\" >>'${PH_TMP_DIR}/.reported_issues'" ;;
 				*)
 			PH_CMD="ph_print_object_check -o '${PH_OBJECT}' -d '${PH_OBJECT_DESC}' -t '${PH_TYPE}' -e '${PH_ERROR_TYPE}'" ;;
 		esac
@@ -2114,26 +2113,6 @@ then
 else
 	printf "%10s\033[33m%s\033[0m\n" "" "Warning : ${PH_ERROR_TYPE}"
 	ph_set_result -r 0
-fi
-return 0
-}
-
-function ph_check_default_base_conf_file_validity {
-
-declare PH_FILE
-declare PH_FILE_SHORTNAME
-
-PH_FILE=""
-PH_FILE_SHORTNAME="${1}"
-
-[[ "${PH_FILE_SHORTNAME}" != @(cont|os|sup|int|@(default|allowed)s) || "${#}" -ne "1" ]] && \
-	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
-
-PH_FILE="$(ph_get_filename_from_shortname "${PH_FILE_SHORTNAME}")"
-if ph_check_object_existence -o "${PH_CONF_DIR}/${PH_FILE}" -m immediate -q
-then
-	printf "%4s%s\n" "" "- Unique configuration file '${PH_FILE}' is present" >>"${PH_TMP_DIR}/.reported_issues"
-	return 1
 fi
 return 0
 }
@@ -2685,9 +2664,9 @@ PH_FILE_SHORTNAME="${1}"
 
 PH_FILE="$(ph_get_filename_from_shortname "${PH_FILE_SHORTNAME}")"
 printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Creating base configuration file " "'${PH_FILE}'"
-if [[ ! -e "${PH_CONF_DIR}/${PH_FILE}" ]]
+if [[ ! -e "${PH_FILE}" ]]
 then
-	if ph_run_with_rollback -c "ph_create_empty_file -t file -q -d '${PH_CONF_DIR}/${PH_FILE}'"
+	if ph_run_with_rollback -c "ph_create_empty_file -t file -q -d '${PH_FILE}'"
 	then
 		ph_run_with_rollback -c true
 	else
@@ -5209,7 +5188,7 @@ then
 		return 1
 	for PH_i in cont os int defaults alloweds sup
 	do
-		ph_run_with_rollback -c "ph_store_file -f '${PH_CONF_DIR}/$(ph_get_filename_from_shortname "${PH_i}")'" || \
+		ph_run_with_rollback -c "ph_store_file -f '$(ph_get_filename_from_shortname "${PH_i}")'" || \
 			return 1
 	done
 	for PH_i in path logind
@@ -8873,7 +8852,7 @@ OPTARG="${PH_OLDOPTARG}"
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 PH_FILE="$(ph_get_filename_from_shortname "${PH_FILE_SHORTNAME}")"
-if [[ "${PH_FILE}" == "supported_apps" ]]
+if [[ "${PH_FILE_SHORTNAME}" == "sup" ]]
 then
 	PH_APP_USER="$(ph_get_app_user_from_app_name "${PH_APP}")"
 	PH_APP_INST_STATE="$(ph_get_app_user_from_app_name "${PH_APP}")"
@@ -8882,12 +8861,12 @@ else
 	PH_APP_STR_TTY="$(ph_get_app_tty_from_app_name "${PH_APP}")"
 fi
 [[ "${PH_QUIESCE}" -eq "1" ]] && \
-	printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Updating information for ${PH_APP} in configuration file " "'${PH_CONF_DIR}/${PH_FILE}'"
+	printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Updating information for ${PH_APP} in configuration file " "'${PH_FILE}'"
 while true
 do
-	if [[ "${PH_FILE}" == "supported_apps" ]]
+	if [[ "${PH_FILE_SHORTNAME}" == "sup" ]]
 	then
-		if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/${PH_FILE}' -l '${PH_APP}\t${PH_APP_USER}\t${PH_APP_INST_STATE}\t${PH_APP_CMD}'"
+		if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_FILE}' -l '${PH_APP}\t${PH_APP_USER}\t${PH_APP_INST_STATE}\t${PH_APP_CMD}'"
 		then
 			for PH_INDEX in "${!PH_VAL_VALUES[@]}"
 			do
@@ -8902,17 +8881,17 @@ do
 				esac
 			done
 			unset PH_VAL_VALUES PH_VAL_COLUMNS
-			if ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/${PH_FILE}' -l '${PH_APP}\\t${PH_APP_USER}\\t${PH_APP_INST_STATE}\\t${PH_APP_CMD}'"
+			if ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_FILE}' -l '${PH_APP}\\t${PH_APP_USER}\\t${PH_APP_INST_STATE}\\t${PH_APP_CMD}'"
 			then
 				break
 			fi
 		fi
 	else
-		if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/${PH_FILE}' -l '${PH_APP}\t${PH_APP_STR_TTY}'"
+		if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_FILE}' -l '${PH_APP}\t${PH_APP_STR_TTY}'"
 		then
 			PH_APP_STR_TTY="${PH_VAL_VALUES[0]}"
 			unset PH_VAL_VALUES PH_VAL_COLUMNS
-			if ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/${PH_FILE}' -l '${PH_APP}\\t${PH_APP_STR_TTY}'"
+			if ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_FILE}' -l '${PH_APP}\\t${PH_APP_STR_TTY}'"
 			then
 				break
 			fi
@@ -11382,7 +11361,7 @@ case "${PH_FILE_SHORTNAME}" in cont)
 			defaults|alloweds)
 		PH_FILE="options.${PH_FILE_SHORTNAME}" ;;
 esac
-echo -n "${PH_FILE}"
+echo -n "${PH_CONF_DIR}/${PH_FILE}"
 return 0
 }
 
