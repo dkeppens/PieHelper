@@ -86,7 +86,7 @@ PH_DISTROU=""
 
 for PH_i in "declares_other.sh" "declares_rollback.sh"
 do
-	PH_i="$(cd "$(dirname "${0}")" && pwd)/${PH_i}"
+	PH_i="$(cd "$(dirname "${0}")" && pwd)/main/${PH_i}"
 	if [[ -r "${PH_i}" ]]
 	then
 		if ! source "${PH_i}" >/dev/null 2>&1
