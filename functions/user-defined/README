@@ -1,2 +1,3 @@
-# User-defined functions will be loaded from this directory if they are defined in files called 'functions.' followed by a free to choose extension
+# User-defined functions will be loaded from this directory which is defined as variable 'PH_USER_FUNCTIONS_DIR'
+# Functions will be loaded only if they are defined in files called 'functions.' followed by an extension of choice
 # Framework functions will override user functions of the same name

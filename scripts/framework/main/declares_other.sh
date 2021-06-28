@@ -1,17 +1,27 @@
 # Global variable declarations unrelated to rollback (By Davy Keppens on 06/10/18)
 # Enable/Disable debug by running 'confpieh_ph.sh -p debug -m declares_other.sh'
 
+unset PH_SCRIPTS_DIR PH_BASE_DIR PH_INST_DIR PH_USER_SCRIPTS_DIR PH_BUILD_DIR PH_SNAPSHOT_DIR PH_MNT_DIR \
+	PH_CONF_DIR PH_USER_CONF_DIR PH_MAIN_DIR PH_FUNCS_DIR PH_USER_FUNCS_DIR PH_TMP_DIR PH_FILES_DIR \
+	PH_USER_FILES_DIR PH_MENUS_DIR PH_TEMPLATES_DIR PH_EXCLUDES_DIR PH_VERSION PH_DISTRO PH_DISTRO_REL \
+	PH_RUN_USER PH_RUN_GROUP PH_SUDO PH_PI_MODEL PH_FILE_SUFFIX PH_SUPPORTED_DISTROS PH_DISTRO_CONFIGS \
+	2>/dev/null
+
 declare -x PH_SCRIPTS_DIR
-declare -x PH_INST_DIR
 declare -x PH_BASE_DIR
+declare -x PH_INST_DIR
+declare -x PH_USER_SCRIPTS_DIR
 declare -x PH_BUILD_DIR
 declare -x PH_SNAPSHOT_DIR
 declare -x PH_MNT_DIR
 declare -x PH_CONF_DIR
+declare -x PH_USER_CONF_DIR
 declare -x PH_MAIN_DIR
 declare -x PH_FUNCS_DIR
+declare -x PH_USER_FUNCS_DIR
 declare -x PH_TMP_DIR
 declare -x PH_FILES_DIR
+declare -x PH_USER_FILES_DIR
 declare -x PH_MENUS_DIR
 declare -x PH_TEMPLATES_DIR
 declare -x PH_EXCLUDES_DIR
@@ -51,3 +61,4 @@ PH_RUN_USER=""
 PH_RUN_GROUP=""
 PH_SUDO=""
 PH_PI_MODEL=""
+PH_FILE_SUFFIX=""

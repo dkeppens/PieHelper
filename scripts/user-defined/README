@@ -1,0 +1,2 @@
+# User-defined scripts should be placed in this directory which is defined as variable 'PH_USER_SCRIPTS_DIR'
+# The framework will ensure they are accessible through the PATH environment of the framework user
