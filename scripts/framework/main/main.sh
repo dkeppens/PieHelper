@@ -304,11 +304,11 @@ do
 	fi
 done
 
-# Run basic sanity checks when enabled
+# Run installation sanity checks when enabled
 
-if [[ "${PH_PIEH_SANITY_BASIC}" == "yes" ]]
+if [[ "${PH_PIEH_SANITY_INST}" == "yes" ]]
 then
-	ph_check_pieh_shared_config basic
+	ph_check_pieh_shared_config inst
 fi
 
 # Set current framework version
@@ -414,9 +414,9 @@ then
 	exit "${?}"
 fi
 
-# Run extended sanity checks when enabled
+# Run configuration sanity checks when enabled
 
-if [[ "${PH_PIEH_SANITY_EXTENDED}" == "yes" ]]
+if [[ "${PH_PIEH_SANITY_CONF}" == "yes" ]]
 then
 	PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
 	if [[ "$("${PH_SUDO}" cat "/proc/${PPID}/comm" 2>/dev/null)" != +(@(conf|list)*_ph|@(re|)start*|${PH_MOVE_SCRIPTS_REGEX}).sh ]]
@@ -428,21 +428,21 @@ then
 		else
 			if [[ -e "${PH_TMP_DIR}/.first_run" ]]
 			then
-				ph_check_pieh_shared_config extended
+				ph_check_pieh_shared_config conf
 				ph_check_pieh_unconfigured_config
 				if [[ -e "${PH_TMP_DIR}/.reported_issues" ]]
 				then
 					ph_add_line_to_file -f "${PH_TMP_DIR}/.reported_issues" -l "  OR"
-					ph_check_pieh_shared_config extended
+					ph_check_pieh_shared_config conf
 					ph_check_pieh_configured_config
 				fi
 			else
-				ph_check_pieh_shared_config extended
+				ph_check_pieh_shared_config conf
 				ph_check_pieh_configured_config
 				if [[ -e "${PH_TMP_DIR}/.reported_issues" ]]
 				then
 					ph_add_line_to_file -f "${PH_TMP_DIR}/.reported_issues" -l "  OR"
-					ph_check_pieh_shared_config extended
+					ph_check_pieh_shared_config conf
 					ph_check_pieh_unconfigured_config
 				fi
 			fi
@@ -486,9 +486,9 @@ for PH_i in USER GROUP
 do
 	if [[ -z "$(eval "echo -n \"\$PH_RUN_${PH_i}\"")" ]]
 	then
-		if [[ "${PH_i}" == "USER" && ( "${PH_PIEH_SANITY_BASIC}" == "no" || "${PH_PIEH_SANITY_EXTENDED}" == "no" ) ]]
+		if [[ "${PH_i}" == "USER" && ( "${PH_PIEH_SANITY_INST}" == "no" || "${PH_PIEH_SANITY_CONF}" == "no" ) ]]
 		then
-			ph_set_option_to_value "PieHelper" -o "PH_PIEH_SANITY_BASIC'yes" -o "PH_PIEH_SANITY_EXTENDED'yes" >/dev/null 2>&1
+			ph_set_option_to_value "PieHelper" -o "PH_PIEH_SANITY_INST'yes" -o "PH_PIEH_SANITY_CONF'yes" >/dev/null 2>&1
 			ph_set_result -a -m "An error occurred trying to set the $(echo -n "${PH_i}" | tr '[:upper:]' '[:lower:]') account for PieHelper (Auto-enabling all sanity checks)"
 		else
 			ph_set_result -a -m "An error occurred trying to set the $(echo -n "${PH_i}" | tr '[:upper:]' '[:lower:]') account for PieHelper (Check user '${PH_RUN_USER}')"
@@ -507,9 +507,9 @@ do
 done
 if [[ "${#PH_ALLOW_USERS[@]}" -eq "0" ]]
 then
-	if [[ "${PH_PIEH_SANITY_BASIC}" == "no" || "${PH_PIEH_SANITY_EXTENDED}" == "no" ]]
+	if [[ "${PH_PIEH_SANITY_INST}" == "no" || "${PH_PIEH_SANITY_CONF}" == "no" ]]
 	then
-		ph_set_option_to_value "PieHelper" -o "PH_PIEH_SANITY_BASIC'yes" -o "PH_PIEH_SANITY_EXTENDED'yes" >/dev/null 2>&1
+		ph_set_option_to_value "PieHelper" -o "PH_PIEH_SANITY_INST'yes" -o "PH_PIEH_SANITY_CONF'yes" >/dev/null 2>&1
 		ph_set_result -a -m "An error occurred trying to determine the users with PieHelper access (Auto-enabling all sanity checks)"
 	else
 		ph_set_result -a -m "An error occurred trying to determine the users with PieHelper access (Check/correct 'sudo' configurations)"

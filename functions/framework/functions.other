@@ -1157,72 +1157,94 @@ PH_SANITY_MODE="${1}"
 PH_REQ_SANITY_LEVEL=""
 PH_DISTROU=""
 
-[[ "${PH_SANITY_MODE}" != @(basic|extended) || "${#}" -ne "1" ]] && \
+[[ "${PH_SANITY_MODE}" != @(inst|conf) || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-declare -ax PH_DEFAULT_APPS
-PH_DEFAULT_APPS=($(ph_get_app_list_by_state -s Default -t minimum))
+read -r -a PH_DEFAULT_APPS -d';' < <(ph_get_app_list_by_state -s Default -t minimum 2>/dev/null; echo -n ";")
+read -r -a PH_DISTRO_DIRS -d';' < <(echo -n "${PH_SUPPORTED_DISTROS[*]}" | nawk -v dir="${PH_CONF_DIR}/distros" 'BEGIN { \
+		RS = " " \
+	} { \
+		printf dir "/" $0 " " \
+	}'; echo -n ";")
 for PH_i in critical optional full
 do
-	if [[ ( "${PH_PIEH_SANITY_LEVEL}" == "critical" && "${PH_i}" != "critical" ) || \
-		( "${PH_PIEH_SANITY_LEVEL}" == "optional" && "${PH_i}" == "full" ) ]]
+	if [[ ( "${PH_SANITY_LEVEL}" == "critical" && "${PH_i}" != "critical" ) || \
+		( "${PH_SANITY_LEVEL}" == "optional" && "${PH_i}" == "full" ) ]]
 	then
 		continue
 	fi
-	for PH_j in "${PH_SCRIPTS_DIR}" "${PH_CONF_DIR}" "${PH_CONF_DIR}/distros" "${PH_TMP_DIR}" \
-		"${PH_FILES_DIR}" "${PH_MENUS_DIR}" "${PH_TEMPLATES_DIR}" "${PH_FILES_DIR}/stored" "${PH_EXCLUDES_DIR}" \
-		"${PH_MNT_DIR}" "${PH_BUILD_DIR}" "${PH_SNAPSHOT_DIR}" "${PH_BUILD_DIR}/.gitignore" \
+	for PH_j in "${PH_USER_SCRIPTS_DIR}" "${PH_USER_CONF_DIR}" "${PH_CONF_DIR}/distros" "${PH_SCRIPTS_DIR}/pre_cmds" "${PH_SCRIPTS_DIR}/post_cmds" \
+		"${PH_SCRIPTS_DIR}/expect" "${PH_FILES_DIR}" "${PH_USER_FILES_DIR}" "${PH_FILES_DIR}/stored" "${PH_MENUS_DIR}" "${PH_TEMPLATES_DIR}" "${PH_EXCLUDES_DIR}" \
+		"${PH_USER_FUNCS_DIR}" "${PH_MNT_DIR}" "${PH_TMP_DIR}" "${PH_BUILD_DIR}" "${PH_SNAPSHOT_DIR}" "${PH_BUILD_DIR}/.gitignore" \
 		"${PH_SNAPSHOT_DIR}/.gitignore" "${PH_MNT_DIR}/.gitignore" "${PH_TMP_DIR}/.gitignore" "${PH_FILES_DIR}/stored/.gitignore" \
-		VERSION VERSIONS default_apps_GL default_apps_X HOWTO \
+		"${PH_USER_SCRIPTS_DIR}/README" "${PH_USER_CONF_DIR}/README" "${PH_USER_FILES_DIR}/README" "${PH_USER_FUNCS_DIR}/README" \
+		"${PH_USER_SCRIPTS_DIR}/.gitignore" "${PH_USER_CONF_DIR}/.gitignore" "${PH_USER_FILES_DIR}/.gitignore" "${PH_USER_FUNCS_DIR}/.gitignore" \
+		VERSION VERSIONS default_apps_GL default_apps_X HOWTO CODE_OF_CONDUCT.md HOWTO INSTALL LICENSE README.md TODO \
 		Support System Main PS3 PS4 XBOX360 XBOXSX SystemRetained SystemInteractive SystemRetaineds \
 		Controllers OOSapp "${PH_DEFAULT_APPS[@]}" "${PH_DISTRO_CONFIGS[@]}" \
 		Kodi-PRE Kodi-POST PieHelper-PRE PieHelper-POST \
 		MovefromPieHScript LoginScript MoveScript MovetoPieHScript RestartScriptPieH \
 		RestartScript StartScriptPieH StartScript StopScriptPieH StopScript \
 		confapps confpieh confttys confgena confctrl confoper confopts listblue listmoon \
-		setpasswd cfgctrls kodi.post_cmd build.archives
+		setpasswd cfgctrls kodi.post_cmd build.archives "${PH_DISTRO_DIRS[@]}"
 	do
 		PH_REQ_SANITY_LEVEL="critical"
 		PH_DIR=""
 		PH_SUFFIX=""
-		if [[ -d "${PH_j}" ]]
+		if [[ "${PH_j}" == @(${PH_MNT_DIR}|${PH_USER_SCRIPTS_DIR}|${PH_USER_CONF_DIR}|${PH_MENUS_DIR}|${PH_TEMPLATES_DIR}|${PH_EXCLUDES_DIR}|${PH_TMP_DIR}) || \
+			"${PH_j}" == @(${PH_USER_FUNCS_DIR}|${PH_BUILD_DIR}|${PH_SNAPSHOT_DIR}|*/stored|*/distros|${PH_USER_FILES_DIR}|*/pre_cmds|*/post_cmds|*/expect) ]]
 		then
-			[[ "${PH_j}" == @(${PH_MNT_DIR}|${PH_BUILD_DIR}|${PH_SNAPSHOT_DIR}|${PH_FILES_DIR}/stored|${PH_EXCLUDES_DIR}) ]] && \
-				PH_REQ_SANITY_LEVEL="basic"
+			[[ "${PH_j}" == @(${PH_MNT_DIR}|${PH_USER_SCRIPTS_DIR}|${PH_USER_CONF_DIR}|${PH_USER_FILES_DIR}|${PH_USER_FUNCS_DIR}|*/pre_cmds|*/post_cmds) ]] && \
+				PH_REQ_SANITY_LEVEL="optional"
 		else
 			if ph_check_array_index -n PH_SUPPORTED_DISTROS -v "${PH_j}" -q
 			then
+				if [[ "${PH_j}" != "${PH_DISTRO}" ]]
+				then
+					PH_REQ_SANITY_LEVEL="full"
+				else
+					if [[ "${PH_SANITY_LEVEL}" == "critical" ]]
+					then
+						ph_check_object_existence -o "${PH_CONF_DIR}/distros/${PH_j}" -m "${PH_SANITY_MODE}" -q
+					fi
+				fi
 				PH_DIR="${PH_CONF_DIR}/distros/"
 				PH_SUFFIX=".conf"
-				[[ "${PH_j}" != "${PH_DISTRO}" ]] && \
-					PH_REQ_SANITY_LEVEL="full"
 			else
 				while true
 				do
-					for PH_k in "${PH_SUPPORTED_DISTROS[@]}"
-					do
-						PH_DISTROU="${PH_k}"
-						if [[ "$(declare -p "PH_SUPPORTED_${PH_DISTROU}_RELS" 2>/dev/null)" == declare* ]]
-						then
-							if ph_check_array_index -n "PH_SUPPORTED_${PH_DISTROU}_RELS" -v "${PH_j}" -q
+					if ph_check_array_index -n PH_DISTRO_CONFIGS -v "${PH_j}" -q
+					then
+						for PH_k in "${PH_SUPPORTED_DISTROS[@]}"
+						do
+							PH_DISTROU="${PH_k}"
+							if [[ "$(declare -p "PH_SUPPORTED_${PH_DISTROU}_RELS" 2>/dev/null)" == declare* ]]
 							then
-								PH_DIR="${PH_CONF_DIR}/distros/${PH_k}/"
-								PH_SUFFIX=".conf"
-								[[ "${PH_j}" != "${PH_DISTRO_REL}" ]] && \
-									PH_REQ_SANITY_LEVEL="full"
-								break 2
+								if ph_check_array_index -n "PH_SUPPORTED_${PH_DISTROU}_RELS" -v "${PH_j}" -q
+								then
+									PH_DIR="${PH_CONF_DIR}/distros/${PH_k}/"
+									PH_SUFFIX=".conf"
+									[[ "${PH_j}" != "${PH_DISTRO_REL}" ]] && \
+										PH_REQ_SANITY_LEVEL="full"
+									break 2
+								fi
 							fi
-						fi
-					done
+						done
+					fi
 					if ph_check_array_index -n PH_DEFAULT_APPS -v "${PH_j}" -q
 					then
 						PH_DIR="${PH_TEMPLATES_DIR}/"
 						PH_SUFFIX="_conf.template"
 					else
-						case "${PH_j}" in Support|System*|Main|PS*|XBOX*)
+						case "${PH_j}" in Support|System|Main)
 							PH_DIR="${PH_MENUS_DIR}/"
 							PH_SUFFIX=".lst" ;;
+								PS*|XBOX*|System*)
+							PH_DIR="${PH_MENUS_DIR}/"
+							PH_REQ_SANITY_LEVEL="optional"
+							PH_SUFFIX=".lst" ;;
 								Controllers|OOSapp)
+							PH_REQ_SANITY_LEVEL="optional"
 							PH_DIR="${PH_TEMPLATES_DIR}/"
 							PH_SUFFIX="_conf.template" ;;
 								*Script|*PieH)
@@ -1232,29 +1254,37 @@ do
 							PH_DIR="${PH_SCRIPTS_DIR}/"
 							PH_SUFFIX="_ph.sh" ;;
 								*PRE)
-							PH_REQ_SANITY_LEVEL="basic"
+							PH_REQ_SANITY_LEVEL="optional"
 							PH_DIR="${PH_SCRIPTS_DIR}/pre_cmds/"
 							PH_SUFFIX=".sh" ;;
 								*POST)
-							PH_REQ_SANITY_LEVEL="basic"
+							PH_REQ_SANITY_LEVEL="optional"
 							PH_DIR="${PH_SCRIPTS_DIR}/post_cmds/"
 							PH_SUFFIX=".sh" ;;
 								kodi.post_cmd|build.archives)
-							PH_REQ_SANITY_LEVEL="basic"
 							PH_SUFFIX=".excludes"
 							PH_DIR="${PH_EXCLUDES_DIR}/" ;;
 								default_apps_*|VERSIONS)
 							PH_DIR="${PH_FILES_DIR}/" ;;
 								VERSION)
 							PH_DIR="${PH_CONF_DIR}/" ;;
-								setpasswd|cfgctrls)
+								setpasswd)
 							PH_SUFFIX=".expect"
 							PH_DIR="${PH_SCRIPTS_DIR}/expect/" ;;
+								cfgctrls)
+							PH_SUFFIX=".expect"
+							PH_REQ_SANITY_LEVEL="optional"
+							PH_DIR="${PH_SCRIPTS_DIR}/expect/" ;;
 								HOWTO)
-							PH_REQ_SANITY_LEVEL="basic"
+							PH_REQ_SANITY_LEVEL="optional"
 							PH_DIR="${PH_BASE_DIR}/" ;;
-								*.gitignore)
-							PH_REQ_SANITY_LEVEL="basic" ;;
+								CODE_OF_CONDUCT.md|INSTALL|LICENSE|README.md|TODO)
+							PH_REQ_SANITY_LEVEL="full"
+							PH_DIR="${PH_BASE_DIR}/" ;;
+								*/README)
+							PH_REQ_SANITY_LEVEL="full" ;;
+								"${PH_MNT_DIR}/.gitignore"|"${PH_USER_SCRIPTS_DIR}/.gitignore"|"${PH_USER_FILES_DIR}/.gitignore"|"${PH_USER_CONF_DIR}/.gitignore"|"${PH_USER_FUNCS_DIR}/.gitignore")
+							PH_REQ_SANITY_LEVEL="optional" ;;
 								*)
 							: ;;
 						esac
@@ -1274,7 +1304,7 @@ do
 		fi
 	done
 done
-unset PH_DEFAULT_APPS
+unset PH_DEFAULT_APPS PH_DISTRO_DIRS
 return 0
 }
 
@@ -1800,7 +1830,9 @@ declare PH_OBJECT_TYPE
 declare PH_OBJECT_CAT
 declare PH_OBJECT_DESC
 declare PH_TYPE
+declare PH_ERROR_TYPE
 declare PH_MODE
+declare PH_CMD
 declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
@@ -1814,7 +1846,9 @@ PH_OBJECT_TYPE="file"
 PH_OBJECT_CAT=""
 PH_OBJECT_DESC=""
 PH_TYPE="critical"
+PH_ERROR_TYPE="Corrupted"
 PH_MODE=""
+PH_CMD=""
 PH_OPTION=""
 PH_QUIESCE="1"
 PH_RET_CODE="0"
@@ -1830,7 +1864,7 @@ do
 			return 1
 		PH_OBJECT="${OPTARG}" ;;
 			     m)
-		[[ -n "${PH_MODE}" || "${OPTARG}" != @(basic|extended|immediate) ]] && \
+		[[ -n "${PH_MODE}" || "${OPTARG}" != @(inst|conf|immediate) ]] && \
 			OPTIND="${PH_OLDOPTIND}" && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
@@ -1855,84 +1889,105 @@ OPTARG="${PH_OLDOPTARG}"
 	( "${#}" -ne "5" && "${PH_QUIESCE}" -eq "0" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-if [[ -d "${PH_OBJECT}" ]]
-then
-	PH_OBJECT_TYPE="directory"
-else
-	if [[ "${PH_OBJECT}" == @(sup|int|cont|os|@(default|allowed)s) ]]
+case "${PH_OBJECT}" in sup|int|cont|os|defaults|alloweds)
+	PH_TYPE="auto-generated"
+	PH_OBJECT="$(ph_get_filename_from_shortname "${PH_OBJECT}")"
+	PH_OBJECT_CAT="configuration" ;;
+       		*/TTYManagement.lst|*/OptionsManagement.lst|*/StatusManagement.lst)
+	PH_TYPE="auto-generated"
+	PH_OBJECT_CAT="menu"
+	PH_OBJECT_TYPE="link" ;;
+		*/Main.lst|*/Support.lst|*/System.lst)
+	PH_OBJECT_CAT="menu"
+	PH_OBJECT_TYPE="item" ;;
+		*/PS3.lst|*/PS4.lst|*/XBOX360.lst|*/XBOXSX.lst|*/SystemInteractive.lst|*/SystemRetained.lst|*/SystemRetaineds.lst)
+	PH_TYPE="optional"
+	PH_OBJECT_CAT="menu"
+	PH_OBJECT_TYPE="item" ;;
+		*/*.lst)
+	PH_TYPE="auto-generated"
+	PH_OBJECT_CAT="menu"
+	PH_OBJECT_TYPE="item" ;;
+		*/list*_ph.sh|*/conf*_ph.sh)
+	PH_OBJECT_CAT="codebase"
+	PH_OBJECT_TYPE="script" ;;
+		*/*-POST.sh)
+	PH_TYPE="optional"
+	PH_OBJECT_CAT="post-command"
+	PH_OBJECT_TYPE="script" ;;
+		*/*-PRE.sh)
+	PH_TYPE="optional"
+	PH_OBJECT_CAT="pre-command"
+	PH_OBJECT_TYPE="script" ;;
+		*/*.sh)
+	PH_TYPE="auto-generated"
+	PH_OBJECT_CAT="management"
+	PH_OBJECT_TYPE="script" ;;
+		*/LoginScript.template)
+	PH_OBJECT_CAT="loginscript"
+	PH_OBJECT_TYPE="template" ;;
+		*/Move*Script.template|*/StopScript*.template|*/StartScript*.template|*/RestartScript*.template)
+	PH_OBJECT_CAT="management script"
+	PH_OBJECT_TYPE="template" ;;
+		*/OOSapp.template|*/Controllers.template)
+	PH_TYPE="optional"
+	PH_OBJECT_CAT="configuration file"
+	PH_OBJECT_TYPE="template" ;;
+		*/*.template)
+	PH_OBJECT_CAT="configuration file"
+	PH_OBJECT_TYPE="template" ;;
+		"${PH_TMP_DIR}/.gitignore"|"${PH_BUILD_DIR}/.gitignore"|"${PH_SNAPSHOT_DIR}/.gitignore"|"${PH_FILES_DIR}/stored/.gitignore"|*/.first_run)
+	PH_OBJECT_CAT="configuration" ;;
+		*/.gitignore|*/.auto_update_denied|*/.*_in_progress)
+	PH_TYPE="optional"
+	PH_OBJECT_CAT="configuration" ;;
+		*/HOWTO|*/TODO|*/INSTALL|*/README*|*/CODE_OF_CONDUCT.md|*/LICENSE)
+	PH_TYPE="optional"
+	PH_OBJECT_CAT="miscellaneous" ;;
+		*/setpasswd.expect)
+	PH_OBJECT_CAT="expect"
+	PH_OBJECT_TYPE="script" ;;
+		*/*.expect)
+	PH_TYPE="optional"
+	PH_OBJECT_CAT="expect"
+	PH_OBJECT_TYPE="script" ;;
+		"${PH_USER_FUNCS_DIR}/functions."*)
+	PH_TYPE="optional"
+	PH_OBJECT_CAT="user-defined codebase" ;;
+		*/functions.*)
+	PH_TYPE="optional"
+	PH_OBJECT_CAT="codebase" ;;
+		*/*.excludes)
+	PH_OBJECT_CAT="tar excludes" ;;
+		*/distros/*/*.conf)
+	PH_OBJECT_CAT="configuration"
+	if [[ "${PH_DISTRO_REL}" != "$(sed 's/.conf$//'<<<"${PH_OBJECT##*/}")" ]]
 	then
-		PH_OBJECT="$(ph_get_filename_from_shortname "${PH_OBJECT}")"
+		PH_TYPE="optional"
+	fi ;;
+		*/distros/*.conf)
+	PH_OBJECT_CAT="configuration"
+	if ! ph_check_array_index -n PH_DISTRO_CONFIGS -v "$(sed 's/.conf$//'<<<"${PH_OBJECT##*/}")" -q
+	then
 		PH_TYPE="auto-generated"
-		PH_OBJECT_CAT="configuration"
-	fi
-	if [[ "${PH_OBJECT}" != @(sup|int|cont|os|@(default|allowed)s) ]]
-	then
-   	    	case "${PH_OBJECT}" in */TTYManagement.lst|*/OptionsManagement.lst|*/StatusManagement.lst)
-			PH_TYPE="auto-generated"
-			PH_OBJECT_CAT="menu"
-			PH_OBJECT_TYPE="link" ;;
-				*/Main.lst|*/PS3.lst|*/PS4.lst|*/Support.lst|*/XBOX360.lst|*/XBOXSX.lst)
-			PH_OBJECT_CAT="menu"
-			PH_OBJECT_TYPE="item" ;;
-				*/System.lst|*/SystemInteractive.lst|*/SystemRetained.lst|*/SystemRetaineds.lst)
-			PH_OBJECT_CAT="menu"
-			PH_OBJECT_TYPE="item" ;;
-				*/*.lst)
-			PH_TYPE="auto-generated"
-			PH_OBJECT_CAT="menu"
-			PH_OBJECT_TYPE="item" ;;
-				*/listblue_ph.sh|*/listmoon_ph.sh)
-			PH_OBJECT_CAT="codebase"
-			PH_OBJECT_TYPE="script" ;;
-				*/confapps_ph.sh|*/confctrl_ph.sh|*/confgena_ph.sh|*/confoper_ph.sh|*/confttys_ph.sh|*/confpieh_ph.sh)
-			PH_OBJECT_CAT="codebase"
-			PH_OBJECT_TYPE="script" ;;
-				*/*.sh)
-			PH_TYPE="auto-generated"
-			PH_OBJECT_CAT="management"
-			PH_OBJECT_TYPE="script" ;;
-				*/LoginScript.template)
-			PH_OBJECT_CAT="loginscript"
-			PH_OBJECT_TYPE="template" ;;
-				*/MoveScript.template|*/StopScript.template|*/StartScript.template|*/RestartScript.template)
-			PH_OBJECT_CAT="management script"
-			PH_OBJECT_TYPE="template" ;;
-				*/MovefromPieHScript.template|*/MovetoPieHScript.template|*/StopScriptPieH.template|*/StartScriptPieH.template|*/RestartScriptPieH.template)
-			PH_OBJECT_CAT="management script"
-			PH_OBJECT_TYPE="template" ;;
-				*/*.template)
-			PH_OBJECT_CAT="configuration"
-			PH_OBJECT_TYPE="template" ;;
-				*/.gitignore|*/.first_run|*/.auto_update_denied|*/HOWTO|*/.configure_in_progress|*/.unconfigure_in_progress)
-			PH_OBJECT_CAT="configuration"
-			PH_TYPE="optional" ;;
-				*/TODO|*/INSTALL|*/README.md|*/CODE_OF_CONDUCT.md|*/LICENSE)
-			PH_OBJECT_CAT="data"
-			PH_TYPE="optional" ;;
-				*/*.expect)
-			PH_OBJECT_CAT="expect"
-			PH_OBJECT_TYPE="script" ;;
-				*/functions.*)
-			PH_OBJECT_CAT="codebase" ;;
-				*/*.excludes)
-			PH_OBJECT_CAT="tar excludes" ;;
-				*/distros/*.conf)
-			if ! ph_check_array_index -n PH_DISTRO_CONFIGS -v "$(sed 's/.conf$//'<<<"${PH_OBJECT##*/}")" -q
-			then
-				PH_OBJECT_CAT="configuration"
-				PH_OBJECT_TYPE="link"
-				PH_TYPE="auto-generated"
-			fi ;;
-				"${PH_CONF_DIR}/main.conf")
-			PH_OBJECT_CAT="configuration" ;;
-				"${PH_CONF_DIR}/"*.conf)
-			PH_OBJECT_CAT="configuration"
-			PH_TYPE="auto-generated" ;;
-				*)
-			: ;;
-       		esac
-	fi
-fi
+		PH_OBJECT_TYPE="link"
+	else
+		if [[ "${PH_DISTRO}" != "$(sed 's/.conf$//'<<<"${PH_OBJECT##*/}")" ]]
+		then
+			PH_TYPE="optional"
+		fi
+	fi ;;
+		"${PH_CONF_DIR}/"*.conf)
+	PH_TYPE="auto-generated"
+	PH_OBJECT_CAT="configuration" ;;
+		VERSION*|default_apps*)
+	PH_OBJECT_CAT="configuration" ;;
+		"${PH_MNT_DIR}"|"${PH_SCRIPTS_DIR}/"*_cmds|"${PH_USER_SCRIPTS_DIR}"|"${PH_USER_FILES_DIR}"|"${PH_USER_CONF_DIR}"|"${PH_USER_FUNCS_DIR}")
+	PH_TYPE="optional"
+	PH_OBJECT_TYPE="directory" ;;
+		*)
+	PH_OBJECT_TYPE="directory" ;;
+esac
 if [[ -n "${PH_OBJECT_CAT}" ]]
 then
 	PH_OBJECT_CAT=" ${PH_OBJECT_CAT} "
@@ -1940,61 +1995,127 @@ else
 	PH_OBJECT_CAT=" "
 fi
 PH_OBJECT_DESC="${PH_TYPE}${PH_OBJECT_CAT}${PH_OBJECT_TYPE}"
-if [[ ! -r "${PH_OBJECT}" || \
-	( "${PH_OBJECT_TYPE}" == @(file|item|script|template) && ( -L "${PH_OBJECT}" || -d "${PH_OBJECT}" )) || \
-	( "${PH_OBJECT_TYPE}" == "directory" && ! -d "${PH_OBJECT}" ) || \
+if [[ ( "${PH_OBJECT_TYPE}" == "directory" && ( ! -r "${PH_OBJECT}" || ! -x "${PH_OBJECT}" || ! -d "${PH_OBJECT}" )) || \
+	( "${PH_OBJECT_TYPE}" == @(file|item|script|template) && ( ! -r "${PH_OBJECT}" || -L "${PH_OBJECT}" || -d "${PH_OBJECT}" )) || \
+	( "${PH_OBJECT_TYPE}" == "script" && "${PH_OBJECT_CAT}" == "codebase" && ! -x "${PH_OBJECT}" ) || \
 	( "${PH_OBJECT_TYPE}" == "link" && ! -L "${PH_OBJECT}" ) ]]
 then
+	if [[ ! -e "${PH_OBJECT}" ]]
+	then
+		PH_ERROR_TYPE="Missing"
+	else
+		if [[ ! -r "${PH_OBJECT}" ]]
+		then
+			PH_ERROR_TYPE="Unreadable"
+		else
+			if [[ ( "${PH_OBJECT_TYPE}" == "directory" || ( "${PH_OBJECT_TYPE}" == "script" && "${PH_OBJECT_CAT}" == "codebase" )) ]]
+			then
+				if [[ ! -x "${PH_OBJECT}" ]]
+				then
+					PH_ERROR_TYPE="Unexecutable"
+				fi
+			fi
+		fi
+	fi
 	if [[ "${PH_QUIESCE}" -ne "0" ]]
 	then
-		case "${PH_MODE}" in basic)
-			case "${PH_TYPE}" in critical)
-				if [[ -r "${PH_OBJECT}" ]]
-				then
-					ph_set_result -a -m "Reinstallation of PieHelper is required (Corrupted ${PH_OBJECT_DESC} '${PH_OBJECT}')"
-				else
-					ph_set_result -a -m "Reinstallation of PieHelper is required (Missing or unreadable ${PH_OBJECT_DESC} '${PH_OBJECT}')"
-				fi ;;
-					auto-generated)
-				if [[ -r "${PH_OBJECT}" ]]
-				then
-					ph_set_result -a -m "Repair of PieHelper is required (Corrupted ${PH_OBJECT_DESC} '${PH_OBJECT}')"
-				else
-					ph_set_result -a -m "Repair of PieHelper is required (Missing or unreadable ${PH_OBJECT_DESC} '${PH_OBJECT}')"
-				fi ;;
+		case "${PH_MODE}" in inst)
+			case "${PH_TYPE}" in critical|optional)
+				PH_CMD="ph_set_result -a -m \"Reinstallation of 'PieHelper' is required (${PH_ERROR_TYPE} ${PH_OBJECT_DESC} '${PH_OBJECT}')\"" ;;
 					*)
-				return 0 ;;
+				PH_CMD="ph_set_result -a -m \"Repair of 'PieHelper' is required (${PH_ERROR_TYPE} ${PH_OBJECT_DESC} '${PH_OBJECT}')\"" ;;
 			esac ;;
-				extended)
-			if [[ -r "${PH_OBJECT}" ]]
-			then
-				>&2 printf "%4s%s\033[1;33m%s\033[0m%s\n" "" \
-					"$(cut -c1<<<"${PH_TYPE}" | tr '[:lower:]' '[:upper:]')$(cut -c2-<<<"${PH_TYPE}") ${PH_OBJECT_CAT}${PH_OBJECT_TYPE} " "'${PH_OBJECT}'" " is corrupted"
-			else
-				>&2 printf "%4s%s\033[1;33m%s\033[0m%s\n" "" \
-					"$(cut -c1<<<"${PH_TYPE}" | tr '[:lower:]' '[:upper:]')$(cut -c2-<<<"${PH_TYPE}") ${PH_OBJECT_CAT}${PH_OBJECT_TYPE} " "'${PH_OBJECT}'" " is missing or unreadable"
-			fi ;;
+				conf)
+			PH_ERROR_TYPE="$(cut -c1<<<"${PH_ERROR_TYPE}" | tr '[:upper:]' '[:lower:]')$(cut -c2<<<"${PH_ERROR_TYPE}")"
+			PH_CMD='printf "%4s%s\033[1;33m%s\033[0m%s\n" ""'
+			PH_CMD="${PH_CMD} \"$(cut -c1<<<${PH_TYPE} | tr '[:lower:]' '[:upper:]')$(cut -c2-<<<${PH_TYPE}) ${PH_OBJECT_CAT}${PH_OBJECT_TYPE} \" \"'${PH_OBJECT}'\" \" is ${PH_ERROR_TYPE}\"" ;;
 				*)
-			printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking for ${PH_OBJECT_DESC} " "'${PH_OBJECT}'"
-			if [[ "${PH_TYPE}" != "optional" ]]
-			then
-				>&2 printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "Not found"
-				ph_set_result -r 1
-			else
-				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found"
-				ph_set_result -r 0
-			fi ;;
+			PH_CMD="ph_print_object_check -o '${PH_OBJECT}' -d '${PH_OBJECT_DESC}' -t '${PH_TYPE}' -e '${PH_ERROR_TYPE}'" ;;
 		esac
+		eval "${PH_CMD}"
+		PH_RET_CODE="1"
 	fi
-	PH_RET_CODE="1"
 else
 	if [[ "${PH_QUIESCE}" -ne "0" && "${PH_MODE}" == "immediate" ]]
 	then
-		printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking for ${PH_OBJECT_DESC} " "'${PH_OBJECT}'"
+		printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking ${PH_OBJECT_DESC} " "'${PH_OBJECT}'"
 		ph_run_with_rollback -c true -m "Found"
 	fi
 fi
 return "${PH_RET_CODE}"
+}
+
+function ph_print_object_check {
+
+declare PH_OBJECT
+declare PH_OBJECT_DESC
+declare PH_TYPE
+declare PH_ERROR_TYPE
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+
+PH_OBJECT=""
+PH_OBJECT_DESC=""
+PH_TYPE=""
+PH_ERROR_TYPE=""
+PH_OPTION=""
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
+
+OPTIND="1"
+
+while getopts :o:d:t:e: PH_OPTION
+do
+	case "${PH_OPTION}" in o)
+		[[ -n "${PH_OBJECT}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_OBJECT="${OPTARG}" ;;
+			     d)
+		[[ -n "${PH_OBJECT_DESC}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_OBJECT_DESC="${OPTARG}" ;;
+			     t)
+		[[ -n "${PH_TYPE}" || "${OPTARG}" != @(critical|optional|auto-generated) ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_TYPE="${OPTARG}" ;;
+			     e)
+		[[ -n "${PH_ERROR_TYPE}" || "${OPTARG}" != @(Missing|Unreadable|Unexecutable|Corrupted) ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_ERROR_TYPE="${OPTARG}" ;;
+			     *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
+		return 1 ;;
+	esac
+done
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
+
+[[ -z "${PH_OBJECT}" || -z "${PH_OBJECT_DESC}" || -z "${PH_TYPE}" || -z "${PH_ERROR_TYPE}" || "${#}" -ne "8" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+[[ "${PH_ERROR_TYPE}" == "Missing" ]] && \
+	PH_ERROR_TYPE="Not Found"
+printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking ${PH_OBJECT_DESC} " "'${PH_OBJECT}'"
+if [[ "${PH_TYPE}" != "optional" ]]
+then
+	>&2 printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR : " "${PH_ERROR_TYPE}"
+	ph_set_result -r 1
+else
+	printf "%10s\033[33m%s\033[0m\n" "" "Warning : ${PH_ERROR_TYPE}"
+	ph_set_result -r 0
+fi
+return 0
 }
 
 function ph_check_default_base_conf_file_validity {
