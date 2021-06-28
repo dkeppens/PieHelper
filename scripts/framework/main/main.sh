@@ -16,7 +16,57 @@ set -o pipefail
 shopt -s extglob
 shopt -s checkwinsize
 
-# Declare local variables
+# Load user-defined codebase
+
+if read -r -a PH_USER_FUNCS -d';' < <("${PH_SUDO}" find "$(cd "$(dirname "${0}")" && pwd)/../../../functions/user-defined" -maxdepth 1 -mount -type f -name "functions.*" 2>/dev/null; echo -n ";")
+then
+	for PH_i in "${PH_USER_FUNCS[@]}"
+	do
+		if [[ -r "${PH_i}" ]]
+		then
+			if ! source "${PH_i}" >/dev/null 2>&1
+			then
+				>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Corrupted critical user-defined codebase file '${PH_i}')"
+				exit 1
+			fi
+		else
+			>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Unreadable critical user-defined codebase file '${PH_i}')"
+			exit 1
+		fi
+	done
+else
+	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine all user-defined functions"
+	exit 1
+fi
+unset PH_USER_FUNCS 2>/dev/null
+
+# Load user-defined configuration files
+
+if read -r -a PH_USER_CONFS -d';' < <("${PH_SUDO}" find "$(cd "$(dirname "${0}")" && pwd)/../../../conf/user-defined" -maxdepth 1 -mount -type f -name "*.conf" 2>/dev/null; echo -n ";")
+then
+	for PH_i in "${PH_USER_CONFS[@]}"
+	do
+		if [[ -r "${PH_i}" ]]
+		then
+			if ! source "${PH_i}" >/dev/null 2>&1
+			then
+				>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Corrupted critical user-defined configuration file '${PH_i}')"
+				exit 1
+			fi
+		else
+			>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Unreadable critical user-defined configuration file '${PH_i}')"
+			exit 1
+		fi
+	done
+else
+	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine all user-defined configuration files"
+	exit 1
+fi
+unset PH_USER_CONFS 2>/dev/null
+
+# Local variable declarations and override identical user declarations
+
+unset PH_i PH_CUR_USER PH_MOVE_SCRIPTS_REGEX PH_OLD_DISTRO_REL PH_FORMAT_FLAG PH_DISTROU 2>/dev/null
 
 declare PH_i
 declare PH_CUR_USER
@@ -32,54 +82,22 @@ PH_OLD_DISTRO_REL=""
 PH_FORMAT_FLAG="1"
 PH_DISTROU=""
 
-# Declare global variables not related to rollback
+# Load global variable declarations
 
-declare -x PH_SCRIPTS_DIR
-declare -x PH_INST_DIR
-declare -x PH_BASE_DIR
-declare -x PH_BUILD_DIR
-declare -x PH_SNAPSHOT_DIR
-declare -x PH_MNT_DIR
-declare -x PH_CONF_DIR
-declare -x PH_MAIN_DIR
-declare -x PH_FUNCS_DIR
-declare -x PH_TMP_DIR
-declare -x PH_FILES_DIR
-declare -x PH_MENUS_DIR
-declare -x PH_TEMPLATES_DIR
-declare -x PH_EXCLUDES_DIR
-declare -x PH_VERSION
-declare -x PH_DISTRO
-declare -x PH_DISTRO_REL
-declare -x PH_RUN_USER
-declare -x PH_RUN_GROUP
-declare -x PH_SUDO
-declare -x PH_PI_MODEL
-declare -x PH_FILE_SUFFIX
-declare -ax PH_SUPPORTED_DISTROS
-declare -ax PH_DISTRO_CONFIGS
-
-PH_SCRIPTS_DIR="$(cd "$(dirname "${0}")" && pwd)"
-PH_INST_DIR="${PH_SCRIPTS_DIR%/PieHelper/scripts}"
-PH_BASE_DIR="${PH_INST_DIR}/PieHelper"
-PH_BUILD_DIR="${PH_BASE_DIR}/builds"
-PH_SNAPSHOT_DIR="${PH_BASE_DIR}/snapshots"
-PH_MNT_DIR="${PH_BASE_DIR}/mnt"
-PH_CONF_DIR="${PH_BASE_DIR}/conf/framework"
-PH_MAIN_DIR="${PH_SCRIPTS_DIR}/framework/main"
-PH_FUNCS_DIR="${PH_BASE_DIR}/functions"
-PH_TMP_DIR="${PH_BASE_DIR}/tmp"
-PH_FILES_DIR="${PH_BASE_DIR}/files"
-PH_MENUS_DIR="${PH_FILES_DIR}/menus"
-PH_TEMPLATES_DIR="${PH_FILES_DIR}/templates"
-PH_EXCLUDES_DIR="${PH_FILES_DIR}/excludes"
-PH_VERSION=""
-PH_DISTRO=""
-PH_DISTRO_REL=""
-PH_RUN_USER=""
-PH_RUN_GROUP=""
-PH_SUDO=""
-PH_PI_MODEL=""
+for PH_i in "declares_other.sh" "declares_rollback.sh"
+do
+	if [[ -r "${PH_i}" ]]
+	then
+		if ! source "${PH_i}" >/dev/null 2>&1
+		then
+			>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Corrupted critical configuration file '${PH_i}')"
+			exit 1
+		fi
+	else
+		>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical configuration file '${PH_i}')"
+		exit 1
+	fi
+done
 
 # Load main configuration
 
@@ -91,7 +109,7 @@ then
 		exit 1
 	fi
 else
-	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '${PH_CONF_DIR}/main.conf')"
+	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical configuration file '${PH_CONF_DIR}/main.conf')"
 	exit 1
 fi
 
@@ -152,33 +170,7 @@ else
 	exit 1
 fi
 
-# Set list of supported Linux distros
-
-if ! read -r -a PH_SUPPORTED_DISTROS -d';' < <("${PH_SUDO}" find "${PH_CONF_DIR}/distros" -maxdepth 1 -mount \
-	-type d ! -wholename "${PH_CONF_DIR}/distros" -exec basename {} \; 2>/dev/null; echo -n ";")
-then
-	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the list of supported distros"
-	exit 1
-fi
-
-# Set list of supported releases for each relevant distro
-
-for PH_i in "${PH_SUPPORTED_DISTROS[@]}"
-do
-	if [[ "$("${PH_SUDO}" find "${PH_CONF_DIR}/distros/${PH_i}" -exec ls {} \; 2>/dev/null | wc -l)" -ne "0" ]]
-	then
-		PH_DISTROU="${PH_i}"
-		declare -ax "PH_SUPPORTED_${PH_DISTROU}_RELS"
-		if ! read -r -a "PH_SUPPORTED_${PH_DISTROU}_RELS" -d';' < <("${PH_SUDO}" find "${PH_CONF_DIR}/distros/${PH_i}" -maxdepth 1 -mount \
-			-type f -name "*.conf" -exec bash -c 'basename ${1%.conf}' -- {} \; 2>/dev/null; echo -n ";")
-		then
-			>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the supported releases of distro '${PH_i}'"
-			exit 1
-		fi
-	fi
-done
-
-# Set list of distro/release configurations
+# Determine list of distro/release configurations
 
 for PH_i in "${PH_SUPPORTED_DISTROS[@]}"
 do
@@ -193,37 +185,6 @@ do
 		PH_DISTRO_CONFIGS+=("${PH_i}")
 	fi
 done
-
-# Declare global variables related to rollback
-
-declare -x PH_ROLLBACK_USED
-declare -x PH_RESULT_MSG
-declare -x PH_RESULT_TYPE_USED
-declare -x PH_TOTAL_RESULT
-declare -x PH_RESULT
-declare -ix PH_RESULT_COUNT
-declare -ix PH_TOTAL_RESULT_COUNT
-declare -ix PH_ROLLBACK_DEPTH
-declare -ax PH_ALL_ROLLBACK_PARAMS
-
-PH_ROLLBACK_USED=""
-PH_RESULT_MSG=""
-PH_RESULT_TYPE_USED=""
-PH_TOTAL_RESULT=""
-PH_RESULT=""
-PH_RESULT_COUNT="0"
-PH_TOTAL_RESULT_COUNT="0"
-PH_ROLLBACK_DEPTH="0"
-PH_ALL_ROLLBACK_PARAMS+=(PH_DEPTH_PARAMS PH_DEPTH PH_CONFIGURED_STATE PH_UNCONFIGURED_STATE PH_GROUPS PH_REMOVE_ACLS_USERS PH_CREATE_ACLS_USERS \
-	PH_REMOVE_RIGHTS_USERS PH_CREATE_RIGHTS_USERS PH_INSTALL_PKGS PH_REMOVE_PKGS PH_INT_APPS PH_SUP_APPS PH_UNINT_APPS PH_UNSUP_APPS PH_OPTIONS PH_PIEH_VERSION PH_OLD_VERSION \
-	PH_BOOTENV PH_ENABLE_SERVICES PH_DISABLE_SERVICES PH_SETUP_TTYS PH_UNDO_SETUP_TTYS PH_BLACKLIST_MODULES PH_UNBLACKLIST_MODULES PH_LOAD_MODULES PH_UNLOAD_MODULES \
-	PH_CREATE_EMPTY_FILES PH_REMOVE_EMPTY_FILES PH_CREATE_APPS_ITEMS PH_REMOVE_APPS_ITEMS PH_GIT_ADD_LOCAL PH_GIT_TAG_LOCAL PH_GIT_COMMIT_LOCAL PH_GIT_CLONE_MASTER \
-	PH_GIT_UNDO_CLONE_MASTER PH_GIT_COMMIT_MASTER PH_OLD_GIT_COMMIT_MSG PH_SECURE PH_LINK_MENUS PH_UNDO_LINK_MENUS PH_STORE_FILES PH_RESTORE_FILES PH_ADD_LINES PH_REMOVE_LINES \
-	PH_ADD_APPS_TO_INT_FILE PH_REMOVE_APPS_FROM_INT_FILE PH_ADD_APPS_TO_SUP_FILE PH_REMOVE_APPS_FROM_SUP_FILE PH_MODIFY_APPS_SCRIPT PH_APPS_ACTION PH_STARTAPP \
-	PH_SET_BOOT_TTYS PH_COPY_FILES PH_GRANT_APPS_ACCESS PH_REVOKE_APPS_ACCESS PH_CREATE_APPS_CIFS_MPT PH_REMOVE_APPS_CIFS_MPT PH_CREATE_APPS_ALLOWEDS PH_REMOVE_APPS_ALLOWEDS \
-	PH_CREATE_APPS_DEFAULTS PH_REMOVE_APPS_DEFAULTS PH_CREATE_APPS_CONF_FILE PH_REMOVE_APPS_CONF_FILE PH_CREATE_APPS_MENUS PH_REMOVE_APPS_MENUS PH_CREATE_APPS_SCRIPTS \
-	PH_REMOVE_APPS_SCRIPTS PH_CREATE_OOS_APPS_CODE PH_REMOVE_OOS_APPS_CODE PH_VARIABLES PH_STORE_OPTION PH_RETRIEVE_STORED_OPTION PH_INSTALL_APPS PH_UNINSTALL_APPS \
-	PH_CREATE_APP_USER PH_REMOVE_APP_USER PH_APP_MOUNT_CIFS PH_APP_UMOUNT_CIFS PH_STOP_SERVICES PH_START_SERVICES)
 
 # Determine the current distro and release
 
@@ -292,9 +253,9 @@ if [[ -z "${PATH}" ]]
 then
 	declare -x PATH 2>/dev/null
 
-	PATH="/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin:${PH_SCRIPTS_DIR}"
+	PATH="/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin:${PH_SCRIPTS_DIR}:${PH_USER_SCRIPTS_DIR}"
 else
-	for PH_i in "${PH_SCRIPTS_DIR}" "/sbin" "/bin" "/usr/sbin" "/usr/bin" "/usr/local/sbin" "/usr/local/bin"
+	for PH_i in "${PH_USER_SCRIPTS_DIR}" "${PH_SCRIPTS_DIR}" "/sbin" "/bin" "/usr/sbin" "/usr/bin" "/usr/local/sbin" "/usr/local/bin"
 	do
 		if ! echo -n "${PATH}" | grep -E "(^|(:)+)${PH_i}((:)+|$)" >/dev/null
 		then
@@ -327,7 +288,7 @@ fi
 
 # Load shared and distro-dependent codebase
 
-for PH_i in functions.other functions.update functions.user "distros/functions.${PH_DISTRO}"
+for PH_i in functions.other functions.update "distros/functions.${PH_DISTRO}"
 do
 	if [[ -r "${PH_FUNCS_DIR}/${PH_i}" ]]
 	then
