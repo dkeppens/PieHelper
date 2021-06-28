@@ -1,0 +1,3 @@
+# User-defined variables will be loaded from this directory if they are defined in files with the '.conf' extension
+# Framework variables will override user variables of the same name
+# The recommended prefix for user variables to avoid such conflicts can be anything except 'PH_'

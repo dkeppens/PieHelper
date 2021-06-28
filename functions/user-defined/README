@@ -1,0 +1,2 @@
+# User-defined functions will be loaded from this directory if they are defined in files called 'functions.' followed by a free to choose extension
+# Framework functions will override user functions of the same name
