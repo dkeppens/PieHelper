@@ -794,10 +794,15 @@ do
 	PH_CMD="xargs -I '{}' ${PH_CMD} {}"
 	[[ "${PH_QUIESCE}" -eq "1" ]] && \
 		printf "%8s%s\n" "" "--> Applying default file ${PH_i}"
-	if ! eval "'${PH_SUDO}' find '${PH_FILE}' -mount \! \\( -wholename '${PH_BASE_DIR}/.git*' -prune \\) -a \! -name '.gitignore' 2>/dev/null | ${PH_CMD}" 2>/dev/null
+	if [[ "${PH_i}" == "ownership" ]]
 	then
-		PH_RET_CODE="1"
-		break
+		! eval "'${PH_SUDO}' find '${PH_FILE}' -mount \! \\( -wholename '${PH_BASE_DIR}/.git*' -prune \\) 2>/dev/null | ${PH_CMD}" 2>/dev/null && \
+			PH_RET_CODE="1" && \
+			break
+	else
+		! eval "'${PH_SUDO}' find '${PH_FILE}' -mount \! \\( -wholename '${PH_BASE_DIR}/.git*' -prune \\) -a \! \\( -name '.gitignore' -or -name 'README' \\) 2>/dev/null | ${PH_CMD}" 2>/dev/null && \
+			PH_RET_CODE="1" && \
+			break
 	fi
 	[[ "${PH_QUIESCE}" -eq "1" ]] && \
 		ph_run_with_rollback -c true
@@ -1174,7 +1179,7 @@ then
 else
 	PH_PARAMS="-q"
 fi
-if "${PH_SUDO}" find "${PH_FILE}" -mount ! \( -wholename "${PH_BASE_DIR}/.git*" -prune \) -a ! -name ".gitignore" 2>/dev/null | eval "${PH_CMD}" 2>/dev/null
+if "${PH_SUDO}" find "${PH_FILE}" -mount ! \( -wholename "${PH_BASE_DIR}/.git*" -prune \) -a ! \( -name ".gitignore" -or -name "README" \) 2>/dev/null | eval "${PH_CMD}" 2>/dev/null
 then
 	[[ "${PH_ACTION}" == "create" ]] && \
 		PH_ACTION="remove" || \
