@@ -4217,12 +4217,13 @@ declare -i PH_APP_TTY
 declare -i PH_CUR_TTY
 
 PH_i=""
-PH_APP_TTY="${1}"
+PH_APP_TTY="0"
 PH_CUR_TTY="0"
 
-[[ "${PH_APP_TTY}" -eq "{1}" || "${PH_APP_TTY}" -gt "${PH_PIEH_MAX_TTYS}" || "${#}" -ne "1" ]] && \
+[[ "${1}" -lt "0" || "${1}" -gt "${PH_PIEH_MAX_TTYS}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
+PH_APP_TTY="${1}"
 if [[ ! -f /etc/systemd/system/getty@tty1.service.d/autostart.conf ]]
 then
 	[[ "${PH_APP_TTY}" -eq "0" ]] && \
