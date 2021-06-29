@@ -4226,26 +4226,38 @@ PH_CUR_TTY="0"
 PH_APP_TTY="${1}"
 if [[ ! -f /etc/systemd/system/getty@tty1.service.d/autostart.conf ]]
 then
-	[[ "${PH_APP_TTY}" -eq "0" ]] && \
-		return 0
-	printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Creating StartApp configuration for " "'tty${PH_APP_TTY}'"
-	if ph_run_with_rollback -c "ph_create_empty_file -r -q -t directory -d '/etc/systemd/system/getty@tty1.service.d'"
+	if [[ "${PH_APP_TTY}" -eq "0" ]]
 	then
+		printf "%8s%s\n" "" "--> Removing StartApp tty configuration"
+		ph_run_with_rollback -c true -m "Nothing to do"
+		return "${?}"
+	else
+		ph_run_with_rollback -c "ph_enable_services 'getty@tty${PH_APP_TTY}'" || \
+			return 1
+		printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Creating StartApp configuration for " "'tty${PH_APP_TTY}'"
+		if [[ ! -d "/etc/systemd/system/getty@tty1.service.d" ]]
+		then
+			if ! ph_run_with_rollback -c "ph_create_empty_file -r -q -t directory -d '/etc/systemd/system/getty@tty1.service.d'"
+			then
+				ph_run_with_rollback -c false -m "Could not create"
+				return "${?}"
+			fi
+		fi
 		if ph_run_with_rollback -c "ph_create_empty_file -r -q -t file -d '/etc/systemd/system/getty@tty1.service.d/autostart.conf'"
 		then
 			for PH_i in '[Service]' 'ExecStart=' 'ExecStart=-/sbin/agetty --noclear tty1 ${TERM}' "ExecStartPost=+/bin/chvt ${PH_APP_TTY}" 'TTYVTDisallocate=no' 'TTYReset=no' 'TTYVHangup=no'
 			do
 				if ! ph_run_with_rollback -c "ph_add_line_to_file -r -l '${PH_i}' -f '/etc/systemd/system/getty@tty1.service.d/autostart.conf'"
 				then
-					ph_run_with_rollback -c false -m "Could not create" || \
-						return 1
+					ph_run_with_rollback -c false -m "Could not create"
+					return "${?}"
 				fi
 			done
         		if "${PH_SUDO}" chmod 644 /etc/systemd/system/getty@tty1.service.d/autostart.conf 2>/dev/null
 			then
 				if "${PH_SUDO}" systemctl daemon-reload >/dev/null 2>&1
 				then
-					ph_add_value_to_param -p PH_SET_BOOT_TTYS -v "${PH_APP_TTY}"
+					ph_add_value_to_param -p PH_SET_BOOT_TTYS -v "0"
 					ph_run_with_rollback -c true
 					return "${?}"
 				else
@@ -4258,30 +4270,48 @@ then
 	fi
 	ph_run_with_rollback -c false -m "Could not create"
 else
+	printf "%8s%s\n" "" "--> Determining the current StartApp tty"
 	PH_CUR_TTY="$(nawk '$1 ~ /^ExecStartPost=/ { \
 			print $2 \
 		}' /etc/systemd/system/getty@tty1.service.d/autostart.conf 2>/dev/null)"
-	[[ "${PH_CUR_TTY}" -eq "${PH_APP_TTY}" ]] && \
-		return 0
-	printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Removing StartApp configuration for " "'tty${PH_CUR_TTY}'"
-	if ph_run_with_rollback -c "ph_store_file -r -f '/etc/systemd/system/getty@tty1.service.d/autostart.conf'"
+	if [[ "${PH_CUR_TTY}" -ne "0" ]]
 	then
-		if "${PH_SUDO}" systemctl daemon-reload >/dev/null 2>&1
+		ph_run_with_rollback -c true -m "'tty${PH_CUR_TTY}'"
+		if [[ "${PH_APP_TTY}" -eq "0" ]]
 		then
-			ph_run_with_rollback -c true
-			ph_run_with_rollback -c "ph_disable_services 'getty@tty${PH_CUR_TTY}'" || \
-				return 1
-			ph_run_with_rollback -c "ph_set_tty_for_boot '${PH_APP_TTY}'" || \
-				return 1
-			ph_add_value_to_param -p PH_SET_BOOT_TTYS -v "${PH_APP_TTY}"
-			return 0
+			printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Removing StartApp configuration for " "'tty${PH_CUR_TTY}'"
+			if ph_run_with_rollback -c "ph_store_file -r -f '/etc/systemd/system/getty@tty1.service.d/autostart.conf'"
+			then
+				if "${PH_SUDO}" systemctl daemon-reload >/dev/null 2>&1
+				then
+					ph_run_with_rollback -c true
+					ph_run_with_rollback -c "ph_disable_services 'getty@tty${PH_CUR_TTY}'" || \
+						return 1
+					ph_add_value_to_param -p PH_SET_BOOT_TTYS -v "${PH_CUR_TTY}"
+					return 0
+				else
+					ph_set_result -m "An error occurred trying to reload systemd configuration"
+				fi
+			fi
 		else
-			ph_set_result -m "An error occurred trying to reload systemd configuration"
+			if [[ "${PH_CUR_TTY}" -ne "${PH_APP_TTY}" ]]
+			then
+				ph_run_with_rollback -c "ph_set_tty_for_boot '0'" || \
+					return 1
+				ph_run_with_rollback -c "ph_set_tty_for_boot '${PH_APP_TTY}'" || \
+					return 1
+				ph_add_value_to_param -p PH_SET_BOOT_TTYS -v "${PH_CUR_TTY}"
+			else
+				ph_run_with_rollback -c true -m "Nothing to do"
+			fi
+			return "${?}"
 		fi
+	else
+		ph_set_result -m "An error occurred trying to determine the current StartApp tty"
 	fi
 	ph_run_with_rollback -c false -m "Could not remove"
 fi
-return 1
+return "${?}"
 }
 
 function ph_get_app_name_from_option {
@@ -7597,8 +7627,11 @@ else
 	fi
 	ph_set_result -r 0
 fi
-ph_run_with_rollback -c "ph_do_app_action stop '${PH_APP}' forced" || \
-	return 1
+if ph_check_app_state_validity -a "${PH_APP}" -r -q
+then
+	ph_run_with_rollback -c "ph_do_app_action stop '${PH_APP}' forced" || \
+		return 1
+fi
 if [[ "${PH_PIEH_STARTAPP}" == "${PH_APP}" ]]
 then
 	ph_run_with_rollback -c "ph_set_app_for_start none" || \
