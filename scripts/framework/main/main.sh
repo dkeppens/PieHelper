@@ -350,9 +350,7 @@ source "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" >/dev/null 2>&1
 
 unset PH_PARSE_APPS 2>/dev/null
 
-declare -a PH_PARSE_APPS
-
-if PH_PARSE_APPS=($(ph_get_known_apps))
+if read -r -a PH_PARSE_APPS -d';' < <(ph_get_known_apps; echo -n ";") 2>/dev/null
 then
 	for PH_i in "Controllers" "${PH_PARSE_APPS[@]}"
 	do

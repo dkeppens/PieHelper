@@ -11054,9 +11054,8 @@ case "${PH_REQ_APP_STATE}" in Integrated)
 			    Out-of-scope)
 	PH_REQ_APP_STATE_PARAM="-o" ;;
 esac
-declare -a PH_PARSE_APPS
 declare -ax PH_APP_LIST
-if PH_PARSE_APPS=($(ph_get_known_apps))
+if read -r -a PH_PARSE_APPS -d';' < <(ph_get_known_apps; echo -n ";") 2>/dev/null
 then
 	for PH_APP in "${PH_PARSE_APPS[@]}"
 	do
@@ -11867,7 +11866,7 @@ then
 fi
 if [[ -z "${PH_CMD}" ]]
 then
-	PH_CMD="ph_do_app_routine -a '\${PH_i}' -p '${PH_ACTION}' -k '${PH_KEYWORD}' -s '${PH_APP_SCOPE}' -o '${PH_ROUTINE_OPTS}'"
+	PH_CMD="ph_do_app_routine -a '\${PH_i}' -p '${PH_ACTION}' -k '${PH_KEYWORD}' -s '${PH_APP_SCOPE}' -o '${PH_ROUTINE_OPTS[*]}'"
 fi
 PH_TOT_LIST_MEMBERS="$(echo ${PH_LIST//,/ } | nawk '{ \
 		printf NF \
