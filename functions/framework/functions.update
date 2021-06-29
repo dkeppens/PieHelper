@@ -796,13 +796,17 @@ do
 		printf "%8s%s\n" "" "--> Applying default file ${PH_i}"
 	if [[ "${PH_i}" == "ownership" ]]
 	then
-		! eval "'${PH_SUDO}' find '${PH_FILE}' -mount \! \\( -wholename '${PH_BASE_DIR}/.git*' -prune \\) 2>/dev/null | ${PH_CMD}" 2>/dev/null && \
-			PH_RET_CODE="1" && \
+		if ! eval "'${PH_SUDO}' find '${PH_FILE}' -mount \! \\( -wholename '${PH_BASE_DIR}/.git*' -prune \\) 2>/dev/null | ${PH_CMD}" 2>/dev/null
+		then
+			PH_RET_CODE="1"
 			break
+		fi
 	else
-		! eval "'${PH_SUDO}' find '${PH_FILE}' -mount \! \\( -wholename '${PH_BASE_DIR}/.git*' -prune \\) -a \! \\( -name '.gitignore' -or -name 'README' \\) 2>/dev/null | ${PH_CMD}" 2>/dev/null && \
-			PH_RET_CODE="1" && \
+		if ! eval "'${PH_SUDO}' find '${PH_FILE}' -mount \! \\( -wholename '${PH_BASE_DIR}/.git*' -prune \\) -a \! \\( -name '.gitignore' -or -name 'README' \\) 2>/dev/null | ${PH_CMD}" 2>/dev/null
+		then
+			PH_RET_CODE="1"
 			break
+		fi
 	fi
 	[[ "${PH_QUIESCE}" -eq "1" ]] && \
 		ph_run_with_rollback -c true
