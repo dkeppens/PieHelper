@@ -1160,12 +1160,27 @@ PH_DISTROU=""
 [[ "${PH_SANITY_MODE}" != @(inst|conf) || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-read -r -a PH_DEFAULT_APPS -d';' < <(ph_get_app_list_by_state -s Default -t minimum 2>/dev/null; echo -n ";")
-read -r -a PH_DISTRO_DIRS -d';' < <(echo -n "${PH_SUPPORTED_DISTROS[*]}" | nawk -v dir="${PH_CONF_DIR}/distros" 'BEGIN { \
-		RS = " " \
-	} { \
-		printf dir "/" $0 " " \
-	}'; echo -n ";")
+for PH_i in "PH_DEFAULT_APPS" "PH_DISTRO_DIRS"
+do
+	local -a "${PH_i}"
+	case "${PH_i}" in PH_DEFAULT_APPS)
+		if ! read -r -a "${PH_i}" -d';' < <(ph_get_app_list_by_state -s Default -t minimum 2>/dev/null; echo -n ";") 2>/dev/null
+		then
+			ph_set_result -a -m "An error occurred trying to determine all Default applications"
+		fi ;;
+			PH_DISTRO_DIRS)
+		if ! read -r -a "${PH_i}" -d';' < <(echo -n "${PH_SUPPORTED_DISTROS[*]}" | nawk -v dir="${PH_CONF_DIR}/distros" 'BEGIN { \
+				RS = " " \
+			} { \
+				printf dir "/" $0 " " \
+			}' 2>/dev/null; echo -n ";") 2>/dev/null
+		then
+			ph_set_result -a -m "An error occurred trying to determine all distro subdirectories in '${PH_CONF_DIR}/distros'"
+		fi ;;
+			*)
+		: ;;
+	esac
+done
 for PH_i in critical optional full
 do
 	if [[ ( "${PH_SANITY_LEVEL}" == "critical" && "${PH_i}" != "critical" ) || \
@@ -1319,7 +1334,6 @@ declare PH_APPU_CIFS_MPT
 declare -i PH_RET_CODE
 declare -u PH_APPU
 declare -l PH_APPL
-declare -a PH_CIFS_MPTS
 
 PH_i=""
 PH_APP=""
@@ -1393,16 +1407,21 @@ do
 		fi
 	done
 done
-read -r -a PH_MPT_APPS -d';' < <("${PH_SUDO}" find "${PH_MNT_DIR}" -maxdepth 1 -type d ! -wholename "${PH_MNT_DIR}" -exec basename {} \; 2>/dev/null; echo -n ';')
-for PH_APP in "${PH_MPT_APPS[@]}"
-do
-	if ! cut -f1 "${PH_CONF_DIR}/integrated_apps" 2>&1 | grep -E "^${PH_APP}$" >/dev/null
-	then
-        	printf "%4s%s\n" "" "- The default CIFS mountpoint '${PH_MNT_DIR}/${PH_APP}' of '$(ph_get_app_state_from_app_name -a ${PH_APP})' application '${PH_APP}' is present" >>"${PH_TMP_DIR}/.reported_issues"
-		PH_RET_CODE="1"
-	fi
-done
-unset PH_MPT_APPS
+local -a PH_MPT_APPS
+if read -r -a PH_MPT_APPS -d';' < <("${PH_SUDO}" find "${PH_MNT_DIR}" -maxdepth 1 -type d ! -wholename "${PH_MNT_DIR}" -exec basename {} \; 2>/dev/null; echo -n ';') 2>/dev/null
+then
+	for PH_APP in "${PH_MPT_APPS[@]}"
+	do
+		if ! cut -f1 "${PH_CONF_DIR}/integrated_apps" 2>&1 | grep -E "^${PH_APP}$" >/dev/null
+		then
+			printf "%4s%s\n" "" "- The default CIFS mountpoint '${PH_MNT_DIR}/${PH_APP}' of '$(ph_get_app_state_from_app_name -a ${PH_APP})' application '${PH_APP}' is present" >>"${PH_TMP_DIR}/.reported_issues"
+			PH_RET_CODE="1"
+		fi
+	done
+else
+	ph_set_result -a -m "An error occurred trying to determine all applications with a default CIFS mountpoint"
+fi
+unset PH_MPT_APPS 2>/dev/null
 for PH_APP in $(ph_get_app_list_by_state -s Integrated -t minimum)
 do
 	PH_APPU="${PH_APP:0:4}"
@@ -1695,13 +1714,18 @@ do
        	printf "%4s%s\n" "" "- Menu item '${PH_i##*/}' is present" >>"${PH_TMP_DIR}/.reported_issues"
 	PH_RET_CODE="1"
 done
-read -r -a PH_MPT_APPS -d';' < <("${PH_SUDO}" find "${PH_MNT_DIR}" -maxdepth 1 -type d ! -wholename "${PH_MNT_DIR}" -exec basename {} \; 2>/dev/null; echo -n ';')
-for PH_APP in "${PH_MPT_APPS[@]}"
-do
-       	printf "%4s%s\n" "" "- Default CIFS mountpoint '${PH_MNT_DIR}/${PH_APP}' is present" >>"${PH_TMP_DIR}/.reported_issues"
-	PH_RET_CODE="1"
-done
-unset PH_MPT_APPS
+local -a PH_MPT_APPS
+if read -r -a PH_MPT_APPS -d';' < <("${PH_SUDO}" find "${PH_MNT_DIR}" -maxdepth 1 -type d ! -wholename "${PH_MNT_DIR}" -exec basename {} \; 2>/dev/null; echo -n ';')
+then
+	for PH_APP in "${PH_MPT_APPS[@]}"
+	do
+       		printf "%4s%s\n" "" "- Default CIFS mountpoint '${PH_MNT_DIR}/${PH_APP}' is present" >>"${PH_TMP_DIR}/.reported_issues"
+		PH_RET_CODE="1"
+	done
+else
+	ph_set_result -a -m "An error occurred trying to determine all applications with a default CIFS mountpoint"
+fi
+unset PH_MPT_APPS 2>/dev/null
 for PH_i in $("${PH_SUDO}" find "${PH_SCRIPTS_DIR}" -maxdepth 1 -type f -regextype egrep ! -regex "^${PH_SCRIPTS_DIR}/(start|stop|restart|.*_ph).*\.sh" 2>/dev/null | nawk 'BEGIN { \
 		ORS =  " " \
 	} { \
@@ -3183,23 +3207,23 @@ declare PH_ANSWER
 declare -i PH_OPT
 declare -i PH_COUNT
 declare -i PH_RET_CODE
-declare -a PH_OPTAR
 
 PH_APP="${1}"
 PH_ANSWER=""
 PH_OPT="0"
 PH_COUNT="0"
 PH_RET_CODE="0"
+
+[[ "${?}" -ne "0" || -z "${PH_APP}" || "${#}" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+local -a PH_OPTAR
 PH_OPTAR=($(nawk -F'=' 'BEGIN { \
 		ORS = " " \
 	} \
 	$1 ~ /^PH_/ { \
 		print $1 \
 	}' "${PH_CONF_DIR}/${PH_APP}.conf" 2>/dev/null))
-
-[[ "${?}" -ne "0" || -z "${PH_APP}" || "${#}" -ne "1" ]] && \
-	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
-
 printf "%8s%s\n" "" "--> Starting configuration of read-write ${PH_APP} option(s) (Press 'Enter' to start)"
 read -r 2>/dev/null
 printf "%10s\033[32m%s\033[0m\n" "" "OK"
@@ -4544,25 +4568,32 @@ OPTARG="${PH_OLDOPTARG}"
 [[ -z "${PH_OPT_TYPE}" || -z "${PH_APP}" || "${#}" -ne "4" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
+local -a PH_TYPE_OPTIONS
 if [[ "${PH_OPT_TYPE}" == "rw" ]]
 then
-	read -r -a PH_TYPE_OPTIONS -d';' < <(nawk -F'=' -v mstring="^PH_${PH_APPU}_.*=" '$0 ~ mstring { \
+	if ! read -r -a PH_TYPE_OPTIONS -d';' < <(nawk -F'=' -v mstring="^PH_${PH_APPU}_.*=" '$0 ~ mstring { \
 			print $1 \
 		} { \
 			next \
 		} END { \
-			print ";" \
-		}' "${PH_CONF_DIR}/${PH_APP}.conf" 2>/dev/null)
-		ph_set_result -m "An error occurred trying to determine a list of ${PH_OPT_TYPE} options for '${PH_APP}'"
+			printf ";" \
+		}' "${PH_CONF_DIR}/${PH_APP}.conf" 2>/dev/null) 2>/dev/null
+	then
+		ph_set_result -m "An error occurred trying to determine all ${PH_OPT_TYPE} options for '${PH_APP}'"
 		return 1
+	fi
 else
-	read -r -a PH_TYPE_OPTIONS -d';' < <(nawk -v mstring="^declare([[:space:]])+-(r)*(i)*(r)*([[:space:]])+PH_${PH_APPU}_.*=" '$0 ~ mstring { \
+	if ! read -r -a PH_TYPE_OPTIONS -d';' < <(nawk -v mstring="^declare([[:space:]])+-(r)*(i)*(r)*([[:space:]])+PH_${PH_APPU}_.*=" '$0 ~ mstring { \
 			print substr($3,0,(index($3,"=")-1)) \
 		} { \
 			next \
 		} END { \
-			print ";" \
-		}' "${PH_CONF_DIR}/${PH_APP}.conf" 2>/dev/null)
+			printf ";" \
+		}' "${PH_CONF_DIR}/${PH_APP}.conf" 2>/dev/null) 2>/dev/null
+	then
+		ph_set_result -m "An error occurred trying to determine all ${PH_OPT_TYPE} options for '${PH_APP}'"
+		return 1
+	fi
 fi
 if [[ "${#PH_TYPE_OPTIONS[@]}" -eq "0" ]]
 then
@@ -4863,7 +4894,7 @@ do
 				return 1
 		fi ;;
 	esac
-	declare -a PH_MENU_LINES
+	local -a PH_MENU_LINES
 	case "${PH_MENU}" in Out-of-scope|Default|Supported|Integrated|Halted|Running)
 		case "${PH_MENU}" in Out-of-scope)
 			PH_MENU_KEYWORD="oos" ;;
@@ -4882,6 +4913,7 @@ do
 				continue
 			PH_MENU_LINES+=("${PH_MENU_LINE}")
 		done
+		local -a PH_STATE_APPS
 		if read -r -a PH_STATE_APPS -d';' < <(ph_get_app_list_by_state -s "${PH_MENU}" -t minimum 2>/dev/null; echo -n ";") 2>/dev/null
 		then
 			for PH_i in "${PH_STATE_APPS[@]}"
@@ -4892,7 +4924,7 @@ do
 			ph_set_result -m "An error occurred trying to determine all ${PH_MENU} applications"
 			return 1
 		fi
-		unset PH_STATE_APPS 2>/dev/null ;;
+		unset PH_STATE_APPS ;;
 			     *)
 		if [[ "${PH_MENU}" == "Applications" ]]
 		then
@@ -4916,7 +4948,7 @@ do
 			done
 		fi ;;
 	esac
-	declare -a PH_MENU_ITEMS PH_MENU_CMDS
+	local -a PH_MENU_ITEMS PH_MENU_CMDS
 	if [[ -e "${PH_MENUS_DIR}/${PH_MENU}.lst" ]]
 	then
 		for PH_i in ITEM CMD
@@ -4930,7 +4962,7 @@ do
 			while read -r
 			do
 				eval "PH_MENU_${PH_i}S+=(\"${REPLY}\")"
-			done < <(cut -d':' "-f${PH_COUNT}" "${PH_MENUS_DIR}/${PH_MENU}.lst" 2>/dev/null)
+			done < <(cut -d':' "-f${PH_COUNT}" "${PH_MENUS_DIR}/${PH_MENU}.lst" 2>/dev/null) 2>/dev/null
 		done
 	fi
 	if [[ ! ( -e "${PH_MENUS_DIR}/${PH_MENU}.lst" ) || \
@@ -5299,7 +5331,7 @@ declare -i PH_DATA_INDEX
 declare -i PH_APP_TTY
 declare -i PH_PKG_FLAG
 declare -i PH_RET_CODE
-declare -a PH_RUN_ACLS
+local -a PH_RUN_ACLS
 
 PH_i=""
 PH_CMD=""
@@ -5519,7 +5551,7 @@ then
 				PH_APP_CMD="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
 				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
 				PH_APP_PKG="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
-				declare -a PH_ROUTINE_OPTS
+				local -a PH_ROUTINE_OPTS
 				for PH_i in CMD USER PKG
 				do
 					declare -n PH_PARAM
@@ -5537,7 +5569,7 @@ then
 				PH_APP_CMD="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
 				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f3 -d"'")"
 				PH_APP_PKG="$(echo -n "${PH_VALUE}" | cut -f4 -d"'")"
-				declare -a PH_ROUTINE_OPTS
+				local -a PH_ROUTINE_OPTS
 				for PH_i in CMD USER PKG
 				do
 					declare -n PH_PARAM
@@ -7406,7 +7438,6 @@ declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 declare -i PH_APP_TTY
-declare -a PH_PARAMS
 
 PH_OLDOPTARG="${OPTARG}"
 PH_OLDOPTIND="${OPTIND}"
@@ -7479,6 +7510,7 @@ then
 	done
 	return 0
 else
+	local -a PH_PARAMS
 	if [[ -z "${PH_APP}" ]]
 	then
 		for PH_i in USER TTY CMD INST_STATE
@@ -7502,8 +7534,8 @@ else
 		[[ "${#PH_PARAMS[@]}" -gt "0" ]] && \
 			PH_APP="$(ph_get_app_name_from_base_conf_file "${PH_PARAMS[@]}")"
 	fi
+	unset PH_PARAMS
 fi
-unset PH_PARAMS
 printf "%8s%s\n" "" "--> Checking application name parameter"
 if [[ -z "${PH_APP}" ]]
 then
@@ -8255,7 +8287,7 @@ case "${PH_APP_STATE}" in Supported|Integrated|Running|Halted)
 		fi
 		ph_run_with_rollback -c true -m "${PH_APP_INST_STATE}"
 	fi
-	declare -a PH_PARAMS
+	local -a PH_PARAMS
 	[[ "${PH_APP_INST_STATE}" == P* ]] && \
 		PH_PARAMS+=("-p" "'${PH_APP_PKG}'")
 	for PH_i in USER PKG
@@ -8797,8 +8829,8 @@ declare -i PH_OLDOPTIND
 declare -i PH_VAL_COLUMN
 declare -i PH_INDEX
 declare -i PH_QUIESCE
-declare -a PH_VAL_VALUES
-declare -a PH_VAL_COLUMNS
+local -a PH_VAL_COLUMNS
+local -a PH_VAL_VALUES
 
 PH_OLDOPTARG="${OPTARG}"
 PH_OLDOPTIND="${OPTIND}"
@@ -9973,43 +10005,50 @@ ph_run_with_rollback -c true -m "${PH_OLD_STARTAPP}"
 if [[ "${PH_APP}" == "prompt" ]]
 then
 	printf "%8s%s\n" "" "--> Please choose the application to start on system boot"
-	declare -a PH_APP_READ=($(ph_get_app_list_by_state -s Integrated -t minimum))
-	while true
-	do
-		[[ "${PH_COUNT}" -gt "0" ]] && \
-			printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
-		nawk '{
-			printf "%10s\033[1;37m%s%s\033[0m\n", "", NR ". ", $1
-		}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null
-		printf "%10s\033[1;37m%s%s\033[0m\n" "" "${#PH_APP_READ[@]}. " "none"
-		printf "%10s\033[1;37m%s%s\033[0m\n\n" "" "$(("${#PH_APP_READ[@]}"+1)). " "Keep the current StartApp : '${PH_PIEH_STARTAPP}'"
-		printf "%8s%s" "" "Your choice : "
-		read -r PH_APP_READ[0] 2>/dev/null
-		((PH_COUNT++))
-		ph_screen_input "${PH_APP_READ[0]}" || \
-			return 1
-		case "${PH_APP_READ[0]}" in $(cat -n "${PH_CONF_DIR}/integrated_apps" 2>/dev/null | nawk '{ \
-				print $1 \
-			}' | paste -d "|" -s))
-			PH_APP="$(nawk -v line="${PH_APP_READ[0]}" '{ \
-					if (NR == line) { \
-						print $1 \
-					} \
-				}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null)" ;;
-					    "${#PH_APP_READ[@]}")
-			PH_APP="none" ;;
-					    "$(("${#PH_APP_READ[@]}"+1))")
-			unset PH_APP_READ 2>/dev/null
-			ph_run_with_rollback -c true -m "Skipping"
-			return "${?}" ;;
-		esac
-		if [[ -n "${PH_APP}" ]]
-		then
-			unset PH_APP_READ
-			ph_run_with_rollback -c true -m "${PH_APP}"
-			break
-		fi
-	done
+	local -a PH_APP_READ
+	if read -r -a PH_APP_READ -d';' < <(ph_get_app_list_by_state -s Integrated -t minimum 2>/dev/null; echo -n ";") 2>/dev/null
+	then
+		while true
+		do
+			[[ "${PH_COUNT}" -gt "0" ]] && \
+				printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
+			nawk '{
+				printf "%10s\033[1;37m%s%s\033[0m\n", "", NR ". ", $1
+			}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null
+			printf "%10s\033[1;37m%s%s\033[0m\n" "" "${#PH_APP_READ[@]}. " "none"
+			printf "%10s\033[1;37m%s%s\033[0m\n\n" "" "$(("${#PH_APP_READ[@]}"+1)). " "Keep the current StartApp : '${PH_PIEH_STARTAPP}'"
+			printf "%8s%s" "" "Your choice : "
+			read -r PH_APP_READ[0] 2>/dev/null
+			((PH_COUNT++))
+			ph_screen_input "${PH_APP_READ[0]}" || \
+				return 1
+			case "${PH_APP_READ[0]}" in $(cat -n "${PH_CONF_DIR}/integrated_apps" 2>/dev/null | nawk '{ \
+					print $1 \
+				}' | paste -d "|" -s))
+				PH_APP="$(nawk -v line="${PH_APP_READ[0]}" '{ \
+						if (NR == line) { \
+							print $1 \
+						} \
+					}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null)" ;;
+					"${#PH_APP_READ[@]}")
+				PH_APP="none" ;;
+					"$(("${#PH_APP_READ[@]}"+1))")
+				unset PH_APP_READ 2>/dev/null
+				ph_run_with_rollback -c true -m "Skipping"
+				return "${?}" ;;
+			esac
+			if [[ -n "${PH_APP}" ]]
+			then
+				unset PH_APP_READ
+				ph_run_with_rollback -c true -m "${PH_APP}"
+				break
+			fi
+		done
+	else
+		ph_set_result -m "An error occurred trying to determine all Integrated applications"
+		ph_run_with_rollback -c false -m "Could not set"
+		return "${?}"
+	fi
 fi
 printf "%8s%s\n" "" "--> Comparing old and new values for StartApp"
 if [[ "${PH_PIEH_STARTAPP}" == "${PH_APP}" ]]
@@ -11055,6 +11094,7 @@ case "${PH_REQ_APP_STATE}" in Integrated)
 	PH_REQ_APP_STATE_PARAM="-o" ;;
 esac
 declare -ax PH_APP_LIST
+local -a PH_PARSE_APPS
 if read -r -a PH_PARSE_APPS -d';' < <(ph_get_known_apps; echo -n ";") 2>/dev/null
 then
 	for PH_APP in "${PH_PARSE_APPS[@]}"
@@ -11099,21 +11139,21 @@ function ph_get_known_apps {
 
 declare PH_FILE
 declare -i PH_RET_CODE
-declare -a PH_PARSE_FILES
 
 PH_FILE=""
 PH_RET_CODE="0"
-PH_PARSE_FILES=("${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}")
 
 [[ "${#}" -ne "0" ]] && \
-	unset PH_PARSE_FILES && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
+local -a PH_PARSE_FILES
+PH_PARSE_FILES=("${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}")
 PH_FILE="$(ph_get_filename_from_shortname "sup")"
 if [[ -r "${PH_FILE}" ]]
 then
         PH_PARSE_FILES+=("${PH_FILE}")
 fi
+local -a PH_KNOWN_APPS
 if read -r -a PH_KNOWN_APPS -d';' < <(nawk 'BEGIN { \
                 i = "1" \
         } \
@@ -11589,7 +11629,7 @@ OPTARG="${PH_OLDOPTARG}"
 [[ -z "${PH_ROUTINE}" || ( -z "${PH_APP}" && -z "${PH_LIST}" ) || "${#}" -gt "14" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-declare -a PH_ROUTINE_OPTS
+local -a PH_ROUTINE_OPTS
 for PH_i in CMD PKG USER STR_TTY
 do
 	declare -n PH_PARAM
