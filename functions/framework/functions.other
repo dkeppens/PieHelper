@@ -2513,7 +2513,7 @@ then
 	PH_APP_STR_TTY="1"
 fi
 echo -n "${PH_APP_STR_TTY}"
-[[ "${PH_APP_STR_TTY}" -eq "1" ]] && \
+[[ "${PH_APP_STR_TTY}" == "1" ]] && \
 	return 1
 return 0
 }
