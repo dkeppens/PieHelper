@@ -50,7 +50,7 @@ function ph_update_pkg_index {
 [[ "${#}" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Updating package database index"
+printf "%8s%s\n" "" "--> Updating the package database index"
 if ! "${PH_SUDO}" apt-get -qq update >/dev/null 2>&1
 then
 	ph_set_result -m "An error occurred updating the index of the package database"

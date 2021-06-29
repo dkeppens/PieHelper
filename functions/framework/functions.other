@@ -11459,6 +11459,8 @@ else
 	PH_ENV_ACTION="enable"
 	printf "%8s%s\n" "" "--> Enabling the graphical environment"
 fi
+ph_run_with_rollback -c false -m "Could not ${PH_ENV_ACTION}"
+return "${?}"
 if "${PH_SUDO}" systemctl set-default "${PH_ENV}" >/dev/null 2>&1
 then
 	[[ "${PH_ENV}" == "graphical.target" ]] && \
