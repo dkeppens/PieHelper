@@ -11196,7 +11196,6 @@ declare PH_ANSWER
 declare PH_CONF_STATE
 declare PH_MODE
 declare -i PH_COUNT
-declare -i PH_DISTRO_FLAG
 declare -u PH_DISTROU
 
 PH_i=""
@@ -11204,7 +11203,6 @@ PH_ANSWER=""
 PH_CONF_STATE=""
 PH_MODE="normal"
 PH_COUNT="0"
-PH_DISTRO_FLAG="1"
 PH_DISTROU=""
 
 PH_ROLLBACK_USED="yes"
@@ -11256,28 +11254,8 @@ then
 		ph_show_result
 		return "${?}"
 	fi
-	if [[ "${PH_RUN_USER}" != "root" ]]
-	then
-		printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking privilege elevation rights of user " "'${PH_RUN_USER}'"
-		if [[ -n "${PH_SUDO}" ]]
-		then
-			ph_run_with_rollback -c true
-		else
-			ph_set_result -m "Run PieHelper as root or manually configure full sudo rights for user '${PH_RUN_USER}' as '/etc/sudoers.d/020_pieh-${PH_RUN_USER}' prior to installation"
-			ph_run_with_rollback -c false -m "Not found" || \
-				return 1
-		fi
-	fi
 	printf "%8s%s\n" "" "--> Checking the Linux distribution"
-	for PH_i in "${PH_SUPPORTED_DISTROS[@]}"
-	do
-		if [[ "${PH_DISTRO}" == "${PH_i}" ]]
-		then
-			PH_DISTRO_FLAG="0"
-			break
-		fi
-	done
-	if [[ "${PH_DISTRO_FLAG}" -eq "0" ]]
+	if ph_check_array_index -n PH_SUPPORTED_DISTROS -v "${PH_DISTRO}" -q
 	then
 		PH_DISTROU="${PH_DISTRO}"
 		ph_run_with_rollback -c true -m "${PH_DISTRO}"
@@ -11296,7 +11274,7 @@ fi
 if [[ "$(declare -p "PH_SUPPORTED_${PH_DISTROU}_RELS" 2>/dev/null)" == declare* ]]
 then
 	printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking the release of Linux distro " "'${PH_DISTRO}'"
-	if [[ ! -f "${PH_CONF_DIR}/distros/${PH_DISTRO_REL}.conf" ]]
+	if ! ph_check_object_existence -o "${PH_CONF_DIR}/distros/${PH_DISTRO}/${PH_DISTRO_REL}.conf" -m immediate -q
 	then
 		ph_set_result -m "Release '${PH_DISTRO_REL}' of distribution '${PH_DISTRO}' is currently not supported"
 		ph_run_with_rollback -c false -m "$PH_DISTRO_REL" || \
@@ -11304,7 +11282,7 @@ then
 	else
 		ph_run_with_rollback -c true -m "${PH_DISTRO_REL}"
 	fi
-	if [[ ! -L "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" ]]
+	if ! ph_check_object_existence -o "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" -m immediate -q
 	then
 		ph_run_with_rollback -c "ph_create_empty_file -t link -s '${PH_CONF_DIR}/distros/${PH_DISTRO_REL}.conf' -d '${PH_CONF_DIR}/distros/${PH_DISTRO}.conf'" || \
 			return 1
