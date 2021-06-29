@@ -1181,7 +1181,7 @@ do
 		"${PH_USER_SCRIPTS_DIR}/.gitignore" "${PH_USER_CONF_DIR}/.gitignore" "${PH_USER_FILES_DIR}/.gitignore" "${PH_USER_FUNCS_DIR}/.gitignore" \
 		VERSION VERSIONS default_apps_GL default_apps_X HOWTO CODE_OF_CONDUCT.md HOWTO INSTALL LICENSE README.md TODO \
 		Support System Main PS3 PS4 XBOX360 XBOXSX SystemRetained SystemInteractive SystemRetaineds \
-		Controllers Controllers_conf OOSapp_conf "${PH_DEFAULT_APPS[@]}" "${PH_DISTRO_CONFIGS[@]}" \
+		Controllers_conf OOSapp_conf "${PH_DEFAULT_APPS[@]}" "${PH_DISTRO_CONFIGS[@]}" \
 		Kodi-PRE Kodi-POST PieHelper-PRE PieHelper-POST \
 		MovefromPieHScript LoginScript MoveScript MovetoPieHScript RestartScriptPieH \
 		RestartScript StartScriptPieH StartScript StopScriptPieH StopScript \
