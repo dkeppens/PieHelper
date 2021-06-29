@@ -1338,7 +1338,6 @@ declare -l PH_APPL
 PH_i=""
 PH_APP=""
 PH_APP_USER=""
-PH_APP_GROUP=""
 PH_APP_STR_TTY=""
 PH_APPU_CIFS_MPT=""
 PH_RET_CODE="0"
@@ -3808,7 +3807,7 @@ PH_XBOXDRV_PID_FILE="$("${PH_SUDO}" ls -lt /tmp/xboxdrv*.pid 2>/dev/null | nawk 
 	}')"
 PH_XBOXDRV_PID="$(cat "${PH_XBOXDRV_PID_FILE}" 2>/dev/null)"
 
-[[ "${PH_MODE}" != @(reset|unmap|full) || "${#}" -ne "1" ]] && \ -ef 
+[[ "${PH_MODE}" != @(reset|unmap|full) || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 if [[ "${PH_MODE}" == @(reset|full) ]]
@@ -3821,10 +3820,13 @@ then
 			if ph_run_with_rollback -c "ph_create_empty_file -q -t file -d '${PH_CONF_DIR}/controller_cli_ids'"
 			then
 				ph_run_with_rollback -c true
+			else
+				ph_run_with_rollback -c false -m "Could not reset"
+				return "${?}"
 			fi
 		else
-			ph_run_with_rollback -c false -m "Could not reset" || \
-				return 1
+			ph_run_with_rollback -c false -m "Could not reset"
+			return "${?}"
 		fi
 	fi
 fi
@@ -3847,7 +3849,7 @@ then
 			ph_set_result -m "An error occurred trying to kill 'xboxdrv' process '${PH_XBOXDRV_PID}'"
 		fi
 		ph_run_with_rollback -c false -m "Could not stop"
-			return 1
+		return "${?}"
 	fi
 fi
 return 0
@@ -4813,7 +4815,7 @@ PH_MENU_TYPE=""
 PH_MENU_HEADER=""
 PH_MENU_PARENT=""
 PH_MENU_CMD=""
-H_MENU_ITEM=""
+PH_MENU_ITEM=""
 PH_LAST_RETURN="${PH_LAST_RETURN_GLOB}"
 PH_ANSWER="0"
 PH_COUNT="0"
@@ -7487,7 +7489,7 @@ do
 			OPTIND="${PH_OLDOPTIND}" && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			return 1 
-                PH_APP_INST_SATE="${OPTARG}" ;;
+                PH_APP_INST_STATE="${OPTARG}" ;;
                              *)
 		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
 		OPTIND="${PH_OLDOPTIND}"
@@ -11284,15 +11286,15 @@ then
 	fi
 	if ! ph_check_object_existence -o "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" -m immediate -q
 	then
-		ph_run_with_rollback -c "ph_create_empty_file -t link -s '${PH_CONF_DIR}/distros/${PH_DISTRO_REL}.conf' -d '${PH_CONF_DIR}/distros/${PH_DISTRO}.conf'" || \
+		ph_run_with_rollback -c "ph_create_empty_file -t link -s '${PH_CONF_DIR}/distros/${PH_DISTRO}/${PH_DISTRO_REL}.conf' -d '${PH_CONF_DIR}/distros/${PH_DISTRO}.conf'" || \
 			return 1
 	fi
-	printf "%8s%s\n" "" "--> Loading release-dependent codebase"
+	printf "%8s%s\n" "" "--> Loading release-dependent configuration"
 	if source "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" 2>/dev/null
 	then
 		ph_run_with_rollback -c true
 	else
-		ph_set_result -m "An error occured trying to load codebase file '${PH_CONF_DIR}/distros/${PH_DISTRO}.conf'"
+		ph_set_result -m "An error occurred trying to load critical configuration file '${PH_CONF_DIR}/distros/${PH_DISTRO}.conf'"
 		ph_run_with_rollback -c false -m "Could not load" || \
 			return 1
 	fi
