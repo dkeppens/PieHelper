@@ -787,7 +787,7 @@ OPTARG="${PH_OLDOPTARG}"
 for PH_i in ownership permissions
 do
 	case "${PH_i}" in ownership)
-				PH_CMD="${PH_SUDO} chown '${PH_RUN_USER}:${PH_RUN_GROUP}' 2>/dev/null)" ;;
+				PH_CMD="${PH_SUDO} chown '${PH_RUN_USER}:${PH_RUN_GROUP}'" ;;
 			permissions)
 				PH_CMD="${PH_SUDO} chmod 770" ;;
 	esac
@@ -796,11 +796,9 @@ do
 		printf "%8s%s\n" "" "--> Applying default file ${PH_i}"
 	if [[ "${PH_i}" == "ownership" ]]
 	then
-		set -x
-		if ! eval "'${PH_SUDO}' find '${PH_FILE}' -mount \! \\( -wholename '${PH_BASE_DIR}/.git*' -prune \\) | ${PH_CMD}"
+		if ! eval "'${PH_SUDO}' find '${PH_FILE}' -mount \! \\( -wholename '${PH_BASE_DIR}/.git*' -prune \\) 2>/dev/null | ${PH_CMD}" 2>/dev/null
 		then
 			PH_RET_CODE="1"
-			set +x
 			break
 		fi
 	else
