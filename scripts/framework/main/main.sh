@@ -348,50 +348,25 @@ source "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" >/dev/null 2>&1
 
 # Load applications/controller configurations
 
-unset PH_PARSE_FILES PH_PARSE_APPS 2>/dev/null
+unset PH_PARSE_APPS 2>/dev/null
 
-declare -a PH_PARSE_FILES
+declare -a PH_PARSE_APPS
 
-PH_PARSE_FILES+=("${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}")
-
-if [[ -f "${PH_CONF_DIR}/supported_apps" ]]
+if PH_PARSE_APPS=($(ph_get_known_apps))
 then
-	PH_PARSE_FILES+=("${PH_CONF_DIR}/supported_apps")
+	for PH_i in "Controllers" "${PH_PARSE_APPS[@]}"
+	do
+		if [[ -f "${PH_CONF_DIR}/${PH_i}.conf" ]]
+		then
+			source "${PH_CONF_DIR}/${PH_i}.conf" >/dev/null 2>&1
+		else
+			source "${PH_TEMPLATES_DIR}/${PH_i}_conf.template" >/dev/null 2>&1
+		fi
+	done
+else
+	ph_set_result -a
 fi
-read -r -a PH_PARSE_APPS -d';' < <(nawk 'BEGIN { \
-		i = "1" \
-	} \
-	NR == "1" { \
-		optarr[i] = $1 ; \
-		next \
-	} { \
-		for (j=1;j<=i;j++) { \
-			if ($1 == optarr[j]) { \
-				next \
-			} ; \
-			i++ ; \
-			optarr[i] = $1 ; \
-			next \
-		} \
-	} END { \
-		for (j=1;j<=i;j++) { \
-			printf optarr[j] ; \
-			delete optarr[j] ; \
-			if (j != i) { \
-				printf " " \
-			} \
-		} \
-	}' "${PH_PARSE_FILES[@]}" 2>/dev/null)
-for PH_i in "Controllers" "${PH_PARSE_APPS[@]}"
-do
-	if [[ -f "${PH_CONF_DIR}/${PH_i}.conf" ]]
-	then
-		source "${PH_CONF_DIR}/${PH_i}.conf" >/dev/null 2>&1
-	else
-		source "${PH_TEMPLATES_DIR}/${PH_i}_conf.template" >/dev/null 2>&1
-	fi
-done
-unset PH_PARSE_FILES PH_PARSE_APPS
+unset PH_PARSE_APPS
 
 # Enable xtrace for modules in debug
 
