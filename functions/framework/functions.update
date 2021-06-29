@@ -796,9 +796,11 @@ do
 		printf "%8s%s\n" "" "--> Applying default file ${PH_i}"
 	if [[ "${PH_i}" == "ownership" ]]
 	then
-		if ! eval "'${PH_SUDO}' find '${PH_FILE}' -mount \! \\( -wholename '${PH_BASE_DIR}/.git*' -prune \\) 2>/dev/null | ${PH_CMD}" 2>/dev/null
+		set -x
+		if ! eval "'${PH_SUDO}' find '${PH_FILE}' -mount \! \\( -wholename '${PH_BASE_DIR}/.git*' -prune \\) | ${PH_CMD}"
 		then
 			PH_RET_CODE="1"
+			set +x
 			break
 		fi
 	else
