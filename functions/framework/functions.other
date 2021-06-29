@@ -7742,6 +7742,7 @@ then
 else
 	for PH_i in USER INST_STATE PKG CMD
 	do
+		PH_il="${PH_i}"
 		if [[ -z "$(eval "echo -n \"\$PH_APP_${PH_i}\"")" ]]
 		then
 			eval "PH_APP_${PH_i}=\"$("ph_get_app_${PH_il}_from_app_name" "${PH_APP}")\""
