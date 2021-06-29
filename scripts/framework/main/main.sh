@@ -74,6 +74,7 @@ declare PH_MOVE_SCRIPTS_REGEX
 declare PH_OLD_DISTRO_REL
 declare -i PH_FORMAT_FLAG
 declare -u PH_DISTROU
+declare -l PH_iL
 
 PH_i=""
 PH_CUR_USER=""
@@ -81,37 +82,50 @@ PH_MOVE_SCRIPTS_REGEX=""
 PH_OLD_DISTRO_REL=""
 PH_FORMAT_FLAG="1"
 PH_DISTROU=""
+PH_iL=""
 
 # Load global variable declarations
 
 for PH_i in "declares_other.sh" "declares_rollback.sh"
 do
 	PH_i="$(cd "$(dirname "${0}")" && pwd)/main/${PH_i}"
-	if [[ -r "${PH_i}" ]]
+	if [[ ! -e "${PH_i}" ]]
 	then
-		if ! source "${PH_i}" >/dev/null 2>&1
-		then
-			>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Corrupted critical configuration file '${PH_i}')"
-			exit 1
-		fi
-	else
-		>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical configuration file '${PH_i}')"
+		>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing critical configuration file '${PH_i}')"
 		exit 1
+	else
+		if [[ ! -r "${PH_i}" ]]
+		then
+			>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Unreadable critical configuration file '${PH_i}')"
+			exit 1
+		else
+			if ! source "${PH_i}" >/dev/null 2>&1
+			then
+				>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Corrupted critical configuration file '${PH_i}')"
+				exit 1
+			fi
+		fi
 	fi
 done
 
 # Load main configuration
 
-if [[ -r "${PH_CONF_DIR}/main.conf" ]]
+if [[ ! -e "${PH_CONF_DIR}/main.conf" ]]
 then
-	if ! source "${PH_CONF_DIR}/main.conf" >/dev/null 2>&1
-	then
-		>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Corrupted critical configuration file '${PH_CONF_DIR}/main.conf')"
-		exit 1
-	fi
-else
-	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical configuration file '${PH_CONF_DIR}/main.conf')"
+	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing critical configuration file '${PH_CONF_DIR}/main.conf')"
 	exit 1
+else
+	if [[ ! -r "${PH_CONF_DIR}/main.conf" ]]
+	then
+		>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Unreadable critical configuration file '${PH_CONF_DIR}/main.conf')"
+		exit 1
+	else
+		if ! source "${PH_CONF_DIR}/main.conf" >/dev/null 2>&1
+		then
+			>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Corrupted critical configuration file '${PH_CONF_DIR}/main.conf')"
+			exit 1
+		fi
+	fi
 fi
 
 # Determine the current user
@@ -235,13 +249,13 @@ then
 					printf tolower(vers_codename) \
 				} \
 			}' /etc/os-release 2>/dev/null)"
+		if [[ -z "${PH_DISTRO_REL}" ]]
+		then
+			>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the current '${PH_DISTRO}' release"
+			exit 1
+		fi
 	else
 		PH_DISTRO_REL="${PH_DISTRO}"
-	fi
-	if [[ -z "${PH_DISTRO_REL}" ]]
-	then
-		>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the current '${PH_DISTRO}' release"
-		exit 1
 	fi
 else
 	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the current distro"
@@ -291,16 +305,20 @@ fi
 
 for PH_i in functions.other functions.update "distros/functions.${PH_DISTRO}"
 do
-	if [[ -r "${PH_FUNCS_DIR}/${PH_i}" ]]
+	if [[ ! -e "${PH_FUNCS_DIR}/${PH_i}" ]]
 	then
-		if ! source "${PH_FUNCS_DIR}/${PH_i}" >/dev/null 2>&1
-		then
-			>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Corrupted critical codebase file '${PH_FUNCS_DIR}/${PH_i}')"
-			exit 1
-		fi
+		>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing critical codebase file '${PH_FUNCS_DIR}/${PH_i}')"
 	else
-		>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing or unreadable critical codebase file '${PH_FUNCS_DIR}/${PH_i}')"
-		exit 1
+		if [[ ! -r "${PH_FUNCS_DIR}/${PH_i}" ]]
+		then
+			>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Unreadable critical codebase file '${PH_FUNCS_DIR}/${PH_i}')"
+		else
+			if ! source "${PH_FUNCS_DIR}/${PH_i}" >/dev/null 2>&1
+			then
+				>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Corrupted critical codebase file '${PH_FUNCS_DIR}/${PH_i}')"
+				exit 1
+			fi
+		fi
 	fi
 done
 
@@ -308,15 +326,20 @@ done
 
 if [[ "${PH_PIEH_SANITY_INST}" == "yes" ]]
 then
+	PH_ROLLBACK_USED="no"
 	ph_check_pieh_shared_config inst
+	PH_ROLLBACK_USED="yes"
 fi
 
 # Set current framework version
 
-PH_VERSION="$(cat "${PH_CONF_DIR}/VERSION" 2>/dev/null)"
-if [[ "${PH_VERSION}" != @(0\.+([[:digit:]])|@(1|2|3|4|5|6|7|8|9)*([[:digit:]])*(\.+([[:digit:]]))) ]]
+if ph_check_object_existence -o "${PH_CONF_DIR}/VERSION" -m inst
 then
-	ph_set_result -a -m "Reinstallation of PieHelper is required (Corrupted critical configuration file '${PH_CONF_DIR}/VERSION')"
+	PH_VERSION="$(cat "${PH_CONF_DIR}/VERSION" 2>/dev/null)"
+	if [[ "${PH_VERSION}" != @(0\.+([[:digit:]])|@(1|2|3|4|5|6|7|8|9)*([[:digit:]])*(\.+([[:digit:]]))) ]] 
+	then
+		ph_set_result -a -m "Reinstallation of PieHelper is required (Corrupted critical configuration file '${PH_CONF_DIR}/VERSION')"
+	fi
 fi
 
 # Load release-dependent configuration
@@ -324,6 +347,8 @@ fi
 source "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" >/dev/null 2>&1
 
 # Load applications/controller configurations
+
+unset PH_PARSE_FILES PH_PARSE_APPS 2>/dev/null
 
 declare -a PH_PARSE_FILES
 
@@ -333,7 +358,7 @@ if [[ -f "${PH_CONF_DIR}/supported_apps" ]]
 then
 	PH_PARSE_FILES+=("${PH_CONF_DIR}/supported_apps")
 fi
-for PH_i in Controllers $(nawk 'BEGIN { \
+read -r -a PH_PARSE_APPS -d';' < <(nawk 'BEGIN { \
 		i = "1" \
 	} \
 	NR == "1" { \
@@ -357,6 +382,7 @@ for PH_i in Controllers $(nawk 'BEGIN { \
 			} \
 		} \
 	}' "${PH_PARSE_FILES[@]}" 2>/dev/null)
+for PH_i in "Controllers" "${PH_PARSE_APPS[@]}"
 do
 	if [[ -f "${PH_CONF_DIR}/${PH_i}.conf" ]]
 	then
@@ -365,7 +391,7 @@ do
 		source "${PH_TEMPLATES_DIR}/${PH_i}_conf.template" >/dev/null 2>&1
 	fi
 done
-unset PH_PARSE_FILES
+unset PH_PARSE_FILES PH_PARSE_APPS
 
 # Enable xtrace for modules in debug
 
@@ -418,6 +444,7 @@ fi
 
 if [[ "${PH_PIEH_SANITY_CONF}" == "yes" ]]
 then
+	PH_ROLLBACK_USED="no"
 	PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
 	if [[ "$("${PH_SUDO}" cat "/proc/${PPID}/comm" 2>/dev/null)" != +(@(conf|list)*_ph|@(re|)start*|${PH_MOVE_SCRIPTS_REGEX}).sh ]]
 	then
@@ -453,6 +480,7 @@ then
 		ph_show_report
 		exit 1
 	fi
+	PH_ROLLBACK_USED="yes"
 fi
 
 # Clean the temp directory again
@@ -470,7 +498,7 @@ ph_initialize_rollback
 
 # Autodetect first run
 
-if [[ -f "${PH_TMP_DIR}/.first_run" ]]
+if [[ -e "${PH_TMP_DIR}/.first_run" ]]
 then
 	clear
 	printf "\n\033[1;36m%s\033[0m\n\n" "- Configuring PieHelper '${PH_VERSION}'"
@@ -481,24 +509,28 @@ fi
 # Set user and group accounts for the framework
 
 PH_RUN_USER="$(ph_get_app_user_from_app_name PieHelper)"
-PH_RUN_GROUP="$(id -ng "${PH_RUN_USER}")"
+PH_RUN_GROUP="$(id -ng "${PH_RUN_USER}" 2>/dev/null)"
 for PH_i in USER GROUP
 do
+	PH_iL="${PH_i}"
 	if [[ -z "$(eval "echo -n \"\$PH_RUN_${PH_i}\"")" ]]
 	then
 		if [[ "${PH_i}" == "USER" && ( "${PH_PIEH_SANITY_INST}" == "no" || "${PH_PIEH_SANITY_CONF}" == "no" ) ]]
 		then
 			ph_set_option_to_value "PieHelper" -o "PH_PIEH_SANITY_INST'yes" -o "PH_PIEH_SANITY_CONF'yes" >/dev/null 2>&1
-			ph_set_result -a -m "An error occurred trying to set the $(echo -n "${PH_i}" | tr '[:upper:]' '[:lower:]') account for PieHelper (Auto-enabling all sanity checks)"
+			ph_set_result -a -m "An error occurred trying to set the ${PH_iL} account for PieHelper (Auto-enabling all sanity checks)"
 		else
-			ph_set_result -a -m "An error occurred trying to set the $(echo -n "${PH_i}" | tr '[:upper:]' '[:lower:]') account for PieHelper (Check user '${PH_RUN_USER}')"
+			ph_set_result -a -m "An error occurred trying to set the ${PH_iL} account for PieHelper (Check user '${PH_RUN_USER}')"
 		fi
 	fi
 done
 
 # Check if the current user has framework access
 
+unset PH_ALLOW_USERS 2>/dev/null
+
 declare -a PH_ALLOW_USERS
+
 [[ "${PH_RUN_USER}" == "root" ]] && \
 	PH_ALLOW_USERS+=("${PH_RUN_USER}")
 for PH_i in $("${PH_SUDO}" find "/etc/sudoers.d" -maxdepth 1 -name "020_pieh-*" 2>/dev/null | paste -d " " -s)
@@ -546,4 +578,4 @@ fi
 
 # Unset all local variables
 
-unset PH_i PH_CUR_USER PH_MOVE_SCRIPTS_REGEX PH_OLD_DISTRO_REL PH_FORMAT_FLAG PH_DISTROU
+unset PH_i PH_CUR_USER PH_MOVE_SCRIPTS_REGEX PH_OLD_DISTRO_REL PH_FORMAT_FLAG PH_iL PH_DISTROU

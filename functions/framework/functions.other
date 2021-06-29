@@ -6078,6 +6078,7 @@ declare -i PH_END
 declare -i PH_RET_CODE
 declare -i PH_OLD_SET_FLAG
 declare -u PH_APPU
+declare -l PH_iL
 
 PH_OLDOPTARG="${OPTARG}"
 PH_OLDOPTIND="${OPTIND}"
@@ -6098,6 +6099,7 @@ PH_END="0"
 PH_RET_CODE="0"
 PH_OLD_SET_FLAG="1"
 PH_APPU="${PH_APP:0:4}"
+PH_iL=""
 
 OPTIND="2"
 
@@ -6186,53 +6188,94 @@ do
 			printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "'${PH_OPTARG_VAL}'" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
 			ph_run_with_rollback -c true -m "Nothing to do"
 			continue
-		fi
-		if [[ "${PH_OPTARG_VAR}" == "PH_${PH_APPU}_PKG" ]]
-		then
-			if ! ph_update_pkg_index
-			then
-				((PH_RET_CODE++))
-				continue
-			fi
-			if ! ph_check_pkg_validity "${PH_OPTARG_VAL}"
-			then
-				printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "'${PH_OPTARG_VAL}'" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
-				if [[ "${PH_MSG_TYPE}" == "ERROR" ]]
+		else
+			case "${PH_OPTARG_VAR}" in "PH_${PH_APPU}_PKG")
+				if ! ph_update_pkg_index
 				then
 					((PH_RET_CODE++))
-					ph_set_result -m "Could not set option '${PH_OPTARG_VAR}' to '${PH_OPTARG_VAL}' since it is not a valid package"
-				else
-					printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set '${PH_OPTARG_VAL}' as a valid package) -> Skipping"
-					ph_set_result -r 0
+					continue
 				fi
-				continue
-			fi
-		fi
-		if [[ "${PH_OPTARG_VAR}" == "PH_MOON_USE_CTRL" && "${PH_OPTARG_VAL}" == "no" ]]
-		then
-			printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "'${PH_OPTARG_VAL}'" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
-			if [[ "${PH_MSG_TYPE}" == "ERROR" ]]
-			then
-				((PH_RET_CODE++))
-				ph_set_result -m "Could not set option '${PH_OPTARG_VAR}' to '${PH_OPTARG_VAL}' since '${PH_APP}' requires at least one controller"
-			else
-				printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set ('${PH_APP}' requires at least one controller) -> Skipping"
-				ph_set_result -r 0
-			fi
-			continue
-		fi
-		if [[ "${PH_OPTARG_VAR}" == "PH_MOON_CMD_OPTS" && "$(echo -n "${PH_OPTARG_VAL}" | grep -E "+([[:space:]])/dev/input/eventPH_CTRL[1-4]" >/dev/null ; echo "${?}")" -ne "0" ]]
-		then
-			printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "'${PH_OPTARG_VAL}'" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
-			if [[ "${PH_MSG_TYPE}" == "ERROR" ]]
-			then
-				((PH_RET_CODE++))
-				ph_set_result -m "Could not set option '${PH_OPTARG_VAR}' to '${PH_OPTARG_VAL}' since no controller ID arguments were passed"
-			else
-				printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set (The value must contain controller ID arguments) -> Skipping"
-				ph_set_result -r 0
-			fi
-			continue
+				if ! ph_check_pkg_validity "${PH_OPTARG_VAL}"
+				then
+					printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "'${PH_OPTARG_VAL}'" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
+					if [[ "${PH_MSG_TYPE}" == "ERROR" ]]
+					then
+						((PH_RET_CODE++))
+						ph_set_result -m "Could not set option '${PH_OPTARG_VAR}' to '${PH_OPTARG_VAL}' since it is not a valid package"
+					else
+						printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set '${PH_OPTARG_VAL}' as a valid package) -> Skipping"
+						ph_set_result -r 0
+					fi
+					continue
+				fi ;;
+					PH_MOON_USE_CTRL)
+				if [[ "${PH_OPTARG_VAL}" == "no" ]]
+				then
+					printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "'${PH_OPTARG_VAL}'" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
+					if [[ "${PH_MSG_TYPE}" == "ERROR" ]]
+					then
+						((PH_RET_CODE++))
+						ph_set_result -m "Could not set option '${PH_OPTARG_VAR}' to '${PH_OPTARG_VAL}' since '${PH_APP}' requires at least one controller"
+					else
+						printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set ('${PH_APP}' requires at least one controller) -> Skipping"
+						ph_set_result -r 0
+					fi
+					continue
+				fi ;;
+					PH_MOON_CMD_OPTS)
+				if ! echo -n "${PH_OPTARG_VAL}" | grep -E "+([[:space:]])/dev/input/eventPH_CTRL[1-4]" >/dev/null
+				then
+					printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "'${PH_OPTARG_VAL}'" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
+					if [[ "${PH_MSG_TYPE}" == "ERROR" ]]
+					then
+						((PH_RET_CODE++))
+						ph_set_result -m "Could not set option '${PH_OPTARG_VAR}' to '${PH_OPTARG_VAL}' since no controller ID arguments were passed"
+					else
+						printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set (The value must contain controller ID arguments) -> Skipping"
+						ph_set_result -r 0
+					fi
+					continue
+				fi ;;
+					"PH_${PH_APPU}_CIFS_MPT")
+				if [[ -n "$(ph_get_app_cifs_mpt -a '${PH_APP}' -r)" ]]
+				then
+					if [[ "$(mount 2>/dev/null | nawk -v mstring="^$(ph_get_app_cifs_mpt -a "${PH_APP}" -r)$" '$3 ~ mstring { \
+							print \
+						} { \
+							next \
+						}' | wc -l)" -gt "0" ]]
+					then
+						printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "'${PH_OPTARG_VAL}'" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
+						if [[ "${PH_MSG_TYPE}" == "ERROR" ]]
+						then
+							((PH_RET_CODE++))
+							ph_set_result -m "The current mountpoint '$(ph_get_app_cifs_mpt -a "${PH_APP}" -r)' cannot be active when changing mountpoints for '${PH_APP}'"
+						else
+							printf "%10s\033[31m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set (The old mountpoint is still active) -> Skipping"
+							ph_set_result -r 0
+						fi
+						continue
+					fi
+				fi ;;
+					"PH_${PH_APPU}_PRE_CMD"|"PH_${PH_APPU}_POST_CMD")
+				PH_i="(cut -c9-11<<<"${PH_OPTARG_VAR}")"
+				PH_iL="${PH_i}"
+				if [[ -n "${PH_OPTARG_VAL}" && ( ! -f "${PH_SCRIPTS_DIR}/${PH_iL}_cmds/${PH_APP}-${PH_i}.sh" || ! -r "${PH_SCRIPTS_DIR}/${PH_iL}_cmds/${PH_APP}-${PH_i}.sh" ) ]]
+				then
+					printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "'${PH_OPTARG_VAL}'" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
+					if [[ "${PH_MSG_TYPE}" == "ERROR" ]]
+					then
+						((PH_RET_CODE++))
+						ph_set_result -m "Could not set option '${PH_OPTARG_VAR}' to '${PH_OPTARG_VAL}' since it is not a valid ${PH_i} command"
+					else
+						printf "%10s\033[31m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set (Not a valid ${PH_i} command) -> Skipping"
+						ph_set_result -r 0
+					fi
+					continue
+				fi ;;
+					*)
+				: ;;
+			esac
 		fi
 		if grep -E "^${PH_OPTARG_VAR}:" "${PH_CONF_DIR}/options.alloweds" >/dev/null 2>&1
 		then
@@ -6260,26 +6303,6 @@ do
 					ph_run_with_rollback -c true
 				fi
 		fi
-		if [[ "${PH_OPTARG_VAR}" == "PH_${PH_APPU}_CIFS_MPT" && -n "$(ph_get_app_cifs_mpt -a '${PH_APP}' -r)" ]]
-		then
-			printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "'${PH_OPTARG_VAL}'" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
-			if [[ "$(mount 2>/dev/null | nawk -v mstring="^$(ph_get_app_cifs_mpt -a "${PH_APP}" -r)$" '$3 ~ mstring { \
-					print \
-				} { \
-					next \
-				}' | wc -l)" -gt "0" ]]
-			then
-				if [[ "${PH_MSG_TYPE}" == "ERROR" ]]
-				then
-					((PH_RET_CODE++))
-					ph_set_result -m "The current mountpoint '$(ph_get_app_cifs_mpt -a "${PH_APP}" -r)' cannot be active when changing mountpoints for '${PH_APP}'"
-				else
-					printf "%10s\033[31m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set (The old mountpoint is still active) -> Skipping"
-					ph_set_result -r 0
-				fi
-				continue
-			fi
-		fi
 	fi
 	printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "'${PH_OPTARG_VAL}'" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
 	PH_OPTARG_VAL="$(ph_do_escape_paths "${PH_OPTARG_VAL}")"
@@ -6302,64 +6325,37 @@ do
 		PH_CURVALUE="${PH_OPTARG_VAL}"
 		ph_add_value_to_param -p PH_OPTIONS -v "${PH_APP}'${PH_OPTARG_VAR}'${PH_OLDVALUE}"
 		ph_run_with_rollback -c true
-		if [[ "${PH_OPTARG_VAR}" == "PH_${PH_APPU}_CIFS_MPT" ]]
-		then
+		case "${PH_OPTARG_VAR}" in "PH_${PH_APPU}_CIFS_MPT")
 			if ! ph_run_with_rollback -c "ph_create_app_cifs_mpt '${PH_APP}'"
 			then
 				((PH_RET_CODE++))
 				break
-			fi
-		fi
-		if [[ "${PH_OPTARG_VAR}" == "PH_${PH_APPU}_NUM_CTRL" && "$(echo -n "${PH_CURVALUE_CMD_OPTS}" | grep -E "+([[:space:]])/dev/input/eventPH_CTRL[1-4]" >/dev/null ; echo "${?}")" -eq "0" ]]
-		then
-			PH_END="${PH_OPTARG_VAL}"
-			PH_NOW="$(echo -n "${PH_CURVALUE_CMD_OPTS}" | nawk 'BEGIN { \
-					count=0 \
-				} { \
-					for (i=1;i<=NF;i++) { \
-						if ($i ~ /\/dev\/input\/eventPH_CTRL(1|2|3|4)/) { \
-							count++ \
-						} \
-					} \
-				} END { \
-					print count \
-				}' 2>/dev/null)"
-			if [[ "${PH_END}" -ne "${PH_NOW}" ]]
+			fi ;;
+				"PH_${PH_APPU}_NUM_CTRL")
+			if echo -n "${PH_CURVALUE_CMD_OPTS}" | grep -E "+([[:space:]])/dev/input/eventPH_CTRL[1-4]" >/dev/null
 			then
-				if [[ "${PH_NOW}" -gt "${PH_END}" ]]
-				then
-					PH_NEWVALUE="$(echo -n "${PH_CURVALUE_CMD_OPTS}" | nawk -v curval="${PH_NOW}" 'BEGIN { \
-							ORS = \"\" ; \
-							compare = "/dev/input/eventPH_CTRL"curval \
-						} { \
-							for (i=1;i<=NF;i++) { \
-								if ($(i+1) !~ compare && $i !~ compare) { \
-									print $i ; \
-									if (i<(NF-2)) { \
-										print \" \" \
-									} \
-								} \
+				PH_END="${PH_OPTARG_VAL}"
+				PH_NOW="$(echo -n "${PH_CURVALUE_CMD_OPTS}" | nawk 'BEGIN { \
+						count=0 \
+					} { \
+						for (i=1;i<=NF;i++) { \
+							if ($i ~ /\/dev\/input\/eventPH_CTRL(1|2|3|4)/) { \
+								count++ \
 							} \
-						}' 2>/dev/null)"
-					while [[ "$((PH_NOW-1))" -gt "${PH_END}" ]]
-					do
-						PH_NOW="$(echo -n "${PH_NEWVALUE}" | nawk 'BEGIN { \
-								count=0 \
-							} { \
-								for (i=1;i<=NF;i++) { \
-									if ($i ~ /\/dev\/input\/eventPH_CTRL(1|2|3|4)/) { \
-										count++ \
-									} \
-								} \
-							} END { \
-								print count \
-							}' 2>/dev/null)"
-						PH_NEWVALUE="$(echo -n "${PH_NEWVALUE}" | nawk -v curval="${PH_NOW}" 'BEGIN { \
+						} \
+					} END { \
+						print count \
+					}' 2>/dev/null)"
+				if [[ "${PH_END}" -ne "${PH_NOW}" ]]
+				then
+					if [[ "${PH_NOW}" -gt "${PH_END}" ]]
+					then
+						PH_NEWVALUE="$(echo -n "${PH_CURVALUE_CMD_OPTS}" | nawk -v curval="${PH_NOW}" 'BEGIN { \
 								ORS = \"\" ; \
-								compval = "/dev/input/eventPH_CTRL"curval \
+								compare = "/dev/input/eventPH_CTRL"curval \
 							} { \
 								for (i=1;i<=NF;i++) { \
-									if ($(i+1) !~ compval && $i !~ compval) { \
+									if ($(i+1) !~ compare && $i !~ compare) { \
 										print $i ; \
 										if (i<(NF-2)) { \
 											print \" \" \
@@ -6367,50 +6363,35 @@ do
 									} \
 								} \
 							}' 2>/dev/null)"
-					done
-				else
-					PH_NEWVALUE="$(echo -n "${PH_CURVALUE_CMD_OPTS}" | nawk -v curval="${PH_NOW}" 'BEGIN { \
-							ORS = \"\" ; \
-							ind = 0 ; \
-							compval = "/dev/input/eventPH_CTRL"curval ; \
-							printval = "/dev/input/eventPH_CTRL"(curval+1) \
-						} { \
-							for (i=1;i<=NF;i++) { \
-								if ($(i+1) ~ compval) { \
-									param = $i ; \
-									ind = i ; \
-									print $i \" \" \
-								} else { \
-									if (i==NF) { \
-										if (i==(ind+1)) { \
-											print $i \" \" param \" \" printval \
-										} else { \
-											print $i \
-										} \
-									} else { \
-										if (i==(ind+1) && ind>0) { \
-											print $i \" \" param \" \" printval \" \" \
-										} else { \
-											print $i \" \" \
+						while [[ "$((PH_NOW-1))" -gt "${PH_END}" ]]
+						do
+							PH_NOW="$(echo -n "${PH_NEWVALUE}" | nawk 'BEGIN { \
+									count=0 \
+								} { \
+									for (i=1;i<=NF;i++) { \
+										if ($i ~ /\/dev\/input\/eventPH_CTRL(1|2|3|4)/) { \
+											count++ \
 										} \
 									} \
-								} \
-							} \
-						}' 2>/dev/null)"
-					while [[ "$((PH_NOW+1))" -lt "${PH_END}" ]]
-					do
-						PH_NOW="$(echo -n "${PH_NEWVALUE}" | nawk 'BEGIN { \
-								count=0 \
-							} { \
-								for (i=1;i<=NF;i++) { \
-									if ($i ~ /\/dev\/input\/eventPH_CTRL(1|2|3|4)/) { \
-										count++ \
+								} END { \
+									print count \
+								}' 2>/dev/null)"
+							PH_NEWVALUE="$(echo -n "${PH_NEWVALUE}" | nawk -v curval="${PH_NOW}" 'BEGIN { \
+									ORS = \"\" ; \
+									compval = "/dev/input/eventPH_CTRL"curval \
+								} { \
+									for (i=1;i<=NF;i++) { \
+										if ($(i+1) !~ compval && $i !~ compval) { \
+											print $i ; \
+											if (i<(NF-2)) { \
+												print \" \" \
+											} \
+										} \
 									} \
-								} \
-							} END { \
-								print count \
-							}' 2>/dev/null)"
-						PH_NEWVALUE="$(echo -n "${PH_NEWVALUE}" | nawk -v curval="${PH_NOW}" 'BEGIN { \
+								}' 2>/dev/null)"
+						done
+					else
+						PH_NEWVALUE="$(echo -n "${PH_CURVALUE_CMD_OPTS}" | nawk -v curval="${PH_NOW}" 'BEGIN { \
 								ORS = \"\" ; \
 								ind = 0 ; \
 								compval = "/dev/input/eventPH_CTRL"curval ; \
@@ -6438,39 +6419,80 @@ do
 									} \
 								} \
 							}' 2>/dev/null)"
-					done
+						while [[ "$((PH_NOW+1))" -lt "${PH_END}" ]]
+						do
+							PH_NOW="$(echo -n "${PH_NEWVALUE}" | nawk 'BEGIN { \
+									count=0 \
+								} { \
+									for (i=1;i<=NF;i++) { \
+										if ($i ~ /\/dev\/input\/eventPH_CTRL(1|2|3|4)/) { \
+											count++ \
+										} \
+									} \
+								} END { \
+									print count \
+								}' 2>/dev/null)"
+							PH_NEWVALUE="$(echo -n "${PH_NEWVALUE}" | nawk -v curval="${PH_NOW}" 'BEGIN { \
+									ORS = \"\" ; \
+									ind = 0 ; \
+									compval = "/dev/input/eventPH_CTRL"curval ; \
+									printval = "/dev/input/eventPH_CTRL"(curval+1) \
+								} { \
+									for (i=1;i<=NF;i++) { \
+										if ($(i+1) ~ compval) { \
+											param = $i ; \
+											ind = i ; \
+											print $i \" \" \
+										} else { \
+											if (i==NF) { \
+												if (i==(ind+1)) { \
+													print $i \" \" param \" \" printval \
+												} else { \
+													print $i \
+												} \
+											} else { \
+												if (i==(ind+1) && ind>0) { \
+													print $i \" \" param \" \" printval \" \" \
+												} else { \
+													print $i \" \" \
+												} \
+											} \
+										} \
+									} \
+								}' 2>/dev/null)"
+						done
+					fi
+					if ! ph_run_with_rollback -c "ph_set_option_to_value '${PH_APP}' -r \"PH_${PH_APPU}_CMD_OPTS'${PH_NEWVALUE}\""
+					then
+						((PH_RET_CODE++))
+						break
+					fi
 				fi
-				if ! ph_run_with_rollback -c "ph_set_option_to_value '${PH_APP}' -r \"PH_${PH_APPU}_CMD_OPTS'${PH_NEWVALUE}\""
-				then
-					((PH_RET_CODE++))
-					break
-				fi
-			fi
-		fi
-		if [[ "${PH_OPTARG_VAR}" == "PH_${PH_APPU}_CMD_OPTS" && "$(echo -n "${PH_OPTARG_VAL}" | grep -E "+([[:space:]])/dev/input/eventPH_CTRL[1-4]" >/dev/null ; echo "${?}")" -eq "0" ]]
-		then
-			PH_NEWVALUE="$(echo -n "${PH_OPTARG_VAL}" | nawk 'BEGIN { \
-					count=0 \
-				} { \
-					for (i=1;i<=NF;i++) { \
-						if ($i ~ /\/dev\/input\/eventPH_CTRL(1|2|3|4)/) { \
-							count++ \
-						} \
-					} \
-				} END { \
-					print count \
-				}' 2>/dev/null)"
-			if [[ "${PH_CURVALUE_NUM_CTRL}" != "${PH_NEWVALUE}" ]]
+			fi ;;
+				"PH_${PH_APPU}_CMD_OPTS")
+			if echo -n "${PH_OPTARG_VAL}" | grep -E "+([[:space:]])/dev/input/eventPH_CTRL[1-4]" >/dev/null
 			then
-				if ! ph_run_with_rollback -c "ph_set_option_to_value '${PH_APP}' -r \"PH_${PH_APPU}_NUM_CTRL'${PH_NEWVALUE}\""
+				PH_NEWVALUE="$(echo -n "${PH_OPTARG_VAL}" | nawk 'BEGIN { \
+						count=0 \
+					} { \
+						for (i=1;i<=NF;i++) { \
+							if ($i ~ /\/dev\/input\/eventPH_CTRL(1|2|3|4)/) { \
+								count++ \
+							} \
+						} \
+					} END { \
+						print count \
+					}' 2>/dev/null)"
+				if [[ "${PH_CURVALUE_NUM_CTRL}" != "${PH_NEWVALUE}" ]]
 				then
-					((PH_RET_CODE++))
-					break
+					if ! ph_run_with_rollback -c "ph_set_option_to_value '${PH_APP}' -r \"PH_${PH_APPU}_NUM_CTRL'${PH_NEWVALUE}\""
+					then
+						((PH_RET_CODE++))
+						break
+					fi
 				fi
-			fi
-		fi
-		if [[ "${PH_OPTARG_VAR}" == "PH_${PH_APPU}_PKG" ]]
-		then
+			fi ;;
+				"PH_${PH_APPU}_PKG")
 			if ph_get_pkg_inst_state "${PH_OPTARG_VAL}"
 			then
 				if ! ph_update_base_conf_file -a "${PH_APP}" -f sup -c 3 -v PI
@@ -6484,8 +6506,10 @@ do
 					((PH_RET_CODE++))
 					break
 				fi
-			fi
-		fi
+			fi ;;
+				*)
+			: ;;
+		esac
 		if [[ "${PH_OLD_SET_FLAG}" -eq "1" ]]
 		then
 			export "OLD_${PH_OPTARG_VAR}=${PH_OPTARG_VAL}"
