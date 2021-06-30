@@ -5423,7 +5423,7 @@ PH_ROLLBACK_USED="no"
 
 if [[ "${#PH_DEPTH_PARAMS[@]}" -gt "0" ]]
 then
-	printf "\033[36m%s\033[0m\n\n" "- Rolling back changes"
+	printf "\033[1;36m%s\033[0m\n\n" "- Rolling back changes"
 	for PH_i in "${PH_DEPTH_PARAMS[@]}"
 	do
 		if [[ "${PH_i}" == PH_@(INSTALL|REMOVE)_PKGS ]]
