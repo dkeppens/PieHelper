@@ -69,7 +69,7 @@ OPTIND="1"
 while getopts a:o:p:t:hgsdrmn PH_OPTION 2>/dev/null
 do
 	case "${PH_OPTION}" in a)
-		[[ -n "${PH_APP}" -z "${OPTARG}" ]] && \
+		[[ -n "${PH_APP}" || -z "${OPTARG}" ]] && \
 			(! confopts_ph.sh -h) && \
 			unset PH_OPTAR PH_VALAR && \
 			OPTIND="${PH_OLDOPTIND}" && \

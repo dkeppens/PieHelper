@@ -353,7 +353,7 @@ case "$PH_ACTION" in help)
 				PH_NEW_CTRL=`sed 's/ '$PH_i' //;s/ '$PH_i'//;s/'$PH_i' //;s/'$PH_i'//g' <<<$PH_NEW_CTRL`
 			else
 				>&2 printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not connect to controller $PH_i"
-				[[ $PH_NUM_CTRL -eq 1 && PH_RESULT="SUCCESS" ]] && PH_RESULT="FAILED" || PH_RESULT="PARTIALLY FAILED"
+				[[ $PH_NUM_CTRL -eq 1 && "${PH_RESULT}" == "SUCCESS" ]] && PH_RESULT="FAILED" || PH_RESULT="PARTIALLY FAILED"
 			fi
 			unset -n PH_CTRL_PIN
 			[[ $PH_COUNT -eq $PH_CONF_CTRL ]] && break 2
