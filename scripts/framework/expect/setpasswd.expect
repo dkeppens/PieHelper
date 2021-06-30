@@ -1,12 +1,12 @@
-#!/usr/bin/expect
+#!/usr/bin/expect -f
+# Set a password for a user (by Davy Keppens on 30/06/2021)
 
 set timeout 10
 set user [lindex $argv 0]
 set password [lindex $argv 1]
 spawn passwd $user
-expect "password:"
+expect -re {.*password:.*}
 send "$password\r"
-expect "password:"
+expect -re {.*password:.*}
 send "$password\r"
-
 expect eof

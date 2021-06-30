@@ -1,5 +1,5 @@
 #!/usr/bin/expect -f
-# Interactively configure bluetooth controllers (by Davy Keppens on 25/12/2018)
+# Configure bluetooth controllers (by Davy Keppens on 25/12/2018)
 
 set adaptid [lindex $argv 0];
 set ctrlid [lindex $argv 1];

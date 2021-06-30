@@ -1,7 +1,47 @@
-# Archlinux specific codebase functions
+# Archlinux-specific codebase
 
-function ph_update_pkg_index {
+function ph_get_path_pkg {
 
+declare PH_APP_PATH
+declare PH_APP_PKG
+
+PH_APP_PATH="${1}"
+PH_APP_PKG=""
+
+[[ "${PH_APP_PATH}" != /* || "${#}" -ne "1" ]] && \
+        ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+if ph_sync_pkg_db
+then
+	PH_APP_PKG="$("${PH_SUDO}" pacman -Fx --machinereadable "\(^${PH_APP_PATH}$\)\{1\}" 2>/dev/null | nawk -F '\0' '{ \
+			print $2 \
+		}')"
+	if [[ -n "${PH_APP_PKG}" ]]
+	then
+		echo -n "${PH_APP_PKG}"
+		return 0
+	else
+		ph_set_result -m "An error occurred trying to determine the package for path '${PH_APP_PATH}'"
+	fi
+fi
+return 1
+}
+
+function ph_clean_pkg_db {
+
+[[ "${#}" -ne "0" ]] && \
+        ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+printf "%8s%s\n" "" "--> Cleaning up after package operations"
+if "${PH_SUDO}" "${PH_SCRIPTS_DIR}/expect/cleanpmpkgdb.expect" >/dev/null 2>&1
+then
+	if "${PH_SUDO}" pacman -Rns "$(pacman -Qtdq 2>/dev/null)" --noconfirm >/dev/null 2>&1
+	then
+		ph_run_with_rollback -c true
+	fi
+fi
+printf "%10s\033[33m%s\033[0m\n" "" "Warning : Failed to cleanup after package operations"
+ph_set_result -r 0
 return 0
 }
 
@@ -33,6 +73,25 @@ fi
 return "${?}"
 }
 
+function ph_sync_pkg_db {
+
+[[ "${#}" -ne "0" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+printf "%8s%s\n" "" "--> Synchronizing the package database"
+if "${PH_SUDO}" pacman -Syy --noconfirm >/dev/null 2>&1
+then
+	if "${PH_SUDO}" "${PH_EXPECT}" "${PH_SCRIPTS_DIR}/expect/pacman_clean_pkg_db.expect" >/dev/null 2>&1
+	then
+		ph_run_with_rollback -c true
+		return "${?}"
+	fi
+fi
+ph_set_result -m "An error occurred trying to synchronize the package database"
+ph_run_with_rollback -c false -m "Could not synchronize"
+return "${?}"
+}
+
 function ph_update_pkg {
 
 declare PH_APP_PKG
@@ -42,17 +101,20 @@ PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
 [[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
-if ph_get_pkg_inst_state "${PH_APP_PKG}"
+if ph_sync_pkg_db
 then
-	ph_run_with_rollback -c true -m "Found"
-	ph_run_with_rollback -c "ph_remove_pkg '${PH_APP_PKG}'" || \
-		return 1
-else
-	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found"
-	ph_set_result -r 0
+	printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
+	if ph_get_pkg_inst_state "${PH_APP_PKG}"
+	then
+		ph_run_with_rollback -c true -m "Found"
+		ph_run_with_rollback -c "ph_remove_pkg '${PH_APP_PKG}'" || \
+			return 1
+	else
+		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found"
+		ph_set_result -r 0
+	fi
+	ph_run_with_rollback -c "ph_install_pkg '${PH_APP_PKG}'"
 fi
-ph_run_with_rollback -c "ph_install_pkg '${PH_APP_PKG}'"
 return "${?}"
 }
 
@@ -109,12 +171,17 @@ PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
 [[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-if ! "${PH_SUDO}" pacman -Ss "${PH_APP_PKG}" --noconfirm >/dev/null 2>&1
+if ph_sync_pkg_db
 then
-	ph_set_result -m "An error occurred since package '${PH_APP_PKG}' is not available"
-	return 1
+	if ! "${PH_SUDO}" pacman -Ss "${PH_APP_PKG}" --noconfirm >/dev/null 2>&1
+	then
+		ph_set_result -m "An error occurred since '${PH_APP_PKG}' is not a valid package"
+		false
+	else
+		true
+	fi
 fi
-return 0
+return "${?}"
 }
 
 function ph_update_system {
@@ -122,13 +189,19 @@ function ph_update_system {
 [[ "${#}" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\033[1;37m%s\033[0m\n" "" "--> Updating your system" " (This may take a while)"
-if "${PH_SUDO}" pacman -Syu --noconfirm >/dev/null 2>&1
+if ph_sync_pkg_db
 then
-	ph_run_with_rollback -c true
-else
-	ph_set_result -m "At least one of the attempted package upgrades failed"
-	ph_run_with_rollback -c false -m "Could not update"
+	printf "%8s%s\033[1;37m%s\033[0m\n" "" "--> Updating the system" " (This may take a while)"
+	if "${PH_SUDO}" pacman -Su --noconfirm >/dev/null 2>&1
+	then
+		ph_run_with_rollback -c true
+		ph_clean_pkg_db
+	else
+		ph_set_result -m "At least one of the attempted package operations failed"
+		ph_run_with_rollback -c false -m "Could not update"
+		ph_clean_pkg_db
+		false
+	fi
 fi
 return "${?}"
 }

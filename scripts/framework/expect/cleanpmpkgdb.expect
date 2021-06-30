@@ -1,0 +1,10 @@
+#!/usr/bin/expect -f
+# Clean the pacman package database (by Davy Keppens on 30/06/2021)
+
+set timeout 10
+spawn pacman -Sc
+expect -re {.*Do you want to.*}
+send "y\r"
+expect -re {.*Do you want to.*}
+send "n\r"
+expect eof

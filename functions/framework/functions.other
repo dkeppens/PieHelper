@@ -1201,7 +1201,7 @@ do
 		MovefromPieHScript LoginScript MoveScript MovetoPieHScript RestartScriptPieH \
 		RestartScript StartScriptPieH StartScript StopScriptPieH StopScript \
 		confapps confpieh confttys confgena confctrl confoper confopts listblue listmoon \
-		setpasswd cfgctrls kodi.post_cmd build.archives "${PH_DISTRO_DIRS[@]}"
+		setpasswd cfgctrls cleanpmpkgdb kodi.post_cmd build.archives "${PH_DISTRO_DIRS[@]}"
 	do
 		PH_REQ_SANITY_LEVEL="critical"
 		PH_DIR=""
@@ -1283,6 +1283,11 @@ do
 							PH_DIR="${PH_FILES_DIR}/" ;;
 								VERSION)
 							PH_DIR="${PH_CONF_DIR}/" ;;
+								cleanpmpkgdb)
+							[[ "${PH_DISTRO}" != "Archlinux" ]] && \
+								PH_REQ_SANITY_LEVEL="optional"
+							PH_SUFFIX=".expect"
+							PH_DIR="${PH_SCRIPTS_DIR}/expect/" ;;
 								setpasswd)
 							PH_SUFFIX=".expect"
 							PH_DIR="${PH_SCRIPTS_DIR}/expect/" ;;
@@ -1966,6 +1971,11 @@ case "${PH_OBJECT}" in */sup*|*/int*|*/cont*|*/*.defaults|*/*.alloweds)
 		*/HOWTO|*/TODO|*/INSTALL|*/README*|*/CODE_OF_CONDUCT.md|*/LICENSE)
 	PH_TYPE="optional"
 	PH_OBJECT_CAT="miscellaneous" ;;
+		*/cleanpmpkgdb.expect)
+	[[ "${PH_DISTRO}" != "Archlinux" ]] && \
+		PH_TYPE="optional"
+	PH_OBJECT_CAT="expect"
+	PH_OBJECT_TYPE="script" ;;
 		*/setpasswd.expect)
 	PH_OBJECT_CAT="expect"
 	PH_OBJECT_TYPE="script" ;;
@@ -5418,7 +5428,7 @@ then
 	do
 		if [[ "${PH_i}" == PH_@(INSTALL|REMOVE)_PKGS ]]
 		then
-			ph_update_pkg_index
+			ph_sync_pkg_db
 			PH_RET_CODE="${?}"
 			break
 		fi
@@ -5813,9 +5823,9 @@ then
 		do
 			while true
 			do
-				if [[ "${PH_PKG_FLAG}" -eq "0" && "${PH_DISTRO}" == "Debian" ]]
+				if [[ "${PH_PKG_FLAG}" -eq "0" ]]
 				then
-					! ph_apt_clean && \
+					! ph_clean_pkg_db && \
 						break
 				fi
 				if [[ "${#PH_RUN_ACLS[@]}" -gt "0" || -n "${PH_RUN_SECURE}" || -n "${PH_RUN_GIT_ADD_LOCAL}" || -n "${PH_RUN_GIT_TAG_LOCAL}" || \
@@ -6258,11 +6268,6 @@ do
 			continue
 		else
 			case "${PH_OPTARG_VAR}" in "PH_${PH_APPU}_PKG")
-				if ! ph_update_pkg_index
-				then
-					((PH_RET_CODE++))
-					continue
-				fi
 				if ! ph_check_pkg_validity "${PH_OPTARG_VAL}"
 				then
 					printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "'${PH_OPTARG_VAL}'" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
@@ -6902,7 +6907,7 @@ then
 	ph_run_with_rollback -c true -m "${PH_APP_STATE} (Nothing to do)"
 	return "${?}"
 fi
-ph_update_pkg_index || \
+ph_sync_pkg_db || \
 	return 1
 printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Determining the package of " "'${PH_APP}'"
 if [[ -n "${PH_APP_PKG}" ]]
@@ -6910,8 +6915,7 @@ then
 	ph_run_with_rollback -c true -m "${PH_APP_PKG}"
 	ph_run_with_rollback -c "ph_install_pkg '${PH_APP_PKG}'" || \
 		return 1
-	[[ "${PH_DISTRO}" == "Debian" ]] && \
-		ph_apt_clean
+	ph_clean_pkg_db
 	if [[ "$(ph_check_object_existence -o sup -m immediate -q; echo "${?}")" -eq "0" && "$(ph_check_app_state_validity -a "${PH_APP}" -q -s ; echo "${?}")" -eq "0" ]]
 	then
 		ph_update_base_conf_file -a "${PH_APP}" -f sup -c 3 -v PI || \
@@ -7309,14 +7313,13 @@ else
 	printf "%8s%s\033[1;33m%s\033[0m%s\n" "" "--> Checking if " "'${PH_APP}'" " is a packaged application"
 	case "${PH_APP_INST_STATE}" in pkg|P*)
 		ph_run_with_rollback -c true -m "Yes ('${PH_APP_PKG}')"
-		ph_update_pkg_index || \
+		ph_sync_pkg_db || \
 			return 1
 		if ! ph_run_with_rollback -c "ph_remove_pkg '${PH_APP_PKG}'"
 		then
 			return 1
 		else
-			[[ "${PH_DISTRO}" == "Debian" ]] && \
-				ph_apt_clean
+			ph_clean_pkg_db
 		fi ;;
 			unpkg|U*)
 		ph_run_with_rollback -c true -m "No"
@@ -8171,8 +8174,6 @@ declare -i PH_FORCE_SUPPORT_FLAG
 declare -l PH_APPL
 declare -u PH_APPU
 
-PH_OLDOPTARG="${OPTARG}"
-PH_OLDOPTIND="${OPTIND}"
 PH_i=""
 PH_APP=""
 PH_APP_EXEC=""
@@ -8184,6 +8185,8 @@ PH_APP_USER=""
 PH_APP_STATE=""
 PH_APP_INST_STATE=""
 PH_OPTION=""
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_COUNT="0"
 PH_ANSWER="0"
 PH_APP_PKG_CHANGED_FLAG="1"
@@ -8271,8 +8274,6 @@ case "${PH_APP_STATE}" in Supported|Integrated|Running|Halted)
 				return 1
 		fi
 		ph_run_with_rollback -c true -m "${PH_APP_CMD}"
-		ph_update_pkg_index || \
-			return 1
 		printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking the package of " "'${PH_APP}'"
 		if [[ -z "${PH_APP_PKG}" || "$(ph_check_pkg_validity "${PH_APP_PKG}" ; echo "${?}")" -ne "0" ]]
 		then
@@ -8317,7 +8318,7 @@ case "${PH_APP_STATE}" in Supported|Integrated|Running|Halted)
 	if [[ -z "${PH_APP_INST_STATE}" ]]
 	then
 		printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking the installation state of " "'${PH_APP}'"
-		if ! PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_conf_file -a "${PH_APP}" -c "${PH_APP_CMD}")"
+		if ! PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_info -a "${PH_APP}" -c "${PH_APP_CMD}")"
 		then
 			ph_run_with_rollback -c false -m "Could not support" || \
 				return 1
@@ -8451,7 +8452,7 @@ case "${PH_APP_STATE}" in Supported|Integrated|Running|Halted)
 				return 1
 		done
 		printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Rechecking the installation state of " "'${PH_APP}'"
-		if ! PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_conf_file -a "${PH_APP}" -p "${PH_APP_PKG}" -c "${PH_APP_CMD}")"
+		if ! PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_info -a "${PH_APP}" -p "${PH_APP_PKG}" -c "${PH_APP_CMD}")"
 		then
 			ph_run_with_rollback -c false -m "Could not support" || \
 				return 1
@@ -8610,7 +8611,7 @@ fi
 return "${PH_RET_CODE}"
 }
 
-function ph_get_app_inst_state_from_app_conf_file {
+function ph_get_app_inst_state_from_app_info {
 
 declare PH_APP
 declare PH_APP_PKG
@@ -8622,14 +8623,14 @@ declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 declare -i PH_PKG_RECEIVED_FLAG
 
-PH_OLDOPTARG="${OPTARG}"
-PH_OLDOPTIND="${OPTIND}"
 PH_APP=""
 PH_APP_PKG=""
 PH_APP_CMD=""
 PH_APP_EXEC=""
 PH_APP_INST_STATE=""
 PH_OPTION=""
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_PKG_RECEIVED_FLAG="1"
 
 OPTIND="1"
@@ -8672,8 +8673,6 @@ OPTARG="${PH_OLDOPTARG}"
 	PH_APP_PKG="$(ph_get_app_pkg_from_app_name "${PH_APP}")"
 if [[ -n "${PH_APP_PKG}" ]]
 then
-	ph_update_pkg_index || \
-		return 1
 	if ph_check_pkg_validity "${PH_APP_PKG}"
 	then
 		if ph_get_pkg_inst_state "${PH_APP}"
@@ -8787,7 +8786,7 @@ OPTARG="${PH_OLDOPTARG}"
 printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Adding application " "'${PH_APP}'" " to configuration file " "'${PH_CONF_DIR}/supported_apps'"
 if [[ -z "${PH_APP_INST_STATE}" ]]
 then
-	if ! PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_conf_file -a "${PH_APP}" -c "${PH_APP_CMD}")"
+	if ! PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_info -a "${PH_APP}" -c "${PH_APP_CMD}")"
 	then
 		ph_run_with_rollback -c false -m "Could not add" || \
 			return 1
@@ -9409,7 +9408,7 @@ do
 				if "${PH_SUDO}" useradd -d "$(ph_get_base_home)/${PH_APP_USER}" -m -c "PieHelper application ${PH_APP}" -s /bin/bash \
 					-G tty,audio,video,input "${PH_APP_USER}" >/dev/null 2>&1
 				then
-					if "${PH_SUDO}" "${PH_SCRIPTS_DIR}/app/setpasswd.expect" "${PH_APP_USER}" "${PH_APP_USER_PASS}" >/dev/null 2>&1
+					if "${PH_SUDO}" "${PH_SCRIPTS_DIR}/expect/setpasswd.expect" "${PH_APP_USER}" "${PH_APP_USER_PASS}" >/dev/null 2>&1
 					then
 						ph_add_value_to_param -p PH_REMOVE_APP_USER -v "${PH_APP}'${PH_APP_USER}"
 						ph_run_with_rollback -c true -m "${PH_APP_USER}"
@@ -10449,7 +10448,7 @@ do
 	ph_check_object_existence -o "${PH_FUNCS_DIR}/${PH_i}" -m immediate || \
 		return 1
 done
-for PH_i in setpasswd cfgctrls
+for PH_i in setpasswd cfgctrls cleanpmpkgdb
 do
 	ph_check_object_existence -o "${PH_SCRIPTS_DIR}/framework/expect/${PH_i}.expect" -m immediate || \
 		return 1
@@ -10464,7 +10463,7 @@ PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
 "${PH_SUDO}" rm "${PH_SCRIPTS_DIR}/"!(@(framework|@(@(conf|list)*_ph|@(re|)start*|stop*|${PH_MOVE_SCRIPTS_REGEX})\.sh)) 2>/dev/null
 "${PH_SUDO}" rm "${PH_SCRIPTS_DIR}/framework"!(@(@(pre|post)_cmds|main|expect)) 2>/dev/null
 "${PH_SUDO}" rm "${PH_MAIN_DIR}/"!(@(main).sh) 2>/dev/null
-"${PH_SUDO}" rm -r "${PH_SCRIPTS_DIR}/framework/expect/"!(@(setpasswd|confctrls)\.expect) 2>/dev/null
+"${PH_SUDO}" rm -r "${PH_SCRIPTS_DIR}/framework/expect/"!(@(setpasswd|cfgctrls|cleanpmpkgdb)\.expect) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_SCRIPTS_DIR}/framework/pre_cmds/"!(@(Kodi|PieHelper)-PRE\.sh) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_SCRIPTS_DIR}/framework/post_cmds/"!(@(Kodi|PieHelper)-POST\.sh) 2>/dev/null
 "${PH_SUDO}" rm "${PH_FUNCS_DIR}/"!(@(distros|functions@(main|\.@(user|update)))) 2>/dev/null
@@ -11296,7 +11295,7 @@ then
 	then
 		PH_DISTROU="${PH_DISTRO}"
 		ph_run_with_rollback -c true -m "${PH_DISTRO}"
-		ph_update_pkg_index || \
+		ph_sync_pkg_db || \
 			return 1
 	else
 		ph_set_result -m "Linux distro '${PH_DISTRO}' is currently not supported"
