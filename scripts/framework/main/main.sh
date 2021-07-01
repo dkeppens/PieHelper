@@ -18,9 +18,28 @@ shopt -s checkwinsize
 
 # Load user-defined codebase
 
-if read -r -a PH_USER_FUNCS -d';' < <("${PH_SUDO}" find "$(cd "$(dirname "${0}")" && pwd)/../../../functions/user-defined" -maxdepth 1 -mount -type f -name "functions.*" 2>/dev/null; echo -n ";")
+if [[ "$(declare -p PH_USER_ITEMS 2>/dev/null)" == declare* ]]
 then
-	for PH_i in "${PH_USER_FUNCS[@]}"
+	if ! unset PH_USER_ITEMS 2>/dev/null
+	then
+		>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Could not unset required framework initialization variable 'PH_USER_ITEMS'"
+		exit 1
+	fi
+fi
+if [[ "$(declare -p PH_i 2>/dev/null)" == declare* ]]
+then
+	if ! unset PH_i 2>/dev/null
+	then
+		>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Could not unset required framework initialization variable 'PH_i'"
+		exit 1
+	fi
+fi
+
+# Load user-defined codebase
+
+if read -r -a PH_USER_ITEMS -d';' < <("${PH_SUDO}" find "$(cd "$(dirname "${0}" 2>/dev/null)" 2>/dev/null && pwd 2>/dev/null)/../../../functions/user-defined" -maxdepth 1 -mount -type f -name "functions.*" 2>/dev/null; echo -n ";") 2>/dev/null
+then
+	for PH_i in "${PH_USER_ITEMS[@]}"
 	do
 		if [[ -r "${PH_i}" ]]
 		then
@@ -38,13 +57,13 @@ else
 	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine all user-defined functions"
 	exit 1
 fi
-unset PH_USER_FUNCS 2>/dev/null
+unset PH_USER_ITEMS 2>/dev/null
 
 # Load user-defined configuration files
 
-if read -r -a PH_USER_CONFS -d';' < <("${PH_SUDO}" find "$(cd "$(dirname "${0}")" && pwd)/../../../conf/user-defined" -maxdepth 1 -mount -type f -name "*.conf" 2>/dev/null; echo -n ";")
+if read -r -a PH_USER_ITEMS -d';' < <("${PH_SUDO}" find "$(cd "$(dirname "${0}" 2>/dev/null)" 2>/dev/null && pwd 2>/dev/null)/../../../conf/user-defined" -maxdepth 1 -mount -type f -name "*.conf" 2>/dev/null; echo -n ";") 2>/dev/null
 then
-	for PH_i in "${PH_USER_CONFS[@]}"
+	for PH_i in "${PH_USER_ITEMS[@]}"
 	do
 		if [[ -r "${PH_i}" ]]
 		then
@@ -62,13 +81,56 @@ else
 	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine all user-defined configuration files"
 	exit 1
 fi
-unset PH_USER_CONFS 2>/dev/null
+unset PH_USER_ITEMS 2>/dev/null
+
+# Ensure no further user/framework variable conflicts
+
+if read -r -a PH_USER_ITEMS -d';' < <(env 2>/dev/null | grep -E "^PH_" | cut -d'=' -f1; declare -p 2>/dev/null | nawk '$1 ~ /^(typeset|declare)$/ { \
+		for (i=1;i<=NF;i++) { \
+			if ($i ~ /^(_=\")?PH_/) { \
+				if ($i ~ /^_=/) {
+					j = substr($i,4) ; \
+					if (substr(j,1,index(j,"=")-1) !~ /^PH_i$/) { \
+						print substr(j,1,index(j,"=")-1) \
+					} \
+				} else if ($i ~ /=/) {
+					if (substr($i,1,index($i,"=")-1) !~ /^PH_i$/) { \
+						print substr($i,1,index($i,"=")-1) \
+					} \
+				} else { \
+					if ($i !~ /^PH_i$/) { \
+						print $i \
+					} \
+				} \
+			} \
+		} \
+	}'; echo -n ";") 2>/dev/null
+then
+	if read -r -a PH_USER_ITEMS -d';' < <( ( for PH_i in "${PH_USER_ITEMS[@]}";\
+	do\
+		echo "${PH_i}";\
+	done) | sort -u; unset PH_USER_ITEMS; echo -n ";") 2>/dev/null
+	then
+		for PH_i in "${PH_USER_ITEMS[@]}"
+		do
+			if ! unset "${PH_i}"
+			then
+				>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to unset variable '${PH_i}'"
+				exit 1
+			fi
+		done
+	else
+		>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the user environment"
+		exit 1
+	fi
+else
+	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the user environment"
+	exit 1
+fi
+unset PH_USER_ITEMS 2>/dev/null
 
 # Local variable declarations and override identical user declarations
 
-unset PH_i PH_CUR_USER PH_MOVE_SCRIPTS_REGEX PH_OLD_DISTRO_REL PH_FORMAT_FLAG PH_DISTROU 2>/dev/null
-
-declare PH_i
 declare PH_CUR_USER
 declare PH_MOVE_SCRIPTS_REGEX
 declare PH_OLD_DISTRO_REL
@@ -76,7 +138,6 @@ declare -i PH_FORMAT_FLAG
 declare -u PH_DISTROU
 declare -l PH_iL
 
-PH_i=""
 PH_CUR_USER=""
 PH_MOVE_SCRIPTS_REGEX=""
 PH_OLD_DISTRO_REL=""
@@ -88,7 +149,7 @@ PH_iL=""
 
 for PH_i in "declares_other.sh" "declares_rollback.sh"
 do
-	PH_i="$(cd "$(dirname "${0}")" && pwd)/main/${PH_i}"
+	PH_i="$(cd "$(dirname "${0}" 2>/dev/null)" 2>/dev/null && pwd 2>/dev/null)/main/${PH_i}"
 	if [[ ! -e "${PH_i}" ]]
 	then
 		>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : Reinstallation of PieHelper is required (Missing critical configuration file '${PH_i}')"
@@ -130,7 +191,7 @@ fi
 
 # Determine the current user
 
-if ! PH_CUR_USER="$(whoami 2>&1)"
+if ! PH_CUR_USER="$(whoami 2>/dev/null)"
 then
 	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the current user account"
 	exit 1
@@ -348,8 +409,6 @@ source "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" >/dev/null 2>&1
 
 # Load applications/controller configurations
 
-unset PH_PARSE_APPS 2>/dev/null
-
 if read -r -a PH_PARSE_APPS -d';' < <(ph_get_known_apps; echo -n ";") 2>/dev/null
 then
 	for PH_i in "Controllers" "${PH_PARSE_APPS[@]}"
@@ -499,8 +558,6 @@ do
 done
 
 # Check if the current user has framework access
-
-unset PH_ALLOW_USERS 2>/dev/null
 
 declare -a PH_ALLOW_USERS
 

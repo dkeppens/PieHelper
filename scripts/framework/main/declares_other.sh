@@ -1,12 +1,6 @@
 # Global variable declarations unrelated to rollback (By Davy Keppens on 06/10/18)
 # Enable/Disable debug by running 'confpieh_ph.sh -p debug -m declares_other.sh'
 
-unset PH_SCRIPTS_DIR PH_BASE_DIR PH_INST_DIR PH_USER_SCRIPTS_DIR PH_BUILD_DIR PH_SNAPSHOT_DIR PH_MNT_DIR \
-	PH_CONF_DIR PH_USER_CONF_DIR PH_MAIN_DIR PH_FUNCS_DIR PH_USER_FUNCS_DIR PH_TMP_DIR PH_FILES_DIR \
-	PH_USER_FILES_DIR PH_MENUS_DIR PH_TEMPLATES_DIR PH_EXCLUDES_DIR PH_VERSION PH_DISTRO PH_DISTRO_REL \
-	PH_RUN_USER PH_RUN_GROUP PH_SUDO PH_PI_MODEL PH_FILE_SUFFIX PH_SUPPORTED_DISTROS PH_DISTRO_CONFIGS \
-	2>/dev/null
-
 declare -x PH_SCRIPTS_DIR
 declare -x PH_BASE_DIR
 declare -x PH_INST_DIR
@@ -36,7 +30,11 @@ declare -x PH_FILE_SUFFIX
 declare -ax PH_SUPPORTED_DISTROS
 declare -ax PH_DISTRO_CONFIGS
 
-PH_SCRIPTS_DIR="$(cd "$(dirname "${0}")" && pwd)"
+if ! PH_SCRIPTS_DIR="$(cd "$(dirname "${0}" 2>/dev/null)" 2>/dev/null && pwd 2>/dev/null)"
+then
+	>&2 printf "\n%2s\033[1;31m%s\033[0m\n\n" "" "ABORT : An error occurred trying to determine the framework scripts directory"
+	exit 1
+fi
 PH_BASE_DIR="${PH_SCRIPTS_DIR%/scripts/framework}"
 PH_INST_DIR="${PH_BASE_DIR%/PieHelper}"
 PH_USER_SCRIPTS_DIR="${PH_BASE_DIR}/scripts/user-defined"

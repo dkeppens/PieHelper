@@ -1,10 +1,6 @@
 # Global variable declarations related to rollback (By Davy Keppens on 06/10/18)
 # Enable/Disable debug by running 'confpieh_ph.sh -p debug -m declares_rollback.sh'
 
-unset PH_ROLLBACK_USED PH_RESULT_MSG PH_RESULT_TYPE_USED PH_TOTAL_RESULT PH_RESULT \
-	PH_RESULT_COUNT PH_TOTAL_RESULT_COUNT PH_ROLLBACK_DEPTH PH_ALL_ROLLBACK_PARAMS \
-	2>/dev/null
-
 declare -x PH_ROLLBACK_USED
 declare -x PH_RESULT_MSG
 declare -x PH_RESULT_TYPE_USED
