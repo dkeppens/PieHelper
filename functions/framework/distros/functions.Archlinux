@@ -1,5 +1,107 @@
 # Archlinux-specific codebase
 
+function ph_get_pkg_version {
+
+declare PH_APP_PKG
+declare PH_PKG_VERSION
+
+PH_APP_PKG="${1}"
+PH_PKG_VERSION=""
+
+[[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+if PH_PKG_VERSION="$("${PH_SUDO}" pacman -Qi "${PH_APP_PKG}" 2>/dev/null | nawk 'tolower($1) ~ /^version$/ { \
+		printf $3 ; \
+		exit \
+	}')"
+then
+	if [[ -n "${PH_PKG_VERSION}" ]]
+	then
+		echo -n "${PH_PKG_VERSION}"
+	fi
+fi
+return "${?}
+}
+
+function ph_get_pkg_updates {
+
+declare PH_APP_PKG
+declare PH_PKG_VERSION
+declare PH_PKG_UPDATES
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+declare -i PH_QUIESCE
+
+PH_APP_PKG=""
+PH_PKG_VERSION=""
+PH_PKG_UPDATES=""
+PH_OPTION=""
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
+PH_QUIESCE="1"
+
+OPTIND="1"
+
+while getopts :p:q PH_OPTION
+do
+	case "${PH_OPTION}" in p)
+		[[ -n "${PH_APP_PKG}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_APP_PKG="${OPTARG}" ;;
+			q)
+		[[ "${PH_QUIESCE}" -eq "0" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_QUIESCE="0" ;;
+			*)
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+	esac
+done
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
+
+[[ -z "${PH_APP_PKG}" || ( "${PH_QUIESCE" -eq "1" && "${#}" -ne "2" ) || \
+	( "${PH_QUIESCE" -eq "0" && "${#}" -ne "3" ) ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+if PH_PKG_VERSION="$(ph_get_pkg_version "${PH_APP_PKG}")"
+then
+	if PH_PKG_UPDATES="$("${PH_SUDO}" apt-cache madison "${PH_APP_PKG}" 2>/dev/null | nawk -v vers="^${PH_PKG_VERSION}$" 'BEGIN { \
+			i = "0" ; \
+		} \
+		$3 !~ vers { \
+			i++ ; \
+			versarr[i] = $3 \
+		} END { \
+			for (j=1;j<=i;j++) { \
+				printf versarr[j] ; \
+				if (j<i) { \
+					printf " " \
+				} ; \
+				delete versarr[j] \
+			}
+		}')"
+	then
+		if [[ -n "${PH_PKG_UPDATES}" ]]
+		then
+			if [[ "${PQ_QUIESCE}" -eq "1" ]]
+			then
+				echo -n "${PH_PKG_UPDATES}"
+			fi
+			true
+		fi
+	fi
+fi
+return "${?}"
+}
+
 function ph_get_path_pkg {
 
 declare PH_APP_PATH
@@ -48,8 +150,10 @@ return 0
 function ph_install_pkg {
 
 declare PH_APP_PKG
+local -a PH_PKG_UPDATES
 
 PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
+PH_PKG_UPDATES=()
 
 [[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
@@ -57,7 +161,11 @@ PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
 printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
 if ph_get_pkg_inst_state "${PH_APP_PKG}"
 then
-	ph_run_with_rollback -c true -m "Nothing to do"
+	if read -r -a PH_PKG_UPDATES -d';' < <(ph_get_pkg_updates "${PH_APP_PKG}"; echo -n ";") 2>/dev/null
+	then
+	else
+		ph_run_with_rollback -c true -m "Nothing to do"
+	fi
 else
 	ph_run_with_rollback -c true -m "Not found"
 	printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0m\n" "" "--> Installing package " "'${PH_APP_PKG}'" " (This may take a while)"

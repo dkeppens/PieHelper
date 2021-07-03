@@ -1,5 +1,124 @@
 # Debian-specific codebase
 
+function ph_get_pkg_version {
+
+declare PH_APP_PKG
+declare PH_PKG_VERSION
+
+PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
+PH_PKG_VERSION=""
+
+[[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
+        ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+if PH_PKG_VERSION="$("${PH_SUDO}" apt-cache policy "${PH_APP_PKG}" 2>/dev/null | nawk 'tolower($1) ~ /^installed:$/ { \
+		printf $2 ; \
+		exit \
+	}')"
+then
+	if [[ -n "${PH_PKG_VERSION}" ]]
+	then
+		echo -n "${PH_PKG_VERSION}"
+		return 0
+	fi
+fi
+ph_set_result -m "An error occurred trying to determine the current version of package '${PH_APP_PKG}'"
+return 1
+}
+
+function ph_get_pkg_updates {
+
+declare PH_APP_PKG
+declare PH_PKG_VERSION
+declare PH_PKG_UPDATES
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+declare -i PH_LATEST_FLAG
+declare -i PH_QUIESCE
+
+PH_APP_PKG=""
+PH_PKG_VERSION=""
+PH_PKG_UPDATES=""
+PH_OPTION=""
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
+PH_LATEST_FLAG="1"
+PH_QUIESCE="1"
+
+OPTIND="1"
+
+while getopts :p:lq PH_OPTION
+do
+	case "${PH_OPTION}" in p)
+		[[ -n "${PH_APP_PKG}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_APP_PKG="$(ph_resolve_dynamic_value "${OPTARG}")" ;;
+			l)
+		[[ "${PH_LATEST_FLAG}" -eq "0" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_LATEST_FLAG="0" ;;
+			q)
+		[[ "${PH_QUIESCE}" -eq "0" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_QUIESCE="0" ;;
+			*)
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+	esac
+done
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
+
+[[ -z "${PH_APP_PKG}" || ( "${PH_LATEST_FLAG}" -eq "1" && "${PH_QUIESCE}" -eq "1" && "${#}" -ne "2" ) || \
+	( "${PH_LATEST_FLAG}" -eq "0" && "${PH_QUIESCE}" -eq "0" && "${#}" -ne "4" ) || \
+	((( "${PH_LATEST_FLAG}" -eq "1" && "${PH_QUIESCE}" -eq "0" ) || \
+	( "${PH_LATEST_FLAG}" -eq "0" && "${PH_QUIESCE}" -eq "1" )) && "${#}" -ne "3" ) ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+ph_sync_pkg_db || \
+	return 1
+if PH_PKG_VERSION="$(ph_get_pkg_version "${PH_APP_PKG}")"
+then
+	if PH_PKG_UPDATES="$("${PH_SUDO}" apt-cache madison "${PH_APP_PKG}" 2>/dev/null | nawk -v vers="^${PH_PKG_VERSION}$" 'BEGIN { \
+			i = "0" ; \
+		} \
+			$3 !~ vers { \
+			i++ ; \
+			versarr[i] = $3 \
+		} END { \
+			for (j=1;j<=i;j++) { \
+				printf versarr[j] ; \
+				if (j<i) { \
+					printf "," \
+				} ; \
+				delete versarr[j] \
+			}
+		}')"
+	then
+		if [[ -n "${PH_PKG_UPDATES}" ]]
+		then
+			if [[ "${PH_LATEST_FLAG}" -eq "1" ]]
+			then
+				echo -n "${PH_PKG_UPDATES}"
+			else
+				echo -n "${PH_PKG_UPDATES}" | cut -f1
+			fi
+			return 0
+		fi
+	fi
+	ph_set_result -m "An error occurred trying to determine all available updates of package '${PH_APP_PKG}'"
+fi
+return 1
+}
+
 function ph_get_path_pkg {
 
 declare PH_APP_PATH
@@ -47,26 +166,53 @@ return 0
 function ph_install_pkg {
 
 declare PH_APP_PKG
+declare PH_PKG_VERSION
+declare PH_PKG_LATEST_VERSION
 
 PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
+PH_PKG_VERSION=""
+PH_PKG_LATEST_VERSION=""
 
 [[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0m\n" "" "--> Installing package " "'${PH_APP_PKG}'" " (This may take a while)"
-if ! ph_get_pkg_inst_state "${PH_APP_PKG}"
+if ph_get_pkg_inst_state "${PH_APP_PKG}"
 then
+	if PH_PKG_VERSION="$(ph_get_pkg_version "${PH_APP_PKG}")"
+	then
+		if PH_PKG_LATEST_VERSION="$(ph_get_pkg_updates -p "${PH_APP_PKG}" -l -q)"
+		then
+			while true
+			do
+				if [[ "${PH_PKG_VERSION}" == "${PH_PKG_LATEST_VERSION}" ]]
+				then
+					ph_run_with_rollback -c true -m "Nothing to do"
+				else
+					if "${PH_SUDO}" apt-get -qq install --no-install-recommends "${PH_APP_PKG}" >/dev/null 2>&1
+					then
+						ph_add_value_to_param -p PH_DOWNGRADE_PKGS -v "${PH_APP_PKG}'${PH_PKG_VERSION}"
+						ph_run_with_rollback -c true
+					else
+						ph_set_result -m "An error occurred trying to update package '${PH_APP_PKG}' to version '${PH_PKG_LATEST_VERSION}'"
+						break
+					fi
+				fi
+				return "${?}"
+			done
+		fi
+	fi
+else
 	if "${PH_SUDO}" apt-get -qq install --no-install-recommends "${PH_APP_PKG}" >/dev/null 2>&1
 	then
 		ph_add_value_to_param -p PH_REMOVE_PKGS -v "${PH_APP_PKG}"
 		ph_run_with_rollback -c true
+		return "${?}"
 	else
 		ph_set_result -m "An error occurred trying to install package '${PH_APP_PKG}'"
-		ph_run_with_rollback -c false -m "Could not install"
 	fi
-else
-	ph_run_with_rollback -c true -m "Nothing to do"
 fi
+ph_run_with_rollback -c false -m "Could not install"
 return "${?}"
 }
 
