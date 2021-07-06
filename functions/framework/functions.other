@@ -7506,6 +7506,7 @@ declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 declare -i PH_APP_TTY
+declare -l PH_APPL
 
 PH_OLDOPTARG="${OPTARG}"
 PH_OLDOPTIND="${OPTIND}"
@@ -7518,6 +7519,7 @@ PH_APP_INST_STATE=""
 PH_APP_STR_TTY=""
 PH_OPTION=""
 PH_APP_TTY="0"
+PH_APPL=""
 
 OPTIND="1"
 
@@ -7604,34 +7606,34 @@ else
 	fi
 	unset PH_PARAMS
 fi
-printf "%8s%s\n" "" "--> Checking application name parameter"
-if [[ -z "${PH_APP}" ]]
-then
-	>&2 printf "%10s\033[31m%s\033[0m\n" "" "ERROR : Invalid name"
-	ph_set_result -r 1 -m "A valid name is mandatory for unintegrating an application"
-	return 1
-else
-	PH_APP_STATE="$(ph_get_app_state_from_app_name "${PH_APP}")"
-	case "${PH_APP_STATE}" in Supported|Unused|Reserved)
-			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Invalid name"
-			ph_set_result -r 0 -w -m "Application already unintegrated"
-			return 0 ;;
-				Integrated|Running|Halted)
-			printf "%10s\033[32m%s\033[0m\n" "" "OK ('${PH_APP}')" ;;
-	esac
-	ph_set_result -r 0
-fi
+printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking the application state of " "'${PH_APP}'"
+PH_APP_STATE="$(ph_get_app_state_from_app_name "${PH_APP}")"
+case "${PH_APP_STATE}" in Supported|Unused|Default|Out-of-scope)
+	ph_run_with_rollback -c true -m "Nothing to do"
+	return "${?}" ;;
+		Reserved)
+	PH_APPL="${PH_APP:0:4}"
+	ph_set_result -m "Could not unsupport invalid application name '${PH_APP}' (Uses reserved keyword '${PH_APPL}')"
+	ph_run_with_rollback -c false -m "Could not unsupport"
+	return "${?}" ;;
+		*)
+	ph_run_with_rollback -c true -m "${PH_APP_STATE}" ;;
+esac
 if [[ "${PH_APP}" == "PieHelper" ]]
 then
-	printf "%8s%s\n" "" "--> Checking if PieHelper is being (un)configured"
-	if [[ -f "${PH_TMP_DIR}/.unconfigure_in_progress" || -f "${PH_TMP_DIR}/.configure_in_progress" ]]
+	printf "%8s%s\033[1;33m%s\033[0m%s\n" "" "--> Checking if " "'${PH_APP}'" " is being (un)configured"
+	if [[ -f "${PH_TMP_DIR}/.unconfigure_in_progress" ]]
 	then
-		printf "%10s\033[32m%s\033[0m\n" "" "OK : 'Unconfigure' action in progress"
-		ph_set_result -r 0
+		ph_run_with_rollback -c true -m "Unconfiguring"
 	else
-		>&2 printf "%10s\033[31m%s\033[0m\n" "" "ERROR : 'Unconfigure' action not in progress"
-		ph_set_result -r 1 -m "Integration for 'PieHelper' is mandatory while configuration state remains 'Configured'"
-		return 1
+		if [[ -f "${PH_TMP_DIR}/.configure_in_progress" ]]
+		then
+			ph_run_with_rollback -c true -m "Configuring"
+		else
+			ph_set_result -m "Unsupporting '${PH_APP}' should be done by running 'confpieh_ph.sh -u'"
+			ph_run_with_rollback -c false -m "No"
+			return "${?}"
+		fi
 	fi
 fi
 if [[ -z "${PH_APP_STR_TTY}" ]]
@@ -8294,7 +8296,7 @@ PH_APP_STATE="$(ph_get_app_state_from_app_name "${PH_APP}")"
 case "${PH_APP_STATE}" in Supported|Integrated|Running|Halted)
 	ph_run_with_rollback -c true -m "Nothing to do" && \
 		return "${?}" ;;
-			Default|Out-of-scope)
+		Default|Out-of-scope|Unused)
 	ph_run_with_rollback -c true -m "${PH_APP_STATE}"
 	printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking the start command of " "'${PH_APP}'"
 	if ! ph_check_app_state_validity -a "${PH_APP}" -q -d
@@ -8526,9 +8528,9 @@ case "${PH_APP_STATE}" in Supported|Integrated|Running|Halted)
 	fi
 	ph_add_value_to_param -p PH_UNSUP_APPS -v "${PH_APP}'${PH_APP_USER}'${PH_APP_CMD}'${PH_APP_PKG}'${PH_APP_INST_STATE}"
 	return 0 ;;
-			*)
+		*)
 	PH_APPL="${PH_APP:0:4}"
-	ph_set_result -m "Could not support '${PH_APP}' since it is using a reserved shortname '${PH_APPL}'" ;;
+	ph_set_result -m "Could not support invalid application name '${PH_APP}' (Uses reserved keyword '${PH_APPL}')" ;;
 esac
 ph_run_with_rollback -c false -m "Could not support" || \
 	return 1
