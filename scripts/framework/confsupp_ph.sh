@@ -166,7 +166,7 @@ case "$PH_ACTION" in inst)
 		else
 			printf "%10s%s\n" "" "Warning : Could not find package '$PH_APP_PKG' -> Adding"
 			printf "%8s%s\n" "" "--> Adding package '$PH_APP_PKG'"
-			ph_install_pkg "$PH_APP_PKG" && printf "%10s%s\n" "" "OK" || (printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not add package" ; \
+			ph_install_pkg -p "${PH_APP_PKG}" && printf "%10s%s\n" "" "OK" || (printf "%10s\033[31m%s\033[0m%s\n" "" "ERROR" " : Could not add package" ; \
 											printf "%2s\033[31m%s\033[0m\n\n" "" "FAILED" ; return 1) || exit $?
 		fi
 		printf "%8s%s\n" "" "--> Checking run account"

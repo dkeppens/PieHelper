@@ -105,16 +105,18 @@ then
 	then
 		if [[ -n "${PH_PKG_UPDATES}" ]]
 		then
-			if [[ "${PH_LATEST_FLAG}" -eq "1" ]]
+			if [[ "${PH_QUIESCE}" -eq "1" ]]
 			then
-				echo -n "${PH_PKG_UPDATES}"
-			else
-				echo -n "${PH_PKG_UPDATES}" | cut -f1
+				if [[ "${PH_LATEST_FLAG}" -eq "1" ]]
+				then
+					echo -n "${PH_PKG_UPDATES}"
+				else
+					echo -n "${PH_PKG_UPDATES}" | cut -f1
+				fi
 			fi
 			return 0
 		fi
 	fi
-	ph_set_result -m "An error occurred trying to determine all available updates of package '${PH_APP_PKG}'"
 fi
 return 1
 }
@@ -167,52 +169,88 @@ function ph_install_pkg {
 
 declare PH_APP_PKG
 declare PH_PKG_VERSION
-declare PH_PKG_LATEST_VERSION
+declare PH_PKG_NEW_VERSION
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
 
-PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
+PH_APP_PKG=""
 PH_PKG_VERSION=""
-PH_PKG_LATEST_VERSION=""
+PH_PKG_NEW_VERSION=""
+PH_OPTION=""
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 
-[[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
+OPTIND="1"
+
+while getopts :p:v: PH_OPTION
+do
+	case "${PH_OPTION}" in p)
+		[[ -n "${PH_APP_PKG}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_APP_PKG="$(ph_resolve_dynamic_value "${OPTARG}")" ;;
+			v)
+		[[ -n "${PH_PKG_NEW_VERSION}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_PKG_NEW_VERSION="${OPTARG}" ;;
+			*)
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+	esac
+done
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
+
+[[ -z "${PH_APP_PKG}" || ( -z "${PH_PKG_NEW_VERSION}" && "${#}" -ne "2" ) || \
+	( -n "${PH_PKG_NEW_VERSION}" && "${#}" -ne "4" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0m\n" "" "--> Installing package " "'${PH_APP_PKG}'" " (This may take a while)"
+if [[ -n "${PH_PKG_NEW_VERSION}" ]]
+then
+	printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[37m%s\033[0m\n" "" "--> Installing package " "'${PH_APP_PKG}'" " version " "'${PH_PKG_NEW_VERSION}'" " (This may take a while)"
+else
+	printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0m\n" "" "--> Installing package " "'${PH_APP_PKG}'" " (This may take a while)"
+fi
 if ph_get_pkg_inst_state "${PH_APP_PKG}"
 then
-	if PH_PKG_VERSION="$(ph_get_pkg_version "${PH_APP_PKG}")"
+	if [[ -n "${PH_PKG_NEW_VERSION}" ]]
 	then
-		if PH_PKG_LATEST_VERSION="$(ph_get_pkg_updates -p "${PH_APP_PKG}" -l -q)"
+		if PH_PKG_VERSION="$(ph_get_pkg_version "${PH_APP_PKG}")"
 		then
-			while true
-			do
-				if [[ "${PH_PKG_VERSION}" == "${PH_PKG_LATEST_VERSION}" ]]
+			if [[ "${PH_PKG_VERSION}" == "${PH_PKG_NEW_VERSION}" ]]
+			then
+				ph_run_with_rollback -c true -m "Nothing to do"
+			else
+				if "${PH_SUDO}" apt-get -qq install --no-install-recommends "${PH_APP_PKG}=${PH_PKG_NEW_VERSION}" >/dev/null 2>&1
 				then
-					ph_run_with_rollback -c true -m "Nothing to do"
+					ph_add_value_to_param -p PH_INSTALL_PKGS -v "${PH_APP_PKG}'${PH_PKG_VERSION}"
+					ph_run_with_rollback -c true
 				else
-					if "${PH_SUDO}" apt-get -qq install --no-install-recommends "${PH_APP_PKG}" >/dev/null 2>&1
-					then
-						ph_add_value_to_param -p PH_DOWNGRADE_PKGS -v "${PH_APP_PKG}'${PH_PKG_VERSION}"
-						ph_run_with_rollback -c true
-					else
-						ph_set_result -m "An error occurred trying to update package '${PH_APP_PKG}' to version '${PH_PKG_LATEST_VERSION}'"
-						break
-					fi
+					ph_set_result -m "An error occurred trying to install version '${PH_PKG_NEW_VERSION}' of package '${PH_APP_PKG}'"
+					ph_run_with_rollback -c false -m "Could not install"
 				fi
-				return "${?}"
-			done
+			fi
+		else
+			ph_run_with_rollback -c false -m "Could not install"
 		fi
+	else
+		ph_run_with_rollback -c true -m "Nothing to do"
 	fi
 else
 	if "${PH_SUDO}" apt-get -qq install --no-install-recommends "${PH_APP_PKG}" >/dev/null 2>&1
 	then
 		ph_add_value_to_param -p PH_REMOVE_PKGS -v "${PH_APP_PKG}"
 		ph_run_with_rollback -c true
-		return "${?}"
 	else
 		ph_set_result -m "An error occurred trying to install package '${PH_APP_PKG}'"
+		ph_run_with_rollback -c false -m "Could not install"
 	fi
 fi
-ph_run_with_rollback -c false -m "Could not install"
 return "${?}"
 }
 
@@ -228,32 +266,6 @@ then
 	ph_run_with_rollback -c false -m "Could not synchronize"
 else
 	ph_run_with_rollback -c true
-fi
-return "${?}"
-}
-
-function ph_update_pkg {
-
-declare PH_APP_PKG
-
-PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
-
-[[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
-	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
-
-if ph_sync_pkg_db
-then
-	printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
-	if ph_get_pkg_inst_state "${PH_APP_PKG}"
-	then
-		ph_run_with_rollback -c true -m "Found"
-		ph_run_with_rollback -c "ph_remove_pkg '${PH_APP_PKG}'" || \
-			return 1
-	else
-		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found"
-		ph_set_result -r 0
-	fi
-	ph_run_with_rollback -c "ph_install_pkg '${PH_APP_PKG}'"
 fi
 return "${?}"
 }

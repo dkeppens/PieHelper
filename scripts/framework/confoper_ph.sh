@@ -825,8 +825,8 @@ then
 			printf "%10s\033[32m%s\033[0m\n" "" "OK (Found)"
 		else
 			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found -> Installing"
-			printf "%8s%s\n" "" "--> Installing $PH_i"
-			if ph_install_pkg "$PH_i"
+			printf "%8s%s\n" "" "--> Installing ${PH_i}"
+			if ph_install_pkg -p "${PH_i}"
 			then
 				printf "%10s\033[32m%s\033[0m\n" "" "OK"
 			else
