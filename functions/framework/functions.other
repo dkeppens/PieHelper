@@ -2177,7 +2177,7 @@ declare PH_j
 declare PH_APP
 declare PH_APP_PKG
 declare PH_APP_STATE
-declare PH_PKG_UPDATE
+declare PH_PKG_NEW_VERSION
 declare PH_UPDATE_DIR
 declare PH_NEW_DIRS
 declare PH_NEW_VERSION
@@ -2200,7 +2200,7 @@ PH_j=""
 PH_APP=""
 PH_APP_PKG=""
 PH_APP_STATE=""
-PH_PKG_UPDATE=""
+PH_PKG_NEW_VERSION=""
 PH_UPDATE_DIR="/tmp/update"
 PH_NEW_DIRS=""
 PH_NEW_VERSION=""
@@ -2454,12 +2454,12 @@ else
 					*)
 				ph_run_with_rollback -c true
 				printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking for available updates of " "'${PH_APP}'"
-				if PH_PKG_UPDATE="$(ph_get_pkg_updates -p '${PH_APP_PKG}' -l)"
+				if PH_PKG_NEW_VERSION="$(ph_get_pkg_updates -p '${PH_APP_PKG}' -l)"
 				then
-					if [[ -n "${PH_PKG_UPDATE}" ]]
+					if [[ -n "${PH_PKG_NEW_VERSION}" ]]
 					then
-						ph_run_with_rollback -c true -m "${PH_PKG_UPDATE}"
-						ph_run_with_rollback -c "ph_install_pkg -p '${PH_APP_PKG}' -v '${PH_PKG_UPDATE}'" || \
+						ph_run_with_rollback -c true -m "${PH_PKG_NEW_VERSION}"
+						ph_run_with_rollback -c "ph_install_pkg -p '${PH_APP_PKG}' -v '${PH_PKG_NEW_VERSION}'" || \
 							return 1
 						PH_UPDATED_FLAG="0"
 					else

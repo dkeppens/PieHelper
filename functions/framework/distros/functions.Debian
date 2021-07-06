@@ -90,7 +90,7 @@ then
 	if PH_PKG_UPDATES="$("${PH_SUDO}" apt-cache madison "${PH_APP_PKG}" 2>/dev/null | nawk -v vers="^${PH_PKG_VERSION}$" 'BEGIN { \
 			i = "0" ; \
 		} \
-			$3 !~ vers { \
+			$3 !~ vers && tolower($NF) !~ /^sources$/ { \
 			i++ ; \
 			versarr[i] = $3 \
 		} END { \
@@ -109,12 +109,16 @@ then
 			then
 				echo -n "${PH_PKG_UPDATES}"
 			else
-				echo -n "${PH_PKG_UPDATES}" | cut -f1
+				echo "${PH_PKG_UPDATES}" | nawk '
+					{
+						printf $1 ;
+						exit
+					}'
 			fi
 		fi
 		return 0
 	else
-		ph_set_result -m "An error occurred trying to determine all available updates of package '${PH_APP_PKG}'"
+		ph_set_result -m "An error occurred trying to determine all available versions of package '${PH_APP_PKG}'"
 	fi
 fi
 return 1
@@ -231,23 +235,28 @@ then
 					local -a PH_PKG_UPDATES
 					if read -r -a PH_PKG_UPDATES -d';' < <(ph_get_pkg_updates -p "${PH_APP_PKG}"; echo -n ";") 2>/dev/null
 					then
-						declare -x PH_PKG_UPDATES
-						if ph_check_array_index -n PH_PKG_UPDATES -v "${PH_PKG_NEW_VERSION}" -q
+						if [[ "${#PH_PKG_UPDATES[@]}" -gt "0" ]]
 						then
-							if "${PH_SUDO}" apt-get -qq install --no-install-recommends "${PH_APP_PKG}=${PH_PKG_NEW_VERSION}" >/dev/null 2>&1
+							declare -x PH_PKG_UPDATES
+							if ph_check_array_index -n PH_PKG_UPDATES -v "${PH_PKG_NEW_VERSION}" -q
 							then
-								ph_add_value_to_param -p PH_INSTALL_PKGS -v "${PH_APP_PKG}'${PH_PKG_VERSION}"
-								ph_run_with_rollback -c true
-								unset PH_PKG_UPDATES 2>/dev/null
-								break
+								if "${PH_SUDO}" apt-get -qq install --no-install-recommends "${PH_APP_PKG}=${PH_PKG_NEW_VERSION}" >/dev/null 2>&1
+								then
+									ph_add_value_to_param -p PH_INSTALL_PKGS -v "${PH_APP_PKG}'${PH_PKG_VERSION}"
+									ph_run_with_rollback -c true
+									unset PH_PKG_UPDATES 2>/dev/null
+									break
+								else
+									ph_set_result -m "An error occurred trying to install version '${PH_PKG_NEW_VERSION}' of package '${PH_APP_PKG}'"
+								fi
 							else
-								ph_set_result -m "An error occurred trying to install version '${PH_PKG_NEW_VERSION}' of package '${PH_APP_PKG}'"
+								ph_set_result -m "An error occurred trying to find a package called '${PH_APP_PKG}' of version '${PH_PKG_NEW_VERSION}'"
 							fi
 						else
 							ph_set_result -m "An error occurred trying to find a package called '${PH_APP_PKG}' of version '${PH_PKG_NEW_VERSION}'"
 						fi
 					else
-						ph_set_result -m "An error occurred trying to determine all available updates of package '${PH_APP_PKG}'"
+						ph_set_result -m "An error occurred trying to determine all available versions of package '${PH_APP_PKG}'"
 					fi
 					unset PH_PKG_UPDATES 2>/dev/null
 				fi
