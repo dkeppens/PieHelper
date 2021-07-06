@@ -5,7 +5,7 @@ function ph_get_pkg_version {
 declare PH_APP_PKG
 declare PH_PKG_VERSION
 
-PH_APP_PKG="${1}"
+PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
 PH_PKG_VERSION=""
 
 [[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
@@ -19,9 +19,11 @@ then
 	if [[ -n "${PH_PKG_VERSION}" ]]
 	then
 		echo -n "${PH_PKG_VERSION}"
+		return 0
 	fi
 fi
-return "${?}
+ph_set_result -m "An error occurred trying to determine the current version of package '${PH_APP_PKG}'"
+return 1
 }
 
 function ph_get_pkg_updates {
@@ -51,7 +53,7 @@ do
 			OPTIND="${PH_OLDOPTIND}" && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-		PH_APP_PKG="${OPTARG}" ;;
+		PH_APP_PKG="$(ph_resolve_dynamic_value "${OPTARG}")" ;;
 			q)
 		[[ "${PH_QUIESCE}" -eq "0" ]] && \
 			OPTIND="${PH_OLDOPTIND}" && \
@@ -67,39 +69,49 @@ done
 OPTIND="${PH_OLDOPTIND}"
 OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "${PH_APP_PKG}" || ( "${PH_QUIESCE" -eq "1" && "${#}" -ne "2" ) || \
-	( "${PH_QUIESCE" -eq "0" && "${#}" -ne "3" ) ]] && \
+[[ -z "${PH_APP_PKG}" || ( "${PH_QUIESCE}" -eq "1" && "${#}" -ne "2" ) || \
+	( "${PH_QUIESCE}" -eq "0" && "${#}" -ne "3" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 if PH_PKG_VERSION="$(ph_get_pkg_version "${PH_APP_PKG}")"
 then
-	if PH_PKG_UPDATES="$("${PH_SUDO}" apt-cache madison "${PH_APP_PKG}" 2>/dev/null | nawk -v vers="^${PH_PKG_VERSION}$" 'BEGIN { \
-			i = "0" ; \
+	if PH_PKG_UPDATES="$("${PH_SUDO}" pacman -Ss "${PH_APP_PKG}" 2>/dev/null | nawk -v instvers="${PH_PKG_VERSION}" -v pkg="${PH_APP_PKG}" 'BEGIN { \
+			testvers = "" ; \
+			stablevers = "" ; \
+			mstring1 = "^[[:alnum:]]+/" pkg "$" ; \
+			mstring2 = "testing/" pkg "$" \
 		} \
-		$3 !~ vers { \
-			i++ ; \
-			versarr[i] = $3 \
+		$1 ~ mstring1 { \
+			if ($1 ~ mstring2) { \
+				testvers = $2 \
+			} else { \
+				stablevers = $2 \
+			} \
+		} { \
+			next \
 		} END { \
-			for (j=1;j<=i;j++) { \
-				printf versarr[j] ; \
-				if (j<i) { \
-					printf " " \
+			if (testvers != "" && stablevers != "") { \
+				if (instvers == testvers) { \
+					printf stablevers \
+				} else { \
+					printf testvers \
 				} ; \
-				delete versarr[j] \
-			}
+				exit 0 \
+			} else { \
+				exit 1 \
+			} \
 		}')"
 	then
-		if [[ -n "${PH_PKG_UPDATES}" ]]
+		if [[ "${PH_QUIESCE}" -eq "1" ]]
 		then
-			if [[ "${PQ_QUIESCE}" -eq "1" ]]
-			then
-				echo -n "${PH_PKG_UPDATES}"
-			fi
-			true
+			echo -n "${PH_PKG_UPDATES}"
 		fi
+		return 0
+	else
+		ph_set_result -m "An error occurred trying to determine all available updates of package '${PH_APP_PKG}'"
 	fi
 fi
-return "${?}"
+return 1
 }
 
 function ph_get_path_pkg {
@@ -135,11 +147,12 @@ function ph_clean_pkg_db {
         ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 printf "%8s%s\n" "" "--> Cleaning up after package operations"
-if "${PH_SUDO}" "${PH_SCRIPTS_DIR}/expect/cleanpmpkgdb.expect" >/dev/null 2>&1
+if "${PH_SUDO}" pacman -Rns "$(pacman -Qtdq 2>/dev/null)" --noconfirm >/dev/null 2>&1
 then
-	if "${PH_SUDO}" pacman -Rns "$(pacman -Qtdq 2>/dev/null)" --noconfirm >/dev/null 2>&1
+	if "${PH_SUDO}" "${PH_SCRIPTS_DIR}/expect/cleanpmpkgdb.expect" >/dev/null 2>&1
 	then
 		ph_run_with_rollback -c true
+		return "${?}"
 	fi
 fi
 printf "%10s\033[33m%s\033[0m\n" "" "Warning : Failed to cleanup after package operations"
@@ -150,32 +163,105 @@ return 0
 function ph_install_pkg {
 
 declare PH_APP_PKG
-local -a PH_PKG_UPDATES
+declare PH_PKG_VERSION
+declare PH_PKG_NEW_VERSION
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
 
-PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
-PH_PKG_UPDATES=()
+PH_APP_PKG=""
+PH_PKG_VERSION=""
+PH_PKG_NEW_VERSION=""
+PH_OPTION=""
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 
-[[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
+OPTIND="1"
+
+while getopts :p:v: PH_OPTION
+do
+	case "${PH_OPTION}" in p)
+		[[ -n "${PH_APP_PKG}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_APP_PKG="$(ph_resolve_dynamic_value "${OPTARG}")" ;;
+			v)
+		[[ -n "${PH_PKG_NEW_VERSION}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_PKG_NEW_VERSION="${OPTARG}" ;;
+			*)
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
+		ph_set_result -a -m "Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'" ;;
+	esac
+done
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
+
+[[ -z "${PH_APP_PKG}" || ( -z "${PH_PKG_NEW_VERSION}" && "${#}" -ne "2" ) || \
+	( -n "${PH_PKG_NEW_VERSION}" && "${#}" -ne "4" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
+if [[ -n "${PH_PKG_NEW_VERSION}" ]]
+then
+	printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[37m%s\033[0m\n" "" "--> Installing package " "'${PH_APP_PKG}'" " version " "'${PH_PKG_NEW_VERSION}'" " (This may take a while)"
+else
+	printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0m\n" "" "--> Installing package " "'${PH_APP_PKG}'" " (This may take a while)"
+fi
 if ph_get_pkg_inst_state "${PH_APP_PKG}"
 then
-	if read -r -a PH_PKG_UPDATES -d';' < <(ph_get_pkg_updates "${PH_APP_PKG}"; echo -n ";") 2>/dev/null
+	if [[ -n "${PH_PKG_NEW_VERSION}" ]]
 	then
+		while true
+		do
+			if PH_PKG_VERSION="$(ph_get_pkg_version "${PH_APP_PKG}")"
+			then
+				if [[ "${PH_PKG_VERSION}" == "${PH_PKG_NEW_VERSION}" ]]
+				then
+					ph_run_with_rollback -c true -m "Nothing to do"
+					break
+				else
+					local -a PH_PKG_UPDATES
+					if read -r -a PH_PKG_UPDATES -d';' < <(ph_get_pkg_updates -p "${PH_APP_PKG}"; echo -n ";") 2>/dev/null
+					then
+						declare -x PH_PKG_UPDATES
+						if ph_check_array_index -n PH_PKG_UPDATES -v "${PH_PKG_NEW_VERSION}" -q
+						then
+							if "${PH_SUDO}" pacman -S "${PH_APP_PKG}=${PH_PKG_NEW_VERSION}" --noconfirm >/dev/null 2>&1
+							then
+								ph_add_value_to_param -p PH_INSTALL_PKGS -v "${PH_APP_PKG}'${PH_PKG_VERSION}"
+								ph_run_with_rollback -c true
+								unset PH_PKG_UPDATES 2>/dev/null
+								break
+							else
+								ph_set_result -m "An error occurred trying to install version '${PH_PKG_NEW_VERSION}' of package '${PH_APP_PKG}'"
+							fi
+						else
+							ph_set_result -m "An error occurred trying to find a package called '${PH_APP_PKG}' of version '${PH_PKG_NEW_VERSION}'"
+						fi
+					else
+						ph_set_result -m "An error occurred trying to determine all available updates of package '${PH_APP_PKG}'"
+					fi
+					unset PH_PKG_UPDATES 2>/dev/null
+				fi
+			fi
+			ph_run_with_rollback -c false -m "Could not install"
+			return "${?}"
+		done
 	else
 		ph_run_with_rollback -c true -m "Nothing to do"
 	fi
 else
-	ph_run_with_rollback -c true -m "Not found"
-	printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0m\n" "" "--> Installing package " "'${PH_APP_PKG}'" " (This may take a while)"
-	if ! "${PH_SUDO}" pacman -S "${PH_APP_PKG}" --noconfirm >/dev/null 2>&1
+	if "${PH_SUDO}" pacman -S "${PH_APP_PKG}" --noconfirm >/dev/null 2>&1
 	then
-		ph_set_result -m "An error occurred trying to install package '${PH_APP_PKG}'"
-		ph_run_with_rollback -c false -m "Could not install"
-	else
 		ph_add_value_to_param -p PH_REMOVE_PKGS -v "${PH_APP_PKG}"
 		ph_run_with_rollback -c true
+	else
+		ph_set_result -m "An error occurred trying to install package '${PH_APP_PKG}'"
+		ph_run_with_rollback -c false -m "Could not install"
 	fi
 fi
 return "${?}"
@@ -187,41 +273,12 @@ function ph_sync_pkg_db {
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 printf "%8s%s\n" "" "--> Synchronizing the package database"
-if "${PH_SUDO}" pacman -Syy --noconfirm >/dev/null 2>&1
+if ! "${PH_SUDO}" pacman -Syy --noconfirm >/dev/null 2>&1
 then
-	if "${PH_SUDO}" "${PH_EXPECT}" "${PH_SCRIPTS_DIR}/expect/pacman_clean_pkg_db.expect" >/dev/null 2>&1
-	then
-		ph_run_with_rollback -c true
-		return "${?}"
-	fi
-fi
-ph_set_result -m "An error occurred trying to synchronize the package database"
-ph_run_with_rollback -c false -m "Could not synchronize"
-return "${?}"
-}
-
-function ph_update_pkg {
-
-declare PH_APP_PKG
-
-PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
-
-[[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
-	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
-
-if ph_sync_pkg_db
-then
-	printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking for package " "'${PH_APP_PKG}'"
-	if ph_get_pkg_inst_state "${PH_APP_PKG}"
-	then
-		ph_run_with_rollback -c true -m "Found"
-		ph_run_with_rollback -c "ph_remove_pkg '${PH_APP_PKG}'" || \
-			return 1
-	else
-		printf "%10s\033[33m%s\033[0m\n" "" "Warning : Not found"
-		ph_set_result -r 0
-	fi
-	ph_run_with_rollback -c "ph_install_pkg '${PH_APP_PKG}'"
+	ph_set_result -m "An error occurred trying to synchronize the package database"
+	ph_run_with_rollback -c false -m "Could not synchronize"
+else
+	ph_run_with_rollback -c true
 fi
 return "${?}"
 }
@@ -242,11 +299,8 @@ then
 	printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m\n" "" "--> Uninstalling package " "'${PH_APP_PKG}'" " (This may take a while)"
 	if "${PH_SUDO}" pacman -Rs "${PH_APP_PKG}" --noconfirm >/dev/null 2>&1
 	then
-		if "${PH_SUDO}" pacman -Rns "$(pacman -Qtdq 2>/dev/null)" --noconfirm >/dev/null 2>&1
-		then
-			ph_add_value_to_param -p PH_INSTALL_PKGS -v "${PH_APP_PKG}"
-			ph_run_with_rollback -c true
-		fi
+		ph_add_value_to_param -p PH_INSTALL_PKGS -v "${PH_APP_PKG}"
+		ph_run_with_rollback -c true
 	else
 		ph_set_result -m "An error occurred trying to uninstall package '${PH_APP_PKG}'"
 		ph_run_with_rollback -c false -m "Could not uninstall"
@@ -283,7 +337,7 @@ if ph_sync_pkg_db
 then
 	if ! "${PH_SUDO}" pacman -Ss "${PH_APP_PKG}" --noconfirm >/dev/null 2>&1
 	then
-		ph_set_result -m "An error occurred since '${PH_APP_PKG}' is not a valid package"
+		ph_set_result -m "An error occurred trying to find a package called '${PH_APP_PKG}'"
 		false
 	else
 		true
@@ -294,6 +348,10 @@ return "${?}"
 
 function ph_update_system {
 
+declare PH_RET_CODE
+
+PH_RET_CODE="0"
+
 [[ "${#}" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
@@ -303,13 +361,12 @@ then
 	if "${PH_SUDO}" pacman -Su --noconfirm >/dev/null 2>&1
 	then
 		ph_run_with_rollback -c true
-		ph_clean_pkg_db
 	else
-		ph_set_result -m "At least one of the attempted package operations failed"
+		ph_set_result -m "An error occurred with at least one of the attempted package upgrades"
 		ph_run_with_rollback -c false -m "Could not update"
-		ph_clean_pkg_db
-		false
 	fi
+	PH_RET_CODE="${?}"
+	ph_clean_pkg_db
 fi
-return "${?}"
+return "${PH_RET_CODE}"
 }

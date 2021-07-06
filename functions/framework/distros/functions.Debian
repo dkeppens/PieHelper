@@ -103,19 +103,18 @@ then
 			}
 		}')"
 	then
-		if [[ -n "${PH_PKG_UPDATES}" ]]
+		if [[ "${PH_QUIESCE}" -eq "1" ]]
 		then
-			if [[ "${PH_QUIESCE}" -eq "1" ]]
+			if [[ "${PH_LATEST_FLAG}" -eq "1" ]]
 			then
-				if [[ "${PH_LATEST_FLAG}" -eq "1" ]]
-				then
-					echo -n "${PH_PKG_UPDATES}"
-				else
-					echo -n "${PH_PKG_UPDATES}" | cut -f1
-				fi
+				echo -n "${PH_PKG_UPDATES}"
+			else
+				echo -n "${PH_PKG_UPDATES}" | cut -f1
 			fi
-			return 0
 		fi
+		return 0
+	else
+		ph_set_result -m "An error occurred trying to determine all available updates of package '${PH_APP_PKG}'"
 	fi
 fi
 return 1
@@ -152,9 +151,9 @@ function ph_clean_pkg_db {
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 printf "%8s%s\n" "" "--> Cleaning up after package operations"
-if "${PH_SUDO}" apt-get -qq clean >/dev/null 2>&1
+if "${PH_SUDO}" apt-get -qq auto-remove >/dev/null 2>&1
 then
-	if "${PH_SUDO}" apt-get -qq auto-remove >/dev/null 2>&1
+	if "${PH_SUDO}" apt-get -qq clean >/dev/null 2>&1
 	then
 		ph_run_with_rollback -c true
 		return "${?}"
@@ -220,24 +219,42 @@ if ph_get_pkg_inst_state "${PH_APP_PKG}"
 then
 	if [[ -n "${PH_PKG_NEW_VERSION}" ]]
 	then
-		if PH_PKG_VERSION="$(ph_get_pkg_version "${PH_APP_PKG}")"
-		then
-			if [[ "${PH_PKG_VERSION}" == "${PH_PKG_NEW_VERSION}" ]]
+		while true
+		do
+			if PH_PKG_VERSION="$(ph_get_pkg_version "${PH_APP_PKG}")"
 			then
-				ph_run_with_rollback -c true -m "Nothing to do"
-			else
-				if "${PH_SUDO}" apt-get -qq install --no-install-recommends "${PH_APP_PKG}=${PH_PKG_NEW_VERSION}" >/dev/null 2>&1
+				if [[ "${PH_PKG_VERSION}" == "${PH_PKG_NEW_VERSION}" ]]
 				then
-					ph_add_value_to_param -p PH_INSTALL_PKGS -v "${PH_APP_PKG}'${PH_PKG_VERSION}"
-					ph_run_with_rollback -c true
+					ph_run_with_rollback -c true -m "Nothing to do"
+					break
 				else
-					ph_set_result -m "An error occurred trying to install version '${PH_PKG_NEW_VERSION}' of package '${PH_APP_PKG}'"
-					ph_run_with_rollback -c false -m "Could not install"
+					local -a PH_PKG_UPDATES
+					if read -r -a PH_PKG_UPDATES -d';' < <(ph_get_pkg_updates -p "${PH_APP_PKG}"; echo -n ";") 2>/dev/null
+					then
+						declare -x PH_PKG_UPDATES
+						if ph_check_array_index -n PH_PKG_UPDATES -v "${PH_PKG_NEW_VERSION}" -q
+						then
+							if "${PH_SUDO}" apt-get -qq install --no-install-recommends "${PH_APP_PKG}=${PH_PKG_NEW_VERSION}" >/dev/null 2>&1
+							then
+								ph_add_value_to_param -p PH_INSTALL_PKGS -v "${PH_APP_PKG}'${PH_PKG_VERSION}"
+								ph_run_with_rollback -c true
+								unset PH_PKG_UPDATES 2>/dev/null
+								break
+							else
+								ph_set_result -m "An error occurred trying to install version '${PH_PKG_NEW_VERSION}' of package '${PH_APP_PKG}'"
+							fi
+						else
+							ph_set_result -m "An error occurred trying to find a package called '${PH_APP_PKG}' of version '${PH_PKG_NEW_VERSION}'"
+						fi
+					else
+						ph_set_result -m "An error occurred trying to determine all available updates of package '${PH_APP_PKG}'"
+					fi
+					unset PH_PKG_UPDATES 2>/dev/null
 				fi
 			fi
-		else
 			ph_run_with_rollback -c false -m "Could not install"
-		fi
+			return "${?}"
+		done
 	else
 		ph_run_with_rollback -c true -m "Nothing to do"
 	fi
@@ -324,7 +341,7 @@ if ph_sync_pkg_db
 then
 	if ! "${PH_SUDO}" apt-cache show "${PH_APP_PKG}" >/dev/null 2>&1
 	then
-		ph_set_result -m "An error occurred since '${PH_APP_PKG}' is not a valid package"
+		ph_set_result -m "An error occurred trying to find a package called '${PH_APP_PKG}'"
 		false
 	else
 		true
@@ -335,6 +352,10 @@ return "${?}"
 
 function ph_update_system {
 
+declare PH_RET_CODE
+
+PH_RET_CODE="0"
+
 [[ "${#}" -ne "0" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
@@ -344,13 +365,12 @@ then
 	if "${PH_SUDO}" apt-get -qq dist-upgrade >/dev/null 2>&1
 	then
 		ph_run_with_rollback -c true
-		ph_clean_pkg_db
 	else
-		ph_set_result -m "At least one of the attempted package operations failed"
+		ph_set_result -m "An error occurred with at least one of the attempted package upgrades"
 		ph_run_with_rollback -c false -m "Could not update"
-		ph_clean_pkg_db
-		false
 	fi
+	PH_RET_CODE="${?}"
+	ph_clean_pkg_db
 fi
-return "${?}"
+return "${PH_RET_CODE}"
 }
