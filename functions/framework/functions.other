@@ -5741,9 +5741,9 @@ then
 				PH_PKG_NEW_VERSION="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
 				if [[ -n "${PH_PKG_NEW_VERSION}" ]]
 				then
-					PH_CMD="ph_install_pkg -p '${PH_APP_PKG}' -v '${PH_PKG_NEW_VERSION}'" ;;
+					PH_CMD="ph_install_pkg -p '${PH_APP_PKG}' -v '${PH_PKG_NEW_VERSION}'"
 				else
-					PH_CMD="ph_install_pkg -p '${PH_APP_PKG}'" ;;
+					PH_CMD="ph_install_pkg -p '${PH_APP_PKG}'"
 				fi ;;
 					  PH_REMOVE_PKGS)
 				PH_CMD="ph_remove_pkg '${PH_VALUE}'" ;;
