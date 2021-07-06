@@ -1062,7 +1062,7 @@ declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 declare -i PH_QUIESCE
-declare -i PH_VALUE_RECEIVED_FLAG
+declare -i PH_VALUE_RECVD_FLAG
 
 PH_OLDOPTARG="${OPTARG}"
 PH_OLDOPTIND="${OPTIND}"
@@ -1333,7 +1333,6 @@ function ph_check_pieh_configured_config {
 declare PH_i
 declare PH_APP
 declare PH_APP_USER
-declare PH_APP_GROUP
 declare PH_APP_STR_TTY
 declare PH_APPU_CIFS_MPT
 declare -i PH_RET_CODE
@@ -6660,7 +6659,7 @@ then
 	then
 		printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" \
 			"--> Mounting CIFS share " "'${PH_TMP_CIFS_DIR}${PH_TMP_CIFS_SUBDIR}'" " from " "'${PH_TMP_CIFS_SRV}'" " on " "'${PH_TMP_CIFS_MPT}'"
-		if "${PH_SUDO}" mount -t cifs -o username="${PH_TMP_CIFS_USER}" -o password="${PH_TMP_CIFS_PASS}" -o rw,uid="${PH_TMP_CIFS_USER}",gid="$(id -ng "${PH_TMP_CIFS_USER}" 2>/dev/null)",file_mode="0770",dir_mode="0770" \
+		if "${PH_SUDO}" mount -t cifs -o username="${PH_TMP_CIFS_USER}" -o password="${PH_TMP_CIFS_PASS}" -o "rw,uid='${PH_TMP_CIFS_USER}',gid='$(id -ng "${PH_TMP_CIFS_USER}" 2>/dev/null)',file_mode='0770',dir_mode='0770'" \
 			"//${PH_TMP_CIFS_SRV}${PH_TMP_CIFS_DIR}${PH_TMP_CIFS_SUBDIR}" "${PH_TMP_CIFS_MPT}" 2>/dev/null
 		then
 			ph_set_result -m "An error occurred trying to mount '${PH_TMP_CIFS_DIR}${PH_TMP_CIFS_SUBDIR}' from '${PH_TMP_CIFS_SRV}' on '${PH_TMP_CIFS_MPT}'"
@@ -7136,7 +7135,7 @@ declare PH_EMUL_SETUP_DIR_INIT
 
 declare PH_APP="Emulationstation"
 declare PH_APP_USER=""
-declare PH_EMUL_HOME="$(ph_get_user_home "${PH_APP_USER}")"
+declare PH_EMUL_HOME=""
 declare PH_EMUL_DIR_INIT=""
 declare PH_EMUL_SETUP_DIR_INIT=""
 
@@ -7144,7 +7143,8 @@ declare PH_EMUL_SETUP_DIR_INIT=""
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Determining the base directory of " "'${PH_APP}'"
-declare PH_APP_USER="$(ph_get_app_user_from_app_name "${PH_APP}")"
+PH_APP_USER="$(ph_get_app_user_from_app_name "${PH_APP}")"
+PH_EMUL_HOME="$(ph_get_user_home "${PH_APP_USER}")"
 if [[ -f "/etc/profile.d/10-retropie.sh" ]]
 then
 	PH_EMUL_DIR_INIT="$(nawk -F'"' '$1 ~ /bash/ { \
