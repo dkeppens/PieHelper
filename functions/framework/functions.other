@@ -259,6 +259,7 @@ ph_run_with_rollback -c false -m "Could not remove" || \
 
 function ph_add_line_to_file {
 
+set -x
 declare PH_LINE
 declare PH_PARAMS
 declare PH_FILE
@@ -315,17 +316,18 @@ if [[ "${PH_ADD_AS_ROOT}" -eq "0" ]]
 then
 	if echo -e "${PH_LINE}" 2>/dev/null | "${PH_SUDO}" tee -a "${PH_FILE}" >/dev/null 2>&1
 	then
-		ph_add_value_to_param -p PH_REMOVE_LINES -v "${PH_FILE}'${PH_PARAMS}'$(echo -e "${PH_LINE}")"
+		ph_add_value_to_param -p PH_REMOVE_LINES -v "${PH_FILE}'${PH_PARAMS}'$(echo -en "${PH_LINE}")"
 		return 0
 	fi
 else
 	if echo -e "${PH_LINE}" | tee -a "${PH_FILE}" >/dev/null 2>&1
 	then
-		ph_add_value_to_param -p PH_REMOVE_LINES -v "${PH_FILE}'${PH_PARAMS}'$(echo -e "${PH_LINE}")"
+		ph_add_value_to_param -p PH_REMOVE_LINES -v "${PH_FILE}'${PH_PARAMS}'$(echo -en "${PH_LINE}")"
 		return 0
 	fi
 fi
 ph_set_result -m "An error occurred trying to add line '${PH_LINE}' to file '${PH_FILE}'"
+set +x
 return 1
 }
 
@@ -5430,6 +5432,7 @@ return "${?}"
 }
 
 function ph_rollback_changes {
+set +x
 
 declare PH_i
 declare PH_CMD

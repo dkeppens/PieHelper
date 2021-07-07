@@ -2335,23 +2335,23 @@ return "${?}"
 function ph_create_app_scripts {
 
 declare PH_i
+declare PH_COUNT
 declare PH_APP
 declare PH_APP2
 declare PH_SWAP
 declare PH_SCRIPT_PREFIX
 declare PH_SCRIPT_SUFFIX
-declare -i PH_COUNT
 declare -i PH_EXISTS_FLAG
 declare -l PH_APPL
 declare -l PH_APPL2
 
 PH_i=""
+PH_COUNT=""
 PH_APP="${1}"
 PH_APP2=""
 PH_SWAP=""
 PH_SCRIPT_PREFIX=""
 PH_SCRIPT_SUFFIX=""
-PH_COUNT="0"
 PH_EXISTS_FLAG="1"
 PH_APPL=""
 PH_APPL2=""
@@ -2364,7 +2364,7 @@ PH_APPL2=""
 PH_APPL="${PH_APP:0:4}"
 for PH_COUNT in 1 2
 do
-	if [[ "${PH_COUNT}" -eq "2" ]]
+	if [[ "${PH_COUNT}" == "2" ]]
 	then
 		if [[ "${PH_EXISTS_FLAG}" -eq "0" ]]
 		then
@@ -2377,7 +2377,7 @@ do
 	fi
 	for PH_i in start stop restart
 	do
-		if [[ "${PH_COUNT}" -eq "1" ]]
+		if [[ "${PH_COUNT}" == "1" ]]
 		then
 			if [[ -e "${PH_SCRIPTS_DIR}/${PH_i}${PH_APPL}.sh" ]]
 			then
@@ -2418,7 +2418,7 @@ do
 		PH_APPL2="${PH_APP2:0:4}"
 		for PH_i in 1 2
 		do
-			if [[ "${PH_COUNT}" -eq "1" ]]
+			if [[ "${PH_COUNT}" == "1" ]]
 			then
 				if [[ -e "${PH_SCRIPTS_DIR}/${PH_APPL}to${PH_APPL2}.sh" ]]
 				then
@@ -2447,7 +2447,7 @@ do
 					continue 2
 			fi
 		done
-		if [[ "${PH_COUNT}" -eq "2" ]]
+		if [[ "${PH_COUNT}" == "2" ]]
 		then
 			ph_run_with_rollback -c false -m "Could not create" || \
 				return 1
@@ -2508,17 +2508,17 @@ function ph_create_app_menus {
 
 declare PH_i
 declare PH_j
+declare PH_COUNT
 declare PH_APP
 declare PH_APP_DISPLAY
-declare -i PH_COUNT
 declare -i PH_EXISTS_FLAG
 declare -l PH_APPL
 
 PH_i=""
 PH_j=""
+PH_COUNT=""
 PH_APP="${1}"
 PH_APP_DISPLAY=""
-PH_COUNT="0"
 PH_EXISTS_FLAG="1"
 PH_APPL="${PH_APP:0:4}"
 
@@ -2527,7 +2527,7 @@ PH_APPL="${PH_APP:0:4}"
 
 for PH_COUNT in 1 2
 do
-	if [[ "${PH_COUNT}" -eq "2" ]]
+	if [[ "${PH_COUNT}" == "2" ]]
 	then
 		if [[ "${PH_EXISTS_FLAG}" -eq "0" ]]
 		then
@@ -2538,7 +2538,7 @@ do
 	fi
 	for PH_i in "${PH_MENUS_DIR}/${PH_APP}.lst" "${PH_MENUS_DIR}/OptionsManagement_${PH_APP}.lst" "${PH_MENUS_DIR}/TTYManagement_${PH_APP}.lst" "${PH_MENUS_DIR}/StatusManagement_${PH_APP}.lst"
 	do
-		if [[ "${PH_COUNT}" -eq "1" ]]
+		if [[ "${PH_COUNT}" == "1" ]]
 		then
 			if [[ -e "${PH_i}" ]]
 			then
@@ -2906,6 +2906,7 @@ do
 		esac ;;
         esac
 	unset -n PH_OPTS
+	set -x
 	if ! ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/options.defaults' -l '${PH_OPT}:${PH_LINE}'"
 	then
 		ph_run_with_rollback -c false -m "Could not create" || \
