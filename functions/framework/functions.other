@@ -35,10 +35,10 @@ PH_APPL="${PH_APP:0:3}"
 [[ -z "${PH_APP}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Adding configure function for application '${PH_APP}' to codebase file '${PH_FUNCS_DIR}/functions.user'"
-if ph_check_app_state_validity -a "${PH_APP}" -q -d
+printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Templating " "'${PH_APP}'" " configuration code to " "'${PH_FUNCS_DIR}/functions.user'"
+if ! ph_check_app_state_validity -a "${PH_APP}" -q -o
 then
-	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Nothing to do since ${PH_APP} is not an out-of-scope application"
+	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Refusing to template '${PH_APP}' configuration code to '${PH_FUNCS_DIR}/functions.user' since it's not an Out-of-scope application"
 	ph_set_result -r 0
 else
 	if ! cat >>"${PH_FUNCS_DIR}/functions.user" 2>/dev/null <<EOF
@@ -50,15 +50,14 @@ return 0
 }
 EOF
 	then
-		ph_set_result -m "An error occurred trying to add function 'ph_configure_${PH_APPL}' to codebase file '${PH_FUNCS_DIR}/functions.user'"
-		ph_run_with_rollback -c false -c "Could not add" || \
-			return 1
+		ph_set_result -m "An error occurred trying to template '${PH_APP}' configuration code to '${PH_FUNCS_DIR}/functions.user'"
+		ph_run_with_rollback -c false -c "Could not template"
 	else
 		ph_add_value_to_param -p PH_REMOVE_OOS_APPS_CODE -v "${PH_APP}"
-		ph_run_with_rollback -c true -m "Configuration code for ${PH_APP} can now be added to '${PH_FUNCS_DIR}/functions.user'"
+		ph_run_with_rollback -c true -m "Configuration code for '${PH_APP}' can now be completed in '${PH_FUNCS_DIR}/functions.user'"
 	fi
 fi
-return 0
+return "${?}"
 }
 
 function ph_get_user_home {
@@ -221,10 +220,10 @@ PH_APPL="${PH_APP:0:3}"
 [[ -z "${PH_APP}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Removing configure function for application '${PH_APP}' from codebase file '${PH_FUNCS_DIR}/functions.user'"
-if ph_check_app_state_validity -a "${PH_APP}" -q -d
+printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Removing " "'${PH_APP}'" " configuration code from " "'${PH_FUNCS_DIR}/functions.user'"
+if ! ph_check_app_state_validity -a "${PH_APP}" -q -o
 then
-	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Nothing to do since ${PH_APP} is not an out-of-scope application"
+	printf "%10s\033[33m%s\033[0m\n" "" "Warning : Refusing to remove '${PH_APP}' configuration code from '${PH_FUNCS_DIR}/functions.user' since it's not an Out-of-scope application"
 	ph_set_result -r 0
 else
 	if nawk -v app="_${PH_APPL}$" 'BEGIN {
@@ -253,7 +252,7 @@ else
 	fi
 fi
 "${PH_SUDO}" rm "${PH_TMP_DIR}/functions_user_tmp" 2>/dev/null
-ph_set_result -m "An error occurred trying to remove function 'ph_configure_${PH_APPL}' from codebase file '${PH_FUNCS_DIR}/functions.user'"
+ph_set_result -m "An error occurred trying to remove '${PH_APP}' configuration code from '${PH_FUNCS_DIR}/functions.user'"
 ph_run_with_rollback -c false -m "Could not remove" || \
 	return 1
 }
@@ -3595,7 +3594,7 @@ then
 		"$(functions 2>&1 | grep -E "function ph_configure_${PH_APPL} {" >/dev/null ; echo "${?}")" -ne "0" ]]
 	then
 		printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Configuring " "'${PH_APP}"
-		ph_set_result -m "${PH_APP} is an out-of-scope application and requires prior user-side development of a function called 'ph_configure_${PH_APPL}' in file '${PH_FUNCS_DIR}/functions.user'"
+		ph_set_result -m "Out-of-scope application '${PH_APP}' requires user-side development to templated function 'ph_configure_${PH_APPL}' in '${PH_FUNCS_DIR}/functions.user'"
 		ph_run_with_rollback -c false -m "Could not configure"
 		return "${?}"
 	fi
@@ -5508,12 +5507,12 @@ then
 					  PH_BLACKLIST_MODULES)
 				PH_CMD="ph_blacklist_kernel_module '${PH_VALUE}'" ;;
 					  PH_REMOVE_RIGHTS_USERS)
-				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
 				PH_CMD="ph_remove_user_sudo_rights -u '${PH_APP_USER}' ${PH_PARAMS}" ;;
 					  PH_CREATE_RIGHTS_USERS)
-				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
-				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
+				PH_APP_USER="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
+				PH_PARAMS="$(echo -n "${PH_VALUE}" | cut -f2 -d"'")"
 				PH_CMD="ph_create_user_sudo_rights -u '${PH_APP_USER}' ${PH_PARAMS}" ;;
 					  PH_REMOVE_ACLS_USERS)
 				PH_ROLLBACK_TIME="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
@@ -6400,7 +6399,7 @@ do
 		fi
 		if grep -E "^${PH_OPTARG_VAR}:" "${PH_CONF_DIR}/options.alloweds" >/dev/null 2>&1
 		then
-			printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\n" "" "--> Checking if the new value " "'${PH_OPTARG_VAL}'" " for option " "'${PH_OPTARG_VAR}'" " is allowed"
+			printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Checking if new value " "'${PH_OPTARG_VAL}'" " is allowed for option " "'${PH_OPTARG_VAR}'"
 			PH_OPT_DEFS="$(grep -E "^${PH_OPTARG_VAR}:" "${PH_CONF_DIR}/options.alloweds" 2>/dev/null | cut -d":" -f2)"
 			PH_OPT_REGEX="$(grep -E "^${PH_OPTARG_VAR}:" "${PH_CONF_DIR}/options.alloweds" 2>/dev/null | cut -d":" -f3-)"
 			if [[ ${PH_OPT_REGEX} ]]
@@ -6421,7 +6420,7 @@ do
 					fi
 					continue
 				else
-					ph_run_with_rollback -c true
+					ph_run_with_rollback -c true -m "Yes"
 				fi
 		fi
 	fi
@@ -8231,6 +8230,7 @@ declare PH_APP_NEW_PKG
 declare PH_APP_USER
 declare PH_APP_STATE
 declare PH_APP_INST_STATE
+declare PH_APP_RECVD_INST_STATE
 declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
@@ -8251,6 +8251,7 @@ PH_APP_NEW_PKG=""
 PH_APP_USER=""
 PH_APP_STATE=""
 PH_APP_INST_STATE=""
+PH_APP_RECVD_INST_STATE=""
 PH_OPTION=""
 PH_OLDOPTARG="${OPTARG}"
 PH_OLDOPTIND="${OPTIND}"
@@ -8291,11 +8292,11 @@ do
 			return 1
                 PH_APP_PKG="${OPTARG}" ;;
                              i)
-		[[ -n "${PH_APP_INST_STATE}" || "${OPTARG}" != @(P|U)@(I|U) ]] && \
+		[[ -n "${PH_APP_RECVD_INST_STATE}" || "${OPTARG}" != @(P|U)@(I|U) ]] && \
 			OPTIND="${PH_OLDOPTIND}" && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-                PH_APP_INST_STATE="${OPTARG}" ;;
+                PH_APP_RECVD_INST_STATE="${OPTARG}" ;;
                              f)
 		[[ "${PH_FORCE_SUPPORT_FLAG}" -eq "0" ]] && \
 			OPTIND="${PH_OLDOPTIND}" && \
@@ -8336,19 +8337,11 @@ case "${PH_APP_STATE}" in Supported|Integrated|Running|Halted)
 	then
 		if [[ -z "${PH_APP_CMD}" ]]
 		then
-			ph_set_result -m "Cannot support out-of-scope application '${PH_APP}' without a valid start command"
+			ph_set_result -m "Cannot support Out-of-scope application '${PH_APP}' without a valid start command"
 			ph_run_with_rollback -c false -m "Could not support" || \
 				return 1
 		fi
 		ph_run_with_rollback -c true -m "${PH_APP_CMD}"
-		printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking the package of " "'${PH_APP}'"
-		if [[ -z "${PH_APP_PKG}" || "$(ph_check_pkg_validity "${PH_APP_PKG}" ; echo "${?}")" -ne "0" ]]
-		then
-			ph_set_result -m "Cannot support out-of-scope application '${PH_APP}' without a valid package name"
-			ph_run_with_rollback -c false "Could not support" || \
-				return 1
-		fi
-		ph_run_with_rollback -c true -m "${PH_APP_PKG}"
 	else
 		if [[ -n "${PH_APP_CMD}" && "${PH_APP_CMD}" != "$(ph_get_app_cmd_from_app_name "${PH_APP}")" ]]
 		then
@@ -8356,45 +8349,68 @@ case "${PH_APP_STATE}" in Supported|Integrated|Running|Halted)
 			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Mismatch with known start command -> Set to '${PH_APP_CMD}'"
 			ph_set_result -r 0
 		else
-			[[ -z "${PH_APP_CMD}" ]] && \
+			if [[ -z "${PH_APP_CMD}" ]]
+			then
 				PH_APP_CMD="$(ph_get_app_cmd_from_app_name "${PH_APP}")"
+			fi
 			ph_run_with_rollback -c true -m "'${PH_APP_CMD}'"
 		fi
-		printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking the package of " "'${PH_APP}'"
-		if [[ -n "${PH_APP_PKG}" && "${PH_APP_PKG}" != "$(ph_get_app_pkg_from_app_name "${PH_APP}")" ]]
+	fi
+	printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking the installation state of " "'${PH_APP}'"
+	if PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_info -a "${PH_APP}" -c "${PH_APP_CMD}")"
+	then
+		if [[ -n "${PH_APP_RECVD_INST_STATE}" && "${PH_APP_RECVD_INST_STATE}" != "${PH_APP_INST_STATE}" ]]
 		then
-			PH_APP_PKG="$(ph_get_app_pkg_from_app_name "${PH_APP}")"
-			if [[ -n "${PH_APP_PKG}" ]]
-			then
-				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Mismatch with known package -> Set to '${PH_APP_PKG}'"
-			else
-				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Mismatch with known installation method -> Set to None" 
-			fi
+			printf "%10s\033[33m%s\033[0m\n" "" "Warning : Mismatch with known installation state > Set to '${PH_APP_INST_STATE}'"
 			ph_set_result -r 0
-		else
-			[[ -z "${PH_APP_PKG}" ]] && \
-				PH_APP_PKG="$(ph_get_app_pkg_from_app_name "${PH_APP}")"
-			if [[ -z "${PH_APP_PKG}" ]]
+		fi
+		ph_run_with_rollback -c true -m "${PH_APP_INST_STATE}"
+	else
+		ph_run_with_rollback -c false -m "Could not support"
+		return "${?}"
+	fi
+	local -a PH_PARAMS
+	printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking the package of " "'${PH_APP}'"
+	if [[ "${PH_APP_INST_STATE}" == P* ]]
+	then
+		if ph_check_app_state_validity -a "${PH_APP}" -q -d
+		then
+			if [[ "${PH_APP_PKG}" != "$(ph_get_app_pkg_from_app_name "${PH_APP}")" ]]
 			then
-				ph_run_with_rollback -c true -m "Unpackaged"
+				PH_APP_PKG="$(ph_get_app_pkg_from_app_name "${PH_APP}")"
+				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Mismatch with known package -> Set to '${PH_APP_PKG}'"
+				ph_set_result -r 0
+			else
+				ph_run_with_rollback -c true -m "${PH_APP_PKG}"
+			fi
+		else
+			if [[ -z "${PH_APP_PKG}" || "$(ph_check_pkg_validity "${PH_APP_PKG}" ; echo "${?}")" -ne "0" ]]
+			then
+				ph_set_result -m "Cannot support Out-of-scope application '${PH_APP}' without a valid package name"
+				ph_run_with_rollback -c false "Could not support"
+				return "${?}"
 			else
 				ph_run_with_rollback -c true -m "${PH_APP_PKG}"
 			fi
 		fi
-	fi
-	if [[ -z "${PH_APP_INST_STATE}" ]]
-	then
-		printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking the installation state of " "'${PH_APP}'"
-		if ! PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_info -a "${PH_APP}" -c "${PH_APP_CMD}")"
-		then
-			ph_run_with_rollback -c false -m "Could not support" || \
-				return 1
-		fi
-		ph_run_with_rollback -c true -m "${PH_APP_INST_STATE}"
-	fi
-	local -a PH_PARAMS
-	[[ "${PH_APP_INST_STATE}" == P* ]] && \
 		PH_PARAMS+=("-p" "'${PH_APP_PKG}'")
+	else
+		if ph_check_app_state_validity -a "${PH_APP}" -q -d
+		then
+			if [[ "${PH_APP_PKG}" != "$(ph_get_app_pkg_from_app_name "${PH_APP}")" ]]
+			then
+				PH_APP_PKG=""
+				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Mismatch with known package -> Set to None"
+				ph_set_result -r 0
+			else
+				ph_run_with_rollback -c true -m "None"
+			fi
+		else
+			ph_set_result -m "Cannot support Out-of-scope application '${PH_APP}' since it is not a packaged application"
+			ph_run_with_rollback -c false "Could not support"
+			return "${?}"
+		fi
+	fi
 	for PH_i in USER PKG
 	do
 		declare -n PH_VAR="PH_APP_${PH_i}"
@@ -11564,8 +11580,6 @@ else
 	PH_ENV_ACTION="enable"
 	printf "%8s%s\n" "" "--> Enabling the graphical environment"
 fi
-ph_run_with_rollback -c false -m "Could not ${PH_ENV_ACTION}"
-return "${?}"
 if "${PH_SUDO}" systemctl set-default "${PH_ENV}" >/dev/null 2>&1
 then
 	[[ "${PH_ENV}" == "graphical.target" ]] && \
@@ -12088,7 +12102,7 @@ do
 				if ph_check_app_state_validity -a "${PH_i}" -q -d
 				then
 					printf "\n"
-					printf "%4s\033[33m%s\033[0m\n" "" "${PH_i} is not an out-of-scope application -> Skipping"
+					printf "%4s\033[33m%s\033[0m\n" "" "${PH_i} is not an Out-of-scope application -> Skipping"
 					[[ "${PH_ACTION}" != @(list|tty) ]] && \
 						PH_ROUTINE_FLAG="0"
 					((PH_SKIP_LIST_MEMBERS++))
@@ -12100,7 +12114,7 @@ do
 				if ! ph_check_app_state_validity -a "${PH_i}" -q -d
 				then
 					printf "\n"
-					printf "%4s\033[33m%s\033[0m\n" "" "${PH_i} not a default application -> Skipping"
+					printf "%4s\033[33m%s\033[0m\n" "" "${PH_i} not a Default application -> Skipping"
 					[[ "${PH_ACTION}" != @(list|tty) ]] && \
 						PH_ROUTINE_FLAG="0"
 					((PH_SKIP_LIST_MEMBERS++))
