@@ -2628,7 +2628,7 @@ do
 	case "${PH_i}" in DIR|*_CMD)
 		PH_LINE='an empty string, variable or valid pathname:"${PH_OPTARG_VAL}" == @(\${*}|) || -f "${PH_OPTARG_VAL}"' ;;
 			CIFS_DIR|CIFS_SUBDIR|CIFS_MPT)
-		PH_LINE='an empty string, variable or starting with /:"${PH_OPTARG_VAL}" == @(/*|\${*}|)' ;;
+		PH_LINE='an empty string, a variable or starting with /:"${PH_OPTARG_VAL}" == @(/*|\${*}|)' ;;
 			CIFS_PASS)
 		PH_LINE='an empty string or a string without single quotes:"$("$(ph_check_password_validity "${PH_OPTARG_VAL}")" ; echo "${?}")" -eq "0"' ;;
 			*SRV)
@@ -2652,13 +2652,13 @@ do
 			PIN_PS3|PIN_PS4)
 		PH_LINE='a four-character word or an empty string:"${PH_OPTARG_VAL}" == @({4}(@([a-Z]|[0-9]))|)' ;;
 			BLUE_ADAPT)
-		PH_LINE='a valid mac address or none:"$("$(ph_check_mac_validity "${PH_OPTARG_VAL}")" ; echo "${?}")" -eq "0"' ;;
+		PH_LINE='a valid bluetooth adapter mac or none:"$("$(ph_check_mac_validity "${PH_OPTARG_VAL}")" ; echo "${?}")" -eq "0"' ;;
 			TYPE)
 		PH_LINE='PS3, PS4, XBOX360 or XBOXSX:"${PH_OPTARG_VAL}" == @(PS@(3|4)|XBOX@(360|SX))' ;;
 			CIFS_USER)
 		PH_LINE='a locally existing account or an empty string:"$("$(ph_check_user_state "${PH_OPTARG_VAL}")" ; echo "${?}")" -eq "0"' ;;
 			STARTAPP)
-		PH_LINE='an integrated application or none:"$("$(ph_check_app_state_validity -a "${PH_OPTARG_VAL}" -q -i)" ; echo "${?}")" -eq "0" || "${PH_OPTARG_VAL}" == "none"' ;;
+		PH_LINE='an Integrated application or none:"$("$(ph_check_app_state_validity -a "${PH_OPTARG_VAL}" -q -i)" ; echo "${?}")" -eq "0" || "${PH_OPTARG_VAL}" == "none"' ;;
 	esac
 	unset -n PH_OPTS
 	if ! ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/options.alloweds' -l 'PH_${PH_APPU}_${PH_i}:${PH_LINE}'"

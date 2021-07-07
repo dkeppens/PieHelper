@@ -7919,7 +7919,7 @@ case "${PH_APP_STATE}" in Integrated|Halted|Running)
 		done
 		if [[ "${PH_FOUND_FLAG}" -eq "1" ]]
 		then
-			ph_run_with_rollback -c true -m "none"
+			ph_run_with_rollback -c true -m "None"
 		else
 			ph_set_result -m "Could not unsupport '${PH_APP}' since at least one other supported application depends on it"
 			ph_run_with_rollback -c false -m "Could not unsupport" || \
@@ -7963,10 +7963,10 @@ case "${PH_APP_STATE}" in Integrated|Halted|Running)
 						return 1
 				fi
 			else
-				ph_run_with_rollback -c true -m "none"
+				ph_run_with_rollback -c true -m "None"
 			fi
 		else
-			ph_run_with_rollback -c true -m "none"
+			ph_run_with_rollback -c true -m "None"
 		fi
 	fi
 	ph_run_with_rollback -c "ph_remove_app_items -a '${PH_APP}' -t unsupport" || \
@@ -8368,7 +8368,7 @@ case "${PH_APP_STATE}" in Supported|Integrated|Running|Halted)
 			then
 				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Mismatch with known package -> Set to '${PH_APP_PKG}'"
 			else
-				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Mismatch with known installation method -> Set to none" 
+				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Mismatch with known installation method -> Set to None" 
 			fi
 			ph_set_result -r 0
 		else
@@ -8542,7 +8542,7 @@ case "${PH_APP_STATE}" in Supported|Integrated|Running|Halted)
 			ph_run_with_rollback -c true -m "${PH_APP_STATE}"
 		fi
 	else
-		ph_run_with_rollback -c true -m "none"
+		ph_run_with_rollback -c true -m "None"
 	fi
 	ph_run_with_rollback -c "ph_create_app_items -a '${PH_APP}' -t support" || \
 		return 1
@@ -10118,7 +10118,7 @@ then
 			nawk '{
 				printf "%10s\033[1;37m%s%s\033[0m\n", "", NR ". ", $1
 			}' "${PH_CONF_DIR}/integrated_apps" 2>/dev/null
-			printf "%10s\033[1;37m%s%s\033[0m\n" "" "${#PH_APP_READ[@]}. " "none"
+			printf "%10s\033[1;37m%s%s\033[0m\n" "" "${#PH_APP_READ[@]}. " "None"
 			printf "%10s\033[1;37m%s%s\033[0m\n\n" "" "$(("${#PH_APP_READ[@]}"+1)). " "Keep the current StartApp : '${PH_PIEH_STARTAPP}'"
 			printf "%8s%s" "" "Your choice : "
 			read -r PH_APP_READ[0] 2>/dev/null
