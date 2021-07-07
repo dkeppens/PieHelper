@@ -1685,8 +1685,6 @@ declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 
-PH_OLDOPTARG="${OPTARG}"
-PH_OLDOPTIND="${OPTIND}"
 PH_i=""
 PH_APP=""
 PH_TYPE=""
@@ -1699,6 +1697,8 @@ PH_SCRIPTS=""
 PH_PARAM=""
 PH_PARAMS=""
 PH_OPTION=""
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 
 OPTIND="1"
 
@@ -2669,13 +2669,15 @@ eval "PH_${PH_APPU}_OPTS=\"USE_CTRL NUM_CTRL PERSISTENT CIFS_SHARE CIFS_USER CIF
 
 declare -n PH_OPTS="PH_${PH_APPU}_OPTS"
 case "${PH_APP}" in Moonlight)
-                PH_OPTS="${PH_OPTS} RES WIDTH HEIGHT FPS BITRATE PCKETSIZE SRV" ;;
-                      Controllers)
-                PH_OPTS="MAP TYPE PIN_PS3 PIN_PS4 BLUE_ADAPT" ;;
-		      Emulationstation)
-                PH_OPTS="${PH_OPTS} DIR SETUP_DIR" ;;
-		      PieHelper)
-                PH_OPTS="${PH_OPTS} SANITY_LEVEL SANITY_INST SANITY_CONF STARTAPP" ;;
+	PH_OPTS="${PH_OPTS} RES WIDTH HEIGHT FPS BITRATE PCKETSIZE SRV" ;;
+		Controllers)
+	PH_OPTS="MAP TYPE PIN_PS3 PIN_PS4 BLUE_ADAPT" ;;
+		Emulationstation)
+	PH_OPTS="${PH_OPTS} DIR SETUP_DIR" ;;
+		PieHelper)
+	PH_OPTS="${PH_OPTS} SANITY_LEVEL SANITY_INST SANITY_CONF STARTAPP" ;;
+		*)
+	: ;;
 esac
 unset -n PH_OPTS
 if grep -E "^PH_${PH_APPU}_" "${PH_CONF_DIR}/options.alloweds" >/dev/null 2>&1
@@ -2762,13 +2764,15 @@ eval "PH_${PH_APPU}_OPTS=\"USE_CTRL PKG_NAME CMD_OPTS NUM_CTRL PERSISTENT CIFS_P
 
 declare -n PH_OPTS="PH_${PH_APPU}_OPTS"
 case "${PH_APP}" in Moonlight)
-                PH_OPTS="${PH_OPTS} RES WIDTH HEIGHT FPS BITRATE PCKTSIZE SRV GAME" ;;
-                      Controllers)
-                PH_OPTS="MAP TYPE PS3_PIN PS4_PIN BLUE_ADAPT" ;;
-           Emulationstation)
-                PH_OPTS="${PH_OPTS} DIR SETUP_DIR" ;;
-                  PieHelper)
-                PH_OPTS="${PH_OPTS} SANITY_LEVEL SANITY_INST SANITY_CONF STARTAPP" ;;
+	PH_OPTS="${PH_OPTS} RES WIDTH HEIGHT FPS BITRATE PCKTSIZE SRV GAME" ;;
+		Controllers)
+	PH_OPTS="MAP TYPE PS3_PIN PS4_PIN BLUE_ADAPT" ;;
+		Emulationstation)
+	PH_OPTS="${PH_OPTS} DIR SETUP_DIR" ;;
+		PieHelper)
+	PH_OPTS="${PH_OPTS} SANITY_LEVEL SANITY_INST SANITY_CONF STARTAPP" ;;
+		*)
+	: ;;
 esac
 unset -n PH_OPTS
 if grep -E "^PH_${PH_APPU}_" "${PH_CONF_DIR}/options.defaults" >/dev/null 2>&1
