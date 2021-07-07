@@ -2725,6 +2725,35 @@ if [[ ! -e "${PH_FILE}" ]]
 then
 	if ph_run_with_rollback -c "ph_create_empty_file -t file -q -d '${PH_FILE}'"
 	then
+		ph_add_value_to_param -p PH_REMOVE_BASE_FILES -v "${PH_FILE_SHORTNAME}"
+		ph_run_with_rollback -c true
+	else
+		ph_run_with_rollback -c false -m "Could not create"
+	fi
+else
+	ph_run_with_rollback -c true -m "Nothing to do"
+fi
+return "${?}"
+}
+
+function ph_remove_base_conf_file {
+
+declare PH_FILE
+declare PH_FILE_SHORTNAME
+
+PH_FILE=""
+PH_FILE_SHORTNAME="${1}"
+
+[[ "${PH_FILE_SHORTNAME}" != @(cont|os|int|sup|@(default|allowed)s) || "${#}" -ne "1" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+PH_FILE="$(ph_get_filename_from_shortname "${PH_FILE_SHORTNAME}")"
+printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Removing base configuration file " "'${PH_FILE}'"
+if [[ -e "${PH_FILE}" ]]
+then
+	if ph_run_with_rollback -c "ph_remove_empty_file -t file -q -d '${PH_FILE}'"
+	then
+		ph_add_value_to_param -p PH_CREATE_BASE_FILES -v "${PH_FILE_SHORTNAME}"
 		ph_run_with_rollback -c true
 	else
 		ph_run_with_rollback -c false -m "Could not create"
@@ -5530,6 +5559,10 @@ then
 					  PH_GIT_COMMIT_MASTER)
 				PH_RUN_GIT_COMMIT_MASTER="${PH_VALUE}"
 				PH_CMD="continue" ;;
+					  PH_CREATE_BASE_FILES)
+				PH_CMD="ph_create_base_conf_file '${PH_VALUE}'" ;;
+					  PH_REMOVE_BASE_FILES)
+				PH_CMD="ph_remove_base_conf_file '${PH_VALUE}'" ;;
 					  PH_GIT_ADD_LOCAL)
 				PH_RUN_GIT_ADD_LOCAL="${PH_VALUE}"
 				PH_CMD="continue" ;;
