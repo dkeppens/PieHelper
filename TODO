@@ -1,4 +1,4 @@
-* continue with debugging last remaining current issue with rollback of ph_configure_pieh function + remove forced fail in function ph_set_bootenv when done
+* remove forced fail in function ph_set_bootenv when done
 * continue with ph_support_app and ph_get_app_inst_state_from_app_info functions to add changes related to more possible install states/app possibly being uninstalled/more auto/indepently determining an install state
 * add even better permission setting dependent on filetype
 * Check for where in ph_set_option_to_value things can be removed (cifs/pkg checks ?) or replaced by just an allowed option value check (possible yet to be developed)
