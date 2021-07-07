@@ -5836,6 +5836,8 @@ then
 					PH_PIEH_VERSION)
 				PH_CMD="ph_update_pieh_version '${PH_VALUE}'" ;;
 					PH_STARTAPP)
+				[[ -z "${PH_VALUE}" ]] && \
+					PH_VALUE="none"
 				PH_CMD="ph_set_app_for_start '${PH_VALUE}'" ;;
 					PH_CREATE_EMPTY_FILES)
 				PH_FILE_DEST="$(echo -n "${PH_VALUE}" | cut -f1 -d"'")"
@@ -6253,6 +6255,7 @@ declare PH_APP
 declare PH_SUFFIX
 declare PH_OPTARG_VAR
 declare PH_OPTARG_VAL
+declare PH_OPTARG_VAL_DISPLAY
 declare PH_MSG_TYPE
 declare PH_NEWVALUE
 declare PH_OPT_DEFS
@@ -6275,6 +6278,7 @@ PH_APP="$1"
 PH_SUFFIX=""
 PH_OPTARG_VAR=""
 PH_OPTARG_VAL=""
+PH_OPTARG_VAL_DISPLAY=""
 PH_MSG_TYPE=""
 PH_NEWVALUE=""
 PH_OPT_DEFS=""
@@ -6322,13 +6326,19 @@ do
 		} { \
 			print $2 \
 		}')"
+	if [[ -n "${PH_OPTARG_VAL}" ]]
+	then
+		PH_OPTARG_VAL_DISPLAY="'${PH_OPTARG_VAL}'"
+	else
+		PH_OPTARG_VAL_DISPLAY="empty"
+	fi
 	[[ -z "${PH_APP}" || -z "${PH_OPTARG_VAR}" ]] && \
 		ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 	if [[ "${PH_APP}" != "Loginscript" ]]
 	then
 		if ! grep -E "^${PH_OPTARG_VAR}=" "${PH_CONF_DIR}/${PH_APP}.conf" >/dev/null
 		then
-			printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "'${PH_OPTARG_VAL}'" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
+			printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "${PH_OPTARG_VAL_DISPLAY}" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
 			if [[ "${PH_MSG_TYPE}" == "ERROR" ]]
 			then
 				((PH_RET_CODE++))
@@ -6371,20 +6381,20 @@ do
 		done
 		if [[ "${PH_OPTARG_VAL}" == "${PH_CURVALUE}" ]]
 		then
-			printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "'${PH_OPTARG_VAL}'" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
+			printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "${PH_OPTARG_VAL_DISPLAY}" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
 			ph_run_with_rollback -c true -m "Nothing to do"
 			continue
 		else
 			case "${PH_OPTARG_VAR}" in "PH_${PH_APPU}_PKG")
 				if ! ph_check_pkg_validity "${PH_OPTARG_VAL}"
 				then
-					printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "'${PH_OPTARG_VAL}'" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
+					printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "${PH_OPTARG_VAL_DISPLAY}" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
 					if [[ "${PH_MSG_TYPE}" == "ERROR" ]]
 					then
 						((PH_RET_CODE++))
-						ph_set_result -m "Could not set option '${PH_OPTARG_VAR}' to '${PH_OPTARG_VAL}' since it is not a valid package"
+						ph_set_result -m "Could not set option '${PH_OPTARG_VAR}' to ${PH_OPTARG_VAL_DISPLAY} since it is not a valid package"
 					else
-						printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set '${PH_OPTARG_VAL}' as a valid package) -> Skipping"
+						printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set ${PH_OPTARG_VAL_DISPLAY} as a valid package) -> Skipping"
 						ph_set_result -r 0
 					fi
 					continue
@@ -6392,11 +6402,11 @@ do
 					PH_MOON_USE_CTRL)
 				if [[ "${PH_OPTARG_VAL}" == "no" ]]
 				then
-					printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "'${PH_OPTARG_VAL}'" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
+					printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "${PH_OPTARG_VAL_DISPLAY}" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
 					if [[ "${PH_MSG_TYPE}" == "ERROR" ]]
 					then
 						((PH_RET_CODE++))
-						ph_set_result -m "Could not set option '${PH_OPTARG_VAR}' to '${PH_OPTARG_VAL}' since '${PH_APP}' requires at least one controller"
+						ph_set_result -m "Could not set option '${PH_OPTARG_VAR}' to ${PH_OPTARG_VAL_DISPLAY} since '${PH_APP}' requires at least one controller"
 					else
 						printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set ('${PH_APP}' requires at least one controller) -> Skipping"
 						ph_set_result -r 0
@@ -6406,11 +6416,11 @@ do
 					PH_MOON_CMD_OPTS)
 				if ! echo -n "${PH_OPTARG_VAL}" | grep -E "+([[:space:]])/dev/input/eventPH_CTRL[1-4]" >/dev/null
 				then
-					printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "'${PH_OPTARG_VAL}'" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
+					printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "${PH_OPTARG_VAL_DISPLAY}" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
 					if [[ "${PH_MSG_TYPE}" == "ERROR" ]]
 					then
 						((PH_RET_CODE++))
-						ph_set_result -m "Could not set option '${PH_OPTARG_VAR}' to '${PH_OPTARG_VAL}' since no controller ID arguments were passed"
+						ph_set_result -m "Could not set option '${PH_OPTARG_VAR}' to ${PH_OPTARG_VAL_DISPLAY} since no controller ID arguments were passed"
 					else
 						printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set (The value must contain controller ID arguments) -> Skipping"
 						ph_set_result -r 0
@@ -6426,7 +6436,7 @@ do
 							next \
 						}' | wc -l)" -gt "0" ]]
 					then
-						printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "'${PH_OPTARG_VAL}'" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
+						printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "${PH_OPTARG_VAL_DISPLAY}" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
 						if [[ "${PH_MSG_TYPE}" == "ERROR" ]]
 						then
 							((PH_RET_CODE++))
@@ -6444,7 +6454,7 @@ do
 		fi
 		if grep -E "^${PH_OPTARG_VAR}:" "${PH_CONF_DIR}/options.alloweds" >/dev/null 2>&1
 		then
-			printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Checking if new value " "'${PH_OPTARG_VAL}'" " is allowed for option " "'${PH_OPTARG_VAR}'"
+			printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Checking if new value " "${PH_OPTARG_VAL_DISPLAY}" " is allowed for option " "'${PH_OPTARG_VAR}'"
 			PH_OPT_DEFS="$(grep -E "^${PH_OPTARG_VAR}:" "${PH_CONF_DIR}/options.alloweds" 2>/dev/null | cut -d":" -f2)"
 			PH_OPT_REGEX="$(grep -E "^${PH_OPTARG_VAR}:" "${PH_CONF_DIR}/options.alloweds" 2>/dev/null | cut -d":" -f3-)"
 			if [[ ${PH_OPT_REGEX} ]]
@@ -6458,7 +6468,7 @@ do
 					if [[ "${PH_MSG_TYPE}" == "ERROR" ]]
 					then
 						((PH_RET_CODE++))
-						ph_set_result -m "Could not set option '${PH_OPTARG_VAR}' to '${PH_OPTARG_VAL}' since it's not '${PH_OPT_DEFS}')"
+						ph_set_result -m "Could not set option '${PH_OPTARG_VAR}' to ${PH_OPTARG_VAL_DISPLAY} since it's not '${PH_OPT_DEFS}')"
 					else
 						printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set (Invalid value since not '${PH_OPT_DEFS}') -> Skipping"
 						ph_set_result -r 0
@@ -6469,7 +6479,7 @@ do
 				fi
 		fi
 	fi
-	printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "'${PH_OPTARG_VAL}'" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
+	printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Setting option " "'${PH_OPTARG_VAR}'" " to " "${PH_OPTARG_VAL_DISPLAY}" " in " "'${PH_CONF_DIR}/${PH_APP}.conf'"
 	PH_OPTARG_VAL="$(ph_do_escape_paths "${PH_OPTARG_VAL}")"
 	if ! sed -i 's/^\('"${PH_OPTARG_VAR}"'=\)\([^\t]*\)\(\t*#.*\)/\1'\'"${PH_OPTARG_VAL}"\''\3/' "${PH_CONF_DIR}/${PH_APP}.conf" 2>/dev/null
 	then
@@ -6477,7 +6487,7 @@ do
 		if [[ "${PH_MSG_TYPE}" == "ERROR" ]]
 		then
 			((PH_RET_CODE++))
-			ph_set_result -m "An error occurred trying to change the value of option '${PH_OPTARG_VAR}' in '${PH_CONF_DIR}/${PH_APP}.conf' to '${PH_OPTARG_VAL}'"
+			ph_set_result -m "An error occurred trying to change the value of option '${PH_OPTARG_VAR}' in '${PH_CONF_DIR}/${PH_APP}.conf' to ${PH_OPTARG_VAL_DISPLAY}"
 		else
 			printf "%10s\033[33m%s\033[0m\n" "" "${PH_MSG_TYPE} : Could not set"
 			ph_set_result -r 0
