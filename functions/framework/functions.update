@@ -49,47 +49,60 @@ OPTIND="1"
 
 while getopts :d:t:qr PH_OPTION
 do
-        case "${PH_OPTION}" in d)
+	case "${PH_OPTION}" in d)
 		[[ -n "${PH_FILE_DEST}" || -z "${OPTARG}" ]] && \
 			OPTIND="${PH_OLDOPTIND}" && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
 		PH_FILE_DEST="${OPTARG}" ;;
-                             t)
-		[[ -n "${PH_FILE_TYPE}" || -z "${OPTARG}" ]] && \
+			t)
+		[[ -n "${PH_FILE_TYPE}" || "${OPTARG}" != @(link|directory|file) ]] && \
 			OPTIND="${PH_OLDOPTIND}" && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
 		PH_FILE_TYPE="${OPTARG}" ;;
-                             q)
+			q)
+		[[ "${PH_QUIESCE}" -eq "0" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
 		[[ -z "${PH_PARAMS}" ]] && \
 			PH_PARAMS="-q" || \
 			PH_PARAMS="${PH_PARAMS} -q"
 		PH_QUIESCE="0" ;;
-                             r)
+			r)
+		[[ "${PH_REMOVE_AS_ROOT}" -eq "0" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
 		[[ -z "${PH_PARAMS}" ]] && \
 			PH_PARAMS="-r" || \
 			PH_PARAMS="${PH_PARAMS} -r"
 		PH_REMOVE_AS_ROOT="0" ;;
-			     *)
+			*)
 		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
 		OPTIND="${PH_OLDOPTIND}"
 		OPTARG="${PH_OLDOPTARG}"
 		return 1 ;;
-        esac
+	esac
 done
 OPTIND="${PH_OLDOPTIND}"
 OPTARG="${PH_OLDOPTARG}"
 
+set -x
 [[ -z "${PH_FILE_DEST}" || -z "${PH_FILE_TYPE}" || \
 	( "${PH_FILE_TYPE}" == "link" && ! -L "${PH_FILE_DEST}" ) || \
 	( "${PH_FILE_TYPE}" == "directory" && ! -d "${PH_FILE_DEST}" ) || \
 	( "${PH_FILE_TYPE}" == "file" && (! -f "${PH_FILE_DEST}" || -L "${PH_FILE_DEST}" || -s "${PH_FILE_DEST}" )) || \
-	"${#}" -lt "4" || "${#}" -gt "6" ]] && \
+	( "${PH_QUIESCE}" -eq "1" && "${PH_REMOVE_AS_ROOT}" -eq "1" && "${#}" -ne "4" ) || \
+	( "${PH_QUIESCE}" -eq "0" && "${PH_REMOVE_AS_ROOT}" -eq "0" && "${#}" -ne "6" ) || \
+	((( "${PH_QUIESCE}" -eq "0" && "${PH_REMOVE_AS_ROOT}" -eq "1" ) || \
+	( "${PH_QUIESCE}" -eq "1" && "${PH_REMOVE_AS_ROOT}" -eq "0" )) && "${#}" -ne "5" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+set +x
 
 [[ "${PH_QUIESCE}" -eq "1" ]] && \
-        printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing ${PH_FILE_TYPE} " "'${PH_FILE_DEST}'"
+	printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing ${PH_FILE_TYPE} " "'${PH_FILE_DEST}'"
 if [[ ! -e "${PH_FILE_DEST}" ]]
 then
 	[[ "${PH_QUIESCE}" -eq "1" ]] && \
@@ -98,42 +111,42 @@ then
 fi
 case "${PH_FILE_TYPE}" in link)
 	PH_FILE_SOURCE="$(ph_get_link_target "${PH_FILE_DEST}")"
-        [[ "${PH_FILE_SOURCE}" != /* ]] && \
-                PH_FILE_SOURCE="${PH_FILE_DEST%/*}/${PH_FILE_SOURCE}"
-        if [[ "${PH_REMOVE_AS_ROOT}" -eq "0" ]]
-        then
-                "${PH_SUDO}" unlink "${PH_FILE_DEST}" 2>/dev/null
-        else
-                unlink "${PH_FILE_DEST}" 2>/dev/null
-        fi ;;
-                        directory)
-        PH_FILE_SOURCE="${PH_FILE_DEST}"
-        if [[ "${PH_REMOVE_AS_ROOT}" -eq "0" ]]
-        then
-                "${PH_SUDO}" rm -r "${PH_FILE_DEST}" 2>/dev/null
-        else
-                rm -r "${PH_FILE_DEST}" 2>/dev/null
-        fi ;;
-                        file)
-        PH_FILE_SOURCE="${PH_FILE_DEST}"
-        if [[ "${PH_REMOVE_AS_ROOT}" -eq "0" ]]
-        then
-                "${PH_SUDO}" rm "${PH_FILE_DEST}" 2>/dev/null
-        else
-                rm "${PH_FILE_DEST}" 2>/dev/null
-        fi ;;
+	[[ "${PH_FILE_SOURCE}" != /* ]] && \
+		PH_FILE_SOURCE="${PH_FILE_DEST%/*}/${PH_FILE_SOURCE}"
+	if [[ "${PH_REMOVE_AS_ROOT}" -eq "0" ]]
+	then
+		"${PH_SUDO}" unlink "${PH_FILE_DEST}" 2>/dev/null
+	else
+		unlink "${PH_FILE_DEST}" 2>/dev/null
+	fi ;;
+		directory)
+	PH_FILE_SOURCE="${PH_FILE_DEST}"
+	if [[ "${PH_REMOVE_AS_ROOT}" -eq "0" ]]
+	then
+		"${PH_SUDO}" rm -r "${PH_FILE_DEST}" 2>/dev/null
+	else
+		rm -r "${PH_FILE_DEST}" 2>/dev/null
+	fi ;;
+		*)
+	PH_FILE_SOURCE="${PH_FILE_DEST}"
+	if [[ "${PH_REMOVE_AS_ROOT}" -eq "0" ]]
+	then
+		"${PH_SUDO}" rm "${PH_FILE_DEST}" 2>/dev/null
+	else
+		rm "${PH_FILE_DEST}" 2>/dev/null
+	fi ;;
 esac
 if [[ "${?}" -eq "0" ]]
 then
-        ph_add_value_to_param -p PH_CREATE_EMPTY_FILES -v "${PH_FILE_DEST}'${PH_FILE_TYPE}'${PH_FILE_SOURCE}'${PH_PARAMS}"
-        [[ "${PH_QUIESCE}" -eq "1" ]] && \
-                ph_run_with_rollback -c true
-        return 0
+	ph_add_value_to_param -p PH_CREATE_EMPTY_FILES -v "${PH_FILE_DEST}'${PH_FILE_TYPE}'${PH_FILE_SOURCE}'${PH_PARAMS}"
+	[[ "${PH_QUIESCE}" -eq "1" ]] && \
+		ph_run_with_rollback -c true
+	return 0
 else
 	ph_set_result -m "An error occurred trying to remove ${PH_FILE_TYPE} '${PH_FILE_DEST}'"
-        [[ "${PH_QUIESCE}" -eq "1" ]] && \
+	[[ "${PH_QUIESCE}" -eq "1" ]] && \
 		ph_run_with_rollback -c false -m "Could not remove"
-        return 1
+	return 1
 fi
 }
 
@@ -163,53 +176,68 @@ OPTIND="1"
 
 while getopts :d:s:t:qr PH_OPTION
 do
-        case "${PH_OPTION}" in d)
+	case "${PH_OPTION}" in d)
 		[[ -n "${PH_FILE_DEST}" || -z "${OPTARG}" ]] && \
 			OPTIND="${PH_OLDOPTIND}" && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
 		PH_FILE_DEST="${OPTARG}" ;;
-                            s)
+			s)
 		[[ -n "${PH_FILE_SOURCE}" || -z "${OPTARG}" ]] && \
 			OPTIND="${PH_OLDOPTIND}" && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
 		PH_FILE_SOURCE="${OPTARG}" ;;
-                            t)
-		[[ -n "${PH_FILE_TYPE}" || -z "${OPTARG}" ]] && \
+			t)
+		[[ -n "${PH_FILE_TYPE}" || "${OPTARG}" != @(link|directory|file) ]] && \
 			OPTIND="${PH_OLDOPTIND}" && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
 		PH_FILE_TYPE="${OPTARG}" ;;
-                            q)
+			q)
+		[[ "${PH_QUIESCE}" -eq "0" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
 		[[ -z "${PH_PARAMS}" ]] && \
 			PH_PARAMS="-q" || \
 			PH_PARAMS="${PH_PARAMS} -q"
 		PH_QUIESCE="0" ;;
-                            r)
+			r)
+		[[ "${PH_CREATE_AS_ROOT}" -eq "0" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
 		[[ -z "${PH_PARAMS}" ]] && \
 			PH_PARAMS="-r" || \
 			PH_PARAMS="${PH_PARAMS} -r"
 		PH_CREATE_AS_ROOT="0" ;;
-			    *)
+			*)
 		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
 		OPTIND="${PH_OLDOPTIND}"
 		OPTARG="${PH_OLDOPTARG}"
 		return 1 ;;
-        esac
+	esac
 done
 OPTIND="${PH_OLDOPTIND}"
 OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "${PH_FILE_DEST}" || -z "${PH_FILE_TYPE}" || ( "${PH_FILE_TYPE}" == "link" && -z "${PH_FILE_SOURCE}" ) || \
+[[ -z "${PH_FILE_DEST}" || -z "${PH_FILE_TYPE}" || ( "${PH_FILE_TYPE}" == "link" && ( -z "${PH_FILE_SOURCE}" || \
+	( "${PH_QUIESCE}" -eq "1" && "${PH_CREATE_AS_ROOT}" -eq "1" && "${#}" -ne "6" ) || \
+	( "${PH_QUIESCE}" -eq "0" && "${PH_CREATE_AS_ROOT}" -eq "0" && "${#}" -ne "8" ) || \
+	((( "${PH_QUIESCE}" -eq "1" && "${PH_CREATE_AS_ROOT}" -eq "0" ) || \
+	( "${PH_QUIESCE}" -eq "0" && "${PH_CREATE_AS_ROOT}" -eq "1" )) && "${#}" -ne "7" )) || \
 	( -e "${PH_FILE_DEST}" && (( "${PH_FILE_TYPE}" == "directory" && ! -d "${PH_FILE_DEST}" ) || 
+	( "${PH_FILE_TYPE}" != "link" && (( "${PH_QUIESCE}" -eq "1" && "${PH_CREATE_AS_ROOT}" -eq "1" && "${#}" -ne "4" ) || \
+	( "${PH_QUIESCE}" -eq "0" && "${PH_CREATE_AS_ROOT}" -eq "0" && "${#}" -ne "6" ) || \
+	((( "${PH_QUIESCE}" -eq "1" && "${PH_CREATE_AS_ROOT}" -eq "0" ) || \
+	( "${PH_QUIESCE}" -eq "0" && "${PH_CREATE_AS_ROOT}" -eq "1" )) && "${#}" -ne "5" )) || \
 	( "${PH_FILE_TYPE}" == "link" && ! -L "${PH_FILE_DEST}" ) || \
-	( "${PH_FILE_TYPE}" == "file" && ( ! -f "${PH_FILE_DEST}" || -L "${PH_FILE_DEST}" )))) || \
-	"${#}" -lt "4" || "${#}" -gt "8" ]] && \
+	( "${PH_FILE_TYPE}" == "file" && ( ! -f "${PH_FILE_DEST}" || -L "${PH_FILE_DEST}" )))) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 [[ "${PH_QUIESCE}" -eq "1" ]] && \
-        printf "%8s%s\033[1;33m%s\033[0;0m" "" "--> Creating ${PH_FILE_TYPE} " "'${PH_FILE_DEST}'"
+	printf "%8s%s\033[1;33m%s\033[0;0m" "" "--> Creating ${PH_FILE_TYPE} " "'${PH_FILE_DEST}'"
 if [[ ( "${PH_FILE_TYPE}" == "link" && -e "${PH_FILE_DEST}" && "${PH_FILE_SOURCE}" == "$(ph_get_link_target "${PH_FILE_DEST}")" ) || \
 	( "${PH_FILE_TYPE}" == @(directory|file) && -e "${PH_FILE_DEST}" ) ]]
 then
@@ -220,38 +248,38 @@ then
 fi
 case "${PH_FILE_TYPE}" in link)
 	[[ "${PH_QUIESCE}" -eq "1" ]] && \
-        	printf "%s\033[1;33m%s\033[0;0m\n" " to " "'${PH_FILE_SOURCE}'"
-        if [[ "${PH_CREATE_AS_ROOT}" -eq "0" ]]
-        then
-                "${PH_SUDO}" ln -s "${PH_FILE_SOURCE}" "${PH_FILE_DEST}" 2>/dev/null
-        else
-                ln -s "${PH_FILE_SOURCE}" "${PH_FILE_DEST}" 2>/dev/null
-        fi ;;
-                        directory)
-        [[ "${PH_QUIESCE}" -eq "1" ]] && \
-                printf "\n"
-        if [[ "${PH_CREATE_AS_ROOT}" -eq "0" ]]
-        then
-                "${PH_SUDO}" mkdir -p "${PH_FILE_DEST}" 2>/dev/null
-        else
-                mkdir -p "${PH_FILE_DEST}" 2>/dev/null
-        fi ;;
-                        file)
-        [[ "${PH_QUIESCE}" -eq "1" ]] && \
-                printf "\n"
-        if [[ "${PH_CREATE_AS_ROOT}" -eq "0" ]]
-        then
-                "${PH_SUDO}" touch "${PH_FILE_DEST}" 2>/dev/null
-        else
-                touch "${PH_FILE_DEST}" 2>/dev/null
-        fi ;;
+		printf "%s\033[1;33m%s\033[0;0m\n" " to " "'${PH_FILE_SOURCE}'"
+	if [[ "${PH_CREATE_AS_ROOT}" -eq "0" ]]
+	then
+		"${PH_SUDO}" ln -s "${PH_FILE_SOURCE}" "${PH_FILE_DEST}" 2>/dev/null
+	else
+		ln -s "${PH_FILE_SOURCE}" "${PH_FILE_DEST}" 2>/dev/null
+	fi ;;
+		directory)
+	[[ "${PH_QUIESCE}" -eq "1" ]] && \
+		printf "\n"
+	if [[ "${PH_CREATE_AS_ROOT}" -eq "0" ]]
+	then
+		"${PH_SUDO}" mkdir -p "${PH_FILE_DEST}" 2>/dev/null
+	else
+		mkdir -p "${PH_FILE_DEST}" 2>/dev/null
+	fi ;;
+		*)
+	[[ "${PH_QUIESCE}" -eq "1" ]] && \
+		printf "\n"
+	if [[ "${PH_CREATE_AS_ROOT}" -eq "0" ]]
+	then
+		"${PH_SUDO}" touch "${PH_FILE_DEST}" 2>/dev/null
+	else
+		touch "${PH_FILE_DEST}" 2>/dev/null
+	fi ;;
 esac
 if [[ "${?}" -eq "0" ]]
 then
-        ph_add_value_to_param -p PH_REMOVE_EMPTY_FILES -v "${PH_FILE_DEST}'${PH_FILE_TYPE}'${PH_PARAMS}"
-        [[ "${PH_QUIESCE}" -eq "1" ]] && \
-                ph_run_with_rollback -c true
-        return 0
+	ph_add_value_to_param -p PH_REMOVE_EMPTY_FILES -v "${PH_FILE_DEST}'${PH_FILE_TYPE}'${PH_PARAMS}"
+	[[ "${PH_QUIESCE}" -eq "1" ]] && \
+		ph_run_with_rollback -c true
+	return 0
 else
 	if [[ "${PH_FILE_TYPE}" == "link" ]]
 	then
@@ -259,9 +287,9 @@ else
 	else
 		ph_set_result -m "An error occurred creating ${PH_FILE_TYPE} '${PH_FILE_DEST}'"
 	fi
-        [[ "${PH_QUIESCE}" -eq "1" ]] && \
+	[[ "${PH_QUIESCE}" -eq "1" ]] && \
 		ph_run_with_rollback -c false -m "Could not create"
-        return 1
+	return 1
 fi
 }
 
