@@ -7793,6 +7793,7 @@ declare -i PH_OLDOPTIND
 declare -i PH_FOUND_FLAG
 declare -i PH_COUNT
 declare -l PH_il
+declare -l PH_APPL
 
 PH_i=""
 PH_APP=""
@@ -7809,6 +7810,7 @@ PH_OLDOPTIND="${OPTIND}"
 PH_FOUND_FLAG="1"
 PH_COUNT="0"
 PH_il=""
+PH_APPL=""
 
 OPTIND="1"
 
@@ -7878,6 +7880,7 @@ else
 			ph_run_with_rollback -c true -m "Nothing to do"
 			return "${?}" ;;
 				Reserved)
+			PH_APPL="${PH_APP:0:4}"
 			ph_set_result -m "Could not unsupport invalid application name '${PH_APP}' (Uses reserved keyword '${PH_APPL}')"
 			ph_run_with_rollback -c false -m "Could not unsupport"
 			return "${?}" ;;

@@ -45,9 +45,7 @@
 * check functions concerning CIFS in functions.update for resolving of possible variables in values for CIFS_DIR and CIFS_SUBDIR + maybe others ? --> Check conf file templates
 * run check of code for instances of abovementioned auto-resolving of possible variables in option values -> Should not be \$$ !!!
 * add quiesce to or quiet function ph_update_base_conf_file
-* continue with declares first in functions (work partly up from ph_get_app_name_from_app_tty) + main.sh
 * adapt REAMD.md with changes such as installation states etc
-* reimplement recursive chown and chperms to speed things up
 * change package removal functions for auto uninstall dependendies that were installed with
 * create expect for moonlight pairing
 * create a function for PH_APP_GRAPH and PH_APP_EXEC determination and replace instances with calls to function

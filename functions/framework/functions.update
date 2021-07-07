@@ -2510,144 +2510,165 @@ declare PH_i
 declare PH_j
 declare PH_APP
 declare PH_APP_DISPLAY
+declare -i PH_COUNT
+declare -i PH_EXISTS_FLAG
 declare -l PH_APPL
 
 PH_i=""
 PH_j=""
 PH_APP="${1}"
 PH_APP_DISPLAY=""
+PH_COUNT="0"
+PH_EXISTS_FLAG="1"
 PH_APPL="${PH_APP:0:4}"
 
 [[ -z "${PH_APP}" || "${#}" -ne "1" ]] && \
         ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-ph_run_with_rollback -c "ph_remove_app_menus '${PH_APP}'" || \
-	return 1
-printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Creating the menu items for " "'${PH_APP}'"
-for PH_i in "${PH_MENUS_DIR}/${PH_APP}.lst" "${PH_MENUS_DIR}/OptionsManagement_${PH_APP}.lst" "${PH_MENUS_DIR}/TTYManagement_${PH_APP}.lst" "${PH_MENUS_DIR}/StatusManagement_${PH_APP}.lst"
+for PH_COUNT in 1 2
 do
-	ph_run_with_rollback -c "ph_create_empty_file -q -t file -d '${PH_i}'" || \
-		break
-	if [[ "${PH_APP}" == "Controllers" ]]
+	if [[ "${PH_COUNT}" -eq "2" ]]
 	then
-		PH_APP_DISPLAY="${PH_APP%s}"
-	else
-		PH_APP_DISPLAY="${PH_APP}"
-	fi
-	case "${PH_i}" in "${PH_MENUS_DIR}/${PH_APP}.lst")
-		for PH_j in "Go to ${PH_APP_DISPLAY} Status:ph_show_menu StatusManagement_${PH_APP}" \
-			"Go to ${PH_APP_DISPLAY} Options:ph_show_menu OptionsManagement_${PH_APP}" \
-			"Go to ${PH_APP_DISPLAY} TTY:ph_show_menu TTYManagement_${PH_APP}"
-		do
-			[[ "${PH_APP}" == "Controllers" && "${PH_j}" == *TTYManagement* ]] && \
-				continue
-			ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
-				break 2
-		done ;;
-			"${PH_MENUS_DIR}/OptionsManagement_${PH_APP}.lst")
-		for PH_j in "List all bluetooth adapters:listblue_ph.sh | more" \
-			"List all Moonlight games:listmoon_ph.sh | more" \
-			"List all ${PH_APP_DISPLAY} options:confopts_ph.sh -p list -a ${PH_APP} | more" \
-			"Change a ${PH_APP_DISPLAY} option:confopts_ph.sh -p prompt -a ${PH_APP} -s" \
-			"Change all ${PH_APP_DISPLAY} options:confopts_ph.sh -p set -a ${PH_APP} | more" \
-			"Reset a ${PH_APP_DISPLAY} option:confopts_ph.sh -p prompt -a ${PH_APP} -r" \
-			"Reset all ${PH_APP_DISPLAY} options:confopts_ph.sh -p reset -a ${PH_APP} | more" \
-			"Display help for ${PH_APP_DISPLAY} options:confopts_ph.sh -p prompt -a ${PH_APP} -d"
-		do
-			[[ "${PH_j}" == "List all bluetooth adapters:listblue_ph.sh | more" && "${PH_APP}" != "Controllers" ]] && \
-				continue
-			[[ "${PH_j}" == "List all Moonlight games:listmoon_ph.sh | more" && "${PH_APP}" != "Moonlight" ]] && \
-				continue
-			ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
-				break 2
-		done ;;
-			"${PH_MENUS_DIR}/TTYManagement_${PH_APP}.lst")
-		if [[ "${PH_APP}" != "Controllers" ]]
+		if [[ "${PH_EXISTS_FLAG}" -eq "0" ]]
 		then
-			for PH_j in "Show tty allocation of ${PH_APP_DISPLAY}:confttys_ph.sh -r tty -a ${PH_APP} | more" \
-				"Change tty allocation of ${PH_APP_DISPLAY}:confttys_ph.sh -r move -a ${PH_APP} -t prompt"
-			do
-				[[ "${PH_APP}" == "PieHelper" && "${PH_j}" == Change* ]] && \
-					continue
-				ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
-					break 2
-			done
-		fi ;;
-			"${PH_MENUS_DIR}/StatusManagement_${PH_APP}.lst")
-		if [[ "${PH_APP}" == "PieHelper" ]]
-		then
-			for PH_j in 'Start PieHelper:echo \"*Sigh* I am already running ! Stop buggering me...\"' \
-				"Stop PieHelper:break" \
-				'Restart PieHelper (Only if on a tty):echo restartpieh.sh | at -M -t \"$(date +%Y%m)$(date +%d%H%M).$(($(date +%S)+2))\"' \
-				"Show PieHelper info:confapps_ph.sh -r info -a PieHelper | more" \
-				"Update PieHelper:confpieh_ph.sh -u" \
-				'Configure PieHelper:echo \"*Sigh* I am already configured ! Stop buggering me...\"' \
-				'Unconfigure PieHelper:echo Unconfigure by quitting PieHelper from the menu and running \"confpieh_ph.sh -u\"' \
-				'Uninstall PieHelper:echo Uninstall by quitting PieHelper from the menu and running \"confpieh_ph.sh -r\"'
-			do
-				ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
-					break 2
-			done
-		else
-			if [[ "${PH_APP}" != "Controllers" ]]
-			then
-				for PH_j in "Start ${PH_APP_DISPLAY}:start${PH_APPL}.sh | more" \
-					"Stop ${PH_APP_DISPLAY}:stop${PH_APPL}.sh -f | more" \
-					"Restart ${PH_APP_DISPLAY}:restart${PH_APPL}.sh | more" \
-					"Show ${PH_APP_DISPLAY} info:confapps_ph.sh -r info -a ${PH_APP}" \
-					"Update ${PH_APP_DISPLAY}:confapps_ph.sh -r update -a ${PH_APP} | more" \
-					"Configure ${PH_APP_DISPLAY}:confapps_ph.sh -r conf -a ${PH_APP}" \
-					"Unconfigure ${PH_APP_DISPLAY}:confapps_ph.sh -r unconf -a ${PH_APP} | more" \
-					"Integrate ${PH_APP_DISPLAY}:confapps_ph.sh -r int -a ${PH_APP} | more" \
-					"Unintegrate ${PH_APP_DISPLAY}:confapps_ph.sh -r unint -a {PH_APP}" \
-					"Install ${PH_APP_DISPLAY}:confapps_ph.sh -r inst -a ${PH_APP} | more" \
-					"Uninstall ${PH_APP_DISPLAY}:confapps_ph.sh -r uninst -a ${PH_APP}" \
-					"Unsupport ${PH_APP_DISPLAY}:confapps_ph.sh -r unsup -a ${PH_APP}"
-				do
-					ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
-						break 2
-				done
-			else
-				for PH_j in "Go to PS3:ph_show_menu PS3" "Go to PS4:ph_show_menu PS4" \
-					"Go to XBOX360:ph_show_menu XBOX360" "Go to XBOXS/X:ph_show_menu XBOXSX"
-				do
-					ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
-						break 2
-				done
-
-			fi
-		fi ;;
-	esac
-	if [[ "${PH_APP}" == "Controllers" ]]
-	then
-		if [[ "${PH_i}" != "${PH_MENUS_DIR}/@(TTYManagement_|)${PH_APP}.lst" ]]
-		then
-			ph_run_with_rollback -c "ph_add_line_to_file -l 'Go to ${PH_APP}:ph_show_menu ${PH_APP}' -f '${PH_i}'" || \
-				break
-		fi
-		for PH_j in "Go to Main:ph_show_menu Main" "Open a shell (Type 'CTRL-D' to return):echo;cd;/bin/bash" \
-			"Quit:break" "Return to previous screen:return"
-		do
-			ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
-				break 2
-		done
-	fi
-	ph_run_with_rollback -c "ph_secure_pieh -q -f '${PH_i}'" || \
-		break
-	if [[ "${PH_i}" == "${PH_MENUS_DIR}/StatusManagement_${PH_APP}.lst" ]]
-	then
-		ph_run_with_rollback -c true
-		if [[ "${PH_APP}" == "PieHelper" ]]
-		then
-			ph_run_with_rollback -c "ph_link_app_to_menu -a '${PH_APP}'" || \
+			ph_run_with_rollback -c "ph_remove_app_menus '${PH_APP}'" || \
 				return 1
 		fi
-		ph_add_value_to_param -p PH_REMOVE_APPS_MENUS -v "${PH_APP}"
-		return 0
+		printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Creating the menu items for " "'${PH_APP}'"
 	fi
+	for PH_i in "${PH_MENUS_DIR}/${PH_APP}.lst" "${PH_MENUS_DIR}/OptionsManagement_${PH_APP}.lst" "${PH_MENUS_DIR}/TTYManagement_${PH_APP}.lst" "${PH_MENUS_DIR}/StatusManagement_${PH_APP}.lst"
+	do
+		if [[ "${PH_COUNT}" -eq "1" ]]
+		then
+			if [[ -e "${PH_i}" ]]
+			then
+				PH_EXISTS_FLAG="0"
+				continue 2
+			fi
+		else
+			ph_run_with_rollback -c "ph_create_empty_file -q -t file -d '${PH_i}'" || \
+				break
+			if [[ "${PH_APP}" == "Controllers" ]]
+			then
+				PH_APP_DISPLAY="${PH_APP%s}"
+			else
+				PH_APP_DISPLAY="${PH_APP}"
+			fi
+			case "${PH_i}" in "${PH_MENUS_DIR}/${PH_APP}.lst")
+				for PH_j in "Go to ${PH_APP_DISPLAY} Status:ph_show_menu StatusManagement_${PH_APP}" \
+					"Go to ${PH_APP_DISPLAY} Options:ph_show_menu OptionsManagement_${PH_APP}" \
+					"Go to ${PH_APP_DISPLAY} TTY:ph_show_menu TTYManagement_${PH_APP}"
+				do
+					[[ "${PH_APP}" == "Controllers" && "${PH_j}" == *TTYManagement* ]] && \
+						continue
+					ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
+						break 2
+				done ;;
+					"${PH_MENUS_DIR}/OptionsManagement_${PH_APP}.lst")
+				for PH_j in "List all bluetooth adapters:listblue_ph.sh | more" \
+					"List all Moonlight games:listmoon_ph.sh | more" \
+					"List all ${PH_APP_DISPLAY} options:confopts_ph.sh -p list -a ${PH_APP} | more" \
+					"Change a ${PH_APP_DISPLAY} option:confopts_ph.sh -p prompt -a ${PH_APP} -s" \
+					"Change all ${PH_APP_DISPLAY} options:confopts_ph.sh -p set -a ${PH_APP} | more" \
+					"Reset a ${PH_APP_DISPLAY} option:confopts_ph.sh -p prompt -a ${PH_APP} -r" \
+					"Reset all ${PH_APP_DISPLAY} options:confopts_ph.sh -p reset -a ${PH_APP} | more" \
+					"Display help for ${PH_APP_DISPLAY} options:confopts_ph.sh -p prompt -a ${PH_APP} -d"
+				do
+					[[ "${PH_j}" == "List all bluetooth adapters:listblue_ph.sh | more" && "${PH_APP}" != "Controllers" ]] && \
+						continue
+					[[ "${PH_j}" == "List all Moonlight games:listmoon_ph.sh | more" && "${PH_APP}" != "Moonlight" ]] && \
+						continue
+					ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
+						break 2
+				done ;;
+					"${PH_MENUS_DIR}/TTYManagement_${PH_APP}.lst")
+				if [[ "${PH_APP}" != "Controllers" ]]
+				then
+					for PH_j in "Show tty allocation of ${PH_APP_DISPLAY}:confttys_ph.sh -r tty -a ${PH_APP} | more" \
+						"Change tty allocation of ${PH_APP_DISPLAY}:confttys_ph.sh -r move -a ${PH_APP} -t prompt"
+					do
+						[[ "${PH_APP}" == "PieHelper" && "${PH_j}" == Change* ]] && \
+							continue
+						ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
+							break 2
+					done
+				fi ;;
+					"${PH_MENUS_DIR}/StatusManagement_${PH_APP}.lst")
+				if [[ "${PH_APP}" == "PieHelper" ]]
+				then
+					for PH_j in 'Start PieHelper:echo \"*Sigh* I am already running ! Stop buggering me...\"' \
+						"Stop PieHelper:break" \
+						'Restart PieHelper (Only if on a tty):echo restartpieh.sh | at -M -t \"$(date +%Y%m)$(date +%d%H%M).$(($(date +%S)+2))\"' \
+						"Show PieHelper info:confapps_ph.sh -r info -a PieHelper | more" \
+						"Update PieHelper:confpieh_ph.sh -u" \
+						'Configure PieHelper:echo \"*Sigh* I am already configured ! Stop buggering me...\"' \
+						'Unconfigure PieHelper:echo Unconfigure by quitting PieHelper from the menu and running \"confpieh_ph.sh -u\"' \
+						'Uninstall PieHelper:echo Uninstall by quitting PieHelper from the menu and running \"confpieh_ph.sh -r\"'
+					do
+						ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
+							break 2
+					done
+				else
+					if [[ "${PH_APP}" != "Controllers" ]]
+					then
+						for PH_j in "Start ${PH_APP_DISPLAY}:start${PH_APPL}.sh | more" \
+							"Stop ${PH_APP_DISPLAY}:stop${PH_APPL}.sh -f | more" \
+							"Restart ${PH_APP_DISPLAY}:restart${PH_APPL}.sh | more" \
+							"Show ${PH_APP_DISPLAY} info:confapps_ph.sh -r info -a ${PH_APP}" \
+							"Update ${PH_APP_DISPLAY}:confapps_ph.sh -r update -a ${PH_APP} | more" \
+							"Configure ${PH_APP_DISPLAY}:confapps_ph.sh -r conf -a ${PH_APP}" \
+							"Unconfigure ${PH_APP_DISPLAY}:confapps_ph.sh -r unconf -a ${PH_APP} | more" \
+							"Integrate ${PH_APP_DISPLAY}:confapps_ph.sh -r int -a ${PH_APP} | more" \
+							"Unintegrate ${PH_APP_DISPLAY}:confapps_ph.sh -r unint -a {PH_APP}" \
+							"Install ${PH_APP_DISPLAY}:confapps_ph.sh -r inst -a ${PH_APP} | more" \
+							"Uninstall ${PH_APP_DISPLAY}:confapps_ph.sh -r uninst -a ${PH_APP}" \
+							"Unsupport ${PH_APP_DISPLAY}:confapps_ph.sh -r unsup -a ${PH_APP}"
+						do
+							ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
+								break 2
+						done
+					else
+						for PH_j in "Go to PS3:ph_show_menu PS3" "Go to PS4:ph_show_menu PS4" \
+							"Go to XBOX360:ph_show_menu XBOX360" "Go to XBOXS/X:ph_show_menu XBOXSX"
+						do
+							ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
+								break 2
+						done
+					fi
+				fi ;;
+			esac
+			if [[ "${PH_APP}" == "Controllers" ]]
+			then
+				if [[ "${PH_i}" != "${PH_MENUS_DIR}/@(TTYManagement_|)${PH_APP}.lst" ]]
+				then
+					ph_run_with_rollback -c "ph_add_line_to_file -l 'Go to ${PH_APP}:ph_show_menu ${PH_APP}' -f '${PH_i}'" || \
+						break
+				fi
+				for PH_j in "Go to Main:ph_show_menu Main" "Open a shell (Type 'CTRL-D' to return):echo;cd;/bin/bash" \
+					"Quit:break" "Return to previous screen:return"
+				do
+					ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
+						break 2
+				done
+			fi
+			ph_run_with_rollback -c "ph_secure_pieh -q -f '${PH_i}'" || \
+				break
+			if [[ "${PH_i}" == "${PH_MENUS_DIR}/StatusManagement_${PH_APP}.lst" ]]
+			then
+				ph_run_with_rollback -c true
+				if [[ "${PH_APP}" == "PieHelper" ]]
+				then
+					ph_run_with_rollback -c "ph_link_app_to_menu -a '${PH_APP}'" || \
+						return 1
+				fi
+				ph_add_value_to_param -p PH_REMOVE_APPS_MENUS -v "${PH_APP}"
+				return 0
+			fi
+		fi
+	done
+	ph_run_with_rollback -c false -m "Could not create"
+	return "${?}"
 done
-ph_run_with_rollback -c false -m "Could not create"
-return "${?}"
 }
 
 function ph_create_app_alloweds {
