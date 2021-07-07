@@ -57,8 +57,8 @@ PH_PIEH_SANITY_LEVEL='optional'								# - This indicates the level of any sanit
 											#         CIFS management, PRE/POST commands, Controllers, Out-of-scope applications, user-defined framework extensions, etc..
 											#   * full     : Checks will include critical, optional and unused items such as
 											#         those required by different Linux distros/releases and various miscellaneous files
-PH_PIEH_STARTAPP='none'									# - This is the application that will start automatically at system boot time, or StartApp
-											# - Allowed values are 'none' or the name of a Supported application
+PH_PIEH_STARTAPP=''									# - This is the application that will start automatically at system boot time, aka StartApp
+											# - Allowed values are an empty string for no StartApp or the name of a Supported application
 PH_PIEH_CMD_OPTS='Main'									# - These are the command line options you want to launch PieHelper with and the specific menu you wish PieHelper to start in
 											# - Amongst others, this can be used for passing event-based input devices when required as parameters by PieHelper
 											#   When passing event-based input devices, replace the numeric id in the device reference with the string 'PH_CTRL%' where

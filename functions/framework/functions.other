@@ -9361,7 +9361,7 @@ else
 		break
 	done
 fi
-ph_run_with_rollback -c true -m "${PH_PASS_APP_USER}"
+ph_run_with_rollback -c true -m "${PH_PASS_APP_USER}:$(id -gn "${PH_PASS_APP_USER}" 2>/dev/null)"
 if [[ "${PH_PASS_APP_USER}" != @(${PH_RUN_USER}|root) ]]
 then
 	if [[ "${PH_CREATE_FLAG}" -eq "0" ]]
@@ -11595,13 +11595,13 @@ then
 				sleep 2
 				if less "${PH_BASE_DIR}/HOWTO" 2>/dev/null
 				then
-					ph_run_with_rollback -c true -m "${PH_SCRIPTS_DIR}/../HOWTO"
+					ph_run_with_rollback -c true -m "${PH_BASE_DIR}/HOWTO"
 				else
 					printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not display"
 					ph_set_result -r 0
 				fi
 				ph_show_result
-				printf "\n\033[1;37m%s\033[0m\n" "Press Enter to reboot into the PieHelper menu"
+				printf "\033[1;37m%s\033[0m\n" "Press Enter to reboot into the PieHelper menu"
 				read -r 2>/dev/null
 				"${PH_SUDO}" init 6
 			fi
