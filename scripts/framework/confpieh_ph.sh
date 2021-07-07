@@ -298,7 +298,7 @@ case "${PH_ACTION}" in repair)
 		configure)
 	;;
 		unconfigure)
-	printf "\n\033[1;36m%s\033[0m\n\n" "- Unconfiguring '${PH_APP}' version '${PH_VERSION}'"
+	printf "\n\033[1;36m%s\033[0m\n\n" "- Unconfiguring the '${PH_APP}' framework version '${PH_VERSION}'"
 	ph_run_with_rollback -c "ph_unconfigure_pieh -r unconfigure" || \
 		return 1
 	ph_show_result
