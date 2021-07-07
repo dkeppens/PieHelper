@@ -91,9 +91,9 @@ OPTARG="${PH_OLDOPTARG}"
 
 set -x
 [[ -z "${PH_FILE_DEST}" || -z "${PH_FILE_TYPE}" || \
-	( "${PH_FILE_TYPE}" == "link" && ! -L "${PH_FILE_DEST}" ) || \
+	( -e "${PH_FILE_DEST}" && ( "${PH_FILE_TYPE}" == "link" && ! -L "${PH_FILE_DEST}" ) || \
 	( "${PH_FILE_TYPE}" == "directory" && ! -d "${PH_FILE_DEST}" ) || \
-	( "${PH_FILE_TYPE}" == "file" && (! -f "${PH_FILE_DEST}" || -L "${PH_FILE_DEST}" || -s "${PH_FILE_DEST}" )) || \
+	( "${PH_FILE_TYPE}" == "file" && (! -f "${PH_FILE_DEST}" || -L "${PH_FILE_DEST}" || -s "${PH_FILE_DEST}" ))) || \
 	( "${PH_QUIESCE}" -eq "1" && "${PH_REMOVE_AS_ROOT}" -eq "1" && "${#}" -ne "4" ) || \
 	( "${PH_QUIESCE}" -eq "0" && "${PH_REMOVE_AS_ROOT}" -eq "0" && "${#}" -ne "6" ) || \
 	((( "${PH_QUIESCE}" -eq "0" && "${PH_REMOVE_AS_ROOT}" -eq "1" ) || \
@@ -226,20 +226,19 @@ OPTARG="${PH_OLDOPTARG}"
 	( "${PH_QUIESCE}" -eq "1" && "${PH_CREATE_AS_ROOT}" -eq "1" && "${#}" -ne "6" ) || \
 	( "${PH_QUIESCE}" -eq "0" && "${PH_CREATE_AS_ROOT}" -eq "0" && "${#}" -ne "8" ) || \
 	((( "${PH_QUIESCE}" -eq "1" && "${PH_CREATE_AS_ROOT}" -eq "0" ) || \
-	( "${PH_QUIESCE}" -eq "0" && "${PH_CREATE_AS_ROOT}" -eq "1" )) && "${#}" -ne "7" )) || \
-	( -e "${PH_FILE_DEST}" && (( "${PH_FILE_TYPE}" == "directory" && ! -d "${PH_FILE_DEST}" ) || 
+	( "${PH_QUIESCE}" -eq "0" && "${PH_CREATE_AS_ROOT}" -eq "1" )) && "${#}" -ne "7" ))) || \
 	( "${PH_FILE_TYPE}" != "link" && (( "${PH_QUIESCE}" -eq "1" && "${PH_CREATE_AS_ROOT}" -eq "1" && "${#}" -ne "4" ) || \
 	( "${PH_QUIESCE}" -eq "0" && "${PH_CREATE_AS_ROOT}" -eq "0" && "${#}" -ne "6" ) || \
 	((( "${PH_QUIESCE}" -eq "1" && "${PH_CREATE_AS_ROOT}" -eq "0" ) || \
-	( "${PH_QUIESCE}" -eq "0" && "${PH_CREATE_AS_ROOT}" -eq "1" )) && "${#}" -ne "5" )) || \
+	( "${PH_QUIESCE}" -eq "0" && "${PH_CREATE_AS_ROOT}" -eq "1" )) && "${#}" -ne "5" ))) || \
+	( -e "${PH_FILE_DEST}" && (( "${PH_FILE_TYPE}" == "directory" && ! -d "${PH_FILE_DEST}" ) || 
 	( "${PH_FILE_TYPE}" == "link" && ! -L "${PH_FILE_DEST}" ) || \
 	( "${PH_FILE_TYPE}" == "file" && ( ! -f "${PH_FILE_DEST}" || -L "${PH_FILE_DEST}" )))) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 [[ "${PH_QUIESCE}" -eq "1" ]] && \
 	printf "%8s%s\033[1;33m%s\033[0;0m" "" "--> Creating ${PH_FILE_TYPE} " "'${PH_FILE_DEST}'"
-if [[ ( "${PH_FILE_TYPE}" == "link" && -e "${PH_FILE_DEST}" && "${PH_FILE_SOURCE}" == "$(ph_get_link_target "${PH_FILE_DEST}")" ) || \
-	( "${PH_FILE_TYPE}" == @(directory|file) && -e "${PH_FILE_DEST}" ) ]]
+if [[ -e "${PH_FILE_DEST}" ]]
 then
 	[[ "${PH_QUIESCE}" -eq "1" ]] && \
 		printf "\n" && \
