@@ -10252,7 +10252,7 @@ then
 else
 	PH_APP_DISPLAY="None"
 fi
-printf "%8s%s\n" "" "--> Comparing old and new values for the StartApp"
+printf "%8s%s\n" "" "--> Comparing old and new values for StartApp"
 if [[ "${PH_OLD_APP}" == "${PH_APP}" ]]
 then
 	ph_run_with_rollback -c true -m "Nothing to do"
@@ -12666,7 +12666,7 @@ case "${PH_ACTION}" in start)
 		     stop)
 	while true
 	do
-		printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Comparing the current foreground tty and the tty allocated to " "'${PH_APP}'"
+		printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Comparing the foreground tty and tty allocated to " "'${PH_APP}'"
 		if [[ "${PH_FG_CONSOLE}" != "${PH_APP_TTY}" ]]
 		then
 			ph_set_result -m "Could not ${PH_ACTION} '${PH_APP}' since foreground 'tty${PH_FG_CONSOLE}' is not 'tty${PH_APP_TTY}' allocated to '${PH_APP}'"
