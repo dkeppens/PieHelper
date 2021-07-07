@@ -296,14 +296,18 @@ case "${PH_ACTION}" in repair)
 	ph_show_result
 	exit "${?}" ;;
 		configure)
-	confapps_ph.sh -r conf -a PieHelper
-	exit "${?}" ;;
+	;;
 		unconfigure)
-	printf "\033[36m%s\033[0m\n\n" "- Unconfiguring ${PH_APP}"
-	ph_unconfigure_pieh -u
+	printf "\n\033[1;36m%s\033[0m\n\n" "- Unconfiguring '${PH_APP}' version '${PH_VERSION}'"
+	ph_run_with_rollback -c "ph_unconfigure_pieh -r unconfigure" || \
+		return 1
+	ph_show_result
 	exit "${?}" ;;
 		remove)
-	confapps_ph.sh -r uninst -a PieHelper
+	printf "\n\033[1;36m%s\033[0m\n\n" "- Uninstalling '${PH_APP}' version '${PH_VERSION}'"
+	ph_run_with_rollback -c "ph_unconfigure_pieh -r remove" || \
+		return 1
+	ph_show_result
 	exit "${?}" ;;
 		update)
 	confapps_ph.sh -r update -a PieHelper

@@ -89,7 +89,6 @@ done
 OPTIND="${PH_OLDOPTIND}"
 OPTARG="${PH_OLDOPTARG}"
 
-ls -la "${PH_CONF_DIR}"
 [[ -z "${PH_FILE_DEST}" || -z "${PH_FILE_TYPE}" || \
 	( -e "${PH_FILE_DEST}" && ( "${PH_FILE_TYPE}" == "link" && ! -L "${PH_FILE_DEST}" ) || \
 	( "${PH_FILE_TYPE}" == "directory" && ! -d "${PH_FILE_DEST}" ) || \

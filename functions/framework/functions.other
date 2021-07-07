@@ -3630,12 +3630,10 @@ PH_EVDEVS="0"
 [[ "${PH_NUM_CTRL}" -eq "0" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-if [[ ! -f "${PH_CONF_DIR}/controller_cli_ids" ]]
-then
-	ph_create_base_conf_file cont || \
-		return 1
-fi
-ph_cleanup_controllers reset
+ph_run_with_rollback -c "ph_create_base_conf_file cont" || \
+	return 1
+ph_cleanup_controllers reset || \
+	return 1
 [[ "${PH_CONT_TYPE}" == XBOX* ]] && \
 	PH_MAP="no"
 PH_EVDEVS="$(ls -l /dev/input/event+([[:digit:]]) 2>/dev/null | wc -l)"
@@ -5205,14 +5203,14 @@ declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 declare -i PH_COUNT
 
-PH_OLDOPTARG="${OPTARG}"
-PH_OLDOPTIND="${OPTIND}"
 PH_i=""
 PH_ANSWER=""
 PH_CONF_STATE=""
 PH_ACTION=""
 PH_MODE=""
 PH_OPTION=""
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 PH_COUNT="0"
 
 OPTIND="1"
@@ -5221,11 +5219,11 @@ PH_ROLLBACK_USED="yes"
 while getopts :urb PH_OPTION
 do
         case "${PH_OPTION}" in r)
-		[[ -n "${PH_ACTION}" ]] && \
+		[[ -n "${PH_ACTION}" || "${OPTARG}" != @(remove|unconfigure) ]] && \
 			OPTIND="${PH_OLDOPTIND}" && \
 			OPTARG="${PH_OLDOPTARG}" && \
 			return 1
-                PH_ACTION="remove" ;;
+                PH_ACTION="${OPTARG}" ;;
 			     u)
 		[[ -n "${PH_ACTION}" ]] && \
 			OPTIND="$PH_OLDOPTIND" && \
@@ -5248,8 +5246,8 @@ done
 OPTIND="${PH_OLDOPTIND}"
 OPTARG="${PH_OLDOPTARG}"
 
-[[ -z "${PH_ACTION}" || ( -z "${PH_MODE}" && "${#}" -ne "1" ) || \
-	( -n "${PH_MODE}" && "${#}" -ne "2" ) ]] && \
+[[ -z "${PH_ACTION}" || ( -z "${PH_MODE}" && "${#}" -ne "2" ) || \
+	( -n "${PH_MODE}" && "${#}" -ne "3" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 [[ -z "${PH_MODE}" ]] && \
@@ -5279,7 +5277,7 @@ then
 		printf "%4s%s\033[33m%s\033[37m%s\n" "" "- Restore system settings and scripts modified at " "'PieHelper'" " installation time to their original state"
 		printf "%4s%s\n" "" "- Enable the graphical environment"
 		[[ "${PH_ACTION}" == "remove" ]] && \
-			printf "%4s%s\033[33m%s\033[37m%s\n" "" "- Remove directory " "'${PH_BASE_DIR}'" " and it's contents"
+			printf "%4s%s\033[33m%s\033[37m%s\n" "" "- Remove directory " "'${PH_BASE_DIR}'" " and its contents"
 		printf "%4s%s\033[0m\n\n" "" "- Reboot your system"
 		while [[ "${PH_ANSWER}" != @(y@(es|)|n@(o|)) ]]
 		do
@@ -5318,11 +5316,6 @@ then
 		return 1
 	ph_run_with_rollback -c "ph_unsupport_app -a supported" || \
 		return 1
-	for PH_i in cont os int defaults alloweds sup
-	do
-		ph_run_with_rollback -c "ph_store_file -f '$(ph_get_filename_from_shortname "${PH_i}")'" || \
-			return 1
-	done
 	for PH_i in path logind
 	do
 		ph_run_with_rollback -c "ph_pieh_unconfigured_${PH_i}_conf" || \
@@ -5340,17 +5333,24 @@ then
 		ph_run_with_rollback -c "ph_disable_services 'getty@tty${PH_COUNT}'" || \
 			return 1
 	done
+	for ((PH_COUNT=3;PH_COUNT<="${PH_PIEH_MAX_TTYS}";PH_COUNT++))
+	do
+		ph_run_with_rollback -c "ph_stop_services 'getty@tty${PH_COUNT}'" || \
+			return 1
+	done
 	ph_run_with_rollback -c "ph_enable_services 'getty@tty1'" || \
 		return 1
 	ph_run_with_rollback -c "ph_set_bootenv graphical.target" || \
 		return 1
+	for PH_i in cont os defaults alloweds int sup
+	do
+		ph_run_with_rollback -c "ph_remove_base_conf_file '${PH_i}'" || \
+			return 1
+	done
+	ph_run_with_rollback -c "ph_create_empty_file -t file -d '${PH_TMP_DIR}/.first_run'" || \
+		return 1
 	ph_run_with_rollback -c "ph_remove_empty_file -t file -d '${PH_TMP_DIR}/.unconfigure_in_progress'" || \
 		return 1
-	if [[ "${PH_APP}" == "PieHelper" && ! -f "${PH_TMP_DIR}/.first_run" ]]
-	then
-		ph_run_with_rollback -c "ph_create_empty_file -t file -d '${PH_TMP_DIR}/.first_run'" || \
-			return 1
-	fi
 fi
 if [[ "${PH_ACTION}" != "remove" && "${PH_BATCH}" == "no" ]]
 then
@@ -5386,7 +5386,6 @@ return "${?}"
 }
 
 function ph_rollback_changes {
-set -x
 
 declare PH_i
 declare PH_CMD
@@ -10549,8 +10548,10 @@ PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
 "${PH_SUDO}" rm "${PH_MNT_DIR}/"!(\.gitignore) 2>/dev/null
 if ! ph_check_object_existence -o sup -m immediate
 then
-	ph_create_base_conf_file sup
-	ph_support_app -a PieHelper
+	ph_run_with_rollback -c "ph_create_base_conf_file sup" || \
+		return 1
+	ph_run_with_rollback -c "ph_support_app -a PieHelper" || \
+		return 1
 else
 	printf "%8s%s\n" "" "--> Checking support for application 'PieHelper'"
 	if ! nawk -v app="^PieHelper$" '$1 ~ app {
@@ -10576,8 +10577,10 @@ fi
 source "${PH_CONF_DIR}/PieHelper.conf" >/dev/null 2>&1
 if ! ph_check_object_existence -o int -m immediate
 then
-	ph_create_base_conf_file int
-	ph_integrate_app -a PieHelper
+	ph_run_with_rollback -c "ph_create_base_conf_file int" || \
+		return 1
+	ph_run_with_rollback -c "ph_integrate_app -a PieHelper" || \
+		return 1
 else
 	printf "%8s%s\n" "" "--> Checking integration for application 'PieHelper'"
 	if ! nawk -v app="^PieHelper$" '$1 ~ app { \
@@ -10732,9 +10735,10 @@ then
 		ph_create_empty_file -t link -s "${PH_CONF_DIR}/distros/${PH_DISTRO_REL}.conf" -d "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf"
 	fi
 fi
-for PH_i in cont os defaults alloweds
+for PH_i in defaults alloweds os cont
 do
-	ph_create_base_conf_file "${PH_i}"
+	ph_run_with_rollback -c "ph_create_base_conf_file '${PH_i}'" || \
+		return 1
 done
 for PH_APP in PieHelper Controllers ${PH_SUPAPPS}
 do
@@ -11428,13 +11432,11 @@ then
 			else
 				ph_run_with_rollback -c true -m "Not found"
 			fi
-			set -x
 			for PH_i in sup int defaults alloweds os cont
 			do
-				ph_create_base_conf_file "${PH_i}" || \
+				ph_run_with_rollback -c "ph_create_base_conf_file '${PH_i}'" || \
 					return 1
 			done
-			set +x
 			ph_run_with_rollback -c "ph_pieh_configured_path_conf" || \
 				return 1
 			ph_run_with_rollback -c "ph_support_app -a PieHelper" || \
