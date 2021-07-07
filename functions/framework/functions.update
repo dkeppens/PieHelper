@@ -89,7 +89,7 @@ done
 OPTIND="${PH_OLDOPTIND}"
 OPTARG="${PH_OLDOPTARG}"
 
-set -x
+ls -la "${PH_CONF_DIR}"
 [[ -z "${PH_FILE_DEST}" || -z "${PH_FILE_TYPE}" || \
 	( -e "${PH_FILE_DEST}" && ( "${PH_FILE_TYPE}" == "link" && ! -L "${PH_FILE_DEST}" ) || \
 	( "${PH_FILE_TYPE}" == "directory" && ! -d "${PH_FILE_DEST}" ) || \
@@ -99,7 +99,6 @@ set -x
 	((( "${PH_QUIESCE}" -eq "0" && "${PH_REMOVE_AS_ROOT}" -eq "1" ) || \
 	( "${PH_QUIESCE}" -eq "1" && "${PH_REMOVE_AS_ROOT}" -eq "0" )) && "${#}" -ne "5" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
-set +x
 
 [[ "${PH_QUIESCE}" -eq "1" ]] && \
 	printf "%8s%s\033[1;33m%s\033[0;0m\n" "" "--> Removing ${PH_FILE_TYPE} " "'${PH_FILE_DEST}'"

@@ -5386,6 +5386,7 @@ return "${?}"
 }
 
 function ph_rollback_changes {
+set -x
 
 declare PH_i
 declare PH_CMD
@@ -11427,11 +11428,13 @@ then
 			else
 				ph_run_with_rollback -c true -m "Not found"
 			fi
-			for PH_i in sup defaults alloweds int os cont
+			set -x
+			for PH_i in sup int defaults alloweds os cont
 			do
 				ph_create_base_conf_file "${PH_i}" || \
 					return 1
 			done
+			set +x
 			ph_run_with_rollback -c "ph_pieh_configured_path_conf" || \
 				return 1
 			ph_run_with_rollback -c "ph_support_app -a PieHelper" || \
@@ -11520,23 +11523,23 @@ declare PH_FILE_SHORTNAME
 declare PH_FILE
 
 PH_FILE_SHORTNAME="${1}"
-PH_FILE=""
+PH_FILE="${PH_CONF_DIR}"
 
 [[ "${PH_FILE_SHORTNAME}" != @(cont|os|int|sup|@(default|allowed)s) || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 case "${PH_FILE_SHORTNAME}" in cont)
-		PH_FILE="controller_cli_ids" ;;
-			os)
-		PH_FILE="OS.defaults" ;;
-			int)
-		PH_FILE="integrated_apps" ;;
-			sup)
-		PH_FILE="supported_apps" ;;
-			defaults|alloweds)
-		PH_FILE="options.${PH_FILE_SHORTNAME}" ;;
+	PH_FILE="${PH_FILE}/controller_cli_ids" ;;
+		os)
+	PH_FILE="${PH_FILE}/OS.defaults" ;;
+		int)
+	PH_FILE="${PH_FILE}/integrated_apps" ;;
+		sup)
+	PH_FILE="${PH_FILE}/supported_apps" ;;
+		*)
+	PH_FILE="${PH_FILE}/options.${PH_FILE_SHORTNAME}" ;;
 esac
-echo -n "${PH_CONF_DIR}/${PH_FILE}"
+echo -n "${PH_FILE}"
 return 0
 }
 
