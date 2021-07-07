@@ -259,7 +259,6 @@ ph_run_with_rollback -c false -m "Could not remove" || \
 
 function ph_add_line_to_file {
 
-set -x
 declare PH_LINE
 declare PH_PARAMS
 declare PH_FILE
@@ -327,7 +326,6 @@ else
 	fi
 fi
 ph_set_result -m "An error occurred trying to add line '${PH_LINE}' to file '${PH_FILE}'"
-set +x
 return 1
 }
 

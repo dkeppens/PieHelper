@@ -2508,7 +2508,7 @@ function ph_create_app_menus {
 
 declare PH_i
 declare PH_j
-declare PH_COUNT
+declare PH_k
 declare PH_APP
 declare PH_APP_DISPLAY
 declare -i PH_EXISTS_FLAG
@@ -2516,7 +2516,7 @@ declare -l PH_APPL
 
 PH_i=""
 PH_j=""
-PH_COUNT=""
+PH_k=""
 PH_APP="${1}"
 PH_APP_DISPLAY=""
 PH_EXISTS_FLAG="1"
@@ -2525,9 +2525,9 @@ PH_APPL="${PH_APP:0:4}"
 [[ -z "${PH_APP}" || "${#}" -ne "1" ]] && \
         ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-for PH_COUNT in 1 2
+for PH_k in 1 2
 do
-	if [[ "${PH_COUNT}" == "2" ]]
+	if [[ "${PH_k}" == "2" ]]
 	then
 		if [[ "${PH_EXISTS_FLAG}" -eq "0" ]]
 		then
@@ -2538,8 +2538,9 @@ do
 	fi
 	for PH_i in "${PH_MENUS_DIR}/${PH_APP}.lst" "${PH_MENUS_DIR}/OptionsManagement_${PH_APP}.lst" "${PH_MENUS_DIR}/TTYManagement_${PH_APP}.lst" "${PH_MENUS_DIR}/StatusManagement_${PH_APP}.lst"
 	do
-		if [[ "${PH_COUNT}" == "1" ]]
+		if [[ "${PH_k}" == "1" ]]
 		then
+set -x
 			if [[ -e "${PH_i}" ]]
 			then
 				PH_EXISTS_FLAG="0"
@@ -2906,7 +2907,6 @@ do
 		esac ;;
         esac
 	unset -n PH_OPTS
-	set -x
 	if ! ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/options.defaults' -l '${PH_OPT}:${PH_LINE}'"
 	then
 		ph_run_with_rollback -c false -m "Could not create" || \
