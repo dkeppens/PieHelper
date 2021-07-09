@@ -1,6 +1,224 @@
 # PieHelper module declarations not required by the update process (By Davy Keppens on 06/10/18)
 # Toggle debugstate of a specific module between Enable/Disable by running 'confpieh_ph.sh -p debug -m module_name'
 
+function ph_remove_app_depend {
+
+declare PH_APP
+declare PH_APP_DEPEND
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+
+PH_APP=""
+PH_APP_DEPEND=""
+PH_OPTION=""
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
+
+OPTIND="1"
+
+while getopts :a:d: PH_OPTION
+do
+	case "${PH_OPTION}" in a)
+		[[ -n "${PH_APP}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_APP="${OPTARG}" ;;
+			     d)
+		[[ -n "${PH_APP_DEPEND}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_APP_DEPEND="${OPTARG}" ;;
+			     *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
+		return 1 ;;
+	esac
+done
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
+
+[[ -z "${PH_APP}" || -z "${PH_APP_DEPEND}" || "${#}" -ne "4" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Removing " "'${PH_APP_DEPEND}'" " as a dependency for " "'${PH_APP}'"
+if cut -f1 "${PH_CONF_DIR}/deps.conf" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
+then
+	sed -i "s/^\(${PH_APP}\)\(\t\)\([^\t]\+\)$/\1\2\3,${PH_APP_DEPEND}/" "${PH_CONF_DIR}/deps.conf" 2>/dev/null
+	ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_APP}\\t${PH_APP_DEPEND}' -f '${PH_CONF_DIR}/deps.conf'"
+else
+	ph_run_with_rollback -c true -m "Nothing to do"
+fi
+if [[ "${?}" -eq "0" ]]
+then
+	ph_run_with_rollback -c true
+else
+	ph_set_result -m "An error occurred trying to add '${PH_APP_DEPEND}' as a dependency for '${PH_APP}'"
+	ph_run_with_rollback -c false -m "Could not add"
+fi
+return "${?}"
+}
+
+function ph_add_app_depend {
+
+declare PH_i
+declare PH_APP
+declare PH_APP_DEPEND
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+
+PH_i=""
+PH_APP=""
+PH_APP_DEPEND=""
+PH_OPTION=""
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
+
+OPTIND="1"
+
+while getopts :a:d: PH_OPTION
+do
+	case "${PH_OPTION}" in a)
+		[[ -n "${PH_APP}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_APP="${OPTARG}" ;;
+			     d)
+		[[ -n "${PH_APP_DEPEND}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_APP_DEPEND="${OPTARG}" ;;
+			     *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
+		return 1 ;;
+	esac
+done
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
+
+[[ -z "${PH_APP}" || -z "${PH_APP_DEPEND}" || "${#}" -ne "4" ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+
+printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Checking existing dependencies of " "'${PH_APP}'"
+local -a PH_APP_DEPENDS PH_APP_ALL_DEPENDS
+if read -r -a PH_APP_DEPENDS -d';' < <(ph_get_app_depends "${PH_APP}"; echo -n ';') 2>/dev/null
+then
+	PH_APP_ALL_DEPENDS+=("${PH_APP_DEPENDS[@]}")
+	for PH_i in "${PH_APP_DEPENDS[@]}"
+	do
+		unset PH_APP_DEPENDS 2>/dev/null
+		if read -r -a PH_APP_DEPENDS -d';' < <(ph_get_app_depends "${PH_i}"; echo -n ';') 2>/dev/null
+		then
+		fi
+	done
+printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Adding " "'${PH_APP_DEPEND}'" " as a dependency for " "'${PH_APP}'"
+if cut -f1 "${PH_CONF_DIR}/deps.conf" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
+then
+	sed -i "s/^\(${PH_APP}\)\(\t\)\([^\t]\+\)$/\1\2\3,${PH_APP_DEPEND}/" "${PH_CONF_DIR}/deps.conf" 2>/dev/null
+else
+	ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_APP}\\t${PH_APP_DEPEND}' -f '${PH_CONF_DIR}/deps.conf'"
+fi
+if [[ "${?}" -eq "0" ]]
+then
+	ph_run_with_rollback -c true
+else
+	ph_set_result -m "An error occurred trying to add '${PH_APP_DEPEND}' as a dependency for '${PH_APP}'"
+	ph_run_with_rollback -c false -m "Could not add"
+fi
+return "${?}"
+}
+
+function ph_get_app_depends {
+
+declare PH_i
+declare PH_APP
+declare PH_OPTION
+declare PH_OLDOPTARG
+declare -i PH_OLDOPTIND
+declare -i PH_ALL_DEPS_FLAG
+
+PH_i=""
+PH_APP=""
+PH_OPTION=""
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
+PH_ALL_DEPS_FLAG="1"
+
+OPTIND="1"
+
+while getopts :a:d PH_OPTION
+do
+	case "${PH_OPTION}" in a)
+		[[ -n "${PH_APP}" || -z "${OPTARG}" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_APP="${OPTARG}" ;;
+			     d)
+		[[ "${PH_ALL_DEPS_FLAG}" -eq "0" ]] && \
+			OPTIND="${PH_OLDOPTIND}" && \
+			OPTARG="${PH_OLDOPTARG}" && \
+			return 1
+		PH_ALL_DEPS_FLAG="0" ;;
+			     *)
+		>&2 printf "\n%2s\033[1;31m%s\n\n" "" "ABORT : Invalid option '${OPTARG}' passed to function '${FUNCNAME[0]}'"
+		OPTIND="${PH_OLDOPTIND}"
+		OPTARG="${PH_OLDOPTARG}"
+		return 1 ;;
+	esac
+done
+OPTIND="${PH_OLDOPTIND}"
+OPTARG="${PH_OLDOPTARG}"
+
+[[ -z "${PH_APP}" || ( "${PH_ALL_DEPS_FLAG}" -eq "0" && "${#}" -ne "3" ) || \
+	( "${PH_ALL_DEPS_FLAG}" -eq "1" && "${#}" -ne "2" ) ]] && \
+	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
+
+local -a PH_APP_DEPS
+if read -r -a PH_APP_DEPS -d';' < <(nawk -v app="^${PH_APP}$" 'BEGIN { \
+		cnt = "0" \
+	} \
+	$1 ~ app { \
+		cnt = split($2,deparr,",") ; \
+		for (j=1;j<=cnt;j++) { \
+			printf deparr[j] ; \
+			if (j < cnt) { \
+				printf " " \
+			} ; \
+			delete deparr[j] \
+		} ; \
+		exit \
+	} { \
+		next \
+	}' "${PH_CONF_DIR}/deps.conf" 2>/dev/null; echo -n ";") 2>/dev/null
+then
+	if [[ "${PH_ALL_DEPS_FLAG}" -eq "1" ]]
+	then
+		echo -n "${PH_APP_DEPS[@]}"
+		return 0
+	else
+		local -a PH_APP_ALL_DEPS
+		PH_APP_ALL_DEPS+=("${PH_APP_DEPS[@]}")
+		for PH_i in "${PH_APP_DEPS[@]}"
+		do
+			if read -r -a PH_APP_ALL_DEPS -d';' < <(ph_get_app_depends -a "${PH_i}" -d; echo -n ';') 2>/dev/null
+		done
+	fi
+else
+	ph_set_result -m "An error occurred trying to determine dependencies for '${PH_APP}'"
+	return 1
+fi
+}
+
 function ph_check_password_validity {
 
 declare PH_PASSWD
@@ -89,13 +307,13 @@ declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 
-PH_OLDOPTARG="${OPTARG}"
-PH_OLDOPTIND="${OPTIND}"
 PH_APP=""
 PH_APP_EXEC=""
 PH_APP_GRAPH=""
 PH_APP_CMD=""
 PH_OPTION=""
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 
 OPTIND="1"
 
