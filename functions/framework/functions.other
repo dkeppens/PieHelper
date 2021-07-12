@@ -8335,7 +8335,7 @@ else
 		fi
 		if [[ "${#PH_UNUSED_DEPENDS[@]}" -eq "0" ]]
 		then
-			ph_run_with_rollback -c "None"
+			ph_run_with_rollback -c true -m "None"
 		else
 			for PH_i in "${PH_UNUSED_DEPENDS[@]}"
 			do
