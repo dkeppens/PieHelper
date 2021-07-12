@@ -2540,7 +2540,6 @@ do
 	do
 		if [[ "${PH_k}" == "1" ]]
 		then
-set -x
 			if [[ -e "${PH_i}" ]]
 			then
 				PH_EXISTS_FLAG="0"
@@ -2548,7 +2547,7 @@ set -x
 			fi
 		else
 			ph_run_with_rollback -c "ph_create_empty_file -q -t file -d '${PH_i}'" || \
-				break
+				break 2
 			if [[ "${PH_APP}" == "Controllers" ]]
 			then
 				PH_APP_DISPLAY="${PH_APP%s}"
@@ -2563,7 +2562,7 @@ set -x
 					[[ "${PH_APP}" == "Controllers" && "${PH_j}" == *TTYManagement* ]] && \
 						continue
 					ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
-						break 2
+						break 3
 				done ;;
 					"${PH_MENUS_DIR}/OptionsManagement_${PH_APP}.lst")
 				for PH_j in "List all bluetooth adapters:listblue_ph.sh | more" \
@@ -2580,7 +2579,7 @@ set -x
 					[[ "${PH_j}" == "List all Moonlight games:listmoon_ph.sh | more" && "${PH_APP}" != "Moonlight" ]] && \
 						continue
 					ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
-						break 2
+						break 3
 				done ;;
 					"${PH_MENUS_DIR}/TTYManagement_${PH_APP}.lst")
 				if [[ "${PH_APP}" != "Controllers" ]]
@@ -2591,7 +2590,7 @@ set -x
 						[[ "${PH_APP}" == "PieHelper" && "${PH_j}" == Change* ]] && \
 							continue
 						ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
-							break 2
+							break 3
 					done
 				fi ;;
 					"${PH_MENUS_DIR}/StatusManagement_${PH_APP}.lst")
@@ -2607,7 +2606,7 @@ set -x
 						'Uninstall PieHelper:echo Uninstall by quitting PieHelper from the menu and running \"confpieh_ph.sh -r\"'
 					do
 						ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
-							break 2
+							break 3
 					done
 				else
 					if [[ "${PH_APP}" != "Controllers" ]]
@@ -2626,14 +2625,14 @@ set -x
 							"Unsupport ${PH_APP_DISPLAY}:confapps_ph.sh -r unsup -a ${PH_APP}"
 						do
 							ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
-								break 2
+								break 3
 						done
 					else
 						for PH_j in "Go to PS3:ph_show_menu PS3" "Go to PS4:ph_show_menu PS4" \
 							"Go to XBOX360:ph_show_menu XBOX360" "Go to XBOXS/X:ph_show_menu XBOXSX"
 						do
 							ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
-								break 2
+								break 3
 						done
 					fi
 				fi ;;
@@ -2643,17 +2642,17 @@ set -x
 				if [[ "${PH_i}" != "${PH_MENUS_DIR}/@(TTYManagement_|)${PH_APP}.lst" ]]
 				then
 					ph_run_with_rollback -c "ph_add_line_to_file -l 'Go to ${PH_APP}:ph_show_menu ${PH_APP}' -f '${PH_i}'" || \
-						break
+						break 2
 				fi
 				for PH_j in "Go to Main:ph_show_menu Main" "Open a shell (Type 'CTRL-D' to return):echo;cd;/bin/bash" \
 					"Quit:break" "Return to previous screen:return"
 				do
 					ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_j}' -f '${PH_i}'" || \
-						break 2
+						break 3
 				done
 			fi
 			ph_run_with_rollback -c "ph_secure_pieh -q -f '${PH_i}'" || \
-				break
+				break 2
 			if [[ "${PH_i}" == "${PH_MENUS_DIR}/StatusManagement_${PH_APP}.lst" ]]
 			then
 				ph_run_with_rollback -c true
@@ -2667,9 +2666,9 @@ set -x
 			fi
 		fi
 	done
-	ph_run_with_rollback -c false -m "Could not create"
-	return "${?}"
 done
+ph_run_with_rollback -c false -m "Could not create"
+return "${?}"
 }
 
 function ph_create_app_alloweds {
