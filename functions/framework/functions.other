@@ -9673,7 +9673,7 @@ PH_APP_INST_STATE=""
 [[ -z "${PH_APP}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-for PH_FILE in "${PH_CONF_DIR}/supported_apps" "${PH_FILES_DIR}/default_apps_${PH_FILE_SUFFIX}"
+for PH_FILE in "${PH_CONF_DIR}/supported_apps" "${PH_FILES_DIR}/default_apps${PH_FILE_SUFFIX}"
 do
 	PH_APP_INST_STATE="$(nawk -v app="^${PH_APP}$" '$1 ~ app { \
 			printf $3 ; \
