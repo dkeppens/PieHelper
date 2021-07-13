@@ -9065,7 +9065,7 @@ else
 	fi
 	ph_run_with_rollback -c "ph_create_app_items -a '${PH_APP}' -t support" || \
 		return 1
-	PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_name "${PH_APP}")"
+	PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_info -a "${PH_APP}" -p "${PH_APP_PKG}" -c "${PH_APP_CMD}")"
 	if [[ "${PH_APP}" != "Controllers" ]]
 	then
 		if [[ "${PH_APP_PKG_CHANGED_FLAG}" -eq "0" ]]
