@@ -1,3 +1,5 @@
+* add checks in functions.update for remaning items functions for 'Nothing to do'
+* add checks in main.sh for when PH_FILE_SUFFIX changes
 * add menus per app for dependency management
 * remove forced fail in function ph_set_bootenv when done
 * continue with ph_support_app and ph_get_app_inst_state_from_app_info functions to add changes related to more possible install states/app possibly being uninstalled/more auto/indepently determining an install state

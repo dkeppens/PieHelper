@@ -48,12 +48,14 @@ OPTARG="${PH_OLDOPTARG}"
 [[ -z "${PH_APP}" || -z "${PH_APP_DEPEND}" || "${#}" -ne "4" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
+ph_check_app_state_validity -a "${PH_APP}" -d || \
+	return 1
 printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Removing " "'${PH_APP_DEPEND}'" " as a direct dependency of " "'${PH_APP}'"
 declare -x PH_APP_DEPENDS
 if read -r -a PH_APP_DEPENDS -d';' < <(ph_get_app_depends -a "${PH_APP}"; echo -n ';') 2>/dev/null
 then
 	case "${#PH_APP_DEPENDS[@]}" in 1)
-		if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/deps.conf' -l '${PH_APP}\t.*'"
+		if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/deps.conf${PH_FILE_SUFFIX}' -l '${PH_APP}\t.*'"
 		then
 			ph_add_value_to_param -p PH_ADD_APP_DEPENDS -v "${PH_APP}'${PH_APP_DEPEND}"
 			ph_run_with_rollback -c true
@@ -65,7 +67,7 @@ then
 			*)
 		PH_INDEX="$(ph_check_array_index -n PH_APP_DEPENDS -v "${PH_APP_DEPEND}")"
 		unset PH_APP_DEPENDS["${PH_INDEX}"]
-		if sed -i "s/^\(${PH_APP}\)\(\t\)\([^\t]\+\)$/\1\2$(sed 's/ /,/g'<<<"${PH_APP_DEPENDS[*]}")/" "${PH_CONF_DIR}/deps.conf" 2>/dev/null
+		if sed -i "s/^\(${PH_APP}\)\(\t\)\([^\t]\+\)$/\1\2$(sed 's/ /,/g'<<<"${PH_APP_DEPENDS[*]}")/" "${PH_CONF_DIR}/deps.conf${PH_FILE_SUFFIX}" 2>/dev/null
 		then
 			ph_add_value_to_param -p PH_ADD_APP_DEPENDS -v "${PH_APP}'${PH_APP_DEPEND}"
 			ph_run_with_rollback -c true
@@ -127,6 +129,8 @@ OPTARG="${PH_OLDOPTARG}"
 [[ -z "${PH_APP}" || -z "${PH_APP_DEPEND}" || "${#}" -ne "4" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
+ph_check_app_state_validity -a "${PH_APP}" -d || \
+	return 1
 declare -x PH_APP_DEPENDS PH_APP_ALL_DEPENDS
 printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Checking all existing dependencies of " "'${PH_APP}'"
 while true
@@ -164,9 +168,9 @@ do
 	return "${?}"
 done
 printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Adding " "'${PH_APP_DEPEND}'" " as a direct dependency of " "'${PH_APP}'"
-if cut -f1 "${PH_CONF_DIR}/deps.conf" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
+if cut -f1 "${PH_CONF_DIR}/deps.conf${PH_FILE_SUFFIX}" 2>/dev/null | grep -E "^${PH_APP}$" >/dev/null
 then
-	if sed -i "s/^\(${PH_APP}\)\(\t\)\([^\t]\+\)$/\1\2\3,${PH_APP_DEPEND}/" "${PH_CONF_DIR}/deps.conf" 2>/dev/null
+	if sed -i "s/^\(${PH_APP}\)\(\t\)\([^\t]\+\)$/\1\2\3,${PH_APP_DEPEND}/" "${PH_CONF_DIR}/deps.conf${PH_FILE_SUFFIX}" 2>/dev/null
 	then
 		ph_add_value_to_param -p PH_REMOVE_APP_DEPENDS -v "${PH_APP}'${PH_APP_DEPEND}"
 		ph_run_with_rollback -c true
@@ -175,7 +179,7 @@ then
 		ph_run_with_rollback -c false -m "Could not add"
 	fi
 else
-	if ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_APP}\\t${PH_APP_DEPEND}' -f '${PH_CONF_DIR}/deps.conf'"
+	if ph_run_with_rollback -c "ph_add_line_to_file -l '${PH_APP}\\t${PH_APP_DEPEND}' -f '${PH_CONF_DIR}/deps.conf${PH_FILE_SUFFIX}'"
 	then
 		ph_add_value_to_param -p PH_REMOVE_APP_DEPENDS -v "${PH_APP}'${PH_APP_DEPEND}"
 		ph_run_with_rollback -c true
@@ -251,7 +255,7 @@ if read -r -a PH_APP_DEPS -d';' < <(nawk -v app="^${PH_APP}$" 'BEGIN { \
 		exit \
 	} { \
 		next \
-	}' "${PH_CONF_DIR}/deps.conf" 2>/dev/null; echo -n ";") 2>/dev/null
+	}' "${PH_CONF_DIR}/deps.conf${PH_FILE_SUFFIX}" 2>/dev/null; echo -n ";") 2>/dev/null
 then
 	PH_APP_ALL_DEPS+=("${PH_APP_DEPS[@]}")
 	if [[ "${PH_ALL_DEPS_FLAG}" -eq "0" ]]
@@ -1470,7 +1474,7 @@ do
 		"${PH_USER_SCRIPTS_DIR}/README" "${PH_USER_CONF_DIR}/README" "${PH_USER_FILES_DIR}/README" "${PH_USER_FUNCS_DIR}/README" \
 		"${PH_USER_SCRIPTS_DIR}/.gitignore" "${PH_USER_CONF_DIR}/.gitignore" "${PH_USER_FILES_DIR}/.gitignore" "${PH_USER_FUNCS_DIR}/.gitignore" \
 		VERSION VERSIONS default_apps_GL default_apps_X HOWTO CODE_OF_CONDUCT.md HOWTO INSTALL LICENSE README.md TODO \
-		deps Support System Main PS3 PS4 XBOX360 XBOXSX SystemRetained SystemInteractive SystemRetaineds \
+		deps.conf_X deps.conf_GL Support System Main PS3 PS4 XBOX360 XBOXSX SystemRetained SystemInteractive SystemRetaineds \
 		Controllers_conf OOSapp_conf "${PH_DEFAULT_APPS[@]}" "${PH_DISTRO_CONFIGS[@]}" \
 		Kodi-PRE Kodi-POST PieHelper-PRE PieHelper-POST \
 		MovefromPieHScript Loginscript MoveScript MovetoPieHScript RestartScriptPieH \
@@ -1551,13 +1555,18 @@ do
 							PH_REQ_SANITY_LEVEL="optional"
 							PH_DIR="${PH_SCRIPTS_DIR}/post_cmds/"
 							PH_SUFFIX=".sh" ;;
-								deps)
-							PH_DIR="${PH_CONF_DIR}/"
-							PH_SUFFIX=".conf" ;;
+								deps.conf${PH_FILE_SUFFIX})
+							PH_DIR="${PH_CONF_DIR}/" ;;
+								deps.conf_*)
+							PH_REQ_SANITY_LEVEL="optional"
+							PH_DIR="${PH_CONF_DIR}/" ;;
 								kodi.post_cmd|build.archives)
 							PH_SUFFIX=".excludes"
 							PH_DIR="${PH_EXCLUDES_DIR}/" ;;
-								default_apps_*|VERSIONS)
+								"default_apps${PH_FILE_SUFFIX}|VERSIONS")
+							PH_DIR="${PH_FILES_DIR}/" ;;
+								default_apps_*)
+							PH_REQ_SANITY_LEVEL="optional"
 							PH_DIR="${PH_FILES_DIR}/" ;;
 								VERSION)
 							PH_DIR="${PH_CONF_DIR}/" ;;
@@ -2286,12 +2295,18 @@ case "${PH_OBJECT}" in */sup*|*/int*|*/cont*|*/*.defaults|*/*.alloweds)
 			PH_TYPE="optional"
 		fi
 	fi ;;
-		"${PH_CONF_DIR}/deps.conf")
+		"${PH_CONF_DIR}/deps.conf${PH_FILE_SUFFIX}")
+	PH_OBJECT_CAT="configuration" ;;
+		"${PH_CONF_DIR}/deps.conf_"*)
+	PH_TYPE="optional"
 	PH_OBJECT_CAT="configuration" ;;
 		"${PH_CONF_DIR}/"*.conf)
 	PH_TYPE="auto-generated"
 	PH_OBJECT_CAT="configuration" ;;
-		*/VERSION*|*/default_apps*)
+		*/VERSION*|*"/default_apps${PH_FILE_SUFFIX}")
+	PH_OBJECT_CAT="configuration" ;;
+		*/default_apps_*)
+	PH_TYPE="optional"
 	PH_OBJECT_CAT="configuration" ;;
 		"${PH_MNT_DIR}"|"${PH_SCRIPTS_DIR}/"*_cmds|"${PH_USER_SCRIPTS_DIR}"|"${PH_USER_FILES_DIR}"|"${PH_USER_CONF_DIR}"|"${PH_USER_FUNCS_DIR}")
 	PH_TYPE="optional"
@@ -8079,6 +8094,7 @@ declare PH_APP_PKG
 declare PH_APP_INST_STATE
 declare PH_APP_STATE
 declare PH_APP_EXEC
+declare PH_ACTION
 declare PH_ANSWER
 declare PH_OPTION
 declare PH_OLDOPTARG
@@ -8096,6 +8112,7 @@ PH_APP_PKG=""
 PH_APP_INST_STATE=""
 PH_APP_STATE=""
 PH_APP_EXEC=""
+PH_ACTION=""
 PH_ANSWER=""
 PH_OPTION=""
 PH_OLDOPTARG="${OPTARG}"
@@ -8153,12 +8170,18 @@ OPTARG="${PH_OLDOPTARG}"
 
 if [[ "${PH_APP}" == "supported" ]]
 then
-	for PH_APP in $(ph_get_app_list_by_state -s Supported -t exact)
-	do
-		ph_unsupport_app -a "${PH_APP}" || \
-			return 1
-	done
-	return 0
+	local -a PH_SUPPORTED_APPS
+	if read -r -a PH_SUPPORTED_APPS -d ';' < <(ph_get_app_list_by_state -s Supported -t exact; echo -n ";") 2>/dev/null
+	then
+		for PH_APP in "${PH_SUPPORTED_APPS[@]}"
+		do
+			ph_unsupport_app -a "${PH_APP}" || \
+				return 1
+		done
+	else
+		ph_run_with_rollback -c false -m "Could not unsupport"
+		return "${?}"
+	fi
 else
 	if [[ "${PH_APP}" != "Controllers" ]]
 	then
@@ -8193,7 +8216,7 @@ else
 			printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking for applications dependent on " "'${PH_APP}'"
 			local -a PH_APP_LIST
 			local -a PH_APPS_DEPENDENT
-			if read -r -a PH_APP_LIST -d';' < <(cut -f1 "${PH_CONF_DIR}/deps.conf" 2>/dev/null; echo -n ";") 2>/dev/null
+			if read -r -a PH_APP_LIST -d';' < <(cut -f1 "${PH_CONF_DIR}/deps.conf${PH_FILE_SUFFIX}" 2>/dev/null; echo -n ";") 2>/dev/null
 			then
 				for PH_i in "${PH_APP_LIST[@]}"
 				do
@@ -8220,10 +8243,30 @@ else
 			if [[ "${#PH_APPS_DEPENDENT[@]}" -eq "0" ]]
 			then
 				ph_run_with_rollback -c true -m "None"
+				if [[ "${PH_APP}" != "PieHelper" ]]
+				then
+					PH_ANSWER=""
+					PH_COUNT="0"
+					while [[ "${PH_ANSWER}" != @(y@(|es)|n@(|o)) ]]
+					do
+						[[ "${PH_COUNT}" -gt "0" ]] && \
+							printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
+						printf "%8s%s\033[1;33m%s\033[0;0m%s\n\n" "" "--> Do you also want to uninstall " "'${PH_APP}'" " ? "
+						printf "%10s\033[1;37m%s\033[1;33m%s\033[1;37m%s\033[0;0m\n\n" "" "- Do not uninstall " "'${PH_APP}'" " if it is still required outside the PieHelper framework"
+						printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m%s" "" "Uninstall " "'${PH_APP}'" " (y/n)" " ? "
+						read -r PH_ANSWER 2>/dev/null
+						((PH_COUNT++))
+					done
+					ph_run_with_rollback -c true -m "${PH_ANSWER}"
+					if [[ "${PH_ANSWER}" == y@(|es) ]]
+					then
+						ph_run_with_rollback -c "ph_uninstall_app -a '${PH_APP}'" || \
+							return 1
+					fi
+				fi
 			else
-				ph_set_result -m "Could not unsupport '${PH_APP}' since one or more applications currently depend on it ('$(sed 's/ /,/g'<<<"${PH_APPS_DEPENDENT[*]}")')"
-				ph_run_with_rollback -c false -m "Could not unsupport"
-				return "${?}"
+				printf "%10s\033[33m%s\033[0m\n" "" "Warning : Could not uninstall '${PH_APP}' since at least one other application depends on it"
+				ph_set_result -r 0
 			fi
 			unset PH_APPS_DEPENDENT
 			if ! ph_check_app_state_validity -a "${PH_APP}" -q -d
@@ -8233,24 +8276,6 @@ else
 			fi
 			if [[ "${PH_APP}" != "PieHelper" ]]
 			then
-				PH_ANSWER=""
-				PH_COUNT="0"
-				while [[ "${PH_ANSWER}" != @(y@(|es)|n@(|o)) ]]
-				do
-					[[ "${PH_COUNT}" -gt "0" ]] && \
-						printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
-					printf "%8s%s\033[1;33m%s\033[0;0m%s\n\n" "" "--> Do you also want to uninstall " "'${PH_APP}'" " ? "
-					printf "%10s\033[1;37m%s\033[1;33m%s\033[1;37m%s\033[0;0m\n\n" "" "- Do not uninstall " "'${PH_APP}'" " if applications outside the PieHelper framework still require it"
-					printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0;0m%s" "" "Uninstall " "'${PH_APP}'" " (y/n)" " ? "
-					read -r PH_ANSWER 2>/dev/null
-					((PH_COUNT++))
-				done
-				ph_run_with_rollback -c true -m "${PH_ANSWER}"
-				if [[ "${PH_ANSWER}" == y@(|es) ]]
-				then
-					ph_run_with_rollback -c "ph_uninstall_app -a '${PH_APP}'" || \
-						return 1
-				fi
 				ph_run_with_rollback -c "ph_revoke_pieh_access -u '${PH_APP_USER}'" || \
 					return 1
 				if [[ "$(nawk -v user "^${PH_APP_USER}$" 'BEGIN { \
@@ -8276,9 +8301,9 @@ else
 							printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
 						printf "%8s%s\033[1;33m%s\033[0m%s\n\n" "" "--> Do you also want to remove user " "'${PH_APP_USER}'" " ?"
 						printf "%10s\033[1;37m%s\033[1;33m%s\033[1;37m%s\n" "" "- PieHelper access for user " "'${PH_APP_USER}'" " is revoked but the user might still have system access"
-						printf "%10s%s\n" "" "- You should not remove the user if :"
-						printf "%12s%s\n" "" "- If the account is still required for other reasons"
-						printf "%12s%s\033[1;33m%s\033[0m\n\n" "" "- If you want to keep the data in the user's home directory " "'$(ph_get_user_home ${PH_APP_USER})'"
+						printf "%10s%s\n" "" "- You should not remove the account if :"
+						printf "%12s%s\n" "" "- It is still required outside the PieHelper framework"
+						printf "%12s%s\033[1;33m%s\033[0m\n\n" "" "- You wish to keep the data in home directory " "'$(ph_get_user_home ${PH_APP_USER})'"
 						printf "%8s%s\033[1;33m%s\033[1;37m%s\033[0m%s" "" "Remove " "'${PH_APP_USER}'" " (y/n)" " ? "
 						read -r PH_ANSWER 2>/dev/null
 						((PH_COUNT++))
@@ -8311,7 +8336,7 @@ else
 				else
 					for PH_j in "${PH_APP_LIST[@]}"
 					do
-						[[ "${PH_j}" == "${PH_i}" ]] && \
+						[[ "${PH_j}" == @(${PH_i}|${PH_APP}) ]] && \
 							continue
 						unset PH_APP_ALL_DEPENDS
 						local -ax PH_APP_ALL_DEPENDS
@@ -8341,21 +8366,28 @@ else
 			do
 				PH_COUNT="0"
 				PH_ANSWER=""
+				if ph_check_app_state_validity -a "${PH_i}" -d -q
+				then
+					PH_ACTION="uninstall"
+				else
+					PH_ACTION="unsupport"
+				fi
+				PH_APP_STATE="$(ph_get_app_state_from_app_name "${PH_i}")"
 				while [[ "${PH_ANSWER}" != @(y@(|es)|n@(|o)) ]]
 				do
 					[[ "${PH_COUNT}" -gt "0" ]] && \
 						printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
-					printf "%8s%s\033[1;33m%s\033[0m%s\n\n" "" "--> Do you also want to unsupport dependency " "'${PH_i}'" " ?"
-					printf "%12s\033[1;37m%s\033[33m%s\033[37m%s\n" "" "- Application " "'${PH_i}'" " is currently not Integrated and no longer required as a dependency"
-					printf "%12s%s\033[0m\n\n" "" "- Applications can always be supported again later"
-					printf "%8s%s\033[1;33m%s\033[37m%s\033[0m%s" "" "Unsupport " "'${PH_i}'" " (y/n)" " ? "
+					printf "%8s%s\033[1;33m%s\033[0m%s\n\n" "" "--> Do you also want to ${PH_ACTION} " "'${PH_i}'" " ?"
+					printf "%12s\033[1;37m%s\033[33m%s\033[37m%s\n" "" "- Application " "'${PH_i}'" " is ${PH_APP_STATE} and no longer a required dependency"
+					printf "%12s%s\033[0m\n\n" "" "- Applications can always be re${PH_ACTION//un/}ed at a later time"
+					printf "%8s%s\033[1;33m%s\033[37m%s\033[0m%s" "" "$(cut -c1<<<${PH_ACTION})$(cut-c2-${PH_ACTION}) " "'${PH_i}'" " (y/n)" " ? "
 					read -r PH_ANSWER 2>/dev/null
 					((PH_COUNT++))
 				done
 				ph_run_with_rollback -c true -m "${PH_ANSWER}"
 				if [[ "${PH_ANSWER}" == y@(|es) ]]
 				then
-					ph_run_with_rollback -c "ph_unsupport_app -a '${PH_i}'" || \
+					ph_run_with_rollback -c "ph_${PH_ACTION}_app -a '${PH_i}'" || \
 						return 1
 				fi
 			done
@@ -8363,8 +8395,8 @@ else
 		unset PH_UNUSED_DEPENDS PH_APP_LIST PH_APP_ALL_DEPENDS
 		if ph_check_app_state_validity -a "${PH_APP}" -o -q
 		then
-			printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n\n" "" "--> Removing " "'${PH_APP}'" " from base configuration file " "'${PH_CONF_DIR}/deps.conf'"
-			if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/deps.conf' -l '${PH_APP}\t.*'"
+			printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n\n" "" "--> Removing " "'${PH_APP}'" " from base configuration file " "'${PH_CONF_DIR}/deps.conf${PH_FILE_SUFFIX}'"
+			if ph_run_with_rollback -c "ph_remove_line_from_file -f '${PH_CONF_DIR}/deps.conf${PH_FILE_SUFFIX}' -l '${PH_APP}\t.*'"
 			then
 				ph_run_with_rollback -c true
 			else
@@ -8638,6 +8670,7 @@ declare PH_APP_STATE
 declare PH_APP_INST_STATE
 declare PH_APP_RECVD_INST_STATE
 declare PH_APP_DEPS
+declare PH_ANSWER2
 declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
@@ -8660,6 +8693,7 @@ PH_APP_STATE=""
 PH_APP_INST_STATE=""
 PH_APP_RECVD_INST_STATE=""
 PH_APP_DEPS=""
+PH_ANSWER2=""
 PH_OPTION=""
 PH_OLDOPTARG="${OPTARG}"
 PH_OLDOPTIND="${OPTIND}"
@@ -8758,7 +8792,7 @@ else
 			then
 				if [[ -z "${PH_APP_CMD}" ]]
 				then
-					ph_set_result -m "Cannot support Out-of-scope application '${PH_APP}' without a valid start command"
+					ph_set_result -m "Could not support Out-of-scope application '${PH_APP}' without a valid start command"
 					ph_run_with_rollback -c false -m "Could not support"
 					return "${?}"
 				fi
@@ -8807,7 +8841,7 @@ else
 				else
 					if [[ -z "${PH_APP_PKG}" || "$(ph_check_pkg_validity "${PH_APP_PKG}" ; echo "${?}")" -ne "0" ]]
 					then
-						ph_set_result -m "Cannot support Out-of-scope application '${PH_APP}' without a valid package name"
+						ph_set_result -m "Could not support Out-of-scope application '${PH_APP}' without a valid package name"
 						ph_run_with_rollback -c false "Could not support"
 						return "${?}"
 					else
@@ -8827,7 +8861,7 @@ else
 						ph_run_with_rollback -c true -m "None"
 					fi
 				else
-					ph_set_result -m "Cannot support Out-of-scope application '${PH_APP}' since it is not a packaged application"
+					ph_set_result -m "Could not support Out-of-scope application '${PH_APP}' since it is not a packaged application"
 					ph_run_with_rollback -c false "Could not support"
 					return "${?}"
 				fi
@@ -8900,7 +8934,7 @@ else
 									printf "\n%10s\033[33m%s\033[0m\n" "" "Warning : Invalid response"
 									continue
 								else
-									printf "%10s\033[33m%s\033[0m\n" "" "Warning : Skipping installation but ${PH_APP} will not function until it is installed"
+									printf "%10s\033[33m%s\033[0m\n" "" "Warning : Skipping installation of '${PH_APP}'"
 									ph_set_result -r 0
 									break 2
 								fi ;;
@@ -8978,19 +9012,30 @@ else
 					PH_APP_DEPENDS+=(${PH_APP_DEPS//,/ })
 				else
 					printf "%8s%s\033[1;33m%s\n\n" "" "--> Please enter any dependencies of " "'${PH_APP}'" " as a comma-separated list"
-					printf "%12s\033[1;37m%s\033[33m%s\033[37m\n" "" "- Dependencies are other applications required by " "'${PH_APP}'"
-					printf "%12s%s\n" "" "- Dependencies that are Default and entered here will be supported automatically"
-					printf "%12s%s\033[0m\n\n" "" "- Dependencies that are Out-of-scope must be supported prior to supporting their dependent applications"
+					printf "%12s\033[1;37m%s\033[33m%s\033[37m\n" "" "- Dependencies are applications that must be installed for proper functioning of " "'${PH_APP}'"
+					printf "%12s%s\033[0m\n\n" "" "- Only Supported or Default applications can be added as a dependency for another application"
 					printf "%8s%s" "" "List of dependencies (Leave empty for none or 'q' to quit) : "
-					read -r PH_ANSWER 2>/dev/null
-					if [[ -n "${PH_ANSWER}" ]]
+					read -r PH_ANSWER2 2>/dev/null
+					if [[ -n "${PH_ANSWER2}" ]]
 					then
-						ph_run_with_rollback -c true -m "${PH_ANSWER}"
-						if [[ "${PH_ANSWER}" == "q" ]]
+						if [[ "${PH_ANSWER2}" == "q" ]]
 						then
+							ph_run_with_rollback -c true -m "${PH_ANSWER2}"
 							ph_quit_with_rollback
 						else
-							PH_APP_DEPENDS+=(${PH_ANSWER//,/ })
+							PH_APP_DEPENDS+=(${PH_ANSWER2//,/ })
+							for PH_i in "${PH_APP_DEPENDS[@]}"
+							do
+								if [[ "$(ph_check_app_state_validity -a "${PH_i}" -d -q; echo -n "${?}")" -eq "0" || \
+									"$(ph_check_app_state_validity -a "${PH_i}" -s -q; echo -n "${?}")" -eq "0" ]]
+								then
+									continue
+								fi
+								ph_set_result -m "Could not add '${PH_i}' as a dependency of '${PH_APP}' since it is neither Default nor Supported"
+								ph_run_with_rollback -c false -m "Could not support"
+								return "${?}"
+							done
+							ph_run_with_rollback -c true -m "${PH_ANSWER2}"
 						fi
 					fi
 				fi
@@ -8999,19 +9044,15 @@ else
 			then
 				for PH_i in "${PH_APP_DEPENDS[@]}"
 				do
-					printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking the application state of " "'${PH_i}'"
-					PH_APP_STATE="$(ph_get_app_state_from_app_name "${PH_APP}")"
-					case "${PH_APP_STATE}" in Unused|Default)
-						printf "%10s\033[33m%s\033[0m\n" "" "Warning : '${PH_i}' is currently unsupported -> Supporting"
+					printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking the installation state of " "'${PH_i}'"
+					PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_name "${PH_i}")"
+					case "${PH_APP_INST_STATE}" in *U)
+						printf "%10s\033[33m%s\033[0m\n" "" "Warning : '${PH_i}' is currently not installed -> Installing"
 						ph_set_result -r 0
-						ph_run_with_rollback -c "ph_support_app -a '${PH_i}' -f" || \
+						ph_run_with_rollback -c "ph_install_app -a '${PH_i}'" || \
 							return 1 ;;
-							Out-of-scope)
-						ph_set_result -m "Out-of-scope dependencies such as '${PH_i}' must be supported prior to any applications that depend on it"
-						ph_run_with_rollback -c false -m "${PH_APP_STATE}"
-						return "${?}" ;;
 							*)
-						ph_run_with_rollback -c true -m "${PH_APP_STATE}" ;;
+						ph_run_with_rollback -c true -m "${PH_APP_INST_STATE}" ;;
 					esac
 					ph_run_with_rollback -c "ph_add_app_depends -a '${PH_APP}' -d '${PH_i}'" || \
 						return 1
@@ -9024,6 +9065,7 @@ else
 	fi
 	ph_run_with_rollback -c "ph_create_app_items -a '${PH_APP}' -t support" || \
 		return 1
+	PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_name "${PH_APP}")"
 	if [[ "${PH_APP}" != "Controllers" ]]
 	then
 		if [[ "${PH_APP_PKG_CHANGED_FLAG}" -eq "0" ]]
@@ -11060,7 +11102,7 @@ PH_MOVE_SCRIPTS_REGEX="$(ph_get_move_scripts_regex)"
 "${PH_SUDO}" rm "${PH_FILES_DIR}/stored/"!(@(autologin|logind)_conf|10-retropie_sh) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_EXCLUDES_DIR}/"!(@(build\.archives|kodi\.post_cmd)\.excludes) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_TEMPLATES_DIR}/"!(@(@(@(S|Res)tart|Stop|Move@(to|from)PieH|Move)Script|Loginscript|@(@(Res|S)tart|Stop)ScriptPieH|@(Kodi|Moonlight|PieHelper|Emulationstation|Bash|X11|Controllers|OOSapp)_conf)\.template) 2>/dev/null
-"${PH_SUDO}" rm "${PH_CONF_DIR}/"!(@(@(main|deps|$(sed 's/ /|/g'<<<"$(ph_get_app_list_by_state -s Supported -t minimum)")).conf|distros|@(supported|integrated)_apps|OS\.defaults|VERSION|controller_cli_ids)) 2>/dev/null
+"${PH_SUDO}" rm "${PH_CONF_DIR}/"!(@(@(main|$(sed 's/ /|/g'<<<"$(ph_get_app_list_by_state -s Supported -t minimum)")).conf|deps.conf_@(X|GL)|distros|@(supported|integrated)_apps|OS\.defaults|VERSION|controller_cli_ids)) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_CONF_DIR}/distros/"!(@($(sed 's/ /\|/g'<<<${PH_SUPPORTED_DISTROS[*]}))@(\.conf|)) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_MENUS_DIR}/"!(*\.lst) 2>/dev/null
 "${PH_SUDO}" rm -r "${PH_TMP_DIR}/"!(\.@(first_run|gitignore|stored_options)) 2>/dev/null
