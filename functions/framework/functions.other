@@ -48,8 +48,8 @@ OPTARG="${PH_OLDOPTARG}"
 [[ -z "${PH_APP}" || -z "${PH_APP_DEPEND}" || "${#}" -ne "4" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-ph_check_app_state_validity -a "${PH_APP}" -d || \
-	return 1
+ph_check_app_state_validity -a "${PH_APP}" -o || \
+	return 0
 printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Removing " "'${PH_APP_DEPEND}'" " as a direct dependency of " "'${PH_APP}'"
 declare -x PH_APP_DEPENDS
 if read -r -a PH_APP_DEPENDS -d';' < <(ph_get_app_depends -a "${PH_APP}"; echo -n ';') 2>/dev/null
@@ -129,8 +129,8 @@ OPTARG="${PH_OLDOPTARG}"
 [[ -z "${PH_APP}" || -z "${PH_APP_DEPEND}" || "${#}" -ne "4" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-ph_check_app_state_validity -a "${PH_APP}" -d || \
-	return 1
+ph_check_app_state_validity -a "${PH_APP}" -o || \
+	return 0
 declare -x PH_APP_DEPENDS PH_APP_ALL_DEPENDS
 printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Checking all existing dependencies of " "'${PH_APP}'"
 while true
@@ -9072,8 +9072,11 @@ else
 							*)
 						ph_run_with_rollback -c true -m "${PH_APP_INST_STATE}" ;;
 					esac
-					ph_run_with_rollback -c "ph_add_app_depends -a '${PH_APP}' -d '${PH_i}'" || \
-						return 1
+					if ph_check_app_state_validity -a "${PH_APP}" -o -q
+					then
+						ph_run_with_rollback -c "ph_add_app_depends -a '${PH_APP}' -d '${PH_i}'" || \
+							return 1
+					fi
 				done
 			else
 				ph_run_with_rollback -c true -m "None"
