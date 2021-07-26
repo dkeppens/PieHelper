@@ -38,8 +38,6 @@ declare -ix PH_ROUTINE_DEPTH
 declare -ix PH_SKIP_DEPTH_MEMBERS
 declare -ix PH_ROUTINE_FLAG
 
-PH_OLDOPTARG="${OPTARG}"
-PH_OLDOPTIND="${OPTIND}"
 PH_i=""
 PH_APP=""
 PH_APP_CMD=""
@@ -53,11 +51,10 @@ PH_LIST=""
 PH_DISP_HELP=""
 PH_OLD_PIEH_SANITY_EXTENDED="${PH_PIEH_SANITY_EXTENDED}"
 PH_OPTION=""
+PH_OLDOPTARG="${OPTARG}"
+PH_OLDOPTIND="${OPTIND}"
 
 OPTIND="1"
-PH_ROUTINE_DEPTH="0"
-PH_SKIP_DEPTH_MEMBERS="0"
-PH_ROUTINE_FLAG="1"
 
 while getopts :r:a:l:s:c:u:p:dh PH_OPTION
 do
@@ -134,7 +131,7 @@ do
 		>&2 printf "\n\n"
 		>&2 printf "%4s\033[1;5;33m%s\033[0m\n" "" "General options"
 		>&2 printf "\n\n"
-		>&2 printf "%6s\033[1;36m%s\033[1;37m%s\n" "" "$(basename "${0}" 2>/dev/null) : " "-r [routine] [[-a [[app]|\"prompt\"|\"Controllers\"]|-l [[keyword],[keyword],...]] '-s [scope]' |"
+		>&2 printf "%6s\033[1;36m%s\033[1;37m%s\n" "" "$(basename "${0}" 2>/dev/null) : " "-r [routine] [[-a [app|\"prompt\"|\"Controllers\"]|-l [keyword,keyword,..]] '-s [scope]' |"
 		>&2 printf "%23s%s\n" "" "-r [routine] -d |"
 		>&2 printf "%23s%s\n" "" "-h"
 		>&2 printf "\n"
@@ -296,9 +293,9 @@ do
 		>&2 printf "\n"
 		>&2 printf "%4s\033[1;5;33m%s\033[0m\n" "" "Routine-specific options"
 		>&2 printf "\n"
-		>&2 printf "%6s\033[1;36m%s\033[1;5;33m%s\033[0;1;37m%s\n" "" "$(basename "${0}" 2>/dev/null) : " "-a [app] -r [\"sup\"|\"inst\"|\"uninst\"] '-s [scope]'" " '-c [[cmd]|\"prompt\"]' |"
-		>&2 printf "%72s%s\n" "" "'-u [[user]|\"prompt\"]' |"
-		>&2 printf "%72s%s\n" "" "'-p [[pkg]|\"prompt\"|\"none\"]'"
+		>&2 printf "%6s\033[1;36m%s\033[1;5;33m%s\033[0;1;37m%s\n" "" "$(basename "${0}" 2>/dev/null) : " "-a [app|\"prompt\"] -r [\"sup\"|\"inst\"|\"uninst\"] '-s [scope]'" " '-c [cmd|\"prompt\"]' |"
+		>&2 printf "%72s%s\n" "" "'-u [user|\"prompt\"]' |"
+		>&2 printf "%72s%s\n" "" "'-p [pkg|\"prompt\"|\"none\"]'"
 		>&2 printf "\n"
 		>&2 printf "%15s\033[0m\033[1;37m%s\n" "" "Where : - Routine options are only required when supporting, installing or"
 		>&2 printf "%23s%s\n" "" "  uninstalling Unused Out-of-scope applications"
@@ -339,144 +336,8 @@ OPTIND="${PH_OLDOPTIND}"
 	-n "${PH_APP_PKG}" ) ]] &&  \
 	(! confapps_ph.sh -h) && \
 	exit 1
-if [[ -n "${PH_LIST}" ]]
-then
-	declare -a PH_KEYWORDS
-	for PH_i in ${PH_LIST//,/ }
-	do
-		[[ "${PH_i}" == "all" ]] && \
-			PH_i="def,sup,int,hal,run"
-		PH_KEYWORDS+=("${PH_i}")
-	done
-	PH_LIST="$(printf "%s\n" "${PH_KEYWORDS[@]}" | sort -u | nawk 'BEGIN { \
-			ORS = " " \
-		} { \
-			print \
-		}')"
-	unset PH_KEYWORDS
-else
-	if [[ -n "${PH_APP}" ]]
-	then
-		case "${PH_ROUTINE}" in mk_cifs_mpt|rm_cifs_mpt)
-			PH_LIST="int,hal,run" ;;
-			  	     inst)
-			PH_LIST="oos,def,sup,int,hal"
-			if [[ -n "${PH_APP_SCOPE}" && "${PH_APP_SCOPE}" != "uninst" ]]
-			then
-				case "${PH_APP_SCOPE}" in oos|def)
-					PH_LIST="${PH_APP_SCOPE}" ;;
-						pkg|PU)
-					PH_APP_SCOPE="PU" ;;
-						unpkg|UU)
-					PH_APP_SCOPE="UU" ;;
-						*I|inst)
-					PH_APP_SCOPE="oos"
-					PH_LIST="def" ;;
-				esac
-			else
-				PH_APP_SCOPE="uninst"
-			fi ;;
-			  	     uninst)
-			PH_LIST="oos,def,sup,int,hal"
-			if [[ -n "${PH_APP_SCOPE}" && "${PH_APP_SCOPE}" != "inst" ]]
-			then
-				case "${PH_APP_SCOPE}" in oos|def)
-					PH_LIST="${PH_APP_SCOPE}" ;;
-						pkg|PI)
-					PH_APP_SCOPE="PI" ;;
-						unpkg|UI)
-					PH_APP_SCOPE="UI" ;;
-						*U|uninst)
-					PH_APP_SCOPE="oos"
-					PH_LIST="def" ;;
-				esac
-			else
-				PH_APP_SCOPE="inst"
-			fi ;;
-			  	     sup)
-			PH_LIST="oos,def" ;;
-			  	     unsup|int)
-			PH_LIST="sup" ;;
-			  	     unint)
-			PH_LIST="hal" ;;
-			  	     conf|unconf)
-			PH_LIST="sup,int,hal"
-			if [[ -n "${PH_APP_SCOPE}" && "${PH_APP_SCOPE}" != "inst" ]]
-			then
-				case "${PH_APP_SCOPE}" in oos|def)
-					PH_LIST="${PH_APP_SCOPE}" ;;
-						pkg|PI)
-					PH_APP_SCOPE="PI" ;;
-						unpkg|UI)
-					PH_APP_SCOPE="UI" ;;
-						*U|uninst)
-					PH_APP_SCOPE="oos"
-					PH_LIST="def" ;;
-				esac
-			else
-				PH_APP_SCOPE="inst"
-			fi ;;
-			  	     start)
-			PH_LIST="sup,int,hal,run"
-			if [[ -n "${PH_APP_SCOPE}" && "${PH_APP_SCOPE}" != "inst" ]]
-			then
-				case "${PH_APP_SCOPE}" in oos|def)
-					PH_LIST="${PH_APP_SCOPE}" ;;
-						pkg|PI)
-					PH_APP_SCOPE="PI" ;;
-						unpkg|UI)
-					PH_APP_SCOPE="UI" ;;
-						*U|uninst)
-					PH_APP_SCOPE="oos"
-					PH_LIST="def" ;;
-				esac
-			else
-				PH_APP_SCOPE="inst"
-			fi ;;
-			  	     unstart)
-			PH_LIST="str"
-			if [[ -n "${PH_APP_SCOPE}" && "${PH_APP_SCOPE}" != "inst" ]]
-			then
-				case "${PH_APP_SCOPE}" in oos|def)
-					PH_LIST="${PH_APP_SCOPE}" ;;
-						pkg|PI)
-					PH_APP_SCOPE="PI" ;;
-						unpkg|UI)
-					PH_APP_SCOPE="UI" ;;
-						*U|uninst)
-					PH_APP_SCOPE="oos"
-					PH_LIST="def" ;;
-				esac
-			else
-				PH_APP_SCOPE="inst"
-			fi ;;
-			  	     update|mk_conf_file|mk_defaults|mk_alloweds|mk_menus|mk_scripts|rm_conf_file|rm_defaults|rm_alloweds|rm_menus|rm_scripts)
-			PH_LIST="sup,int,hal" ;;
-			  	     tty)
-			PH_LIST="hal,run" ;;
-			  	     list|info)
-			PH_LIST="oos,def,sup,int,hal,run" ;;
-			  	     *)
-			: ;;
-		esac
-	fi
-fi
+
 printf "\n"
-case "${PH_APP_SCOPE}" in oos)
-	PH_APP_SCOPE="Out-of-scope" ;;
-			  def)
-	PH_APP_SCOPE="Default" ;;
-			  pkg)
-	PH_APP_SCOPE='P*' ;;
-			  unpkg)
-	PH_APP_SCOPE='U*' ;;
-			  inst)
-	PH_APP_SCOPE='*I' ;;
-			  uninst)
-	PH_APP_SCOPE='*U' ;;
-			  *)
-	: ;;
-esac
 if [[ -n "${PH_DISP_HELP}" ]]
 then
 	printf "\033[1;36m%s\033[0;0m\n\n" "- Displaying supported routine options"
