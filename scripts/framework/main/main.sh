@@ -590,6 +590,7 @@ if [[ -L "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf" ]]
 then
 	if PH_OLD_DISTRO_REL="$(ph_get_link_target "${PH_CONF_DIR}/distros/${PH_DISTRO}.conf")"
 	then
+		PH_OLD_DISTRO_REL="$(sed 's/.conf$//'<<<"${PH_OLD_DISTRO_REL##*/}")"
 		if [[ "${PH_OLD_DISTRO_REL}" != "${PH_DISTRO_REL}" ]]
 		then
 			PH_DISTROU="${PH_DISTRO}"
@@ -605,6 +606,7 @@ then
 		ph_set_result -a
 	fi
 fi
+set +x
 
 # Unset all local variables
 

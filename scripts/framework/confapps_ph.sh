@@ -81,7 +81,7 @@ do
 			exit 1
 		for PH_i in ${OPTARG//,/ }
 		do
-			if [[ "${PH_i}" != @(def|sup|int|hal|run|str|all) ]]
+			if [[ "${PH_i}" != @(new|def|sup|int|hal|run|str|all) ]]
 			then
 				(! confapps_ph.sh -h)
 				OPTARG="${PH_OLDOPTARG}"
@@ -132,44 +132,51 @@ do
 		>&2 printf "%4s\033[1;5;33m%s\033[0m\n" "" "General options"
 		>&2 printf "\n\n"
 		>&2 printf "%6s\033[1;36m%s\033[1;37m%s\n" "" "$(basename "${0}" 2>/dev/null) : " "-r [routine] [[-a [app|\"prompt\"|\"Controllers\"]|-l [keyword,keyword,..]] '-s [scope]' |"
-		>&2 printf "%23s%s\n" "" "-r [routine] -d |"
 		>&2 printf "%23s%s\n" "" "-h"
 		>&2 printf "\n"
-		>&2 printf "%15s\033[0m\033[1;37m%s\n" "" "Where : - The PieHelper framework manages applications by their regular state and their install state"
+		>&2 printf "%15s\033[0m\033[1;37m%s\n" "" "Where : - The PieHelper framework manages applications by their state and installation status"
 		>&2 printf "%27s%s\n" "" "- To manage the install state of applications (installing, uninstalling, updates, etc), they must be supported by the framework"
 		>&2 printf "%27s%s\n" "" "- To manage the state of applications (start, stop, etc), they must also be integrated with the framework"
-		>&2 printf "%25s%s\n" "" "- Application states are separated into two groups :"
-		>&2 printf "%27s%s\n" "" "- Unused applications refers to all applications for which support has not been added yet"
-		>&2 printf "%27s%s\n" "" "- Used applications refers to all applications for which support has been added"
-		>&2 printf "%23s%s\n" "" "-l allows selecting one or more applications by state if it is matched exactly by any one of a comma-separated [keyword] list"
-		>&2 printf "%25s%s\n" "" "- Supported keywords are :"
-		>&2 printf "%27s%s\n" "" "- \"oos\" refers to Unused applications that are Out-of-scope"
-		>&2 printf "%29s%s\n" "" "- Since Out-of-scope applications are applications for which the framework has no built-in knowledge of"
-		>&2 printf "%29s%s\n" "" "  the data required for support, these are equivalent to unknown applications"
-		>&2 printf "%27s%s\n" "" "- \"def\" selects Unused applications that are Default"
-		>&2 printf "%29s%s\n" "" "- Since Default applications are applications for which the framework has built-in knowledge of"
-		>&2 printf "%29s%s\n" "" "  the data required for support, these applications are still known"
+		>&2 printf "%25s%s\n" "" "- Applications can be grouped by state as :"
+		>&2 printf "%27s%s\n" "" "- Out-of-scope which refers to applications for which the framework has no built-in knowledge of the data required for their support"
+		>&2 printf "%27s%s\n" "" "- Default which refers to applications for which the framework has built-in knowledge of the data required for their support"
+		>&2 printf "%27s%s\n" "" "- Unused applications which refers to all applications for which support has not been added yet"
+		>&2 printf "%27s%s\n" "" "- Used applications which refers to all applications for which support has been added"
+		>&2 printf "%27s%s\n" "" "- Known applications which are all Used applications and all Default Unused applications"
+		>&2 printf "%27s%s\n" "" "- UnKnown applications which are all Out-of-scope Unused applications"
+		>&2 printf "%23s%s\n" "" "-l allows selecting one or more applications by state if it is matched exactly by any one of a comma-separated state [keyword] list"
+		>&2 printf "%25s%s\n" "" "- Supported state selection keywords are :"
+		>&2 printf "%27s%s\n" "" "- \"new\" selects all Unused Out-of-scope applications"
+		>&2 printf "%29s%s\n" "" "- These are equivalent to Unknown applications"
+		>&2 printf "%27s%s\n" "" "- \"def\" selects all Unused Default applications"
+		>&2 printf "%31s%s\n" "" "- These applications, though Unused, are still Known"
 		>&2 printf "%27s%s\n" "" "- \"sup\" selects applications in state Supported"
-		>&2 printf "%29s%s\n" "" "- Supported applications are Default or Out-of-scope applications for which a configuration file, option configuration and menu items exist as well"
+		>&2 printf "%29s%s\n" "" "- Supported applications are applications for which a configuration file, option configuration and menu items exist"
+		>&2 printf "%29s%s\n" "" "  They can be either Default or Out-of-scope"
 		>&2 printf "%27s%s\n" "" "- \"int\" selects applications in state Integrated"
-		>&2 printf "%29s%s\n" "" "- Integrated applications are Supported applications without a tty for which management scripts and, in case one is defined, a mounpoint exist as well"
+		>&2 printf "%29s%s\n" "" "- Integrated applications are previously Supported applications with no tty but for which management scripts and"
+		>&2 printf "%29s%s\n" "" "  a mountpoint (if one is defined), are created as well"
 		>&2 printf "%27s%s\n" "" "- \"hal\" selects applications in state Halted"
-		>&2 printf "%29s%s\n" "" "- Halted applications are inactive Integrated applications with an allocated tty"
+		>&2 printf "%29s%s\n" "" "- Halted applications are previously Integrated applications with an allocated tty, that are inactive"
 		>&2 printf "%27s%s\n" "" "- \"run\" selects applications in state Running"
-		>&2 printf "%29s%s\n" "" "- Running applications are active Integrated applications with an allocated tty"
+		>&2 printf "%29s%s\n" "" "- Running applications are previously Integrated applications with an allocated tty, that are active"
 		>&2 printf "%27s%s\n" "" "- \"str\" selects the current Start application"
 		>&2 printf "%29s%s\n" "" "- The Start application, if set, is either a Halted or Running application, set to start automatically on system boot"
 		>&2 printf "%27s%s\n" "" "- \"all\" is equivalent to using '-l def,sup,int,hal,run'"
-		>&2 printf "%23s%s\n" "" "-a allows selecting a single application by an identifier [app]"
+		>&2 printf "%25s%s\n" "" "- Using keywords is mutually exclusive with selection by name"
+		>&2 printf "%23s%s\n" "" "-a allows selecting a single application by a value [app]"
 		>&2 printf "%25s%s\n" "" "- Supported values for [app] are :"
-		>&2 printf "%27s%s\n" "" "- An application name"
-		>&2 printf "%27s%s\n" "" "- Reserved keyword 'Controllers' which is a special Supported application for controller management"
+		>&2 printf "%27s%s\n" "" "- The name of a Known application"
+		>&2 printf "%27s%s\n" "" "- A new name meeting the following requirements :"
+		>&2 printf "%29s%s\n" "" "- The first four characters of any application name in lowercase form the unique application identifier"
+		>&2 printf "%29s%s\n" "" "- Application identifiers may not match existing identifiers or the first four characters of internally reserved keywords"
 		>&2 printf "%27s%s\n" "" "- Reserved keyword 'prompt' for specifying the name interactively"
-		>&2 printf "%25s%s\n" "" "- This option is mandatory to select Unused Out-of-scope applications"
+		>&2 printf "%27s%s\n" "" "- Reserved keyword 'Controllers' which is a special Supported application for controller management"
+		>&2 printf "%25s%s\n" "" "- Using a name value is mutually exclusive with selection by keyword"
 		>&2 printf "%23s%s\n" "" "-s allows applying an additional scope filter when selecting applications"
 		>&2 printf "%25s%s\n" "" "- Supported scope filters are :"
-		>&2 printf "%27s%s\n" "" "- \"oos\" additionally filters selections by state and returns only Out-of-scope applications (Used and Unused)"
-		>&2 printf "%27s%s\n" "" "- \"def\" additionally filters selections by state and returns only Default applications (Used and Unused)"
+		>&2 printf "%27s%s\n" "" "- \"oos\" additionally filters selections by state group and returns only Out-of-scope applications (Used and Unused)"
+		>&2 printf "%27s%s\n" "" "- \"def\" additionally filters selections by state group and returns only Default applications (Used and Unused)"
 		>&2 printf "%27s%s\n" "" "- \"inst\" additionally filters selections by install state and returns only those currently installed"
 		>&2 printf "%27s%s\n" "" "- \"uninst\" additionally filters selections by install state and returns only those not currently installed"
 		>&2 printf "%27s%s\n" "" "- \"pkg\" additionally filters selections by install state and returns only those which are packaged"
@@ -190,43 +197,45 @@ do
 		>&2 printf "%27s%s\n" "" "- Disable extended sanity checks by setting PieHelper option 'PH_PIEH_SANITY_EXTENDED' to no"
 		>&2 printf "%27s%s\n" "" "- Remove and re-create all existing items for that routine and for each selection"
 		>&2 printf "%27s%s\n" "" "- Re-enable extended sanity checks, if at first disabled, by setting PieHelper option 'PH_PIEH_SANITY_EXTENDED' back to yes"
-		>&2 printf "%25s%s\n" "" "- Application PieHelper will always be skipped by the following routines :"
+		>&2 printf "%25s%s\n" "" "- The PieHelper application will always be skipped by the following routines :"
 		>&2 printf "%27s%s\n" "" "- 'conf' and 'unconf'"
 		>&2 printf "%27s%s\n" "" "- 'sup' and 'unsup'"
 		>&2 printf "%27s%s\n" "" "- 'int' and 'unint'"
 		>&2 printf "%27s%s\n" "" "- 'inst' and 'uninst'"
-		>&2 printf "%25s%s\n" "" "- Application Controllers will always be skipped except by the following routines :"
+		>&2 printf "%25s%s\n" "" "- The special application Controllers will always be skipped except by the following routines :"
 		>&2 printf "%27s%s\n" "" "- 'list' and 'info'"
 		>&2 printf "%27s%s\n" "" "- 'sup' and 'unsup'"
 		>&2 printf "%27s%s\n" "" "- 'mk_conf_file' and 'rm_conf_file'"
 		>&2 printf "%27s%s\n" "" "- 'mk_menus' and 'rm_menus'"
 		>&2 printf "%27s%s\n" "" "- 'mk_all' and 'rm_all'"
 		>&2 printf "%25s%s\n" "" "- Supported routines are :"
-		>&2 printf "%27s%s\n" "" "- \"inst\" will install all selected applications"
+		>&2 printf "%27s%s\n" "" "- \"inst\" will install selected applications"
 		>&2 printf "%29s%s\n" "" "- Running and installed applications will be skipped"
 		>&2 printf "%27s%s\n" "" "- \"uninst\" will uninstall selected applications"
 		>&2 printf "%29s%s\n" "" "- Running and uninstalled applications will be skipped"
-		>&2 printf "%27s%s\n" "" "- \"sup\" will support selected applications in the PieHelper framework"
+		>&2 printf "%27s%s\n" "" "- \"sup\" will add support for selected applications to the PieHelper framework"
 		>&2 printf "%29s%s\n" "" "- Adding support will create a configuration file, option configuration and menu items"
-		>&2 printf "%31s%s\n" "" "- When supporting Out-of-scope applications, related routines that allow for end-user"
+		>&2 printf "%31s%s\n" "" "- When supporting Out-of-scope applications, un/configuration function templates intended for end-user"
 		>&2 printf "%31s%s\n" "" "  development will also be created, in '${PH_FUNCS_DIR}/functions.user'"
 		>&2 printf "%29s%s\n" "" "- Applications with state Supported or higher will be skipped"
-		>&2 printf "%27s%s\n" "" "- \"unsup\" will unsupport selected applications from the PieHelper framework"
+		>&2 printf "%27s%s\n" "" "- \"unsup\" will remove support for selected applications from the PieHelper framework"
 		>&2 printf "%29s%s\n" "" "- Removing support will remove the configuration file, option configuration and menu items"
-		>&2 printf "%31s%s\n" "" "- When unsupporting Out-of-scope applications, related routines allowing for end-user"
-		>&2 printf "%31s%s\n" "" "  development will also be removed, from '${PH_FUNCS_DIR}/functions.user'"
+		>&2 printf "%31s%s\n" "" "- When unsupporting Out-of-scope applications, related un/configuration functions or their templates"
+		>&2 printf "%31s%s\n" "" "  will also be removed, from '${PH_FUNCS_DIR}/functions.user'"
 		>&2 printf "%29s%s\n" "" "- Unused applications or applications with state Integrated or higher will be skipped"
 		>&2 printf "%27s%s\n" "" "- \"int\" will integrate selected applications into the PieHelper framework"
-		>&2 printf "%29s%s\n" "" "- Integration will create management scripts and, in case a default mountpoint is defined, the mountpoint"
+		>&2 printf "%29s%s\n" "" "- Integration will create management scripts and, if a default mountpoint is defined in the application's"
+		>&2 printf "%29s%s\n" "" "  configuration file, the mountpoint"
 		>&2 printf "%29s%s\n" "" "- Unused applications or applications with state Integrated or higher will be skipped"
 		>&2 printf "%27s%s\n" "" "- \"unint\" will unintegrate selected applications from the PieHelper framework"
-		>&2 printf "%29s%s\n" "" "- Unintegration will remove any tty allocation, management scripts and, in case a default CIFS mountpoint is used, the mountpoint"
+		>&2 printf "%29s%s\n" "" "- Unintegration will remove any tty allocation, management scripts and, if a default CIFS mountpoint is defined"
+		>&2 printf "%29s%s\n" "" "  in the application's configuration file and currently exists, the mountpoint"
 		>&2 printf "%29s%s\n" "" "- Unused, Supported, and Running applications will be skipped"
 		>&2 printf "%27s%s\n" "" "- \"conf\" will attempt to do application-specific configuration"
-		>&2 printf "%29s%s\n" "" "- Out-of-scope application-specific configuration routines require prior end-user development"
+		>&2 printf "%29s%s\n" "" "- Out-of-scope applications require prior end-user development of their templated configuration functions"
 		>&2 printf "%29s%s\n" "" "- Unused and Running applications and applications not currently installed will be skipped"
 		>&2 printf "%27s%s\n" "" "- \"unconf\" will attempt to undo application-specific configuration"
-		>&2 printf "%29s%s\n" "" "- Out-of-scope application-specific unconfiguration routines require prior end-user development"
+		>&2 printf "%29s%s\n" "" "- Out-of-scope applications require prior end-user development of their templated unconfiguration functions"
 		>&2 printf "%29s%s\n" "" "- Unused, Running applications and uninstalled applications will be skipped"
 		>&2 printf "%27s%s\n" "" "- \"start\" will configure selected applications as the Start application"
 		>&2 printf "%29s%s\n" "" "- Unused and uninstalled applications will be skipped"
@@ -234,18 +243,18 @@ do
 		>&2 printf "%29s%s\n" "" "- Applications that are not the current Start application and uninstalled applications will be skipped"
 		>&2 printf "%27s%s\n" "" "- \"update\" will check for available updates of selected applications and apply them when found"
 		>&2 printf "%29s%s\n" "" "- Unused and Running applications will be skipped"
-		>&2 printf "%27s%s\n" "" "- \"list\" will list the name of selected applications"
+		>&2 printf "%27s%s\n" "" "- \"list\" will list the name and install state of selected applications"
 		>&2 printf "%27s%s\n" "" "- \"info\" will display the name and general information of selected applications"
 		>&2 printf "%27s%s\n" "" "- \"tty\" will display the name and tty allocation of selected applications"
 		>&2 printf "%29s%s\n" "" "- Applications with a maximum state of Integrated will be skipped"
 		>&2 printf "%27s%s\n" "" "- \"mk_conf_file\" will create the configuration file for selected applications"
 		>&2 printf "%29s%s\n" "" "- Configuration files are created as '${PH_CONF_DIR}/[app].conf'"
 		>&2 printf "%29s%s\n" "" "- Unused and Running applications will be skipped"
-		>&2 printf "%27s%s\n" "" "- \"mk_defaults\" will create configuration for default option values of selected applications"
-		>&2 printf "%29s%s\n" "" "- Configuration will be added to '${PH_CONF_DIR}/options.defaults'"
+		>&2 printf "%27s%s\n" "" "- \"mk_defaults\" will create settings defining default option values for selected applications"
+		>&2 printf "%29s%s\n" "" "- Settings will be added to '${PH_CONF_DIR}/options.defaults'"
 		>&2 printf "%29s%s\n" "" "- Unused and Running applications will be skipped"
-		>&2 printf "%27s%s\n" "" "- \"mk_alloweds\" will create configuration for allowed option values of selected applications"
-		>&2 printf "%29s%s\n" "" "- Configuration will be added to '${PH_CONF_DIR}/options.defaults'"
+		>&2 printf "%27s%s\n" "" "- \"mk_alloweds\" will create settings defining allowed option values for selected applications"
+		>&2 printf "%29s%s\n" "" "- Settings will be added to '${PH_CONF_DIR}/options.defaults'"
 		>&2 printf "%29s%s\n" "" "- Unused and Running applications will be skipped"
 		>&2 printf "%27s%s\n" "" "- \"mk_menus\" will create the menu items for selected applications"
 		>&2 printf "%29s%s\n" "" "- Menu items will be created in '${PH_MENUS_DIR}'"
@@ -266,11 +275,11 @@ do
 		>&2 printf "%27s%s\n" "" "- \"rm_conf_file\" will remove the configuration file of selected applications"
 		>&2 printf "%29s%s\n" "" "- Configuration files will be removed as '${PH_CONF_DIR}/[app].conf'"
 		>&2 printf "%29s%s\n" "" "- Unused and Running applications will be skipped"
-		>&2 printf "%27s%s\n" "" "- \"rm_defaults\" will remove default option value configuration of selected applications"
-		>&2 printf "%29s%s\n" "" "- Configuration will be removed from '${PH_CONF_DIR}/options.defaults'"
+		>&2 printf "%27s%s\n" "" "- \"rm_defaults\" will remove settings defining default option values for selected applications"
+		>&2 printf "%29s%s\n" "" "- Settings will be removed from '${PH_CONF_DIR}/options.defaults'"
 		>&2 printf "%29s%s\n" "" "- Unused and Running applications will be skipped"
-		>&2 printf "%27s%s\n" "" "- \"rm_alloweds\" will remove allowed option value configuration of selected applications"
-		>&2 printf "%29s%s\n" "" "- Configuration will be removed from '${PH_CONF_DIR}/options.alloweds'"
+		>&2 printf "%27s%s\n" "" "- \"rm_alloweds\" will remove settings defining allowed option values for selected applications"
+		>&2 printf "%29s%s\n" "" "- Settings will be removed from '${PH_CONF_DIR}/options.alloweds'"
 		>&2 printf "%29s%s\n" "" "- Unused and Running applications will be skipped"
 		>&2 printf "%27s%s\n" "" "- \"rm_menus\" will remove the menu items of selected applications"
 		>&2 printf "%29s%s\n" "" "- Menu items will be removed from '${PH_MENUS_DIR}'"
@@ -288,33 +297,39 @@ do
 		>&2 printf "%29s%s\n" "" "- For Integrated and Halted applications :"
 		>&2 printf "%31s%s\n" "" "- \"rm_cifs_mpt\", \"rm_scripts\", \"rm_menus\", \"rm_defaults\", \"rm_alloweds\", \"rm_conf_file\""
 		>&2 printf "%29s%s\n" "" "- Unused and Running applications will be skipped"
-		>&2 printf "%23s%s\n" "" "-d will list the options supported by a specified routine [routine]"
 		>&2 printf "%23s%s\033[0m\n" "" "-h displays this usage"
 		>&2 printf "\n"
 		>&2 printf "%4s\033[1;5;33m%s\033[0m\n" "" "Routine-specific options"
 		>&2 printf "\n"
-		>&2 printf "%6s\033[1;36m%s\033[1;5;33m%s\033[0;1;37m%s\n" "" "$(basename "${0}" 2>/dev/null) : " "-a [app|\"prompt\"] -r [\"sup\"|\"inst\"|\"uninst\"] '-s [scope]'" " '-c [cmd|\"prompt\"]' |"
-		>&2 printf "%72s%s\n" "" "'-u [user|\"prompt\"]' |"
-		>&2 printf "%72s%s\n" "" "'-p [pkg|\"prompt\"|\"none\"]'"
+		>&2 printf "%6s\033[1;36m%s\033[37m%s\n" "" "$(basename "${0}" 2>/dev/null) : " "-a [app|\"prompt\"] -r [routine] '-s [scope]' '-c [cmd|\"prompt\"]' '-u [user|\"prompt\"]' '-p [pkg|\"prompt\"|\"none\"]' |"
+		>&2 printf "%23s%s\n" "" "-r [routine] -d"
 		>&2 printf "\n"
-		>&2 printf "%15s\033[0m\033[1;37m%s\n" "" "Where : - Routine options are only required when supporting, installing or"
-		>&2 printf "%23s%s\n" "" "  uninstalling Unused Out-of-scope applications"
-		>&2 printf "%23s%s\n" "" "-u allows passing a username value [user] to a routine"
+		>&2 printf "%15s\033[0m\033[1;37m%s\n" "" "Where : - Routine options are required to allow supporting, installing or"
+		>&2 printf "%23s%s\n" "" "  uninstalling Unused Out-of-scope (or Unknown) applications"
+		>&2 printf "%23s%s\n" "" "-a allows defining the name of the new application as [app]"
+		>&2 printf "%25s%s\n" "" "- Supported values for [app] are :"
+		>&2 printf "%27s%s\n" "" "- A name meeting the following requirements :"
+		>&2 printf "%29s%s\n" "" "- The first four characters of any application name in lowercase form the unique application identifier"
+		>&2 printf "%29s%s\n" "" "- Application identifiers may not match any existing identifiers or the first four characters of internally reserved keywords"
+		>&2 printf "%27s%s\n" "" "- Reserved keyword 'prompt' for specifying the name interactively"
+		>&2 printf "%23s%s\n" "" "-u allows passing a username [user] to a routine"
 		>&2 printf "%25s%s\n" "" "- [user] can be :"
-		>&2 printf "%27s%s\n" "" "- A valid username for [app]"
-		>&2 printf "%27s%s\n" "" "- Reserved keyword 'prompt' which allows for specifying the value interactively"
-		>&2 printf "%25s%s\n" "" "- This argument is optional"
-		>&2 printf "%23s%s\n" "" "-p allows passing a packagename value [pkg] to a routine"
+		>&2 printf "%27s%s\n" "" "- A valid username"
+		>&2 printf "%29s%s\n" "" "- Users are not mandatory to exist and will be created if they don't"
+		>&2 printf "%27s%s\n" "" "- Reserved keyword 'prompt' which allows specifying the value interactively"
+		>&2 printf "%25s%s\n" "" "- This argument is ignored by routines not requiring a username"
+		>&2 printf "%23s%s\n" "" "-p allows passing a package name [pkg] to a routine"
 		>&2 printf "%25s%s\n" "" "- [pkg] can be :"
-		>&2 printf "%27s%s\n" "" "- A valid packagename if [app] is a packaged application"
+		>&2 printf "%27s%s\n" "" "- A valid package name if [app] is a packaged application"
 		>&2 printf "%27s%s\n" "" "- Reserved keyword 'none' if [app] is an unpackaged application"
-		>&2 printf "%27s%s\n" "" "- Reserved keyword 'prompt' which allows for specifying the value interactively"
-		>&2 printf "%25s%s\n" "" "- This argument is optional"
+		>&2 printf "%27s%s\n" "" "- Reserved keyword 'prompt' which allows specifying the value interactively"
+		>&2 printf "%25s%s\n" "" "- This argument is ignored by routines not requiring a package name"
 		>&2 printf "%23s%s\n" "" "-c allows passing a start command value [cmd] to a routine"
 		>&2 printf "%25s%s\n" "" "- [cmd] can be :"
 		>&2 printf "%27s%s\n" "" "- A valid start command for [app]"
-		>&2 printf "%27s%s\n" "" "- Reserved keyword 'prompt' which allows for specifying the value interactively"
-		>&2 printf "%25s%s\033[0m\n" "" "- This argument is optional"
+		>&2 printf "%27s%s\n" "" "- Reserved keyword 'prompt' which allows specifying the value interactively"
+		>&2 printf "%25s%s\n" "" "- This argument is ignored by routines not requiring a start command"
+		>&2 printf "%23s%s\033[0m\n" "" "-d will list the options supported by a specified routine [routine] and whether they are mandatory or optional"
 		>&2 printf "\n"
 		OPTARG="${PH_OLDOPTARG}"
 		OPTIND="${PH_OLDOPTIND}"
@@ -327,33 +342,38 @@ OPTIND="${PH_OLDOPTIND}"
 [[ -z "${PH_ROUTINE}" || \
 	( -n "${PH_DISP_HELP}" && ( -n "${PH_LIST}" || -n "${PH_APP}" || -n "${PH_APP_SCOPE}" || \
 	-n "${PH_APP_CMD}" || -n "${PH_APP_USER}" || -n "${PH_APP_PKG}" )) || \
-	( -n "${PH_LIST}" && -n "${PH_APP}" ) || \
-	(( "${PH_ROUTINE}" != "sup" || -n "${PH_LIST}" || \
-	"$(ph_check_app_state_validity -a "${PH_APP}" -q -o; echo "${?}")" -ne "0" ) && \
-	( -n "${PH_APP_CMD}" || -n "${PH_APP_USER}" )) ||  \
-	(( "${PH_ROUTINE}" != @(sup|inst|uninst) || -n "${PH_LIST}" || \
-	"$(ph_check_app_state_validity -a "${PH_APP}" -q -o; echo "${?}")" -ne "0" ) && \
-	-n "${PH_APP_PKG}" ) ]] &&  \
+	( -n "${PH_LIST}" && ( -n "${PH_APP}" || ( -n "${PH_APP_USER}" || -n "${PH_APP_CMD}" || -n "${PH_APP_PKG}" ))) ]] && \
 	(! confapps_ph.sh -h) && \
 	exit 1
 
 printf "\n"
 if [[ -n "${PH_DISP_HELP}" ]]
 then
-	printf "\033[1;36m%s\033[0;0m\n\n" "- Displaying supported routine options"
+	printf "\033[1;36m%s\033[0;0m\n\n" "- Displaying routine options"
 	printf "%8s%s\033[1;33m%s\033[0;0m\n\n" "" "--> Listing supported options for routine " "'${PH_ROUTINE}'"
 	case "${PH_ROUTINE}" in sup)
-		if printf "%12s\033[1;37m%-73s%-5s\033[1;33m%s\033[0;0m\n" "" "- The start command for the application " ":" " -c \"start command\""
+		if printf "%12s\033[1;37m%-55s%-5s\033[33m%-30s\033[37m%s\033[0m\n" "" "- The start command for the application " ":" " -c [cmd|\"prompt\"]" "(Mandatory)"
 		then
-			if printf "%12s\033[1;37m%-73s%-5s\033[1;33m%s\033[0;0m\n" "" "- The user account for the application " ":" " -u \"user\""
+			if printf "%12s\033[1;37m%-55s%-5s\033[33m%-30s\033[37m%s\033[0m\n" "" "- The user account for the application " ":" " -u [user|\"prompt\"]" "(Optional)"
 			then
-				printf "%12s\033[1;37m%-73s%-5s\033[1;33m%s\033[0;0m\n" "" "- A package name for packaged applications or empty string otherwise " ":" " -p \"package\""
+				printf "%12s\033[1;37m%-55s%-5s\033[33m%-30s\033[37m%s\033[0m\n" "" "- The package name of the application " ":" " -p [pkg|\"prompt\"|\"none\"]" "(Optional)"
 			fi
 		fi ;;
-			inst|uninst)
-		printf "%12s\033[1;37m%-73s%-5s\033[1;33m%s\033[0;0m\n" "" "- The package name for packaged applications or an empty string otherwise " ":" "-p \"package\"" ;;
+			inst)
+		if printf "%12s\033[1;37m%-55s%-5s\033[33m%-30s\033[37m%s\033[0m\n" "" "- The start command for the application " ":" " -c [cmd|\"prompt\"]" "(Optional with package/Mandatory without)"
+		then
+			if printf "%12s\033[1;37m%-55s%-5s\033[33m%-30s\033[37m%s\033[0m\n" "" "- The user account for the application " ":" " -u [user|\"prompt\"]" "(Mandatory)"
+			then
+				printf "%12s\033[1;37m%-55s%-5s\033[33m%-30s\033[37m%s\033[0m\n" "" "- The package name of the application " ":" " -p [pkg|\"prompt\"|\"none\"]" "(Optional)"
+			fi
+		fi ;;
+			uninst)
+		if printf "%12s\033[1;37m%-55s%-5s\033[33m%-30s\033[37m%s\033[0m\n" "" "- The start command for the application " ":" " -c [cmd|\"prompt\"]" "(Optional with package/Mandatory without)"
+		then
+			printf "%12s\033[1;37m%-55s%-5s\033[33m%-30s\033[37m%s\033[0m\n" "" "- The package name of the application " ":" " -p [pkg|\"prompt\"|\"none\"]" "(Optional)"
+		fi ;;
 			*)
-		printf "%12s\033[1;37m%-73s\033[0;0m\n" "" "- No options supported" ;;
+		printf "%12s\033[1;37m%-55s\033[0m\n" "" "- Routine does not support options" ;;
 	esac
 	if [[ "${?}" -eq "0" ]]
 	then
@@ -364,14 +384,25 @@ then
 		ph_run_with_rollback -c false -m "Could not list"
 	fi
 else
-	printf "\033[1;36m%s\033[0;0m\n\n" "- Running routine '${PH_ROUTINE}'"
-	if [[ "${PH_ROUTINE}" == @(rm|mk)_conf_file ]]
-	then
+	printf "\033[1;36m%s\033[0;0m\n\n" "- Application routine '${PH_ROUTINE}'"
+	case "${PH_ROUTINE}" in uninst)
+		if [[ -n "${PH_APP_USER}" ]]
+		then
+			PH_APP_USER=""
+		fi ;;
+			rm_conf_file|mk_conf_file)
 		if ! ph_store_all_options_value
 		then
 			ph_show_result
 			exit "${?}"
-		fi
+		fi ;;
+	esac
+	if [[ ( -n "${PH_APP_USER}" || -n "${PH_APP_PKG}" || -n "${PH_APP_CMD}" ) && \
+		"$(ph_get_app_state_from_app_name "${PH_APP}")" == "Out-of-scope" ]]
+	then
+		PH_APP_USER=""
+		PH_APP_PKG=""
+		PH_APP_CMD=""
 	fi
 	if [[ "${PH_ROUTINE}" == rm_* && "${PH_PIEH_SANITY_EXTENDED}" == "yes" ]]
 	then
@@ -386,11 +417,14 @@ else
 	do
 		declare -n PH_PARAM
 		PH_PARAM="PH_${PH_i}"
-		if [[ "${PH_i}" == @(APP|LIST) ]]
+		if [[ -n "${PH_PARAM}" ]]
 		then
-			PH_ROUTINE_OPTS+=("-$(cut -c1<<<"${PH_i}" | tr '[:upper:]' '[:lower:]')" "'${PH_PARAM}'")
-		else
-			PH_ROUTINE_OPTS+=("-$(cut -c5<<<"${PH_i}" | tr '[:upper:]' '[:lower:]')" "'${PH_PARAM}'")
+			if [[ "${PH_i}" == @(APP|LIST) ]]
+			then
+				PH_ROUTINE_OPTS+=("-$(cut -c1<<<"${PH_i}" | tr '[:upper:]' '[:lower:]')" "'${PH_PARAM}'")
+			else
+				PH_ROUTINE_OPTS+=("-$(cut -c5<<<"${PH_i}" | tr '[:upper:]' '[:lower:]')" "'${PH_PARAM}'")
+			fi
 		fi
 		unset -n PH_PARAM
 	done

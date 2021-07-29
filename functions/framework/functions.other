@@ -12232,16 +12232,16 @@ PH_ARRAY="${PH_ARRAY_NAME}"
 while read -r 2>/dev/null
 do
 	PH_ARRAY_SORTED+=("${REPLY}")
-done < <(echo -n "${PH_ARRAY[@]}" | nawk 'BEGIN { \
+done < <(echo -n "${PH_ARRAY[*]}" | nawk 'BEGIN { \
 		RS = " " \
 	} { \
 		print \
-	}' | sort -u | paste -d' ' -s)
+	}' | sort -u)
 for PH_i in "${!PH_ARRAY[@]}"
 do
 	unset PH_ARRAY["${PH_i}"]
 done
-PH_ARRAY=("${PH_ARRAY_SORTED[@]}")
+PH_ARRAY+=("${PH_ARRAY_SORTED[@]}")
 unset -n PH_ARRAY
 return 0
 }
@@ -12342,7 +12342,7 @@ do
 			return 1
 		for PH_i in ${OPTARG//,/ }
 		do
-			if [[ "${PH_i}" != @(oos|def|sup|int|hal|run|str) ]]
+			if [[ "${PH_i}" != @(new|def|sup|int|hal|run|str) ]]
 			then
 				OPTARG="${PH_OLDOPTARG}"
 				OPTIND="${PH_OLDOPTIND}"
@@ -12382,7 +12382,7 @@ then
 else
 	for PH_i in ${PH_LIST//,/ }
 	do
-		case "${PH_i}" in oos)
+		case "${PH_i}" in new)
 			PH_DISP_APP_STATE="Out-of-scope"
 			PH_REQ_APP_STATE_PARAM="-o" ;;
 				def)
@@ -12425,9 +12425,176 @@ fi
 declare -x PH_SELECTION_APPS
 ph_sort_array_unique PH_SELECTION_APPS
 declare +x PH_SELECTION_APPS
-ph_run_with_rollback -c true
-if [[ -n "${PH_APP}" ]]
+case "${PH_ROUTINE}" in mk_cifs_mpt|rm_cifs_mpt)
+	PH_FILTER_STATES=("int" "hal" "run") ;;
+		inst)
+	if [[ -n "${PH_APP_SCOPE}" && "${PH_APP_SCOPE}" != "uninst" ]]
+	then
+		case "${PH_APP_SCOPE}" in oos)
+			PH_FILTER_STATES=("new") ;;
+				def)
+			PH_FILTER_STATES=("${PH_APP_SCOPE}") ;;
+				pkg|PU)
+			PH_APP_SCOPE="PU" ;;
+				unpkg|UU)
+			PH_APP_SCOPE="UU" ;;
+				*I|inst)
+			PH_APP_SCOPE="oos"
+				PH_FILTER_STATES=("def") ;;
+		esac
+	else
+		PH_APP_SCOPE="uninst"
+	fi
+	if [[ "${#PH_FILTER_STATES[@]}" -eq "0" ]]
+	then
+		PH_FILTER_STATES=("new" "def" "sup" "int" "hal")
+	fi ;;
+		uninst)
+	if [[ -n "${PH_APP_SCOPE}" && "${PH_APP_SCOPE}" != "inst" ]]
+	then
+		case "${PH_APP_SCOPE}" in oos)
+			PH_FILTER_STATES=("new") ;;
+				def)
+			PH_FILTER_STATES=("${PH_APP_SCOPE}") ;;
+				pkg|PI)
+			PH_APP_SCOPE="PI" ;;
+				unpkg|UI)
+			PH_APP_SCOPE="UI" ;;
+				*U|uninst)
+			PH_APP_SCOPE="oos"
+			PH_FILTER_STATES=("def") ;;
+		esac
+	else
+		PH_APP_SCOPE="inst"
+	fi
+	if [[ "${#PH_FILTER_STATES[@]}" -eq "0" ]]
+	then
+		PH_FILTER_STATES=("new" "def" "sup" "int" "hal")
+	fi ;;
+		sup)
+	PH_FILTER_STATES=("new" "def") ;;
+		unsup|int)
+	PH_FILTER_STATES=("sup") ;;
+		unint)
+	PH_FILTER_STATES=("hal") ;;
+		conf|unconf)
+	if [[ -n "${PH_APP_SCOPE}" && "${PH_APP_SCOPE}" != "inst" ]]
+	then
+		case "${PH_APP_SCOPE}" in oos)
+			PH_FILTER_STATES=("new") ;;
+				def)
+			PH_FILTER_STATES=("${PH_APP_SCOPE}") ;;
+				pkg|PI)
+			PH_APP_SCOPE="PI" ;;
+				unpkg|UI)
+			PH_APP_SCOPE="UI" ;;
+				*U|uninst)
+			PH_APP_SCOPE="oos"
+			PH_FILTER_STATES=("def") ;;
+		esac
+	else
+		PH_APP_SCOPE="inst"
+	fi
+	if [[ "${#PH_FILTER_STATES[@]}" -eq "0" ]]
+	then
+		PH_FILTER_STATES=("sup" "int" "hal")
+	fi ;;
+		start)
+	if [[ -n "${PH_APP_SCOPE}" && "${PH_APP_SCOPE}" != "inst" ]]
+	then
+		case "${PH_APP_SCOPE}" in oos)
+			PH_FILTER_STATES=("new") ;;
+				def)
+			PH_FILTER_STATES=("${PH_APP_SCOPE}") ;;
+				pkg|PI)
+			PH_APP_SCOPE="PI" ;;
+				unpkg|UI)
+			PH_APP_SCOPE="UI" ;;
+				*U|uninst)
+			PH_APP_SCOPE="oos"
+			PH_FILTER_STATES=("def") ;;
+		esac
+	else
+		PH_APP_SCOPE="inst"
+	fi
+	if [[ "${#PH_FILTER_STATES[@]}" -eq "0" ]]
+	then
+		PH_FILTER_STATES=("sup" "int" "hal" "run")
+	fi ;;
+		unstart)
+	if [[ -n "${PH_APP_SCOPE}" && "${PH_APP_SCOPE}" != "inst" ]]
+	then
+		case "${PH_APP_SCOPE}" in oos)
+			PH_FILTER_STATES=("new") ;;
+				def)
+			PH_FILTER_STATES=("${PH_APP_SCOPE}") ;;
+				pkg|PI)
+			PH_APP_SCOPE="PI" ;;
+				unpkg|UI)
+			PH_APP_SCOPE="UI" ;;
+				*U|uninst)
+			PH_APP_SCOPE="oos"
+			PH_FILTER_STATES=("def") ;;
+		esac
+	else
+		PH_APP_SCOPE="inst"
+	fi
+	if [[ "${#PH_FILTER_STATES[@]}" -eq "0" ]]
+	then
+		PH_FILTER_STATES=("str")
+	fi ;;
+		update|mk_conf_file|mk_defaults|mk_alloweds|mk_menus|mk_scripts|rm_conf_file|rm_defaults|rm_alloweds|rm_menus|rm_scripts)
+	PH_FILTER_STATES=("sup" "int" "hal") ;;
+		tty)
+	PH_FILTER_STATES=("hal" "run") ;;
+		list|info)
+	PH_FILTER_STATES=("new" "def" "sup" "int" "hal" "run") ;;
+		rm_all|mk_all)
+	if [[ -n "${PH_LIST}" ]]
+	then
+		PH_ROUTINE_OPTS+=("-l" "${PH_LIST}")
+	fi ;;
+		*)
+	: ;;
+esac
+for PH_i in "${!PH_SELECTION_APPS[@]}"
+do
+	PH_APP_STATE="$(ph_get_app_state_from_app_name "${PH_SELECTION_APPS["${PH_i}"]}")"
+	case "${PH_APP_STATE}" in Out-of-scope)
+		PH_APP_STATE="new" ;;
+			Default|Supported|Integrated|Halted|Running)
+		PH_APP_STATE="$(cut -c1<<<"${PH_APP_STATE}" | tr '[:upper:]' '[:lower:]')$(cut -c2-3<<<"${PH_APP_STATE}")" ;;
+			*)
+		: ;;
+	esac
+	while true
+	do
+		for PH_j in "${PH_FILTER_STATES[@]}"
+		do
+			if [[ ( "${PH_i}" == "${PH_PIEH_STARTAPP}" && "${PH_j}" == "str" ) || \
+				( "${PH_APP_STATE}" == "${PH_j}" && "${PH_j}" != "str" ) ]]
+			then
+				break 2
+			fi
+		done
+		unset PH_SELECTION_APPS["${PH_i}"]
+		continue 2
+	done
+	if [[ -n "${PH_APP_SCOPE}" ]]
+	then
+		if ! ph_do_app_scope_check -a "${PH_SELECTION_APPS["${PH_i}"]}" -s "${PH_APP_SCOPE}"
+		then
+			unset PH_SELECTION_APPS["${PH_i}"]
+			continue
+		fi
+	fi
+done
+if [[ "${#PH_SELECTION_APPS[@]}" -eq "0" ]]
 then
+	printf "%10s\033[33m%s\033[0m\n" "" "Warning : None"
+	ph_set_result -r 0 -w -m "The selection criteria did not match one or more applications"
+else
+	ph_run_with_rollback -c true
 	for PH_i in PH_APP PH_APP_CMD PH_APP_PKG PH_APP_USER PH_APP_STR_TTY
 	do
 		declare -n PH_PARAM
@@ -12505,164 +12672,13 @@ then
 		fi
 		unset -n PH_PARAM
 	done
-fi
-if [[ "${PH_ROUTINE}" == @(rm|mk)_all && -n "${PH_LIST}" ]]
-then
-	PH_ROUTINE_OPTS+=("-l" "${PH_LIST}")
-fi
-case "${PH_ROUTINE}" in mk_cifs_mpt|rm_cifs_mpt)
-	PH_FILTER_STATES=("int" "hal" "run") ;;
-		inst)
-	if [[ -n "${PH_APP_SCOPE}" && "${PH_APP_SCOPE}" != "uninst" ]]
-	then
-		case "${PH_APP_SCOPE}" in oos|def)
-			PH_FILTER_STATES=("${PH_APP_SCOPE}") ;;
-				pkg|PU)
-			PH_APP_SCOPE="PU" ;;
-				unpkg|UU)
-			PH_APP_SCOPE="UU" ;;
-				*I|inst)
-			PH_APP_SCOPE="oos"
-				PH_FILTER_STATES=("def") ;;
-		esac
-	else
-		PH_APP_SCOPE="uninst"
-	fi
-	if [[ "${#PH_FILTER_STATES[@]}" -eq "0" ]]
-	then
-		PH_FILTER_STATES=("oos" "def" "sup" "int" "hal")
-	fi ;;
-		uninst)
-	if [[ -n "${PH_APP_SCOPE}" && "${PH_APP_SCOPE}" != "inst" ]]
-	then
-		case "${PH_APP_SCOPE}" in oos|def)
-			PH_FILTER_STATES=("${PH_APP_SCOPE}") ;;
-				pkg|PI)
-			PH_APP_SCOPE="PI" ;;
-				unpkg|UI)
-			PH_APP_SCOPE="UI" ;;
-				*U|uninst)
-			PH_APP_SCOPE="oos"
-			PH_FILTER_STATES=("def") ;;
-		esac
-	else
-		PH_APP_SCOPE="inst"
-	fi
-	if [[ "${#PH_FILTER_STATES[@]}" -eq "0" ]]
-	then
-		PH_FILTER_STATES=("oos" "def" "sup" "int" "hal")
-	fi ;;
-		sup)
-	PH_FILTER_STATES=("oos" "def") ;;
-		unsup|int)
-	PH_FILTER_STATES=("sup") ;;
-		unint)
-	PH_FILTER_STATES=("hal") ;;
-		conf|unconf)
-	if [[ -n "${PH_APP_SCOPE}" && "${PH_APP_SCOPE}" != "inst" ]]
-	then
-		case "${PH_APP_SCOPE}" in oos|def)
-			PH_FILTER_STATES=("${PH_APP_SCOPE}") ;;
-				pkg|PI)
-			PH_APP_SCOPE="PI" ;;
-				unpkg|UI)
-			PH_APP_SCOPE="UI" ;;
-				*U|uninst)
-			PH_APP_SCOPE="oos"
-			PH_FILTER_STATES=("def") ;;
-		esac
-	else
-		PH_APP_SCOPE="inst"
-	fi
-	if [[ "${#PH_FILTER_STATES[@]}" -eq "0" ]]
-	then
-		PH_FILTER_STATES=("sup" "int" "hal")
-	fi ;;
-		start)
-	if [[ -n "${PH_APP_SCOPE}" && "${PH_APP_SCOPE}" != "inst" ]]
-	then
-		case "${PH_APP_SCOPE}" in oos|def)
-			PH_FILTER_STATES=("${PH_APP_SCOPE}") ;;
-				pkg|PI)
-			PH_APP_SCOPE="PI" ;;
-				unpkg|UI)
-			PH_APP_SCOPE="UI" ;;
-				*U|uninst)
-			PH_APP_SCOPE="oos"
-			PH_FILTER_STATES=("def") ;;
-		esac
-	else
-		PH_APP_SCOPE="inst"
-	fi
-	if [[ "${#PH_FILTER_STATES[@]}" -eq "0" ]]
-	then
-		PH_FILTER_STATES=("sup" "int" "hal" "run")
-	fi ;;
-		unstart)
-	if [[ -n "${PH_APP_SCOPE}" && "${PH_APP_SCOPE}" != "inst" ]]
-	then
-		case "${PH_APP_SCOPE}" in oos|def)
-			PH_FILTER_STATES=("${PH_APP_SCOPE}") ;;
-				pkg|PI)
-			PH_APP_SCOPE="PI" ;;
-				unpkg|UI)
-			PH_APP_SCOPE="UI" ;;
-				*U|uninst)
-			PH_APP_SCOPE="oos"
-			PH_FILTER_STATES=("def") ;;
-		esac
-	else
-		PH_APP_SCOPE="inst"
-	fi
-	if [[ "${#PH_FILTER_STATES[@]}" -eq "0" ]]
-	then
-		PH_FILTER_STATES=("str")
-	fi ;;
-		update|mk_conf_file|mk_defaults|mk_alloweds|mk_menus|mk_scripts|rm_conf_file|rm_defaults|rm_alloweds|rm_menus|rm_scripts)
-	PH_FILTER_STATES=("sup" "int" "hal") ;;
-		tty)
-	PH_FILTER_STATES=("hal" "run") ;;
-		list|info)
-	PH_FILTER_STATES=("oos" "def" "sup" "int" "hal" "run") ;;
-		*)
-	: ;;
-esac
-for PH_i in "${!PH_SELECTION_APPS[@]}"
-do
-	PH_APP_STATE="$(ph_get_app_state_from_app_name "${PH_SELECTION_APPS["${PH_i}"]}")"
-	while true
-	do
-		for PH_j in "${PH_FILTER_STATES[@]}"
-		do
-			if [[ ( "${PH_i}" == "${PH_PIEH_STARTAPP}" && "${PH_j}" == "str" ) || \
-				( "${PH_APP_STATE}" == "${PH_j}" && "${PH_j}" != "str" ) ]]
-			then
-				break 2
-			fi
-		done
-		unset PH_SELECTION_APPS["${PH_i}"]
-		continue 2
-	done
-	if [[ -n "${PH_APP_SCOPE}" ]]
-	then
-		if ! ph_do_app_scope_check -a "${PH_SELECTED_APPS["${PH_i}"]}" -s "${PH_APP_SCOPE}"
-		then
-			unset PH_SELECTED_APPS["${PH_i}"]
-			continue
-		fi
-	fi
-done
-case "${PH_ROUTINE}" in list)
-	printf "%8s%s\n" "" "--> Listing all selected applications" ;;
-		tty)
-	printf "%8s%s\n" "" "--> Listing tty allocations of selected applications" ;;
-		*)
-	: ;;
-esac
-if [[ "${#PH_SELECTION_APPS[@]}" -eq "0" ]]
-then
-	ph_set_result -r 0 -w -m "The selection criteria did not match one or more applications"
-else
+	case "${PH_ROUTINE}" in list)
+		printf "%8s%s\n" "" "--> Listing all selected applications" ;;
+			tty)
+		printf "%8s%s\n" "" "--> Listing tty allocations of selected applications" ;;
+			*)
+		: ;;
+	esac
 	for PH_i in "${PH_SELECTION_APPS[@]}"
 	do
 		PH_CMD=""
@@ -12674,15 +12690,15 @@ else
 				PH_APP_INST_STATE="Unknown"
 			fi
 			printf "\n"
-			PH_CMD="printf \"%12s\\033\[1\;37m%s\\033\[1\;33m%s\\033\[0m\\n\" \"\" \"- ${PH_i} : \" \"${PH_APP_INST_STATE}\"" ;;
+			PH_CMD="printf \"%12s\\033[1;37m%s\\033[1;33m%s\\033[0m\\n\" \"\" \"- ${PH_i} : \" \"${PH_APP_INST_STATE}\"" ;;
 				tty)
 			printf "\n"
 			PH_APP_STR_TTY="$(ph_get_app_tty_from_app_name "${PH_i}")"
 			if [[ "${PH_APP_STR_TTY}" == @(-|1) ]]
 			then
-				PH_CMD="printf \"%12s\\033\[1\;37m%s\\033\[1\;33m%s\\033\[0m\\n\" \"\" \"- ${PH_i} : \" \"None\""
+				PH_CMD="printf \"%12s\\033[1;37m%s\\033[1;33m%s\\033[0m\\n\" \"\" \"- ${PH_i} : \" \"None\""
 			else
-				PH_CMD="printf \"%12s\\033\[1\;37m%s\\033\[1\;33m%s\\033\[0m\\n\" \"\" \"- ${PH_i} : \" \"tty${PH_APP_STR_TTY}\""
+				PH_CMD="printf \"%12s\\033[1;37m%s\\033[1;33m%s\\033[0m\\n\" \"\" \"- ${PH_i} : \" \"tty${PH_APP_STR_TTY}\""
 			fi ;;
 				info)
 			PH_CMD="ph_show_app_info '${PH_i}'" ;;
