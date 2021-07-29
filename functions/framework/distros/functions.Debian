@@ -137,7 +137,7 @@ PH_APP_PKG=""
 
 if ph_sync_pkg_db
 then
-	PH_APP_PKG="$("${PH_SUDO}" apt-file -lF "${PH_APP_PATH}" 2>/dev/null)"
+	PH_APP_PKG="$("${PH_SUDO}" apt-file -lF search "${PH_APP_PATH}" 2>/dev/null)"
 	if [[ -n "${PH_APP_PKG}" ]]
 	then
 		echo -n "${PH_APP_PKG}"
