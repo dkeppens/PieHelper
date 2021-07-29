@@ -9277,7 +9277,6 @@ OPTARG="${PH_OLDOPTARG}"
 [[ -z "${PH_APP}" || -z "${PH_APP_CMD}" || "${#}" -ne "4" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-set -x
 PH_APP_EXEC="$(ph_get_app_executable -a "${PH_APP}" -c "${PH_APP_CMD}")"
 PH_APP_PKG="$(ph_get_path_pkg "${PH_APP_EXEC}")"
 if [[ -n "${PH_APP_PKG}" ]]
@@ -9297,7 +9296,6 @@ else
 	fi
 fi
 echo -n "${PH_APP_INST_STATE}"
-set +x
 return 0
 }
 
