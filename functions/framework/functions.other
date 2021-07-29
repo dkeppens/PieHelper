@@ -2070,6 +2070,17 @@ PH_APP_CMD="$(ph_get_app_cmd_from_app_name "${PH_APP}")"
 PH_APP_PKG="$(ph_get_app_pkg_from_app_name "${PH_APP}")"
 PH_APP_STATE="$(ph_get_app_state_from_app_name "${PH_APP}")"
 PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_name "${PH_APP}")"
+case "${PH_APP_INST_STATE}" in PI)
+	PH_CLARIFY="(Packaged and Installed)" ;;
+		PU)
+	PH_CLARIFY="(Packaged and Uninstalled)" ;;
+		UI)
+	PH_CLARIFY="(Unpackaged and Installed)" ;;
+		UU)
+	PH_CLARIFY="(Unpackaged and Uninstalled)" ;;
+		*)
+	: ;;
+esac
 PH_APP_STR_TTY="$(ph_get_app_tty_from_app_name "${PH_APP}")"
 PH_APPU="${PH_APP:0:4}"
 PH_APP_PERSISTENCE="PH_${PH_APPU}_PERSISTENT"
@@ -2082,21 +2093,23 @@ PH_APP_PERSISTENCE="PH_${PH_APPU}_PERSISTENT"
 	PH_APP_USER="-"
 [[ -z "${PH_APP_PKG}" ]] && \
 	PH_APP_PKG="-"
-printf "\n%10s\033[1;37m%-20s\033[33m%s\n" "" "App name" ": ${PH_APP}"
-printf "%10s\033[37m%-20s\033[33m%s\n" "" "App tty" ": ${PH_APP_STR_TTY}"
-printf "%10s\033[37m%-20s\033[33m%s\n" "" "App run account" ": ${PH_APP_USER}"
-printf "%10s\033[37m%-20s\033[33m%s\n" "" "App start command" ": ${PH_APP_CMD}"
-printf "%10s\033[37m%-20s\033[33m%s\n" "" "App state" ": ${PH_APP_STATE}"
-printf "%10s\033[37m%-20s\033[33m%s\n" "" "App package name" ": ${PH_APP_PKG}"
-printf "%10s\033[37m%-20s\033[33m%s\n" "" "App install state" ": ${PH_APP_INST_STATE}"
-printf "%10s\033[37m%-20s\033[33m%s\n" "" "App persistence" ": $(cut -c1<<<"${PH_APP_PERSISTENCE}" | tr "[:lower:]" "[:upper:]")$(cut -c2-<<<"${PH_APP_PERSISTENCE}")"
+printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Showing known info of " "'${PH_APP}'"
+printf "\n%12s\033[1;37m%-20s\033[33m%s\n" "" "- App name" ": ${PH_APP}"
+printf "%12s\033[37m%-20s\033[33m%s\n" "" "- App tty" ": ${PH_APP_STR_TTY}"
+printf "%12s\033[37m%-20s\033[33m%s\n" "" "- App run account" ": ${PH_APP_USER}"
+printf "%12s\033[37m%-20s\033[33m%s\n" "" "- App start command" ": ${PH_APP_CMD}"
+printf "%12s\033[37m%-20s\033[33m%s\n" "" "- App state" ": ${PH_APP_STATE}"
+printf "%12s\033[37m%-20s\033[33m%s\n" "" "- App package name" ": ${PH_APP_PKG}"
+printf "%12s\033[37m%-20s\033[33m%s%-2s\033[37m%s\n" "" "- App install state" ": ${PH_APP_INST_STATE}" "" "${PH_CLARIFY}"
+printf "%12s%-20s\033[33m%s\n" "" "- App persistence" ": $(cut -c1<<<"${PH_APP_PERSISTENCE}" | tr "[:lower:]" "[:upper:]")$(cut -c2-<<<"${PH_APP_PERSISTENCE}")"
 if [[ "${PH_APP}" == "PieHelper" && "${PH_APP_STATE}" == "Running" && "$(ph_get_app_environment "${PH_APP}")" == "pts" ]]
 then
 	PH_APP_STATE="Yes"
 else
 	PH_APP_STATE="No"
 fi
-printf "%10s\033[37m%-20s\033[33m%s\033[0m\n" "" "Active on pts" ": ${PH_APP_STATE}"
+printf "%12s\033[37m%-20s\033[33m%s\033[0m\n\n" "" "- Active on pts" ": ${PH_APP_STATE}"
+ph_run_with_rollback -c true
 unset -n PH_APP_PERSISTENCE
 return 0
 }
@@ -9264,6 +9277,7 @@ OPTARG="${PH_OLDOPTARG}"
 [[ -z "${PH_APP}" || -z "${PH_APP_CMD}" || "${#}" -ne "4" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
+set -x
 PH_APP_EXEC="$(ph_get_app_executable -a "${PH_APP}" -c "${PH_APP_CMD}")"
 PH_APP_PKG="$(ph_get_path_pkg "${PH_APP_EXEC}")"
 if [[ -n "${PH_APP_PKG}" ]]
@@ -9283,6 +9297,7 @@ else
 	fi
 fi
 echo -n "${PH_APP_INST_STATE}"
+set +x
 return 0
 }
 
@@ -12261,6 +12276,7 @@ declare PH_APP_INST_STATE
 declare PH_REQ_APP_STATE
 declare PH_REQ_APP_STATE_PARAM
 declare PH_DISP_APP_STATE
+declare PH_APP_CIFS_MPT
 declare PH_ITEM
 declare PH_ITEMS
 declare PH_LIST
@@ -12287,6 +12303,7 @@ PH_APP_INST_STATE=""
 PH_REQ_APP_STATE=""
 PH_REQ_APP_STATE_PARAM=""
 PH_DISP_APP_STATE=""
+PH_APP_CIFS_MPT=""
 PH_ITEM=""
 PH_ITEMS=""
 PH_LIST=""
@@ -12580,6 +12597,22 @@ do
 		unset PH_SELECTION_APPS["${PH_i}"]
 		continue 2
 	done
+	if [[ ( "${PH_i}" == "PieHelper" && "${PH_ROUTINE}" == @(conf|unconf|sup|unsup|int|unint|inst|uninst) ) || \
+		( "${PH_i}" == "Controllers" && "${PH_ROUTINE}" != @(@(mk|rm)_@(conf_file|menus|all)|sup|unsup|list|info) ) ]]
+	then
+		unset PH_SELECTION_APPS["${PH_i}"]
+		continue
+	fi
+	PH_APP_CIFS_MPT="$(ph_get_app_cifs_mpt -a "${PH_i}" -r)"
+	if [[ -n "${PH_APP_CIFS_MPT}" && "${PH_ROUTINE}" == @(mk|rm)_cifs_mpt ]]
+	then
+		if [[ "$(ph_check_dir_contents "${PH_APP_CIFS_MPT}"; echo -n "${?}")" -ne "0" || \
+			"$(ph_check_mpt_status "${PH_APP_CIFS_MPT}"; echo -n "${?}")" -ne "0" ]]
+		then
+			unset PH_SELECTION_APPS["${PH_i}"]
+			continue
+		fi
+	fi
 	if [[ -n "${PH_APP_SCOPE}" ]]
 	then
 		if ! ph_do_app_scope_check -a "${PH_SELECTION_APPS["${PH_i}"]}" -s "${PH_APP_SCOPE}"
