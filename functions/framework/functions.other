@@ -1969,8 +1969,11 @@ PH_RET_CODE="0"
 printf "%2s%s\n\n" "" "While PieHelper is unconfigured :" >>"${PH_TMP_DIR}/.reported_issues"
 for PH_i in sup int cont os defaults alloweds
 do
-	ph_check_object_existence -o "$(ph_get_filename_from_shortname "${PH_i}")" -m immediate -q && \
+	if ph_check_object_existence -o "$(ph_get_filename_from_shortname "${PH_i}")" -m immediate -q
+	then
+        	printf "%4s%s\n" "" "- Configuration file " "'$(ph_get_filename_from_shortname ${PH_i})'" " is present" >>"${PH_TMP_DIR}/.reported_issues"
 		PH_RET_CODE="1"
+	fi
 done
 if [[ -f /etc/profile.d/PieHelper-path.sh ]]
 then

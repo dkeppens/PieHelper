@@ -606,7 +606,6 @@ then
 		ph_set_result -a
 	fi
 fi
-set +x
 
 # Unset all local variables
 
