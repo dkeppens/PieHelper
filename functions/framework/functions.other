@@ -1562,7 +1562,7 @@ do
 								kodi.post_cmd|build.archives)
 							PH_SUFFIX=".excludes"
 							PH_DIR="${PH_EXCLUDES_DIR}/" ;;
-								"default_apps${PH_FILE_SUFFIX}|VERSIONS")
+								"default_apps${PH_FILE_SUFFIX}"|VERSIONS)
 							PH_DIR="${PH_FILES_DIR}/" ;;
 								default_apps_*)
 							PH_REQ_SANITY_LEVEL="optional"
@@ -10318,6 +10318,7 @@ else
 	ph_run_with_rollback -c true -m "${PH_APP}"
 	printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking the application state of " "'${PH_APP}'"
 	PH_APP_STATE="$(ph_get_app_state_from_app_name "${PH_APP}")"
+	echo "${PH_APP_STATE}"
 	case "${PH_APP_STATE}" in Supported)
 		ph_run_with_rollback -c true -m "${PH_APP_STATE}" ;;
 			Integrated|Halted|Running)
@@ -12131,9 +12132,9 @@ else
 	PH_ENV_ACTION="enable"
 	printf "%8s%s\n" "" "--> Enabling the graphical environment"
 fi
-#ph_set_result -m "Forced ERROR for rollback test"
-#ph_run_with_rollback -c false -m "Could not ${PH_ENV_ACTION}"
-#return "${?}"
+ph_set_result -m "Forced ERROR for rollback test"
+ph_run_with_rollback -c false -m "Could not ${PH_ENV_ACTION}"
+return "${?}"
 if "${PH_SUDO}" systemctl set-default "${PH_ENV}" >/dev/null 2>&1
 then
 	[[ "${PH_ENV}" == "graphical.target" ]] && \
