@@ -1,3 +1,5 @@
+* add check for 32bit/64bit systems to ph_get_app_addon_type function
+* replace mac address check by check for bluetooth adapter mac specifically
 * add checks in functions.update for remaning items functions for 'Nothing to do'
 * add checks in main.sh for when PH_FILE_SUFFIX changes and possibly menu item to handle this specific switching
 * add menus per app for dependency management

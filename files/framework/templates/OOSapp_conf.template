@@ -82,9 +82,12 @@ PH_#PH_APPU#_PRE_CMD=''									# - This is the full command to run before start
 											# - In case PH_#PH_APPU#_PRE_CMD makes use of default #PH_APP# CIFS configuration, #PH_APP#'s run account should be present on PH_#PH_APPU#_CIFS_SRV with
 											#   share permissions required by PH_#PH_APPU#_PRE_CMD
 											# - Default is ''
-											# - Allowed values are an empty string and valid pathnames of scripts, sourceable scripts or executables
-											# - Variables can be used as part of or instead of the normal value
-											#   Sourceable scripts can use variable names known to PieHelper
+											# - Allowed values are
+											# - Full pathnames of executable scripts or binaries
+											# - Full pathnames of sourceable scripts (These can use user-defined variables and functions)
+											# - Full pathnames of links to either of these types
+											# - A defined variable set to one of the above
+											# - An empty string
 PH_#PH_APPU#_POST_CMD=''								# - This is the full command to run after stopping #PH_APP#
 											# - POST-commands are always executed as the run account for PieHelper '${PH_RUN_USER}' which should be granted adequate
 											#   permissions
@@ -92,9 +95,16 @@ PH_#PH_APPU#_POST_CMD=''								# - This is the full command to run after stoppi
 											# - In case PH_#PH_APPU#_POST_CMD makes use of default #PH_APP# CIFS configuration, #PH_APP#'s run account should be present on PH_#PH_APPU#_CIFS_SRV with
 											#   share permissions required by PH_#PH_APPU#_POST_CMD
 											# - Default is ''
-											# - Allowed values are an empty string and valid pathnames of scripts, sourceable scripts or executables
-											# - Variables can be used as part of or instead of the normal value
-											#   Sourceable scripts can use variable names known to PieHelper
+											# - Allowed values are
+											# - Full pathnames of executable scripts or binaries
+											# - Full pathnames of sourceable scripts (These can use user-defined variables and functions)
+											# - Full pathnames of links to either of these types
+											# - A defined variable set to one of the above
+											# - An empty string
+
+# Additional typesets
+
+typeset -i PH_#APPU#_NUM_CTRL
 
 # Read-only exports
 

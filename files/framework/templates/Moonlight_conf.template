@@ -67,24 +67,27 @@ PH_MOON_CMD_OPTS='-${PH_MOON_RES} -bitrate ${PH_MOON_BITRATE} -packetsize ${PH_M
 											# - PH_MOON_SRV should always be the last option passed
 											# - Default is '-${PH_MOON_RES} -bitrate ${PH_MOON_BITRATE} -packetsize ${PH_MOON_PCKTSIZE} -width ${PH_MOON_WIDTH} -height ${PH_MOON_HEIGHT}
 											#   -app "$PH_MOON_GAME" -input /dev/input/eventPH_CTRL1 ${PH_MOON_SRV}'
-PH_MOON_RES='1080'									# - This maps to one of the resolution-specific parameters of Moonlight and determines your output resolution
+PH_MOON_RES='1080'									# - This maps to one of the resolution-specific parameters of Moonlight and determines your sceen resolution
 											# - Default is '1080'
-											# - Allowed values are '720' '1080' and '4k'
-PH_MOON_WIDTH='1920'									# - This maps to the -width parameter of Moonlight and determines your screen width
+											# - Allowed values are
+											# - '720' which sets horizontal/vertical resolution to 1280x720
+											# - '1080' which sets horizontal/vertical resolution to 1920x1080
+											# - '4k' which sets horizontal/vertical resolution to 3840x2160
+PH_MOON_WIDTH='1920'									# - This maps to the -width parameter of Moonlight representing your horizontal resolution
 											# - Default is '1920'
-											# - Allowed values are whole numbers
-PH_MOON_HEIGHT='1080'									# - This maps to the -height parameter of Moonlight and determines your screen height
+											# - Allowed values are positive integers
+PH_MOON_HEIGHT='1080'									# - This maps to the -height parameter of Moonlight representing your vertical resolution
 											# - Default is '1080'
-											# - Allowed values are whole numbers
+											# - Allowed values are positive integers
 PH_MOON_FPS='-1'									# - This maps to the -fps parameter of Moonlight and specifies the upper cap of frames per second
 											# - Default is '-1' which is uncapped
-											# - Allowed values are whole numbers and '-1'
+											# - Allowed values are positive integers and '-1'
 PH_MOON_BITRATE='20480'									# - This maps to the -bitrate parameter of Moonlight and specifies the bitrate for gamestreaming in Kbps
 											# - Default is '20480'
-											# - Allowed values are multiples of 1024
+											# - Allowed values are positive integer multiples of 1024
 PH_MOON_PCKTSIZE='1472'									# - This maps to the -packetsize parameter of Moonlight and specifies your TCP packetsize in bytes
 											# - Default is '1472'
-											# - Allowed values are multiples of 16
+											# - Allowed values are positive integer multiples of 16
 PH_MOON_USE_CTRL='yes'									# - This indicates whether you want to use controllers with Moonlight or not
 											# - Controller type to be used and the toggle for optional mapping with xboxdrv should be configured separately using 'confopts_ph.sh'
 											#   or the PieHelper menu
@@ -122,9 +125,12 @@ PH_MOON_PRE_CMD=''									# - This is the full command to run before starting M
 											# - In case PH_MOON_PRE_CMD makes use of default Moonlight CIFS configuration, Moonlight's run account should be present on PH_MOON_CIFS_SRV with
 											#   share permissions required by PH_MOON_PRE_CMD
 											# - Default is ''
-											# - Allowed values are an empty string and valid pathnames of scripts, sourceable scripts or executables
-											# - Variables can be used as part of or instead of the normal value
-											#   Sourceable scripts can use variable names known to PieHelper
+											# - Allowed values are
+											# - Full pathnames of executable scripts or binaries
+											# - Full pathnames of sourceable scripts (These can use user-defined variables and functions)
+											# - Full pathnames of links to either of these types
+											# - A defined variable set to one of the above
+											# - An empty string
 PH_MOON_POST_CMD=''									# - This is the full command to run after stopping Moonlight
 											# - POST-commands are always executed as the run account for PieHelper '${PH_RUN_USER}' which should be granted adequate
 											#   permissions
@@ -132,9 +138,16 @@ PH_MOON_POST_CMD=''									# - This is the full command to run after stopping M
 											# - In case PH_MOON_POST_CMD makes use of default Moonlight CIFS configuration, Moonlight's run account should be present on PH_MOON_CIFS_SRV with
 											#   share permissions required by PH_MOON_POST_CMD
 											# - Default is ''
-											# - Allowed values are an empty string and valid pathnames of scripts, sourceable scripts or executables
-											# - Variables can be used as part of or instead of the normal value
-											#   Sourceable scripts can use variable names known to PieHelper
+											# - Allowed values are
+											# - Full pathnames of executable scripts or binaries
+											# - Full pathnames of sourceable scripts (These can use user-defined variables and functions)
+											# - Full pathnames of links to either of these types
+											# - A defined variable set to one of the above
+											# - An empty string
+
+# Additional typesets
+
+typeset -i PH_MOON_RES PH_MOON_WIDTH PH_MOON_HEIGHT PH_MOON_FPS PH_MOON_PCKTSIZE PH_MOON_NUM_CTRL
 
 # Read-only exports
 

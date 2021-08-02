@@ -1,0 +1,6 @@
+List all PieHelper options:confopts_ph.sh -p list -a PieHelper | more
+Change a PieHelper option:confopts_ph.sh -p prompt -a PieHelper -s
+Change all PieHelper options:confopts_ph.sh -p set -a PieHelper | more
+Reset a PieHelper option:confopts_ph.sh -p prompt -a PieHelper -r
+Reset all PieHelper options:confopts_ph.sh -p reset -a PieHelper | more
+Display help for PieHelper options:confopts_ph.sh -p prompt -a PieHelper -d

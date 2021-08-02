@@ -97,9 +97,12 @@ PH_EMUL_PRE_CMD=''									# - This is the full command to run before starting E
 											# - In case PH_EMUL_PRE_CMD makes use of default Emulationstation CIFS configuration, Emulationstation's run account should be present on PH_EMUL_CIFS_SRV with
 											#   share permissions required by PH_EMUL_PRE_CMD
 											# - Default is ''
-											# - Allowed values are an empty string and valid pathnames of scripts, sourceable scripts or executables
-											# - Variables can be used as part of or instead of the normal value
-											#   Sourceable scripts can use variable names known to PieHelper
+											# - Allowed values are
+											# - Full pathnames of executable scripts or binaries
+											# - Full pathnames of sourceable scripts (These can use user-defined variables and functions)
+											# - Full pathnames of links to either of these types
+											# - A defined variable set to one of the above
+											# - An empty string
 PH_EMUL_POST_CMD=''									# - This is the full command to run after stopping Emulationstation
 											# - POST-commands are always executed as the run account for PieHelper '${PH_RUN_USER}' which should be granted adequate
 											#   permissions
@@ -107,9 +110,16 @@ PH_EMUL_POST_CMD=''									# - This is the full command to run after stopping E
 											# - In case PH_EMUL_POST_CMD makes use of default Emulationstation CIFS configuration, Emulationstation's run account should be present on PH_EMUL_CIFS_SRV with
 											#   share permissions required by PH_EMUL_POST_CMD
 											# - Default is ''
-											# - Allowed values are an empty string and valid pathnames of scripts, sourceable scripts or executables
-											# - Variables can be used as part of or instead of the normal value
-											#   Sourceable scripts can use variable names known to PieHelper
+											# - Allowed values are
+											# - Full pathnames of executable scripts or binaries
+											# - Full pathnames of sourceable scripts (These can use user-defined variables and functions)
+											# - Full pathnames of links to either of these types
+											# - A defined variable set to one of the above
+											# - An empty string
+
+# Additional typesets
+
+typeset -i PH_EMUL_NUM_CTRL
 
 # Read-only exports
 

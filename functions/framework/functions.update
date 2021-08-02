@@ -2698,7 +2698,7 @@ case "${PH_APP}" in Moonlight)
 		Emulationstation)
 	PH_OPTS="${PH_OPTS} DIR SETUP_DIR" ;;
 		PieHelper)
-	PH_OPTS="${PH_OPTS} SANITY_LEVEL SANITY_INST SANITY_CONF STARTAPP" ;;
+	PH_OPTS="${PH_OPTS} SANITY_LEVEL SANITY_INST SANITY_CONF STARTAPP MAX_TTYS" ;;
 esac
 unset -n PH_OPTS
 if grep -E "^PH_${PH_APPU}_" "${PH_CONF_DIR}/options.alloweds" >/dev/null 2>&1
@@ -2710,14 +2710,16 @@ declare -n PH_OPTS="PH_${PH_APPU}_OPTS"
 printf "%8s%s\033[1;33m%s\033[0m%s\033[1;33m%s\033[0m\n" "" "--> Creating allowed option settings for " "'${PH_APP}'" " in " "'${PH_CONF_DIR}/options.alloweds'"
 for PH_i in ${PH_OPTS}
 do
-	case "${PH_i}" in DIR|*_CMD)
-		PH_LINE='an empty string, variable or valid pathname:"${PH_OPTARG_VAL}" == @(\${*}|) || -f "${PH_OPTARG_VAL}"' ;;
+	case "${PH_i}" in PRE_CMD)
+		PH_LINE='a variable referring to or full path of a valid PRE-command or an empty string:( "$(ph_get_app_addon_type -a "${PH_APP}" -d pre_cmd)" == "text" && -f "$(ph_resolve_dynamic_value "${PH_OPTARG_VAL}")" ) || ( "$(ph_get_app_addon_type -a "${PH_APP}" -d pre_cmd)" == @(32binexec|64binexec|textexec) && -x "$(ph_resolve_dynamic_value "${PH_OPTARG_VAL}")" )' ;;
+			POST_CMD)
+		PH_LINE='a variable referring to or full path of a valid POST-command or an empty string:( "$(ph_get_app_addon_type -a "${PH_APP}" -d post_cmd)" == "text" && -f "$(ph_resolve_dynamic_value "${PH_OPTARG_VAL}")" ) || ( "$(ph_get_app_addon_type -a "${PH_APP}" -d post_cmd)" == @(32binexec|64binexec|textexec) && -x "$(ph_resolve_dynamic_value "${PH_OPTARG_VAL}")" )' ;;
 			CIFS_DIR|CIFS_SUBDIR|CIFS_MPT)
-		PH_LINE='an empty string, a variable or starting with /:"${PH_OPTARG_VAL}" == @(/*|\${*}|)' ;;
+		PH_LINE='a variable referring to or full path of a directory or an empty string:"$(ph_resolve_dynamic_value "${PH_OPTARG_VAL}")" == @(/*|\${*}|)' ;;
 			CIFS_PASS)
-		PH_LINE='an empty string or a string without single quotes:"$("$(ph_check_password_validity "${PH_OPTARG_VAL}")" ; echo "${?}")" -eq "0"' ;;
+		PH_LINE='a valid password or an empty string:"$("$(ph_check_password_validity "${PH_OPTARG_VAL}")" ; echo -n "${?}")" -eq "0"' ;;
 			*SRV)
-		PH_LINE='a valid ipv4 address or an empty string:"$("$(ph_check_ip_validity "${PH_OPTARG_VAL}")" ; echo "${?}")" -eq "0"' ;;
+		PH_LINE='a valid ipv4 address or an empty string:"$("$(ph_check_ip_validity "${PH_OPTARG_VAL}")" ; echo -n "${?}")" -eq "0"' ;;
 			SANITY_LEVEL)
 		PH_LINE='critical, optional or full:"${PH_OPTARG_VAL}" == @(critical|optional|full)' ;;
 			PERSISTENT|MAP|CIFS_SHARE|USE_CTRL|SANITY_INST|SANITY_CONF)
@@ -2727,23 +2729,25 @@ do
 			RES)
 		PH_LINE='720, 1080 or 4k:"${PH_OPTARG_VAL}" == @(720|1080|4k)' ;;
 			WIDTH|HEIGHT)
-		PH_LINE='a whole number:"${PH_OPTARG_VAL}" == +(0|1|2|3|4|5|6|7|8|9)' ;;
+		PH_LINE='a positive integer:"${PH_OPTARG_VAL}" == +(1|2|3|4|5|6|7|8|9)*(0|1|2|3|4|5|6|7|8|9)' ;;
 			FPS)
-		PH_LINE='a whole number or -1:"${PH_OPTARG_VAL}" == @(+(0|1|2|3|4|5|6|7|8|9)|-1)' ;;
+		PH_LINE='a positive integer or -1:"${PH_OPTARG_VAL}" == @(+(1|2|3|4|5|6|7|8|9)*(0|1|2|3|4|5|6|7|8|9)|-1)' ;;
 			BITRATE)
-		PH_LINE='a multiple of 1024:"${PH_OPTARG_VAL}" == +([0-9]) && "$(expr "${PH_OPTARG_VAL}" % 1024 2>/dev/null)" -eq "0"' ;;
+		PH_LINE='a positive multiple of 1024:"${PH_OPTARG_VAL}" == +([0-9]) && "$(expr "${PH_OPTARG_VAL}" % 1024 2>/dev/null)" -eq "0"' ;;
 			PCKTSIZE)
-		PH_LINE='a multiple of 16:"${PH_OPTARG_VAL}" == +([0-9]) && "$(expr "${PH_OPTARG_VAL}" % 16 2>/dev/null)" -eq "0"' ;;
+		PH_LINE='a positive multiple of 16:"${PH_OPTARG_VAL}" == +([0-9]) && "$(expr "${PH_OPTARG_VAL}" % 16 2>/dev/null)" -eq "0"' ;;
 			PIN_PS3|PIN_PS4)
 		PH_LINE='a four-character word or an empty string:"${PH_OPTARG_VAL}" == @({4}(@([a-Z]|[0-9]))|)' ;;
 			BLUE_ADAPT)
-		PH_LINE='a valid bluetooth adapter mac or none:"$("$(ph_check_mac_validity "${PH_OPTARG_VAL}")" ; echo "${?}")" -eq "0"' ;;
+		PH_LINE='a valid bluetooth adapter mac or an empty string:"$("$(ph_check_mac_validity "${PH_OPTARG_VAL}")" ; echo -n "${?}")" -eq "0" || -z "${PH_OPTARG_VAL}"' ;;
 			TYPE)
 		PH_LINE='PS3, PS4, XBOX360 or XBOXSX:"${PH_OPTARG_VAL}" == @(PS@(3|4)|XBOX@(360|SX))' ;;
 			CIFS_USER)
-		PH_LINE='a locally existing account or an empty string:"$("$(ph_check_user_state "${PH_OPTARG_VAL}")" ; echo "${?}")" -eq "0"' ;;
+		PH_LINE='a locally existing account or an empty string:"$("$(ph_check_user_state "${PH_OPTARG_VAL}")" ; echo -n "${?}")" -eq "0"' ;;
 			STARTAPP)
-		PH_LINE='a Supported application or an empty string:"$("$(ph_check_app_state_validity -a "${PH_OPTARG_VAL}" -q -s)" ; echo "${?}")" -eq "0" || -z "${PH_OPTARG_VAL}"' ;;
+		PH_LINE='a Supported application or an empty string:"$("$(ph_check_app_state_validity -a "${PH_OPTARG_VAL}" -q -s)" ; echo -n "${?}")" -eq "0" || -z "${PH_OPTARG_VAL}"' ;;
+			MAX_TTYS)
+		PH_LINE='a positive integer from 12 up to and including 63:"${PH_OPTARG_VAL}" -ge 12 || "${PH_OPTARG_VAL}" -le 63' ;;
 	esac
 	unset -n PH_OPTS
 	if ! ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/options.alloweds' -l 'PH_${PH_APPU}_${PH_i}:${PH_LINE}'"
@@ -2793,7 +2797,7 @@ case "${PH_APP}" in Moonlight)
 		Emulationstation)
 	PH_OPTS="${PH_OPTS} DIR SETUP_DIR" ;;
 		PieHelper)
-	PH_OPTS="${PH_OPTS} SANITY_LEVEL SANITY_INST SANITY_CONF STARTAPP" ;;
+	PH_OPTS="${PH_OPTS} SANITY_LEVEL SANITY_INST SANITY_CONF STARTAPP MAX_TTYS" ;;
 esac
 unset -n PH_OPTS
 if grep -E "^PH_${PH_APPU}_" "${PH_CONF_DIR}/options.defaults" >/dev/null 2>&1
@@ -2817,15 +2821,7 @@ do
 		else
 			PH_LINE='no'
 		fi ;;
-			CIFS_USER)
-		PH_LINE='' ;;
-			CIFS_DIR)
-		PH_LINE='' ;;
-			CIFS_SUBDIR)
-		PH_LINE='' ;;
-			CIFS_SRV)
-		PH_LINE='' ;;
-			CIFS_PASS)
+			CIFS_USER|CIFS_DIR|CIFS_SUBDIR|CIFS_SRV|CIFS_PASS)
 		PH_LINE='' ;;
 			CIFS_SHARE)
 		PH_LINE='no' ;;
@@ -2884,7 +2880,7 @@ do
 				PS4_PIN)
                 	PH_LINE='' ;;
 				BLUE_ADAPT)
-                	PH_LINE='none' ;;
+                	PH_LINE='' ;;
 				TYPE)
                 	PH_LINE='PS4' ;;
 		esac ;;
@@ -2895,14 +2891,14 @@ do
                 	PH_LINE='${PH_SCRIPTS_DIR}/app/pre_cmds/PieHelper-PRE.sh' ;;
 				POST_CMD)
                 	PH_LINE='${PH_SCRIPTS_DIR}/app/post_cmds/PieHelper-POST.sh' ;;
-				PKG_NAME)
+				PKG_NAME|STARTAPP)
                 	PH_LINE='' ;;
 				SANITY_INST|SANITY_CONF)
                 	PH_LINE='yes' ;;
 				SANITY_LEVEL)
                 	PH_LINE='optional' ;;
-				STARTAPP)
-                	PH_LINE='' ;;
+				MAX_TTYS)
+                	PH_LINE='12' ;;
 		esac ;;
         esac
 	unset -n PH_OPTS
