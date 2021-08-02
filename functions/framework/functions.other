@@ -1540,7 +1540,7 @@ do
 							PH_REQ_SANITY_LEVEL="optional"
 							PH_DIR="${PH_TEMPLATES_DIR}/"
 							PH_SUFFIX=".template" ;;
-								*Script|*PieH)
+								*Script|*PieH|Loginscript)
 							PH_DIR="${PH_TEMPLATES_DIR}/"
 							PH_SUFFIX=".template" ;;
 								conf*|list*)

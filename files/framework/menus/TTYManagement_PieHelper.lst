@@ -1,1 +1,0 @@
-Show tty allocation of PieHelper:confttys_ph.sh -r tty -a PieHelper | more
