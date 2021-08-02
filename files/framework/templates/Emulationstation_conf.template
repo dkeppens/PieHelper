@@ -117,10 +117,6 @@ PH_EMUL_POST_CMD=''									# - This is the full command to run after stopping E
 											# - A defined variable set to one of the above
 											# - An empty string
 
-# Additional typesets
-
-typeset -i PH_EMUL_NUM_CTRL
-
 # Read-only exports
 
 export PH_EMUL_PERSISTENT PH_EMUL_CIFS_MPT

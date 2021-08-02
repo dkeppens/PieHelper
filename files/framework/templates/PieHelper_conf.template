@@ -151,10 +151,6 @@ PH_PIEH_POST_CMD='${PH_SCRIPTS_DIR}/app/post_cmds/PieHelper-POST.sh'			# - This 
 											# - A defined variable set to one of the above
 											# - An empty string
 
-# Additional typesets
-
-typeset -i PH_PIEH_MAX_TTYS
-
 # Read-only exports
 
 export PH_PIEH_MAX_TTYS PH_PIEH_NUM_CTRL PH_PIEH_USE_CTRL

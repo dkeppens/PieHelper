@@ -103,8 +103,6 @@ PH_X11_POST_CMD=''									# - This is the full command to run after stopping X1
 											# - A defined variable set to one of the above
 											# - An empty string
 
-# Additional typesets
-
 # Read-only exports
 
 export PH_X11_USE_CTRL PH_X11_NUM_CTRL

@@ -102,10 +102,6 @@ PH_#PH_APPU#_POST_CMD=''								# - This is the full command to run after stoppi
 											# - A defined variable set to one of the above
 											# - An empty string
 
-# Additional typesets
-
-typeset -i PH_#APPU#_NUM_CTRL
-
 # Read-only exports
 
 # Read-write exports

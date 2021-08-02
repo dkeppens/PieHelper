@@ -145,10 +145,6 @@ PH_MOON_POST_CMD=''									# - This is the full command to run after stopping M
 											# - A defined variable set to one of the above
 											# - An empty string
 
-# Additional typesets
-
-typeset -i PH_MOON_RES PH_MOON_WIDTH PH_MOON_HEIGHT PH_MOON_FPS PH_MOON_PCKTSIZE PH_MOON_NUM_CTRL
-
 # Read-only exports
 
 export PH_MOON_PERSISTENT PH_MOON_CIFS_SHARE PH_MOON_CIFS_USER PH_MOON_CIFS_PASS PH_MOON_CIFS_SRV PH_MOON_CIFS_DIR PH_MOON_CIFS_SUBDIR PH_MOON_CIFS_MPT
