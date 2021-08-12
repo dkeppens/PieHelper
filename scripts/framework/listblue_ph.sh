@@ -18,40 +18,53 @@ fi
 
 #set -x
 
+declare PH_ACTION
 declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 declare -i PH_INDEX
+declare -i PH_QUIESCE
 
-PH_OLDOPTARG="${OPTARG}"
-PH_OLDOPTIND="${OPTIND}"
+PH_ACTION=""
 PH_OPTION=""
 PH_INDEX="0"
+PH_QUIESCE="1"
 
-OPTIND="1"
-
-while getopts :h PH_OPTION
+while getopts :l:qh PH_OPTION
 do
-	case "${PH_OPTION}" in *)
+	case "${PH_OPTION}" in l)
+		[[ -n "${PH_ACTION}" || "${OPTARG}" != @(default|all) ]] && \
+			(! listblue_ph.sh -h ) && \
+			exit 1
+		PH_ACTION="${OPTARG}" ;;
+			q)
+		[[ "${PH_QUIESCE}" -eq "0" ]] && \
+			(! listblue_ph.sh -h ) && \
+			exit 1
+		PH_QUIESCE="0" ;;
+			*)
 		>&2 printf "\n\n"
 		>&2 printf "%2s\033[1;36m%s%s\033[1;4;35m%s\033[0m\n" "" "Bluetooth Adapters" " : " "${PH_HEADER}"
 		>&2 printf "\n\n"
 		>&2 printf "%4s\033[1;5;33m%s\033[0m\n" "" "General options"
 		>&2 printf "\n\n"
-		>&2 printf "%6s\033[1;36m%s\033[1;37m%s\n" "" "$(basename "${0}" 2>/dev/null) : " "| -h"
+		>&2 printf "%6s\033[1;36m%s\033[1;37m%s\n" "" "$(basename "${0}" 2>/dev/null) : " "-l [\"all\"|\"def\"] '-q' |"
+		>&2 printf "%23s\033[1;37m%s\033[0m\n" "" "-h"
 		>&2 printf "\n"
 		>&2 printf "%15s\033[0m\033[1;37m%s\n" "" "Where : -h displays this usage"
-		>&2 printf "%9s%s\n" "" "- Running this script without parameters will list :"
-		>&2 printf "%12s%s\n" "" "- A summary of all available bluetooth adapters"
-		>&2 printf "%12s%s\033[0m\n" "" "- The bluetooth adapter currently set as default"
+		>&2 printf "%23s\033[1;37m%s\033[0m\n" "" "-l will list the MAC address of selected bluetooth adapters available on this system"
+		>&2 printf "%25s\033[1;37m%s\033[0m\n" "" "- Allowed values for selection are :"
+		>&2 printf "%27s\033[1;37m%s\033[0m\n" "" "\"all\" which will list all bluetooth adapters"
+		>&2 printf "%27s\033[1;37m%s\033[0m\n" "" "\"def\" which will list the adapter currently set as default for the PieHelper"
+		>&2 printf "%29s\033[1;37m%s\033[0m\n" "" "- The default adapter can be configured with Controllers option 'PH_CONT_BLUE_ADAPT'"
+		>&2 printf "%23s\033[1;37m%s\033[0m\n" "" "-q suppresses all output except for the adapter list"
 		>&2 printf "\n"
-		OPTIND="${PH_OLDOPTIND}"
-		OPTARG="${PH_OLDOPTARG}"
 		exit 1 ;;
 	esac
 done
-OPTIND="${PH_OLDOPTIND}"
-OPTARG="${PH_OLDOPTARG}"
+[[ -z "${PH_ACTION}" ]] && \
+	(! listblue_ph.sh -h ) && \
+	exit 1
 
 printf "\n\033[1;36m%s\033[0m\n\n" "- Listing bluetooth adapters"
 if ph_run_with_rollback -c "ph_enable_services bluetooth"
