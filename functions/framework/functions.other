@@ -8703,6 +8703,7 @@ declare PH_APP_STATE
 declare PH_APP_INST_STATE
 declare PH_APP_RECVD_INST_STATE
 declare PH_APP_DEPS
+declare PH_APP_DEPEND_CMD
 declare PH_ANSWER2
 declare PH_OPTION
 declare PH_OLDOPTARG
@@ -8726,6 +8727,7 @@ PH_APP_STATE=""
 PH_APP_INST_STATE=""
 PH_APP_RECVD_INST_STATE=""
 PH_APP_DEPS=""
+PH_APP_DEPEND_CMD=""
 PH_ANSWER2=""
 PH_OPTION=""
 PH_OLDOPTARG="${OPTARG}"
@@ -9076,8 +9078,17 @@ else
 				ph_run_with_rollback -c true -m "$(sed 's/ /,/g'<<<"${PH_APP_DEPENDS[*]}")"
 				for PH_i in "${PH_APP_DEPENDS[@]}"
 				do
+					printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking the state of " "'${PH_i}'"
+					if [[ "$(ph_check_app_state_validity -a "${PH_i}" -o -q; echo -n "${?}")" -eq "0" && \
+						"$(ph_check_app_state_validity -a "${PH_i}" -s -q; echo -n "${?}")" -ne "0" ]]
+					then
+						ph_set_result -m "Out-of-scope application '${PH_i}' is set as a dependency for '${PH_APP}' but is not Supported"
+						ph_run_with_rollback -c false -m "Could not support"
+						return "${?}"
+					fi
+					ph_run_with_rollback -c true -m "$(ph_get_app_state_from_app_name "${PH_i}")"
 					printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Checking the installation state of " "'${PH_i}'"
-					PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_name "${PH_i}")"
+					PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_info -a "${PH_i}" -c "$(ph_get_app_cmd_from_app_name "${PH_i}")")"
 					case "${PH_APP_INST_STATE}" in *U)
 						printf "%10s\033[33m%s\033[0m\n" "" "Warning : '${PH_i}' is currently not installed -> Installing"
 						ph_set_result -r 0
@@ -9086,6 +9097,7 @@ else
 							*)
 						ph_run_with_rollback -c true -m "${PH_APP_INST_STATE}" ;;
 					esac
+					set +x
 					if ph_check_app_state_validity -a "${PH_APP}" -o -q
 					then
 						ph_run_with_rollback -c "ph_add_app_depends -a '${PH_APP}' -d '${PH_i}'" || \
