@@ -83,48 +83,51 @@ OPTARG="${PH_OLDOPTARG}"
         ( "${PH_LATEST_FLAG}" -eq "0" && "${PH_QUIESCE}" -eq "1" )) && "${#}" -ne "3" ) ]] && \
         ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-if PH_PKG_VERSION="$(ph_get_pkg_version "${PH_APP_PKG}")"
+if ph_sync_pkg_db quiesce
 then
-	if PH_PKG_UPDATES="$("${PH_SUDO}" pacman -Ss "${PH_APP_PKG}" 2>/dev/null | nawk -v instvers="${PH_PKG_VERSION}" -v pkg="${PH_APP_PKG}" 'BEGIN { \
-			testvers = "" ; \
-			stablevers = "" ; \
-			mstring1 = "^[[:alnum:]]+/" pkg "$" ; \
-			mstring2 = "testing/" pkg "$" \
-		} \
-		$1 ~ mstring1 { \
-			if ($1 ~ mstring2) { \
-				testvers = $2 \
-			} else { \
-				stablevers = $2 \
-			} \
-		} { \
-			next \
-		} END { \
-			if (testvers != "" && stablevers != "") { \
-				if (instvers == testvers) { \
-					printf "downgrade:" stablevers \
-				} else { \
-					printf "upgrade:" testvers \
-				} ; \
-				exit 0 \
-			} else { \
-				exit 1 \
-			} \
-		}')"
+	if PH_PKG_VERSION="$(ph_get_pkg_version "${PH_APP_PKG}")"
 	then
-		if [[ "${PH_QUIESCE}" -eq "1" ]]
+		if PH_PKG_UPDATES="$("${PH_SUDO}" pacman -Ss "${PH_APP_PKG}" 2>/dev/null | nawk -v instvers="${PH_PKG_VERSION}" -v pkg="${PH_APP_PKG}" 'BEGIN { \
+				testvers = "" ; \
+				stablevers = "" ; \
+				mstring1 = "^[[:alnum:]]+/" pkg "$" ; \
+				mstring2 = "testing/" pkg "$" \
+			} \
+			$1 ~ mstring1 { \
+				if ($1 ~ mstring2) { \
+					testvers = $2 \
+				} else { \
+					stablevers = $2 \
+				} \
+			} { \
+				next \
+			} END { \
+				if (testvers != "" && stablevers != "") { \
+					if (instvers == testvers) { \
+						printf "downgrade:" stablevers \
+					} else { \
+						printf "upgrade:" testvers \
+					} ; \
+					exit 0 \
+				} else { \
+					exit 1 \
+				} \
+			}')"
 		then
-			if [[ -n "${PH_PKG_UPDATES}" ]]
+			if [[ "${PH_QUIESCE}" -eq "1" ]]
 			then
-				if [[ "${PH_LATEST_FLAG}" -eq "1" || "${PH_PKG_UPDATES%%:*}" == "upgrade" ]]
+				if [[ -n "${PH_PKG_UPDATES}" ]]
 				then
-					echo -n "${PH_PKG_UPDATES#*:}"
+					if [[ "${PH_LATEST_FLAG}" -eq "1" || "${PH_PKG_UPDATES%%:*}" == "upgrade" ]]
+					then
+						echo -n "${PH_PKG_UPDATES#*:}"
+					fi
 				fi
 			fi
+			return 0
+		else
+			ph_set_result -m "An error occurred trying to determine all available versions of package '${PH_APP_PKG}'"
 		fi
-		return 0
-	else
-		ph_set_result -m "An error occurred trying to determine all available versions of package '${PH_APP_PKG}'"
 	fi
 fi
 return 1
@@ -141,7 +144,7 @@ PH_APP_PKG=""
 [[ "${PH_APP_PATH}" != /* || "${#}" -ne "1" ]] && \
         ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-if ph_sync_pkg_db
+if ph_sync_pkg_db quiesce
 then
 	PH_APP_PKG="$("${PH_SUDO}" pacman -Fx --machinereadable "\(^${PH_APP_PATH}$\)\{1\}" 2>/dev/null | nawk -F '\0' '{ \
 			print $2 \
@@ -150,8 +153,6 @@ then
 	then
 		echo -n "${PH_APP_PKG}"
 		return 0
-	else
-		ph_set_result -m "An error occurred trying to determine the package for path '${PH_APP_PATH}'"
 	fi
 fi
 return 1
@@ -290,16 +291,23 @@ return "${?}"
 
 function ph_sync_pkg_db {
 
-[[ "${#}" -ne "0" ]] && \
+[[ "${#}" -ne "0" && ! ( "${#}" -eq "1" && "${1}" == "quiesce" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-printf "%8s%s\n" "" "--> Synchronizing the package database"
+[[ -z "${1}" ]] && \
+	printf "%8s%s\n" "" "--> Synchronizing the package database"
 if ! "${PH_SUDO}" pacman -Syy --noconfirm >/dev/null 2>&1
 then
 	ph_set_result -m "An error occurred trying to synchronize the package database"
-	ph_run_with_rollback -c false -m "Could not synchronize"
+	[[ -z "${1}" ]] && \
+		ph_run_with_rollback -c false -m "Could not synchronize"
 else
-	ph_run_with_rollback -c true
+	if [[ -z "${1}" ]]
+	then
+		ph_run_with_rollback -c true
+	else
+		true
+	fi
 fi
 return "${?}"
 }
@@ -354,11 +362,10 @@ PH_APP_PKG="$(ph_resolve_dynamic_value "${1}")"
 [[ -z "${PH_APP_PKG}" || "${#}" -ne "1" ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
-if ph_sync_pkg_db
+if ph_sync_pkg_db quiesce
 then
 	if ! "${PH_SUDO}" pacman -Ss "${PH_APP_PKG}" --noconfirm >/dev/null 2>&1
 	then
-		ph_set_result -m "An error occurred trying to find a package called '${PH_APP_PKG}'"
 		false
 	else
 		true
