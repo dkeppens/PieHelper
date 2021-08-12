@@ -9396,8 +9396,8 @@ if [[ -z "${PH_APP_INST_STATE}" ]]
 then
 	if ! PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_info -a "${PH_APP}" -c "${PH_APP_CMD}")"
 	then
-		ph_run_with_rollback -c false -m "Could not add" || \
-			return 1
+		ph_run_with_rollback -c false -m "Could not add"
+		return "${?}"
 	fi
 fi
 PH_COUNT="$(nawk -v app="^${PH_APP}$" 'BEGIN { \
@@ -9414,8 +9414,8 @@ PH_COUNT="$(nawk -v app="^${PH_APP}$" 'BEGIN { \
 case "${PH_COUNT}" in 0)
 		if ! ph_run_with_rollback -c "ph_add_line_to_file -f '${PH_CONF_DIR}/supported_apps' -l '${PH_APP}\\t${PH_APP_USER}\\t${PH_APP_INST_STATE}\\t${PH_APP_CMD}'"
 		then
-			ph_run_with_rollback -c false -m "Could not add" || \
-				return 1
+			ph_run_with_rollback -c false -m "Could not add"
+			return "${?}"
 		fi ;;
 		    1)
 		for PH_i in USER INST_STATE CMD
@@ -12149,9 +12149,6 @@ else
 	PH_ENV_ACTION="enable"
 	printf "%8s%s\n" "" "--> Enabling the graphical environment"
 fi
-ph_set_result -m "Forced ERROR for rollback test"
-ph_run_with_rollback -c false -m "Could not ${PH_ENV_ACTION}"
-return "${?}"
 if "${PH_SUDO}" systemctl set-default "${PH_ENV}" >/dev/null 2>&1
 then
 	[[ "${PH_ENV}" == "graphical.target" ]] && \
