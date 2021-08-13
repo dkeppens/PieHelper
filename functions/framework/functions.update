@@ -2739,7 +2739,7 @@ do
 			PIN_PS3|PIN_PS4)
 		PH_LINE='a four-character word or an empty string:"${PH_OPTARG_VAL}" == @({4}(@([a-Z]|[0-9]))|)' ;;
 			BLUE_ADAPT)
-		PH_LINE='a valid bluetooth adapter mac or an empty string:"$("$(ph_check_mac_validity "${PH_OPTARG_VAL}")" ; echo -n "${?}")" -eq "0" || -z "${PH_OPTARG_VAL}"' ;;
+		PH_LINE='a valid bluetooth adapter MAC or an empty string:"$("$("${PH_SCRIPTS_DIR}/listblue_ph.sh" -v "${PH_OPTARG_VAL}" -q)"; echo -n "${?}")" -eq "0" || -z "${PH_OPTARG_VAL}"' ;;
 			TYPE)
 		PH_LINE='PS3, PS4, XBOX360 or XBOXSX:"${PH_OPTARG_VAL}" == @(PS@(3|4)|XBOX@(360|SX))' ;;
 			CIFS_USER)
