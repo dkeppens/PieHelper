@@ -39,7 +39,7 @@ PH_RET_CODE="0"
 while getopts :l:v:qh PH_OPTION
 do
 	case "${PH_OPTION}" in l)
-		[[ -n "${PH_ACTION}" || "${OPTARG}" != @(default|all) ]] && \
+		[[ -n "${PH_ACTION}" || "${OPTARG}" != @(def|all) ]] && \
 			(! listblue_ph.sh -h ) && \
 			exit 1
 		PH_ACTION="${OPTARG}" ;;
@@ -84,7 +84,7 @@ done
 	(! listblue_ph.sh -h ) && \
 	exit 1
 
-[[ -z "${PH_QUIESCE}" ]] && \
+[[ "${PH_QUIESCE}" -eq "1" ]] && \
 	printf "\n\033[1;36m%s\033[0m\n\n" "- Listing bluetooth adapters"
 if ph_run_with_rollback -c "ph_enable_services -s bluetooth ${PH_PARAM}"
 then
@@ -105,7 +105,7 @@ then
 				then
 					ph_run_with_rollback -c true -m "${PH_CONT_BLUE_ADAPT}"
 				else
-					print "${PH_CONT_BLUE_ADAPT}"
+					echo "${PH_CONT_BLUE_ADAPT}"
 				fi
 			fi ;;
 				all|verify)
@@ -146,7 +146,7 @@ then
 									printf "%12s\033[1;37m%-4s\033[1;33m%-10s\033[0m\n" "" "$((PH_INDEX+1))." "${PH_BLUE_ADAPTS["${PH_INDEX}"]}"
 								fi
 							else
-								print "${PH_BLUE_ADAPTS["${PH_INDEX}"]}"
+								echo "${PH_BLUE_ADAPTS["${PH_INDEX}"]}"
 							fi
 						done
 						if [[ "${PH_QUIESCE}" -eq "1" ]]
