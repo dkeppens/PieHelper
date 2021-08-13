@@ -1,3 +1,5 @@
+* change ph_get_app_inst_state_from_app_name to call ph_get_app_inst_state_from_app_info for unsupported apps and then make all calls go to ph_get_app_inst_state_from_app_name
+* implement general print function to ease up on PQ_QUIESCE stuff
 * add check for 32bit/64bit systems to ph_get_app_addon_type function
 * add checks in functions.update for remaning items functions for 'Nothing to do'
 * add checks in main.sh for when PH_FILE_SUFFIX changes and possibly menu item to handle this specific switching

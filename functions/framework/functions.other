@@ -2072,7 +2072,7 @@ PH_APP_USER="$(ph_get_app_user_from_app_name "${PH_APP}")"
 PH_APP_CMD="$(ph_get_app_cmd_from_app_name "${PH_APP}")"
 PH_APP_PKG="$(ph_get_app_pkg_from_app_name "${PH_APP}")"
 PH_APP_STATE="$(ph_get_app_state_from_app_name "${PH_APP}")"
-PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_name "${PH_APP}")"
+PH_APP_INST_STATE="$(ph_get_app_inst_state_from_app_info -a "${PH_APP}" -c "${PH_APP_CMD}")"
 case "${PH_APP_INST_STATE}" in PI)
 	PH_CLARIFY="(Packaged and Installed)" ;;
 		PU)
@@ -2100,7 +2100,12 @@ printf "%8s%s\033[1;33m%s\033[0m\n" "" "--> Showing known info of " "'${PH_APP}'
 printf "\n%12s\033[1;37m%-20s\033[33m%s\n" "" "- App name" ": ${PH_APP}"
 printf "%12s\033[37m%-20s\033[33m%s\n" "" "- App tty" ": ${PH_APP_STR_TTY}"
 printf "%12s\033[37m%-20s\033[33m%s\n" "" "- App run account" ": ${PH_APP_USER}"
-printf "%12s\033[37m%-20s\033[33m%s\n" "" "- App start command" ": ${PH_APP_CMD}"
+if echo -n "${PH_APP_CMD}" | grep '#PH_TTY#' >/dev/null 2>&1
+then
+	printf "%12s\033[37m%-20s\033[33m%s%-2s\033[37m%s\n" "" "- App start command" ": ${PH_APP_CMD}" "" "(Where '#PH_TTY#' templates an allocated tty)"
+else
+	printf "%12s\033[37m%-20s\033[33m%s\n" "" "- App start command" ": ${PH_APP_CMD}"
+fi
 printf "%12s\033[37m%-20s\033[33m%s\n" "" "- App state" ": ${PH_APP_STATE}"
 printf "%12s\033[37m%-20s\033[33m%s\n" "" "- App package name" ": ${PH_APP_PKG}"
 printf "%12s\033[37m%-20s\033[33m%s%-2s\033[37m%s\n" "" "- App install state" ": ${PH_APP_INST_STATE}" "" "${PH_CLARIFY}"
@@ -2855,6 +2860,8 @@ if ! PH_APP_STR_TTY="$(nawk -v app="^${PH_APP}$" -v max="${PH_PIEH_MAX_TTYS}" '$
 then
 	PH_APP_STR_TTY="1"
 fi
+[[ -z "${PH_APP_STR_TTY}" ]] && \
+	PH_APP_STR_TTY="-"
 echo -n "${PH_APP_STR_TTY}"
 [[ "${PH_APP_STR_TTY}" == "1" ]] && \
 	return 1
@@ -3137,10 +3144,10 @@ do
 	then
 		[[ "${PH_APP}" == "PieHelper" ]] && \
 			PH_APP_CMD="$(ph_resolve_dynamic_value "${PH_APP_CMD}")"
-		if echo "${PH_APP_CMD}" | grep -E "#PH_TTY#" >/dev/null
+		if echo -n "${PH_APP_CMD}" | grep -E "#PH_TTY#" >/dev/null
 		then
 			PH_APP_STR_TTY="$(ph_get_app_tty_from_app_name "${PH_APP}")"
-			if [[ "${PH_APP_STR_TTY}" != "-" ]]
+			if [[ "${PH_APP_STR_TTY}" != @(1|-) ]]
 			then
 				echo -n "${PH_APP_CMD//#PH_TTY#/${PH_APP_STR_TTY}}"
 				return 0
