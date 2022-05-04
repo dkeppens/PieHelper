@@ -13104,10 +13104,7 @@ case "${PH_APP_ADDON}" in pre_cmd|post_cmd)
 	PH_APP_ADDON_VAL="$(ph_resolve_dynamic_value "${PH_APP_ADDON_VAL}")"
 	if [[ -n "${PH_APP_ADDON_VAL}" ]]
 	then
-		if [[ -f "$(echo -n "${PH_APP_ADDON_VAL}" | nawk '{ \
-				printf $1 ; \
-				exit 0 \
-			}')" ]]
+		if [[ -f "$(echo "${PH_APP_ADDON_VAL}" | nawk '{ printf $1 ; exit 0 }')" ]]
 		then
 			while true
 			do
@@ -13130,7 +13127,7 @@ case "${PH_APP_ADDON}" in pre_cmd|post_cmd)
 							type = "64binexec" \
 						} \
 						$0 ~ /directory/ { \
-							type = printf "directory" \
+							type = "directory" \
 						} \
 						$0 ~ /link to / { \
 							type = "link" \
@@ -13143,10 +13140,7 @@ case "${PH_APP_ADDON}" in pre_cmd|post_cmd)
 						}')"
 				if [[ "${PH_APP_ADDON_TYPE}" == "link" ]]
 				then
-					PH_APP_ADDON_VAL="$(ph_get_link_target "$(echo -n "${PH_APP_ADDON_VAL}" | nawk '{ \
-							printf $1 ; \
-							exit 0 \
-						}' 2>/dev/null)")"
+					PH_APP_ADDON_VAL="$(ph_get_link_target "$(echo "${PH_APP_ADDON_VAL}" | nawk '{ printf $1 ; exit 0 }' 2>/dev/null)")"
 				else
 					break
 				fi
