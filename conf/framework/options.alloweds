@@ -1,0 +1,22 @@
+PH_PIEH_USE_CTRL:yes or no:"${PH_OPTARG_VAL}" == @(yes|no)
+PH_PIEH_NUM_CTRL:1, 2, 3 or 4:"${PH_OPTARG_VAL}" == @(1|2|3|4)
+PH_PIEH_PERSISTENT:yes or no:"${PH_OPTARG_VAL}" == @(yes|no)
+PH_PIEH_CIFS_SHARE:yes or no:"${PH_OPTARG_VAL}" == @(yes|no)
+PH_PIEH_CIFS_USER:a locally existing account or an empty string:"$("$(ph_check_user_state "${PH_OPTARG_VAL}")" ; echo -n "${?}")" -eq "0"
+PH_PIEH_CIFS_PASS:a valid password or an empty string:"$("$(ph_check_password_validity "${PH_OPTARG_VAL}")" ; echo -n "${?}")" -eq "0"
+PH_PIEH_CIFS_SRV:a valid ipv4 address or an empty string:"$("$(ph_check_ip_validity "${PH_OPTARG_VAL}")" ; echo -n "${?}")" -eq "0"
+PH_PIEH_CIFS_DIR:a variable referring to or full path of a directory or an empty string:"$(ph_resolve_dynamic_value "${PH_OPTARG_VAL}")" == @(/*|\${*}|)
+PH_PIEH_CIFS_SUBDIR:a variable referring to or full path of a directory or an empty string:"$(ph_resolve_dynamic_value "${PH_OPTARG_VAL}")" == @(/*|\${*}|)
+PH_PIEH_CIFS_MPT:a variable referring to or full path of a directory or an empty string:"$(ph_resolve_dynamic_value "${PH_OPTARG_VAL}")" == @(/*|\${*}|)
+PH_PIEH_PRE_CMD:a variable referring to or full path of a valid PRE-command or an empty string:( "$(ph_get_app_addon_type -a "${PH_APP}" -d pre_cmd)" == "text" && -f "$(ph_resolve_dynamic_value "${PH_OPTARG_VAL}")" ) || ( "$(ph_get_app_addon_type -a "${PH_APP}" -d pre_cmd)" == @(32binexec|64binexec|textexec) && -x "$(ph_resolve_dynamic_value "${PH_OPTARG_VAL}")" )
+PH_PIEH_POST_CMD:a variable referring to or full path of a valid POST-command or an empty string:( "$(ph_get_app_addon_type -a "${PH_APP}" -d post_cmd)" == "text" && -f "$(ph_resolve_dynamic_value "${PH_OPTARG_VAL}")" ) || ( "$(ph_get_app_addon_type -a "${PH_APP}" -d post_cmd)" == @(32binexec|64binexec|textexec) && -x "$(ph_resolve_dynamic_value "${PH_OPTARG_VAL}")" )
+PH_PIEH_SANITY_LEVEL:critical, optional or full:"${PH_OPTARG_VAL}" == @(critical|optional|full)
+PH_PIEH_SANITY_INST:yes or no:"${PH_OPTARG_VAL}" == @(yes|no)
+PH_PIEH_SANITY_CONF:yes or no:"${PH_OPTARG_VAL}" == @(yes|no)
+PH_PIEH_STARTAPP:a Supported application or an empty string:"$("$(ph_check_app_state_validity -a "${PH_OPTARG_VAL}" -q -s)" ; echo -n "${?}")" -eq "0" || -z "${PH_OPTARG_VAL}"
+PH_PIEH_MAX_TTYS:a positive integer from 12 up to and including 63:"${PH_OPTARG_VAL}" -ge 12 || "${PH_OPTARG_VAL}" -le 63
+PH_CONT_MAP:yes or no:"${PH_OPTARG_VAL}" == @(yes|no)
+PH_CONT_TYPE:PS3, PS4, XBOX360 or XBOXSX:"${PH_OPTARG_VAL}" == @(PS@(3|4)|XBOX@(360|SX))
+PH_CONT_PIN_PS3:a four-character word or an empty string:"${PH_OPTARG_VAL}" == @({4}(@([a-Z]|[0-9]))|)
+PH_CONT_PIN_PS4:a four-character word or an empty string:"${PH_OPTARG_VAL}" == @({4}(@([a-Z]|[0-9]))|)
+PH_CONT_BLUE_ADAPT:a valid bluetooth adapter MAC or an empty string:"$("$("${PH_SCRIPTS_DIR}/listblue_ph.sh" -v "${PH_OPTARG_VAL}" -q)"; echo -n "${?}")" -eq "0" || -z "${PH_OPTARG_VAL}"

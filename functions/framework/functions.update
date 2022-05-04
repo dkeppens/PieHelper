@@ -2834,9 +2834,9 @@ do
 	esac
 	case "${PH_APP}" in Kodi)
 		case "${PH_i}" in PRE_CMD)
-                	PH_LINE='${PH_SCRIPTS_DIR}/app/pre_cmds/Kodi-PRE.sh' ;;
+                	PH_LINE='${PH_SCRIPTS_DIR}/pre_cmds/Kodi-PRE.sh' ;;
 				POST_CMD)
-                	PH_LINE='${PH_SCRIPTS_DIR}/app/post_cmds/Kodi-POST.sh' ;;
+                	PH_LINE='${PH_SCRIPTS_DIR}/post_cmds/Kodi-POST.sh' ;;
 				PKG_NAME)
                 	PH_LINE='kodi' ;;
 		esac ;;
@@ -2888,9 +2888,9 @@ do
 		case "${PH_i}" in CMD_OPTS)
                 	PH_LINE='Main' ;;
 				PRE_CMD)
-                	PH_LINE='${PH_SCRIPTS_DIR}/app/pre_cmds/PieHelper-PRE.sh' ;;
+                	PH_LINE='${PH_SCRIPTS_DIR}/pre_cmds/PieHelper-PRE.sh' ;;
 				POST_CMD)
-                	PH_LINE='${PH_SCRIPTS_DIR}/app/post_cmds/PieHelper-POST.sh' ;;
+                	PH_LINE='${PH_SCRIPTS_DIR}/post_cmds/PieHelper-POST.sh' ;;
 				PKG_NAME|STARTAPP)
                 	PH_LINE='' ;;
 				SANITY_INST|SANITY_CONF)

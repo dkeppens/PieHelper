@@ -11177,8 +11177,8 @@ do
 	ph_check_object_existence -o "${PH_MENUS_DIR}/${PH_i}.lst" -m immediate || \
 		return 1
 done
-for PH_i in confopts_ph confoper_ph confapps_ph confctrl_ph listblue_ph listmoon_ph confgena_ph confpieh_ph app/post_cmds/Kodi-POST \
-	app/post_cmds/PieHelper-POST app/pre_cmds/PieHelper-PRE app/pre_cmds/Kodi-PRE
+for PH_i in confopts_ph confoper_ph confapps_ph confctrl_ph listblue_ph listmoon_ph confgena_ph confpieh_ph post_cmds/Kodi-POST \
+	post_cmds/PieHelper-POST pre_cmds/PieHelper-PRE pre_cmds/Kodi-PRE
 do
 	ph_check_object_existence -o "${PH_SCRIPTS_DIR}/${PH_i}.sh" -m immediate || \
 		return 1
@@ -12182,7 +12182,7 @@ then
 				return 1
 			if [[ "${PH_MODE}" == "normal" ]]
 			then
-				for PH_i in acl xboxdrv git make bluez bluez-tools expect less at ${PH_DISTRO_PKGS}
+				for PH_i in acl git make bluez bluez-tools expect less at ${PH_DISTRO_PKGS}
 				do
 					ph_run_with_rollback -c "ph_install_pkg -p '${PH_i}'" || \
 						return 1
@@ -12456,6 +12456,8 @@ return 0
 }
 
 function ph_do_app_routine {
+
+set -x
 
 declare PH_i
 declare PH_j
@@ -12782,7 +12784,7 @@ do
 	do
 		for PH_j in "${PH_FILTER_STATES[@]}"
 		do
-			if [[ ( "${PH_i}" == "${PH_PIEH_STARTAPP}" && "${PH_j}" == "str" ) || \
+			if [[ ( "${PH_SELECTION_APPS["${PH_i}"]}" == "${PH_PIEH_STARTAPP}" && "${PH_j}" == "str" ) || \
 				( "${PH_APP_STATE}" == "${PH_j}" && "${PH_j}" != "str" ) ]]
 			then
 				break 2
@@ -12791,13 +12793,13 @@ do
 		unset PH_SELECTION_APPS["${PH_i}"]
 		continue 2
 	done
-	if [[ ( "${PH_i}" == "PieHelper" && "${PH_ROUTINE}" == @(conf|unconf|sup|unsup|int|unint|inst|uninst) ) || \
-		( "${PH_i}" == "Controllers" && "${PH_ROUTINE}" != @(@(mk|rm)_@(conf_file|menus|all)|sup|unsup|list|info) ) ]]
+	if [[ ( "${PH_SELECTION_APPS["${PH_i}"]}" == "PieHelper" && "${PH_ROUTINE}" == @(conf|unconf|sup|unsup|int|unint|inst|uninst) ) || \
+		( "${PH_SELECTION_APPS["${PH_i}"]}" == "Controllers" && "${PH_ROUTINE}" != @(@(mk|rm)_@(conf_file|menus|all)|sup|unsup|list|info) ) ]]
 	then
 		unset PH_SELECTION_APPS["${PH_i}"]
 		continue
 	fi
-	PH_APP_CIFS_MPT="$(ph_get_app_cifs_mpt -a "${PH_i}" -r)"
+	PH_APP_CIFS_MPT="$(ph_get_app_cifs_mpt -a "${PH_SELECTION_APPS["${PH_i}"]}" -r)"
 	if [[ -n "${PH_APP_CIFS_MPT}" && "${PH_ROUTINE}" == @(mk|rm)_cifs_mpt ]]
 	then
 		if [[ "$(ph_check_dir_contents "${PH_APP_CIFS_MPT}"; echo -n "${?}")" -ne "0" || \
@@ -13301,8 +13303,8 @@ PH_APPU_CIFS_SHARE="$(eval "echo -n \"\$PH_${PH_APPU}_CIFS_SHARE\"")"
 PH_APPU_PERSISTENT="$(eval "echo -n \"\$PH_${PH_APPU}_PERSISTENT\"")"
 PH_STOP_MODE="${3}"
 
-[[ ( "${#}" -ne "2" && "${PH_ACTION}" == "start") || ( "${PH_ACTION}" == "stop" && \
-	( "${#}" -ne 3 || "${PH_STOP_MODE}" != @(normal|forced) )) || "${PH_ACTION}" != st@(art|op) ]] && \
+[[ ( "${#}" -ne "2" && "${#}" -ne "6" && "${PH_ACTION}" == "start") || ( "${PH_ACTION}" == "stop" && \
+	(( "${#}" -ne 3 && "${#}" -ne "7" ) || "${PH_STOP_MODE}" != @(normal|forced) )) || "${PH_ACTION}" != st@(art|op) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 case "${PH_ACTION}" in start)
@@ -13464,37 +13466,42 @@ case "${PH_ACTION}" in start)
 						    *) 
 					"${PH_SUDO}" chvt "${PH_PIEH_TTY}" 2>/dev/null ;;
 				esac
-				if ph_run_with_rollback -c "ph_stop_services -s 'getty@tty${PH_APP_TTY}'"
+				if [[ "${?}" -eq "0" ]]
 				then
-					printf "%8s%s\n" "" "--> Checking for controller usage"
-					if [[ "${PH_APPU_USE_CTRL}" == "yes" ]]
-					then
-						ph_run_with_rollback -c true -m "Yes"
-						if ph_cleanup_controllers full
-						then
-							printf "%8s%s\n\n" "" "--> Displaying reminder about controller(s)"
-							printf "%12s\033[1;37m%s\033[0;0m\n\n" "" "- Please manually turn off your controller(s)"
-							ph_run_with_rollback -c true
-							sleep 4
-						else
-							return 1
-						fi
-					else
-						ph_run_with_rollback -c true -m "No"
-					fi
-					ph_run_app_addon -a "${PH_APP}" -d "post_cmd"
-					printf "%8s%s\n" "" "--> Checking for CIFS mount configuration"
-					if [[ "${PH_APPU_CIFS_SHARE}" == "no" ]]
-					then
-						ph_run_with_rollback -c true -m "Not Found"
-					else
-						ph_run_with_rollback -c true -m "Found"
-						ph_run_with_rollback -c "ph_umount_cifs_share '${PH_APP}'" || \
-							return 1
-					fi
-					ph_add_value_to_param -p PH_APPS_ACTION -v "${PH_APP}'start'${PH_STOP_MODE}"
 					ph_run_with_rollback -c true
-					break
+					if ph_run_with_rollback -c "ph_stop_services -s 'getty@tty${PH_APP_TTY}'"
+					then
+						printf "%8s%s\n" "" "--> Checking for controller usage"
+						if [[ "${PH_APPU_USE_CTRL}" == "yes" ]]
+						then
+							ph_run_with_rollback -c true -m "Yes"
+							if ph_cleanup_controllers full
+							then
+								printf "%8s%s\n\n" "" "--> Displaying reminder about controller(s)"
+								printf "%12s\033[1;37m%s\033[0;0m\n\n" "" "- Please manually turn off your controller(s)"
+								ph_run_with_rollback -c true
+								sleep 4
+							else
+								return 1
+							fi
+						else
+							ph_run_with_rollback -c true -m "No"
+						fi
+						ph_run_app_addon -a "${PH_APP}" -d "post_cmd"
+						printf "%8s%s\n" "" "--> Checking for CIFS mount configuration"
+						if [[ "${PH_APPU_CIFS_SHARE}" == "no" ]]
+						then
+							ph_run_with_rollback -c true -m "Not Found"
+						else
+							ph_run_with_rollback -c true -m "Found"
+							ph_run_with_rollback -c "ph_umount_cifs_share '${PH_APP}'" || \
+								return 1
+						fi
+						ph_add_value_to_param -p PH_APPS_ACTION -v "${PH_APP}'start'${PH_STOP_MODE}"
+						printf "%8s%s\n" "" "--> Finishing up"
+						ph_run_with_rollback -c true
+						break
+					fi
 				fi
 			fi
 		fi
