@@ -76,13 +76,13 @@ PH_KODI_CIFS_MPT='${PH_MNT_DIR}/Kodi'							# - This is the full pathname of a d
 											# - Default is '${PH_MNT_DIR}/Kodi'
 											# - Allowed values are values starting with '/' and an empty string
 											# - Variables can be used as part of or instead of the normal value
-PH_KODI_PRE_CMD='${PH_SCRIPTS_DIR}/app/pre_cmds/Kodi-PRE.sh'				# - This is the full command to run before starting Kodi
+PH_KODI_PRE_CMD='${PH_SCRIPTS_DIR}/pre_cmds/Kodi-PRE.sh'				# - This is the full command to run before starting Kodi
 											# - PRE-commands are always executed as the run account for the application being started which should be granted adequate
 											#   permissions
 											# - PRE-commands that fail will only generate a warning and not block further Kodi startup
 											# - In case PH_KODI_PRE_CMD makes use of default Kodi CIFS configuration, Kodi's run account should be present on PH_KODI_CIFS_SRV with
 											#   share permissions required by PH_KODI_PRE_CMD
-											# - Default is '${PH_SCRIPTS_DIR}/app/pre_cmds/Kodi-PRE.sh' which will restore a backup of Kodi's preferences directory for Kodi's run account from
+											# - Default is '${PH_SCRIPTS_DIR}/pre_cmds/Kodi-PRE.sh' which will restore a backup of Kodi's preferences directory for Kodi's run account from
 											#   an archive called 'Kodi-Prefs.tar' in PH_KODI_CIFS_SUBDIR on PH_KODI_CIFS_SRV if one is found, and CIFS for Kodi is correctly configured
 											#   with a user for Kodi's run account having read-write access to the share
 											#   Note that this will significantly delay Kodi startup
@@ -92,13 +92,13 @@ PH_KODI_PRE_CMD='${PH_SCRIPTS_DIR}/app/pre_cmds/Kodi-PRE.sh'				# - This is the 
 											# - Full pathnames of links to either of these types
 											# - A defined variable set to one of the above
 											# - An empty string
-PH_KODI_POST_CMD='${PH_SCRIPTS_DIR}/app/post_cmds/Kodi-POST.sh'				# - This is the full command to run after stopping Kodi
+PH_KODI_POST_CMD='${PH_SCRIPTS_DIR}/post_cmds/Kodi-POST.sh'				# - This is the full command to run after stopping Kodi
 											# - POST-commands are always executed as the run account for PieHelper '${PH_RUN_USER}' which should be granted adequate
 											#   permissions
 											# - POST-commands that fail will only generate a warning
 											# - In case PH_KODI_POST_CMD makes use of default Kodi CIFS configuration, Kodi's run account should be present on PH_KODI_CIFS_SRV with
 											#   share permissions required by PH_KODI_POST_CMD
-											# - Default is '${PH_SCRIPTS_DIR}/app/post_cmds/Kodi-POST.sh' which will backup the current Kodi preferences directory for Kodi's run account to
+											# - Default is '${PH_SCRIPTS_DIR}/post_cmds/Kodi-POST.sh' which will backup the current Kodi preferences directory for Kodi's run account to
 											#   an archive called 'Kodi-Prefs.tar' in PH_KODI_CIFS_SUBDIR on PH_KODI_CIFS_SRV if CIFS for Kodi is correctly configured
 											#   with a user for Kodi's run account having read-write access to the share
 											#   'Kodi-Prefs.tar' will replace any identically named pre-existing archive

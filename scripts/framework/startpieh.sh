@@ -314,7 +314,7 @@ else
 		"${PH_SUDO}" rm "${PH_TMP_DIR}/Start.report" 2>/dev/null
 		if ph_run_with_rollback -c "ph_set_option_to_value '${PH_RUNAPP}' -r \"PH_PIEH_PERSISTENT'yes\""
 		then
-			if ! ph_run_with_rollback -c "ph_do_app_action start '${PH_RUNAPP}'"
+			if ! ph_run_with_rollback -c "ph_do_app_action start '${PH_RUNAPP}' \\| tee -a '${PH_TMP_DIR}/Start.report'"
 			then
 				if [[ "${PH_FG_CONSOLE}" -ne "${PH_RUNAPP_STR_TTY}" ]]
 				then
