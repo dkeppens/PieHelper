@@ -13295,7 +13295,7 @@ PH_APPU_CIFS_SHARE="$(eval "echo -n \"\$PH_${PH_APPU}_CIFS_SHARE\"")"
 PH_APPU_PERSISTENT="$(eval "echo -n \"\$PH_${PH_APPU}_PERSISTENT\"")"
 PH_STOP_MODE="${3}"
 
-[[ ( "${PH_ACTION}" != st@(op|art) || ( "${PH_ACTION}" == "stop" && "${PH_STOP_MODE}" != @(normal|forced) ) ]] && \
+[[ ( "${PH_ACTION}" != st@(op|art) ) || ( "${PH_ACTION}" == "stop" && "${PH_STOP_MODE}" != @(normal|forced) ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 case "${PH_ACTION}" in start)
