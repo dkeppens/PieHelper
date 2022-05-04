@@ -5401,6 +5401,15 @@ do
 					PH_MENU_LINES+=("Go to ${PH_i} Applications:ph_show_menu ${PH_i}")
 				fi
 			done
+		else
+			if [[ "${PH_MENU}" != @(Main|SystemRetaineds|SystemRetained|SystemInteractive|PS3|PS4|XBOX360|XBOXSX|Support|Controllers|Out-of-scope|Default|Supported|Integrated|Halted|Running|StatusManagement*|OptionsManagement*|TTYManagement*) ]]
+			then
+				for PH_MENU_LINE in "Install ${PH_MENU} application:confapps_ph.sh -r inst -a ${PH_MENU}" \
+					"Uninstall ${PH_MENU} application:confapps_ph.sh -r uninst -a ${PH_MENU}"
+				do
+					PH_MENU_LINES+=("${PH_MENU_LINE}")
+				done
+			fi
 		fi ;;
 	esac
 	local -a PH_MENU_ITEMS PH_MENU_CMDS
@@ -7421,12 +7430,10 @@ do
 done
 OPTIND="${PH_OLDOPTIND}"
 OPTARG="${PH_OLDOPTARG}"
-
 [[ -z "${PH_APP}" || ( -n "${PH_APP_USER}" && -n "${PH_APP_CMD}" && -n "${PH_APP_PKG}" && "${#}" -ne "8" ) || \
 	( -z "${PH_APP_USER}" && -z "${PH_APP_CMD}" && -z "${PH_APP_PKG}" && "${#}" -ne "2" ) || \
 	((( -n "${PH_APP_USER}" && (( -n "${PH_APP_CMD}" && -z "${PH_APP_PKG}" ) || ( -z "${PH_APP_CMD}" && -n "${PH_APP_PKG}" ))) || \
-	( -n "${PH_APP_CMD}" && (( -n "${PH_APP_USER}" && -z "${PH_APP_PKG}" ) || ( -z "${PH_APP_USER}" && -n "${PH_APP_PKG}" )))) && "${#}" -ne "6" ) || \
-	"${#}" -ne "4" ]] && \
+	( -n "${PH_APP_CMD}" && (( -n "${PH_APP_USER}" && -z "${PH_APP_PKG}" ) || ( -z "${PH_APP_USER}" && -n "${PH_APP_PKG}" )))) && "${#}" -ne "6" ) ]] && \
 	ph_set_result -a -m "Incorrect arguments provided to function '${FUNCNAME[0]}'"
 
 PH_APP_STATE="$(ph_get_app_state_from_app_name "${PH_APP}")"
@@ -12480,6 +12487,7 @@ declare PH_OPTION
 declare PH_OLDOPTARG
 declare -i PH_OLDOPTIND
 declare -i PH_COUNT
+declare -i PH_RET_CODE
 local -a PH_SELECTION_APPS
 local -a PH_FILTER_STATES
 local -a PH_ROUTINE_OPTS
@@ -12507,6 +12515,7 @@ PH_OPTION=""
 PH_OLDOPTARG="${OPTARG}"
 PH_OLDOPTIND="${OPTIND}"
 PH_COUNT="0"
+PH_RET_CODE="0"
 PH_SELECTION_APPS=()
 PH_FILTER_STATES=()
 PH_ROUTINE_OPTS=()
@@ -12553,7 +12562,7 @@ do
 			return 1
 		for PH_i in ${OPTARG//,/ }
 		do
-			if [[ "${PH_i}" != @(new|def|sup|int|hal|run|str) ]]
+			if [[ "${PH_i}" != @(all|new|def|sup|int|hal|run|str) ]]
 			then
 				OPTARG="${PH_OLDOPTARG}"
 				OPTIND="${PH_OLDOPTIND}"
@@ -12620,14 +12629,22 @@ else
 				*)
 			: ;;
 		esac
-		if ! read -r -a PH_SELECTION_APPS -d ';' < <(ph_get_app_list_by_state -s "${PH_DISP_APP_STATE}" -t exact; echo -n ";") 2>/dev/null
+		if [[ "${PH_DISP_APP_STATE}" == "Unused" ]]
 		then
-			if [[ "${PH_DISP_APP_STATE}" == "Unused" ]]
+			if ! read -r -a PH_SELECTION_APPS -d ';' < <(ph_get_app_list_by_state -s "${PH_DISP_APP_STATE}" -t minimum; echo -n ";") 2>/dev/null
 			then
 				ph_set_result -m "An error occurred trying to determine all Known applications"
-			else
-				ph_set_result -m "An error occurred trying to determine all ${PH_DISP_APP_STATE} applications"
+				PH_RET_CODE="1"
 			fi
+		else
+			if ! read -r -a PH_SELECTION_APPS -d ';' < <(ph_get_app_list_by_state -s "${PH_DISP_APP_STATE}" -t exact; echo -n ";") 2>/dev/null
+			then
+				ph_set_result -m "An error occurred trying to determine all ${PH_DISP_APP_STATE} applications"
+				PH_RET_CODE="1"
+			fi
+		fi
+		if [[ "${PH_RET_CODE}" -eq "1" ]]
+		then
 			ph_run_with_rollback -c false -m "Could not select"
 			return "${?}"
 		fi

@@ -288,7 +288,7 @@ then
 		if [[ "${PH_RUNAPP_STR_TTY}" != "-" && "$(pgrep -t "tty${PH_RUNAPP_STR_TTY}" -f "start${PH_RUNAPPL}.sh" >/dev/null 2>&1 ; echo "$?")" -eq "0" ]]
 		then
 			ph_run_with_rollback -c true -m "Found on tty${PH_RUNAPP_STR_TTY}"
-			ph_run_with_rollback -c "ph_do_app_action stop '${PH_RUNAPP}' force" || \
+			ph_run_with_rollback -c "ph_do_app_action stop '${PH_RUNAPP}' forced" || \
 				exit 1
 			printf "%8s%s\033[1;33m%s\033[0;0m%s\n" "" "--> Starting " "'${PH_RUNAPP}'" " on a pseudo-terminal"
 			ph_run_with_rollback -c true
