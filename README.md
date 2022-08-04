@@ -1,3 +1,9 @@
+#### 
+####	NOTE :	Currently undergoing a complete rewrite which is taking longer than expected
+####		So be warned, at the moment large parts are not in a working state
+####		Do not download for production use
+####
+
 * PieHelper is an extensible, user-friendly, scripted software suite for Raspberry Pi that aims to facilitate
 
 	- all initial configuration tasks required, after the initial hardware and OS installation of a Raspberry Pi
